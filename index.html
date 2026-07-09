@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Notes — Knowledge Base</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Login Overlay -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-icon">&#128218;</div>
+    <h1>Learning Notes</h1>
+    <p>Sign in to access your knowledge base</p>
+    <form id="login-form">
+      <input type="text" id="login-user" placeholder="Username" autocomplete="off" autofocus>
+      <input type="password" id="login-pass" placeholder="Password">
+      <button type="submit">Sign In</button>
+      <div class="login-error" id="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dashboard">
+  <header class="dashboard-header">
+    <div class="brand"><em>Learning</em> Notes</div>
+    <p class="tagline">Your personal knowledge base — performance testing, automation, and beyond.</p>
+    <div class="dashboard-nav">
+      <input type="text" class="dashboard-search" placeholder="Search topics... (Ctrl+K)" aria-label="Search topics">
+      <button class="dashboard-logout">Logout</button>
+    </div>
+  </header>
+
+  <div class="topics-grid" id="topics-grid">
+
+    <!-- ========== TOPIC CARD: JMeter ========== -->
+    <a href="JMeter_Notes_Website.html" class="topic-card">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-icon">&#9889;</div>
+      <h3>JMeter Performance Testing</h3>
+      <p>Complete guide covering installation, recording, thread groups, listeners, assertions, controllers, timers, correlation, BeanShell scripting, distributed testing, and interview prep.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">16 Sections</span>
+        <span class="topic-tag">250+ Revision Items</span>
+        <span class="topic-tag">4+ Yrs Experience</span>
+      </div>
+    </a>
+
+    <!--
+    ========== HOW TO ADD A NEW TOPIC ==========
+
+    1. Create a new HTML file (e.g., selenium.html) using the template below.
+    2. Copy a topic card block here and update the href, icon, title, description, and tags.
+    3. Your new topic page should link to styles.css and app.js just like JMeter_Notes_Website.html.
+
+    TEMPLATE CARD:
+
+    <a href="YOUR_FILE.html" class="topic-card">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-icon">EMOJI</div>
+      <h3>Topic Title</h3>
+      <p>Brief description of what this topic covers.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">X Sections</span>
+        <span class="topic-tag">Details</span>
+      </div>
+    </a>
+
+    ====================================================
+    -->
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

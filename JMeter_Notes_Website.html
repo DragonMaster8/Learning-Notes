@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JMeter Performance Testing Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-icon">&#9889;</div>
+    <h1>JMeter Notes</h1>
+    <p>Performance Testing Knowledge Base</p>
+    <form id="login-form">
+      <input type="text" id="login-user" placeholder="Username" autocomplete="off" autofocus>
+      <input type="password" id="login-pass" placeholder="Password">
+      <button type="submit">Sign In</button>
+      <div class="login-error" id="login-error"></div>
+    </form>
+  </div>
+</div>
+<div id="progress-bar"></div>
+<button id="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+<aside id="sidebar">
+  <div class="logo"><span>&#9889;</span> JMeter Notes</div>
+  <a href="index.html" class="back-to-home">&larr; All Topics</a>
+  <div id="search-container">
+    <input type="text" id="search-box" placeholder="Search notes..." aria-label="Search">
+    <span class="search-shortcut">Ctrl+K</span>
+  </div>
+  <div class="search-info"></div>
+  <nav id="nav-links">
+    <a href="#section-1">1. Introduction &amp; Installation</a>
+    <a href="#section-2">2. Recording &amp; Proxy Setup</a>
+    <a href="#section-3">3. Thread Groups &amp; Listeners</a>
+    <a href="#section-4">4. Advanced Thread Groups</a>
+    <a href="#section-5">5. HTTP Cookie Manager</a>
+    <a href="#section-6">6. Assertions</a>
+    <a href="#section-7">7. Controllers</a>
+    <a href="#section-8">8. Timers</a>
+    <a href="#section-9">9. Regex Extractor</a>
+    <a href="#section-10">10. Manual HTTP &amp; CSV</a>
+    <a href="#section-11">11. BeanShell Scripting</a>
+    <a href="#section-12">12. Correlation</a>
+    <a href="#section-13">13. Non-GUI Mode</a>
+    <a href="#section-14">14. Distributed Mode</a>
+    <a href="#section-15">15. Server Monitoring</a>
+    <a href="#section-16">16. Interview &amp; Career Guide</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" id="logout-btn">Logout</button>
+  </div>
+</aside>
+<main id="main-content">
+<div class="page-header">
+  <h1>JMeter Performance Testing</h1>
+  <p>Complete Knowledge Base — From Fundamentals to Expert Level</p>
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num">16</div><div class="stat-label">Sections</div></div>
+    <div class="stat"><div class="stat-num">250+</div><div class="stat-label">Revision Items</div></div>
+    <div class="stat"><div class="stat-num">80+</div><div class="stat-label">Tables</div></div>
+    <div class="stat"><div class="stat-num">4+ Yrs</div><div class="stat-label">Experience Level</div></div>
+  </div>
+</div>
+<div id="no-results" class="no-results">No matching content found.</div>
+
+<!-- SECTION 1 -->
+<section id="section-1" class="section-card">
+<h2>Section 1: Introduction to Performance Testing &amp; JMeter Installation</h2>
+
+<h3>What is Performance Testing?</h3>
+<p><strong>Definition:</strong> Performance testing is a type of non-functional testing performed to ensure that software applications perform well under their expected workload. It validates speed, responsiveness, stability, and scalability of a system.</p>
+
+<h4>Key Difference from Functional Testing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Functional Testing</th><th>Performance Testing</th></tr></thead>
+<tbody>
+<tr><td>Focus</td><td>What the system does (features &amp; behavior)</td><td>How well the system performs under load</td></tr>
+<tr><td>Users</td><td>Single user at a time</td><td>Thousands of concurrent users</td></tr>
+<tr><td>Goal</td><td>Verify correct functionality</td><td>Measure speed, throughput, stability</td></tr>
+<tr><td>Output</td><td>Pass / Fail</td><td>Metrics (response time, throughput, error rate)</td></tr>
+<tr><td>Tools</td><td>Selenium, Cypress, Playwright</td><td>JMeter, LoadRunner, NeoLoad</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Functional Testing Example — Amazon Purchase Flow</h4>
+<p>A functional tester verifies that a single user can: search for a product, add it to cart, proceed to checkout, enter payment details, and receive an order confirmation. Each step is validated for correctness.</p>
+
+<h4>Performance Testing Example — Thousands of Users Simultaneously</h4>
+<p>A performance tester simulates 10,000 users simultaneously searching, adding to cart, and checking out on Amazon during a sale event. The goal is to measure whether the site remains responsive, how long pages take to load, and whether any requests fail under load.</p>
+
+<h3>Types of Performance Testing</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Test Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Load Testing</td><td>Testing with the expected number of users to verify the system handles normal anticipated traffic</td></tr>
+<tr><td>Stress Testing</td><td>Testing beyond normal capacity to find the breaking point of the system</td></tr>
+<tr><td>Volume Testing</td><td>Testing with large amounts of data to verify the system handles data-intensive operations</td></tr>
+<tr><td>Endurance Testing</td><td>Testing under sustained load for an extended duration to detect memory leaks and degradation</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Why Performance Testing is Necessary</h3>
+<h4>Real-World Scenario: Independence Day Sale</h4>
+<p>Imagine an e-commerce website launching a massive Independence Day sale with 50% discounts. Marketing campaigns drive millions of visitors within hours. Without performance testing, the site may crash, transactions may fail, and revenue is lost along with customer trust.</p>
+
+<h4>Consequences of Not Doing Performance Testing</h4>
+<ul>
+<li>Website crashes during peak traffic events</li>
+<li>Slow page load times causing user abandonment</li>
+<li>Failed transactions and lost revenue</li>
+<li>Negative brand reputation and social media backlash</li>
+<li>Database overload and server downtime</li>
+</ul>
+
+<h4>Partial vs Complete Failure</h4>
+<p><strong>Partial Failure:</strong> Some features work while others fail — e.g., users can browse products but checkout fails. This is harder to detect and equally damaging.</p>
+<p><strong>Complete Failure:</strong> The entire website becomes unavailable — users see error pages or timeouts across all functionality.</p>
+
+<div class="callout">
+<strong>Key Takeaway:</strong> Performance testing is mandatory for any website or application that receives traffic from real users. Skipping it is a business risk, not just a technical oversight.
+</div>
+
+<h3>How Load Testing Tools Help</h3>
+<h4>Process Overview (5 Steps)</h4>
+<ol>
+<li><strong>Record</strong> — Capture user actions as HTTP requests using a proxy or browser plugin</li>
+<li><strong>Enhance</strong> — Add thread groups, timers, assertions, and cookie managers to the script</li>
+<li><strong>Configure</strong> — Set number of users, ramp-up time, loop count, and duration</li>
+<li><strong>Execute</strong> — Run the test and simulate concurrent virtual users</li>
+<li><strong>Analyze</strong> — Review listeners and reports for response times, throughput, and errors</li>
+</ol>
+
+<h4>Selenium vs Load Testing Tool</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Selenium</th><th>Load Testing Tool</th></tr></thead>
+<tbody>
+<tr><td>Purpose</td><td>Functional testing</td><td>Performance testing</td></tr>
+<tr><td>Execution</td><td>Single user</td><td>Thousands of users</td></tr>
+<tr><td>UI</td><td>Browser-based (renders full UI)</td><td>Headless (no UI rendering)</td></tr>
+<tr><td>Output</td><td>Pass / Fail</td><td>Performance metrics (response time, throughput, error %)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Popular Load Testing Tools</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tool</th><th>Type</th></tr></thead>
+<tbody>
+<tr><td>JMeter</td><td>Open Source</td></tr>
+<tr><td>LoadRunner</td><td>Paid</td></tr>
+<tr><td>NeoLoad</td><td>Paid</td></tr>
+<tr><td>LoadUI</td><td>Paid</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Why JMeter?</h3>
+<ol>
+<li><strong>Open Source</strong> — Free to use with no licensing costs; backed by Apache Foundation</li>
+<li><strong>Cross-Platform (Java)</strong> — Runs on Windows, Mac, and Linux since it is Java-based</li>
+<li><strong>No Coding Required</strong> — GUI-driven test creation; scripting is optional for advanced scenarios</li>
+<li><strong>User-Friendly GUI</strong> — Intuitive interface for building and running test plans</li>
+<li><strong>Extensive Documentation</strong> — Large community, tutorials, plugins, and official Apache docs</li>
+</ol>
+
+<h3>JMeter Installation</h3>
+<h4>Step 1: Download from Apache</h4>
+<p>Visit the official Apache JMeter website and download the latest binary release (zip/tgz file).</p>
+<pre><code>https://jmeter.apache.org/download_jmeter.cgi</code></pre>
+
+<h4>Step 2: Install Java</h4>
+<p>JMeter requires Java 8 or higher. Install JDK and verify:</p>
+<pre><code>java -version</code></pre>
+
+<h4>Step 3: Extract and Run</h4>
+<ol>
+<li>Extract the downloaded zip to a folder (e.g., <code>C:\apache-jmeter-5.6.3</code>)</li>
+<li>Navigate to the <code>bin</code> folder</li>
+<li>Run <code>ApacheJMeter.bat</code> (Windows) or <code>jmeter.sh</code> (Mac/Linux)</li>
+</ol>
+<pre><code>cd C:\apache-jmeter-5.6.3\bin
+ApacheJMeter.bat</code></pre>
+
+<div class="callout">
+<strong>Version Changes:</strong> JMeter releases new versions periodically. Always check the release notes for breaking changes. Plugin compatibility may vary between major versions.
+</div>
+
+<h3>JMeter Interface Overview</h3>
+<p><strong>Test Plan:</strong> The root container for your entire performance test. All elements (thread groups, samplers, listeners) are organized under the Test Plan.</p>
+<p><strong>WorkBench:</strong> A temporary workspace for storing elements not yet added to the Test Plan. Note: WorkBench was deprecated in JMeter 4.0 and removed in later versions — elements should be placed directly in the Test Plan.</p>
+
+<h4>7 Components of a Test Plan</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Component</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>Threads (Thread Groups)</td><td>Define number of virtual users and their behavior</td></tr>
+<tr><td>Config Elements</td><td>Configure defaults shared by samplers (e.g., HTTP Cookie Manager, CSV Data Set)</td></tr>
+<tr><td>Timers</td><td>Introduce delays between requests to simulate realistic user think time</td></tr>
+<tr><td>Pre-Processors</td><td>Execute actions before a sampler runs (e.g., extract tokens)</td></tr>
+<tr><td>Post-Processors</td><td>Execute actions after a sampler runs (e.g., extract values from response)</td></tr>
+<tr><td>Assertions</td><td>Validate responses to determine pass/fail beyond HTTP status codes</td></tr>
+<tr><td>Listeners</td><td>Display and save test results (View Results Tree, Aggregate Report)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Toolbar Overview</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Button</th><th>Function</th></tr></thead>
+<tbody>
+<tr><td>Start (Green Play)</td><td>Run the test plan</td></tr>
+<tr><td>Stop (Red X)</td><td>Stop the test immediately</td></tr>
+<tr><td>Shutdown</td><td>Gracefully stop — lets current threads finish</td></tr>
+<tr><td>Clear All</td><td>Clear all listener results</td></tr>
+<tr><td>Clear</td><td>Clear results of selected listener</td></tr>
+<tr><td>Save</td><td>Save the test plan as .jmx file</td></tr>
+<tr><td>Cut / Copy / Paste</td><td>Standard editing operations on test elements</td></tr>
+<tr><td>Enable / Disable</td><td>Toggle elements on or off without deleting</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Record and Playback</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Protocol</th><th>Recording Method</th><th>Certificate Required?</th></tr></thead>
+<tbody>
+<tr><td>HTTP</td><td>JMeter Proxy / BlazeMeter Plugin</td><td>No</td></tr>
+<tr><td>HTTPS</td><td>JMeter Proxy / BlazeMeter Plugin</td><td>Yes — import JMeter CA certificate into browser</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Method 1: Firefox with JMeter Proxy</h4>
+<ol>
+<li>Start HTTP(S) Test Script Recorder in JMeter (port 8888)</li>
+<li>Configure Firefox manual proxy to localhost:8888</li>
+<li>Import JMeter's CA certificate for HTTPS recording</li>
+<li>Browse the application — requests are captured automatically</li>
+</ol>
+
+<h4>Method 2: Chrome with BlazeMeter Plugin</h4>
+<ol>
+<li>Install BlazeMeter Chrome extension</li>
+<li>Sign in and click Record</li>
+<li>Perform actions in the browser</li>
+<li>Stop recording and export as .jmx file</li>
+</ol>
+
+<div class="accordion">
+<div class="accordion-header">Quick Revision — Section 1 (20 Items) <span class="icon">&#9660;</span></div>
+<div class="accordion-body"><div class="accordion-body-inner"><ol>
+<li>Performance testing ensures software performs well under specified workload</li>
+<li>Functional testing checks WHAT the system does; performance testing checks HOW WELL it performs</li>
+<li>Functional testing uses a single user; performance testing simulates thousands of concurrent users</li>
+<li>Load testing validates behavior under expected user count</li>
+<li>Stress testing pushes the system beyond normal capacity to find breaking points</li>
+<li>Volume testing validates handling of large data volumes</li>
+<li>Endurance testing runs sustained load over extended periods to detect memory leaks</li>
+<li>Without performance testing, sites can crash during peak events like sales</li>
+<li>Partial failure: some features work, others fail (harder to detect)</li>
+<li>Complete failure: entire site becomes unavailable</li>
+<li>Performance testing is mandatory for traffic-receiving websites</li>
+<li>Load testing process: Record → Enhance → Configure → Execute → Analyze</li>
+<li>Selenium is for functional testing; load tools are for performance testing</li>
+<li>Selenium runs single-user browser-based tests; load tools run headless multi-user tests</li>
+<li>JMeter is open source; LoadRunner, NeoLoad, and LoadUI are paid tools</li>
+<li>JMeter advantages: open source, cross-platform (Java), no coding required, GUI-friendly, extensive docs</li>
+<li>Install Java first, then download JMeter from Apache and run ApacheJMeter.bat from bin folder</li>
+<li>Test Plan is the root container; 7 components include Threads, Config Elements, Timers, Pre/Post-Processors, Assertions, Listeners</li>
+<li>HTTP recording needs no certificate; HTTPS recording requires importing JMeter's CA certificate</li>
+<li>Two recording methods: Firefox + JMeter Proxy, or Chrome + BlazeMeter Plugin</li>
+</ol></div></div>
+</div>
+</section>
+
+<!-- SECTION 2 -->
+<section id="section-2" class="section-card">
+<h2>Section 2: Getting Started — Recording, Proxy Setup &amp; Practical Demo</h2>
+
+<h3>Tips for Best Learning Experience</h3>
+<ul>
+<li>Watch videos at 1x speed initially to absorb concepts fully</li>
+<li>Pause and practice each step in JMeter alongside the tutorial</li>
+<li>Use a second monitor or split screen: video on one side, JMeter on the other</li>
+<li>Take notes on port numbers, file paths, and configuration values</li>
+<li>Replay sections you don't understand before moving forward</li>
+</ul>
+
+<h3>Record and Playback Concept</h3>
+<h4>Baseline Process (4 Steps)</h4>
+<ol>
+<li><strong>Record</strong> — Use a proxy or browser plugin to capture HTTP requests while browsing</li>
+<li><strong>Playback</strong> — Replay the captured requests using JMeter thread groups</li>
+<li><strong>Enhance</strong> — Add assertions, timers, cookie managers, and parameterization</li>
+<li><strong>Execute at Scale</strong> — Run with multiple virtual users to simulate load</li>
+</ol>
+
+<h4>How It Works</h4>
+<p>When you browse a website, your browser sends HTTP requests to the server. The JMeter proxy sits between your browser and the server, intercepting every request and response. These intercepted requests are converted into JMeter samplers (HTTP Request elements) that can be replayed programmatically.</p>
+
+<div class="callout">
+<strong>Important Limitation:</strong> Recorded scripts capture requests as-is. Dynamic values (session tokens, CSRF tokens, timestamps, unique IDs) will cause failures during playback unless handled with correlation (Regular Expression Extractor, JSON Extractor, etc.).
+</div>
+
+<h3>HTTP(S) Test Script Recorder Setup</h3>
+<h4>Port Number: 8888</h4>
+<p>The default port for JMeter's HTTP(S) Test Script Recorder is <strong>8888</strong>. This must match the proxy port configured in your browser.</p>
+
+<h4>Request Filtering — Add Suggested Excludes</h4>
+<p>Click "Add suggested excludes" to filter out static resources (CSS, JS, images, fonts) and third-party analytics. This keeps your script clean and focused on business-critical requests.</p>
+
+<h4>Recording Controller vs Test Script Recorder</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Element</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>HTTP(S) Test Script Recorder</td><td>The proxy server that captures requests from the browser</td></tr>
+<tr><td>Recording Controller</td><td>The container where captured samplers are placed in the test plan tree</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Firefox Proxy Configuration</h3>
+<h4>Step-by-Step Setup</h4>
+<ol>
+<li>Open Firefox → Settings → General → Network Settings → Settings</li>
+<li>Select "Manual proxy configuration"</li>
+<li>HTTP Proxy: <code>localhost</code>, Port: <code>8888</code></li>
+<li>Check "Also use this proxy for HTTPS"</li>
+<li>Click OK and start recording in JMeter</li>
+</ol>
+
+<h4>Connection Logic Diagram</h4>
+<div class="ascii-diagram">Browser (Firefox)
+    │
+    │  HTTP/HTTPS Request
+    ▼
+JMeter Proxy (localhost:8888)
+    │
+    │  HTTP(S) Test Script Recorder
+    │  → Captures request as JMeter Sampler
+    ▼
+Target Server (e.g., blazedemo.com)
+    │
+    │  Response
+    ▼
+JMeter Proxy → Browser</div>
+
+<div class="callout">
+<strong>Port Matching Importance:</strong> The port in Firefox proxy settings MUST exactly match the port configured in JMeter's HTTP(S) Test Script Recorder. Mismatch = no recording.
+</div>
+
+<h4>Reverting Proxy Settings</h4>
+<p>After recording, change Firefox proxy back to "No proxy" or "Use system proxy settings" to restore normal browsing.</p>
+
+<h3>HTTPS Certificate Import</h3>
+<h4>Why Needed</h4>
+<p>HTTPS traffic is encrypted. JMeter acts as a man-in-the-middle proxy, decrypting and re-encrypting traffic. The browser must trust JMeter's self-signed CA certificate to allow this interception.</p>
+
+<h4>Step-by-Step Import into Firefox</h4>
+<ol>
+<li>In JMeter, click "Start" on the HTTP(S) Test Script Recorder</li>
+<li>Click "CA Certificate" button to locate the certificate file</li>
+<li>In Firefox: Settings → Privacy &amp; Security → Certificates → View Certificates → Authorities → Import</li>
+<li>Select <code>ApacheJMeterTemporaryRootCA</code> (located in JMeter's bin folder)</li>
+<li>Check "Trust this CA to identify websites" and confirm</li>
+</ol>
+
+<p><strong>Certificate Location:</strong> <code>&lt;jmeter-install-dir&gt;/bin/ApacheJMeterTemporaryRootCA</code></p>
+
+<h3>Practical Demo: blazedemo.com Recording</h3>
+<p>Navigate to blazedemo.com and perform a flight booking flow. Three main captured requests:</p>
+<ol>
+<li><strong>GET /</strong> — Load the homepage (select departure and destination cities)</li>
+<li><strong>POST /reserve.php</strong> — Submit flight selection form</li>
+<li><strong>GET /purchase.php</strong> — Load the purchase/payment page</li>
+</ol>
+
+<h3>BlazeMeter Chrome Plugin</h3>
+<h4>Setup Steps</h4>
+<ol>
+<li>Install "BlazeMeter | The Continuous Testing Platform" from Chrome Web Store</li>
+<li>Create a free BlazeMeter account and sign in via the extension</li>
+</ol>
+
+<h4>Recording Steps</h4>
+<ol>
+<li>Click the BlazeMeter extension icon → Record</li>
+<li>Enter a test name and target URL</li>
+<li>Perform actions in the browser</li>
+<li>Click Stop when done</li>
+</ol>
+
+<h4>Exporting to .jmx</h4>
+<p>After stopping the recording, click "Save" in the BlazeMeter interface and choose "JMeter (.jmx)" format. Open the exported file in JMeter.</p>
+
+<h3>Firefox vs BlazeMeter Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Firefox + JMeter Proxy</th><th>Chrome + BlazeMeter Plugin</th></tr></thead>
+<tbody>
+<tr><td>Browser</td><td>Firefox only</td><td>Chrome (and Chromium-based browsers)</td></tr>
+<tr><td>Setup Complexity</td><td>Manual proxy + certificate import</td><td>Install plugin, sign in — minimal setup</td></tr>
+<tr><td>HTTPS Support</td><td>Requires CA certificate import</td><td>Handled automatically by plugin</td></tr>
+<tr><td>Recording Location</td><td>Directly into JMeter test plan</td><td>Cloud first, then export to .jmx</td></tr>
+<tr><td>Internet Required</td><td>No (fully local)</td><td>Yes (cloud-based recording)</td></tr>
+<tr><td>Request Filtering</td><td>Manual (Add suggested excludes)</td><td>Automatic smart filtering</td></tr>
+<tr><td>Cost</td><td>Free</td><td>Free tier available; paid for advanced features</td></tr>
+<tr><td>Best For</td><td>Local development, full control</td><td>Quick recording, team sharing</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="accordion">
+<div class="accordion-header">Quick Revision — Section 2 (20 Items) <span class="icon">&#9660;</span></div>
+<div class="accordion-body"><div class="accordion-body-inner"><ol>
+<li>Watch tutorial videos at 1x speed and practice alongside</li>
+<li>Record and Playback: Record → Playback → Enhance → Execute at Scale</li>
+<li>JMeter proxy intercepts browser requests and converts them to samplers</li>
+<li>Dynamic values (tokens, IDs) cause playback failures without correlation</li>
+<li>Default JMeter proxy port is 8888</li>
+<li>Use "Add suggested excludes" to filter static resources during recording</li>
+<li>Test Script Recorder = proxy server; Recording Controller = container for captured samplers</li>
+<li>Firefox proxy: Manual → localhost:8888 → Also use for HTTPS</li>
+<li>Browser → JMeter Proxy (8888) → Target Server → Response back through proxy</li>
+<li>Port in browser MUST match port in JMeter recorder</li>
+<li>Revert Firefox proxy to "No proxy" after recording</li>
+<li>HTTPS requires importing JMeter's CA certificate into browser</li>
+<li>Certificate file: ApacheJMeterTemporaryRootCA in JMeter bin folder</li>
+<li>blazedemo.com demo captures: GET /, POST /reserve.php, GET /purchase.php</li>
+<li>BlazeMeter: install Chrome extension, sign in, record, stop, export .jmx</li>
+<li>BlazeMeter handles HTTPS automatically; Firefox method requires manual cert import</li>
+<li>Firefox method records directly into JMeter; BlazeMeter records to cloud first</li>
+<li>Firefox method works offline; BlazeMeter requires internet</li>
+<li>BlazeMeter has automatic smart filtering; JMeter uses manual exclude patterns</li>
+<li>Choose Firefox+Proxy for local control; BlazeMeter for quick setup and sharing</li>
+</ol></div></div>
+</div>
+</section>
+
+<!-- SECTION 3 -->
+<section id="section-3" class="section-card">
+<h2>Section 3: Thread Groups, Listeners &amp; Performance Metrics</h2>
+
+<h3>Thread Group</h3>
+<p><strong>Definition:</strong> A Thread Group is the starting point of any JMeter test plan. Each thread represents one virtual user. Threads execute the test plan independently and concurrently.</p>
+
+<h4>Parameters</h4>
+<p><strong>Number of Threads (Users):</strong> Total virtual users to simulate.</p>
+<p><strong>Ramp-Up Period (seconds):</strong> Time over which all threads are started. If 100 threads with 100-second ramp-up, one new thread starts every second.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Threads</th><th>Ramp-Up</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td>10</td><td>10 sec</td><td>1 thread starts every second</td></tr>
+<tr><td>100</td><td>50 sec</td><td>2 threads start every second</td></tr>
+<tr><td>50</td><td>100 sec</td><td>1 thread every 2 seconds</td></tr>
+<tr><td>100</td><td>0 sec</td><td>All 100 threads start immediately (spike test)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Loop Count:</strong> Number of times each thread executes the test. Set to "Forever" for continuous execution combined with a Duration.</p>
+<p><strong>Forever + Duration:</strong> When Loop Count is Forever, specify Duration (seconds) to control how long the test runs.</p>
+
+<h4>Action on Sampler Error</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Option</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td>Continue</td><td>Continue to next sampler in the loop (default)</td></tr>
+<tr><td>Start Next Thread Loop</td><td>Skip remaining samplers in current iteration; start next loop</td></tr>
+<tr><td>Stop Thread</td><td>Stop current thread; other threads continue</td></tr>
+<tr><td>Stop Test</td><td>Stop all threads immediately after current sampler completes</td></tr>
+<tr><td>Stop Test Now</td><td>Hard stop — abort all threads immediately</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Moving Recorded Script into Thread Group</h3>
+<ol>
+<li>Create a Thread Group under the Test Plan</li>
+<li>Drag the Recording Controller (with captured samplers) into the Thread Group</li>
+<li>Disable or remove the HTTP(S) Test Script Recorder (not needed for execution)</li>
+<li>Add Listeners to the Thread Group or Test Plan level</li>
+<li>Configure thread count, ramp-up, and loop count</li>
+</ol>
+
+<h3>Listeners</h3>
+<h4>View Results Tree</h4>
+<ul>
+<li><strong>Green icon</strong> = sampler passed (no assertion failures)</li>
+<li><strong>Red icon</strong> = sampler failed (assertion failure or error)</li>
+<li><strong>Request tab</strong> — shows headers, body, and cookies sent</li>
+<li><strong>Response tab</strong> — shows response data, headers, and HTML rendered view</li>
+</ul>
+<div class="callout">
+<strong>Green 200 Problem:</strong> A request can show green with HTTP 200 status but still be a functional failure — e.g., login returns 200 but response body contains the login page again. Always validate response content, not just status codes.
+</div>
+<p><strong>Best Practice:</strong> Run with 1 user first using View Results Tree to debug. Disable or remove it before running large load tests — it consumes significant memory.</p>
+
+<h4>Aggregate Report — 10 Parameters</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Parameter</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Samples</td><td>Total number of requests executed</td></tr>
+<tr><td>Average</td><td>Mean response time across all samples</td></tr>
+<tr><td>Min</td><td>Fastest response time recorded</td></tr>
+<tr><td>Max</td><td>Slowest response time recorded</td></tr>
+<tr><td>Error %</td><td>Percentage of failed requests</td></tr>
+<tr><td>Throughput</td><td>Requests per second (higher is better)</td></tr>
+<tr><td>Median</td><td>50th percentile — half of requests were faster than this</td></tr>
+<tr><td>90% Line</td><td>90% of requests completed within this time</td></tr>
+<tr><td>95% Line</td><td>95% of requests completed within this time</td></tr>
+<tr><td>99% Line</td><td>99% of requests completed within this time</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Graph Results</h4>
+<p>Three lines plotted over time:</p>
+<ul>
+<li><strong>Median (purple)</strong> — typical response time</li>
+<li><strong>Deviation (red)</strong> — variability in response times</li>
+<li><strong>Throughput (green)</strong> — requests per minute</li>
+</ul>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Behavior</th><th>Graph Pattern</th><th>Interpretation</th></tr></thead>
+<tbody>
+<tr><td>Ideal</td><td>Throughput rises, Median stays flat, Deviation stays low</td><td>System handles load well</td></tr>
+<tr><td>Degrading</td><td>Median rises steadily, Deviation increases</td><td>System struggling under load</td></tr>
+<tr><td>Failure</td><td>Throughput drops, Deviation spikes</td><td>System overloaded or crashing</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Golden Rule:</strong> Throughput should increase or stay stable as load increases. If throughput drops while adding users, the system has reached its capacity limit.
+</div>
+
+<h3>Key Formulas and Calculations</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Formula</th><th>Calculation</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Thread Start Rate</td><td>Threads ÷ Ramp-Up Period</td><td>100 threads / 50 sec = 2 threads/sec</td></tr>
+<tr><td>Total Samples</td><td>Threads × Loop Count × Samplers per Loop</td><td>10 threads × 5 loops × 3 samplers = 150 samples</td></tr>
+<tr><td>Throughput</td><td>Total Samples ÷ Test Duration (sec)</td><td>150 samples / 30 sec = 5 req/sec</td></tr>
+<tr><td>Error Rate</td><td>(Failed Samples ÷ Total Samples) × 100</td><td>(5 / 150) × 100 = 3.33%</td></tr>
+<tr><td>90th Percentile</td><td>90% of response times fall below this value</td><td>If 90% Line = 500ms, 90% of requests were faster than 500ms</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="accordion">
+<div class="accordion-header">Quick Revision — Section 3 (31 Items) <span class="icon">&#9660;</span></div>
+<div class="accordion-body"><div class="accordion-body-inner"><ol>
+<li>Thread Group = starting point; each thread = one virtual user</li>
+<li>Number of Threads = total virtual users to simulate</li>
+<li>Ramp-Up Period = time to start all threads (threads ÷ ramp-up = start rate)</li>
+<li>100 threads, 100 sec ramp-up = 1 thread per second</li>
+<li>Loop Count = how many times each thread repeats the test</li>
+<li>Forever + Duration = continuous execution for specified time</li>
+<li>Action on Sampler Error: Continue, Start Next Loop, Stop Thread, Stop Test, Stop Test Now</li>
+<li>Move Recording Controller into Thread Group for execution</li>
+<li>Disable HTTP(S) Test Script Recorder before running load test</li>
+<li>View Results Tree: green = pass, red = fail</li>
+<li>Request tab shows sent data; Response tab shows received data</li>
+<li>Green 200 Problem: HTTP 200 doesn't guarantee functional success</li>
+<li>Always run 1 user with View Results Tree first for debugging</li>
+<li>Disable View Results Tree before large load tests (memory intensive)</li>
+<li>Aggregate Report Samples = total requests executed</li>
+<li>Average = mean response time; Min/Max = fastest/slowest</li>
+<li>Error % = percentage of failed requests</li>
+<li>Throughput = requests per second</li>
+<li>Median = 50th percentile response time</li>
+<li>90%/95%/99% Line = percentile response times</li>
+<li>Graph Results shows Median, Deviation, and Throughput lines</li>
+<li>Ideal: throughput rises, median flat, deviation low</li>
+<li>Degrading: median rises, deviation increases</li>
+<li>Failure: throughput drops, deviation spikes</li>
+<li>Golden Rule: throughput should increase or stay stable with more users</li>
+<li>Thread Start Rate = Threads ÷ Ramp-Up Period</li>
+<li>Total Samples = Threads × Loops × Samplers per Loop</li>
+<li>Throughput = Total Samples ÷ Test Duration</li>
+<li>Error Rate = (Failed ÷ Total) × 100</li>
+<li>90th percentile means 90% of requests were faster than that value</li>
+<li>Use Aggregate Report for load test analysis; View Results Tree for debugging only</li>
+</ol></div></div>
+</div>
+</section>
+
+<!-- SECTION 4 -->
+<section id="section-4" class="section-card">
+<h2>Section 4: Advanced Thread Groups (Plugins)</h2>
+
+<h3>Installing Plugins Manager</h3>
+<ol>
+<li>Download <code>jmeter-plugins-manager-*.jar</code> from <a href="https://jmeter-plugins.org/" style="color:var(--highlight)">jmeter-plugins.org</a></li>
+<li>Place the JAR file in <code>&lt;jmeter&gt;/lib/ext/</code> folder</li>
+<li>Restart JMeter</li>
+<li>Access via Options → Plugins Manager</li>
+</ol>
+
+<h3>Installing Custom Thread Groups Plugin</h3>
+<ol>
+<li>Open Plugins Manager (Options → Plugins Manager)</li>
+<li>Go to "Available Plugins" tab</li>
+<li>Search for "Custom Thread Groups"</li>
+<li>Check the box and click "Apply Changes and Restart JMeter"</li>
+</ol>
+
+<h3>Concurrency Thread Group</h3>
+<p>Maintains a target number of concurrent threads with a staircase ramp-up pattern.</p>
+<h4>4 Parameters</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Parameter</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Target Concurrency</td><td>Maximum number of concurrent threads to maintain</td></tr>
+<tr><td>Ramp-Up Time</td><td>Total time to reach target concurrency</td></tr>
+<tr><td>Ramp-Up Steps</td><td>Number of steps (staircase increments) to reach target</td></tr>
+<tr><td>Hold Target Rate Time</td><td>Duration to maintain target concurrency after ramp-up</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Staircase Pattern</h4>
+<div class="ascii-diagram">Threads
+  │
+50│          ┌──────────────────── Hold Target Rate
+  │         ╱│
+  │        ╱ │
+  │       ╱  │
+  │      ╱   │
+  │     ╱    │
+  │    ╱     │
+  │   ╱      │
+  │  ╱       │
+  │ ╱        │
+ 0└────────────────────────────────── Time
+   Ramp-Up (in steps)</div>
+
+<h3>Ultimate Thread Group</h3>
+<p>Provides fine-grained control with multiple load phases in a single thread group.</p>
+<h4>5 Parameters</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Parameter</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Start Threads Count</td><td>Number of threads to start in this schedule row</td></tr>
+<tr><td>Initial Delay</td><td>Wait time before starting this group of threads</td></tr>
+<tr><td>Startup Time</td><td>Time to ramp up to full thread count</td></tr>
+<tr><td>Hold Load For</td><td>Duration to maintain full load</td></tr>
+<tr><td>Shutdown Time</td><td>Time to ramp down threads to zero</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Load Pattern</h4>
+<div class="ascii-diagram">Threads
+  │
+100│       ┌──────── Hold ────────┐
+  │      ╱│                      │╲
+  │     ╱ │                      │ ╲
+  │    ╱  │                      │  ╲
+  │   ╱   │                      │   ╲
+  │  ╱    │                      │    ╲
+  │ ╱     │                      │     ╲
+ 0└────────────────────────────────────── Time
+  Delay  Startup              Shutdown</div>
+
+<h4>Full Timeline Calculation</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Phase</th><th>Duration</th><th>Cumulative Time</th></tr></thead>
+<tbody>
+<tr><td>Initial Delay</td><td>10 sec</td><td>0 – 10 sec (no threads)</td></tr>
+<tr><td>Startup Time</td><td>30 sec</td><td>10 – 40 sec (ramping up)</td></tr>
+<tr><td>Hold Load For</td><td>120 sec</td><td>40 – 160 sec (full load)</td></tr>
+<tr><td>Shutdown Time</td><td>20 sec</td><td>160 – 180 sec (ramping down)</td></tr>
+<tr><td><strong>Total Test Duration</strong></td><td><strong>180 sec</strong></td><td><strong>3 minutes</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Comparison: Concurrency vs Ultimate Thread Group</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Concurrency Thread Group</th><th>Ultimate Thread Group</th></tr></thead>
+<tbody>
+<tr><td>Load Pattern</td><td>Staircase ramp-up to flat hold</td><td>Custom multi-phase (ramp up, hold, ramp down)</td></tr>
+<tr><td>Configuration</td><td>4 simple parameters</td><td>5 parameters per schedule row; multiple rows supported</td></tr>
+<tr><td>Ramp-Down</td><td>Not built-in (threads stop at end)</td><td>Built-in shutdown/ramp-down phase</td></tr>
+<tr><td>Multiple Phases</td><td>Single ramp + hold</td><td>Multiple schedule rows for complex patterns</td></tr>
+<tr><td>Complexity</td><td>Simple, quick to configure</td><td>More complex, highly flexible</td></tr>
+<tr><td>Best For</td><td>Standard load tests with steady-state hold</td><td>Complex scenarios with ramp-down, multiple load levels</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>When to Use Which</h3>
+<ul>
+<li><strong>Concurrency Thread Group:</strong> When you need a simple ramp-up to a target user count and hold steady — most common load test scenario</li>
+<li><strong>Ultimate Thread Group:</strong> When you need ramp-down, multiple load phases, or complex load profiles (e.g., simulate morning ramp-up, lunch dip, evening peak)</li>
+<li><strong>Standard Thread Group:</strong> When plugins aren't available or for simple loop-based tests</li>
+</ul>
+
+<div class="accordion">
+<div class="accordion-header">Quick Revision — Section 4 (21 Items) <span class="icon">&#9660;</span></div>
+<div class="accordion-body"><div class="accordion-body-inner"><ol>
+<li>Install Plugins Manager JAR in lib/ext folder and restart JMeter</li>
+<li>Custom Thread Groups plugin installed via Plugins Manager → Available Plugins</li>
+<li>Concurrency Thread Group maintains target concurrent threads with staircase ramp-up</li>
+<li>Target Concurrency = max concurrent threads to maintain</li>
+<li>Ramp-Up Time = total time to reach target concurrency</li>
+<li>Ramp-Up Steps = number of staircase increments</li>
+<li>Hold Target Rate Time = duration to maintain target after ramp-up</li>
+<li>Ultimate Thread Group provides fine-grained multi-phase load control</li>
+<li>Start Threads Count = threads in this schedule row</li>
+<li>Initial Delay = wait before starting threads</li>
+<li>Startup Time = ramp-up duration</li>
+<li>Hold Load For = steady-state duration at full load</li>
+<li>Shutdown Time = ramp-down duration</li>
+<li>Total test duration = Initial Delay + Startup + Hold + Shutdown</li>
+<li>Example: 10 + 30 + 120 + 20 = 180 seconds (3 minutes)</li>
+<li>Concurrency TG: simple staircase ramp + flat hold</li>
+<li>Ultimate TG: custom multi-phase with built-in ramp-down</li>
+<li>Ultimate TG supports multiple schedule rows for complex patterns</li>
+<li>Use Concurrency TG for standard load tests with steady-state hold</li>
+<li>Use Ultimate TG for complex profiles with ramp-down or multiple load levels</li>
+<li>Use Standard Thread Group when plugins aren't available</li>
+</ol></div></div>
+</div>
+</section>
+
+<!-- SECTION 5 -->
+<section id="section-5" class="section-card">
+<h2>Section 5: HTTP Cookie Manager</h2>
+
+<h3>The Problem</h3>
+<p>You record a login flow, run the test, and all requests show <strong>green (success)</strong>. However, when you inspect the response data, the login page HTML is returned instead of the dashboard. The test appears to pass but functionally fails.</p>
+
+<h3>What are Session Cookies?</h3>
+<p><strong>Facebook Example:</strong> When you log into Facebook, the server creates a session and sends a cookie (e.g., <code>session_id=abc123</code>) to your browser. On every subsequent request, your browser automatically sends this cookie. The server reads it and knows who you are — without re-entering credentials.</p>
+
+<h3>Cookie Flow</h3>
+<ul>
+<li><strong>Stateless HTTP:</strong> HTTP is inherently stateless — each request is independent with no memory of previous requests</li>
+<li><strong>Unique Identification:</strong> Cookies provide a mechanism for the server to identify returning users across multiple requests</li>
+<li><strong>Expiration:</strong> Cookies have expiration times — session cookies expire when the browser closes; persistent cookies have a set expiry date</li>
+</ul>
+
+<h3>The Solution: HTTP Cookie Manager</h3>
+<h4>How to Add</h4>
+<ol>
+<li>Right-click Thread Group → Add → Config Element → HTTP Cookie Manager</li>
+<li>Place it at the Thread Group level (applies to all samplers in the group)</li>
+<li>No additional configuration needed for basic usage</li>
+</ol>
+
+<h4>How It Works Step by Step</h4>
+<ol>
+<li>User sends login request → Server responds with <code>Set-Cookie: session_id=abc123</code></li>
+<li>HTTP Cookie Manager stores the cookie automatically</li>
+<li>Next request → Cookie Manager attaches <code>Cookie: session_id=abc123</code> to the request header</li>
+<li>Server recognizes the session → Returns dashboard instead of login page</li>
+</ol>
+
+<h4>Before vs After Comparison</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Without Cookie Manager</th><th>With Cookie Manager</th></tr></thead>
+<tbody>
+<tr><td>Login Request</td><td>Sends credentials, receives session cookie in response</td><td>Same — credentials sent, cookie received</td></tr>
+<tr><td>Cookie Storage</td><td>Cookie is ignored/discarded</td><td>Cookie is stored automatically</td></tr>
+<tr><td>Subsequent Requests</td><td>No cookie sent — server treats as new visitor</td><td>Cookie attached — server recognizes session</td></tr>
+<tr><td>Dashboard Request</td><td>Returns login page (appears as green 200)</td><td>Returns actual dashboard content</td></tr>
+<tr><td>Test Result</td><td>False positive — all green but functionally broken</td><td>Correct behavior — session maintained</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>How to Know When to Use</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Approach</th><th>When</th></tr></thead>
+<tbody>
+<tr><td>Proactive</td><td>Add HTTP Cookie Manager whenever your test involves login, session-based navigation, or multi-step flows</td></tr>
+<tr><td>Reactive</td><td>Add when you see green 200 responses but wrong page content (login page instead of expected page)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Best Practice:</strong> Always add HTTP Cookie Manager proactively to any test plan that involves authentication or session-dependent workflows. Don't wait for failures to discover you need it.
+</div>
+
+<div class="accordion">
+<div class="accordion-header">Quick Revision — Section 5 (19 Items) <span class="icon">&#9660;</span></div>
+<div class="accordion-body"><div class="accordion-body-inner"><ol>
+<li>Login flow may show all green but return login page in response body</li>
+<li>Session cookies identify users across multiple HTTP requests</li>
+<li>Facebook example: login creates session_id cookie sent with every subsequent request</li>
+<li>HTTP is stateless — each request is independent without cookies</li>
+<li>Cookies provide unique user identification across requests</li>
+<li>Cookies have expiration — session cookies expire on browser close</li>
+<li>HTTP Cookie Manager: Thread Group → Add → Config Element → HTTP Cookie Manager</li>
+<li>Cookie Manager automatically stores cookies from Set-Cookie response headers</li>
+<li>Cookie Manager automatically attaches stored cookies to subsequent requests</li>
+<li>Without Cookie Manager: cookies discarded, server treats each request as new visitor</li>
+<li>With Cookie Manager: session maintained, dashboard returned correctly</li>
+<li>Without Cookie Manager = false positive (green but functionally broken)</li>
+<li>Proactive: add Cookie Manager for any login or session-based flow</li>
+<li>Reactive: add when green 200 shows wrong page content</li>
+<li>Place Cookie Manager at Thread Group level for all samplers</li>
+<li>No extra configuration needed for basic cookie handling</li>
+<li>Cookie Manager handles Set-Cookie and Cookie headers automatically</li>
+<li>Always add proactively — don't wait for failures</li>
+<li>Essential for any multi-step authenticated workflow</li>
+</ol></div></div>
+</div>
+</section>
+
+<!-- SECTION 6 -->
+<section id="section-6" class="section-card">
+<h2>Section 6: Assertions</h2>
+
+<h3>Why Assertions?</h3>
+<p>HTTP status codes alone are insufficient. A server can return 200 OK with wrong content (login page instead of dashboard). Assertions validate response content, size, and timing to determine true pass/fail beyond status codes.</p>
+
+<h3>Types of Assertions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Assertion Type</th><th>Validates</th></tr></thead>
+<tbody>
+<tr><td>Response Assertion</td><td>Text patterns in response body, headers, URL, or response code</td></tr>
+<tr><td>Size Assertion</td><td>Response body size in bytes</td></tr>
+<tr><td>Duration Assertion</td><td>Response time does not exceed a threshold</td></tr>
+<tr><td>JSON Assertion</td><td>JSON path expressions in JSON responses</td></tr>
+<tr><td>XPath Assertion</td><td>XPath expressions in XML/HTML responses</td></tr>
+<tr><td>BeanShell Assertion</td><td>Custom logic using BeanShell scripting</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Response Assertion</h3>
+<h4>Field to Test</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Field</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Text Response</td><td>Response body as text</td></tr>
+<tr><td>Response Code</td><td>HTTP status code (200, 404, 500, etc.)</td></tr>
+<tr><td>Response Message</td><td>HTTP status message (OK, Not Found, etc.)</td></tr>
+<tr><td>Response Headers</td><td>HTTP response headers</td></tr>
+<tr><td>URL</td><td>Sampled URL</td></tr>
+<tr><td>Document (text)</td><td>Parsed HTML document text</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Apply To</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Option</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Main sample and sub-samples</td><td>Apply to main request and all embedded resources (default)</td></tr>
+<tr><td>Main sample only</td><td>Apply only to the primary request</td></tr>
+<tr><td>Sub-samples only</td><td>Apply only to embedded resources (images, CSS, JS)</td></tr>
+<tr><td>JMeter Variable</td><td>Apply to a specific JMeter variable</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Pattern Matching Rules</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Rule</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Contains</td><td>Response contains the pattern string</td></tr>
+<tr><td>Matches</td><td>Response matches regular expression</td></tr>
+<tr><td>Equals</td><td>Response exactly equals the pattern</td></tr>
+<tr><td>Substring</td><td>Response contains the substring</td></tr>
+<tr><td>Not</td><td>Negates the selected rule (response must NOT match)</td></tr>
+<tr><td>Or</td><td>Multiple patterns — pass if ANY matches</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Examples</h4>
+<p><strong>Example 1 — Body Contains:</strong> Field: Text Response, Pattern: <code>Welcome, John</code>, Rule: Contains → Validates login success.</p>
+<p><strong>Example 2 — Response Code:</strong> Field: Response Code, Pattern: <code>200</code>, Rule: Equals → Validates successful HTTP response.</p>
+<p><strong>Example 3 — Negative NOT:</strong> Field: Text Response, Pattern: <code>Invalid username or password</code>, Rule: Not + Contains → Validates login did NOT fail.</p>
+
+<h3>Size Assertion</h3>
+<h4>Why Size Matters</h4>
+<p>An error page is often much smaller than a full dashboard page. If you expect a dashboard (~50KB) but receive 2KB, the response is likely an error page even with HTTP 200.</p>
+
+<h4>Comparison Operators</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operator</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>=</td><td>Size equals specified bytes</td></tr>
+<tr><td>!=</td><td>Size does not equal specified bytes</td></tr>
+<tr><td>&gt;</td><td>Size greater than specified bytes</td></tr>
+<tr><td>&lt;</td><td>Size less than specified bytes</td></tr>
+<tr><td>&gt;=</td><td>Size greater than or equal to specified bytes</td></tr>
+<tr><td>&lt;=</td><td>Size less than or equal to specified bytes</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Example:</strong> Response size &gt; 10000 bytes — ensures the dashboard page (not a minimal error page) was returned.</p>
+
+<h3>Duration Assertion</h3>
+<h4>Configuration</h4>
+<p>Set "Duration in milliseconds" — if the response time exceeds this value, the assertion fails.</p>
+
+<h4>Examples</h4>
+<ul>
+<li>Duration &lt; 2000ms — page must load within 2 seconds</li>
+<li>Duration &lt; 500ms — API endpoint must respond within 500ms</li>
+<li>Duration &lt; 5000ms — search results must return within 5 seconds</li>
+</ul>
+
+<h3>Assertion Results Listener</h3>
+<p>Add via: Thread Group → Add → Listener → Assertion Results. Shows only failed assertions with error messages. Use during debugging to identify which assertions fail and why.</p>
+
+<h3>Correct Order of Testing</h3>
+<ol>
+<li><strong>Debug with 1 user</strong> — View Results Tree + Assertion Results</li>
+<li><strong>Validate assertions pass</strong> — Fix any failing assertions</li>
+<li><strong>Scale up gradually</strong> — 5 users → 10 users → target load</li>
+<li><strong>Remove/disable debug listeners</strong> — View Results Tree, Assertion Results</li>
+<li><strong>Run full load test</strong> — Use Aggregate Report and Summary Report only</li>
+</ol>
+
+<div class="accordion">
+<div class="accordion-header">Quick Revision — Section 6 (23 Items) <span class="icon">&#9660;</span></div>
+<div class="accordion-body"><div class="accordion-body-inner"><ol>
+<li>Assertions validate true pass/fail beyond HTTP status codes</li>
+<li>200 OK can still contain wrong content (login page instead of dashboard)</li>
+<li>Response Assertion validates text, code, headers, URL</li>
+<li>Size Assertion validates response body size in bytes</li>
+<li>Duration Assertion validates response time threshold</li>
+<li>JSON Assertion validates JSON path expressions</li>
+<li>XPath Assertion validates XPath in XML/HTML</li>
+<li>BeanShell Assertion allows custom scripting logic</li>
+<li>Field to Test: Text Response, Response Code, Headers, URL, Document</li>
+<li>Apply To: main sample, sub-samples, or JMeter variable</li>
+<li>Pattern rules: Contains, Matches, Equals, Substring, Not, Or</li>
+<li>Body Contains example: check for "Welcome, John" in response</li>
+<li>Response Code example: assert code equals 200</li>
+<li>Negative NOT example: response must NOT contain "Invalid username"</li>
+<li>Size matters: error pages are typically much smaller than expected pages</li>
+<li>Size operators: =, !=, &gt;, &lt;, &gt;=, &lt;=</li>
+<li>Size example: response &gt; 10000 bytes ensures full page returned</li>
+<li>Duration Assertion: fail if response time exceeds threshold</li>
+<li>Duration examples: &lt; 2000ms for pages, &lt; 500ms for APIs</li>
+<li>Assertion Results listener shows only failed assertions</li>
+<li>Testing order: 1 user debug → validate assertions → scale up → remove debug listeners → full load test</li>
+<li>Always debug with 1 user before scaling</li>
+<li>Remove View Results Tree and Assertion Results before large load tests</li>
+</ol></div></div>
+</div>
+</section>
+
+<!-- SECTION 7 -->
+<section id="section-7" class="section-card">
+<h2>Section 7: Controllers</h2>
+
+<h3>Types of Controllers</h3>
+<h4>Commonly Used Controllers</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Controller</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>Transaction Controller</td><td>Group samplers into a single transaction for reporting</td></tr>
+<tr><td>Recording Controller</td><td>Container for recorded samplers during proxy recording</td></tr>
+<tr><td>Simple Controller</td><td>Basic container to organize samplers logically</td></tr>
+<tr><td>Module Controller</td><td>Reuse a module (controller tree) from elsewhere in the test plan</td></tr>
+<tr><td>Loop Controller</td><td>Repeat child elements a specified number of times</td></tr>
+<tr><td>If Controller</td><td>Conditionally execute child elements based on a condition</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Additional Controllers</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Controller</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>Interleave Controller</td><td>Execute one child per iteration, cycling through children</td></tr>
+<tr><td>Random Controller</td><td>Execute one randomly chosen child per iteration</td></tr>
+<tr><td>Random Order Controller</td><td>Execute all children in random order once per iteration</td></tr>
+<tr><td>Runtime Controller</td><td>Run child elements until specified runtime elapses</td></tr>
+<tr><td>While Controller</td><td>Repeat child elements while condition is true</td></tr>
+<tr><td>Switch Controller</td><td>Execute child based on a switch value</td></tr>
+<tr><td>Foreach Controller</td><td>Loop over a set of variables</td></tr>
+<tr><td>Include Controller</td><td>Include an external test fragment</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Transaction Controller (Most Important)</h3>
+<h4>Purpose</h4>
+<p>Groups multiple samplers into a single logical transaction. Aggregate Report shows the transaction as one line item with combined response time, instead of individual sampler metrics.</p>
+
+<h4>How to Create</h4>
+<ol>
+<li>Right-click Thread Group → Add → Logic Controller → Transaction Controller</li>
+<li>Drag related samplers (login, search, checkout) into the Transaction Controller</li>
+<li>Name it meaningfully (e.g., "Complete Purchase Flow")</li>
+</ol>
+
+<h4>Aggregate Report Example</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Label</th><th>Samples</th><th>Avg (ms)</th><th>Min</th><th>Max</th><th>Error %</th><th>Throughput</th></tr></thead>
+<tbody>
+<tr><td>Login</td><td>100</td><td>250</td><td>180</td><td>450</td><td>0%</td><td>3.3/sec</td></tr>
+<tr><td>Search Product</td><td>100</td><td>320</td><td>200</td><td>580</td><td>0%</td><td>3.3/sec</td></tr>
+<tr><td>Complete Purchase Flow</td><td>100</td><td>890</td><td>650</td><td>1200</td><td>0%</td><td>3.3/sec</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Generate Parent Sample Checkbox</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Setting</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td>Unchecked (default)</td><td>Only individual samplers appear in reports; transaction is a logical grouping</td></tr>
+<tr><td>Checked</td><td>Creates an additional parent sample in reports with combined timing of all child samplers</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Real-World Banking Example</h4>
+<p>Group "Check Balance → Transfer Funds → Confirm Transfer → View Updated Balance" into a Transaction Controller named "Fund Transfer Flow". The Aggregate Report shows the entire flow as one metric — total time for the complete business transaction.</p>
+
+<h3>Recording Controller vs Simple Controller</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Recording Controller</th><th>Simple Controller</th></tr></thead>
+<tbody>
+<tr><td>Purpose</td><td>Target container for proxy-recorded samplers</td><td>General-purpose logical grouping</td></tr>
+<tr><td>During Recording</td><td>Actively receives captured samplers from proxy</td><td>Not involved in recording</td></tr>
+<tr><td>After Recording</td><td>Can be renamed/repurposed as Simple Controller</td><td>Used for organizing samplers by feature/flow</td></tr>
+<tr><td>Execution Behavior</td><td>Executes all child samplers sequentially</td><td>Executes all child samplers sequentially</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Module Controller</h3>
+<p><strong>Code Reuse:</strong> Instead of duplicating the same login flow in every thread group, create it once in a Test Fragment and reference it via Module Controller.</p>
+<div class="ascii-diagram">Test Plan
+├── Test Fragment: "Login Module"
+│   ├── HTTP Request: POST /login
+│   └── HTTP Request: GET /dashboard
+├── Thread Group: "Scenario A"
+│   └── Module Controller → points to "Login Module"
+│       └── HTTP Request: Search Product
+└── Thread Group: "Scenario B"
+    └── Module Controller → points to "Login Module"
+        └── HTTP Request: View Cart</div>
+
+<h3>Interleave Controller</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Iteration</th><th>Child Executed</th></tr></thead>
+<tbody>
+<tr><td>Loop 1</td><td>Child A</td></tr>
+<tr><td>Loop 2</td><td>Child B</td></tr>
+<tr><td>Loop 3</td><td>Child C</td></tr>
+<tr><td>Loop 4</td><td>Child A (cycles back)</td></tr>
+<tr><td>Loop 5</td><td>Child B</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Random Controller</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Interleave Controller</th><th>Random Controller</th></tr></thead>
+<tbody>
+<tr><td>Selection</td><td>Deterministic — cycles A → B → C → A → B...</td><td>Random — any child may be selected each iteration</td></tr>
+<tr><td>Predictability</td><td>Same order every test run</td><td>Different order each test run</td></tr>
+<tr><td>Use Case</td><td>Even distribution of actions across users</td><td>Simulate unpredictable user behavior</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Random Order Controller</h3>
+<p>Executes ALL child elements once per iteration, but in a random order. Unlike Random Controller (picks one), Random Order runs all children shuffled.</p>
+
+<h3>Runtime Controller</h3>
+<p>Runs child samplers repeatedly until the specified runtime (seconds) elapses. Useful for soak/endurance testing where you want to maintain load for a fixed duration regardless of loop count.</p>
+
+<h3>Loop Controller</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Loop Controller</th><th>Runtime Controller</th></tr></thead>
+<tbody>
+<tr><td>Control Basis</td><td>Fixed number of iterations</td><td>Fixed duration (time-based)</td></tr>
+<tr><td>Configuration</td><td>Loop Count = N</td><td>Runtime (seconds) = T</td></tr>
+<tr><td>Stops When</td><td>N iterations complete</td><td>Time T elapses</td></tr>
+<tr><td>Best For</td><td>Known iteration count tests</td><td>Endurance/soak testing for fixed duration</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>If Controller</h3>
+<p>Executes child elements only when a condition evaluates to true. Uses JMeter variables and functions:</p>
+<pre><code>${__jexl3("${userRole}" == "admin")}
+${__groovy(vars.get("status") == "active")}</code></pre>
+
+<h3>While Controller</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>If Controller</th><th>While Controller</th></tr></thead>
+<tbody>
+<tr><td>Execution</td><td>Checks condition once; executes children 0 or 1 time</td><td>Repeats children as long as condition is true</td></tr>
+<tr><td>Loop Behavior</td><td>Single check per parent loop iteration</td><td>Continuous loop until condition becomes false</td></tr>
+<tr><td>Use Case</td><td>Conditional branching (if admin, do X)</td><td>Polling/retry (while status != "complete", check again)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Which Controllers to Focus On</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tier</th><th>Controllers</th><th>Priority</th></tr></thead>
+<tbody>
+<tr><td>Tier 1 — Must Know</td><td>Transaction Controller, Simple Controller, Loop Controller</td><td>Used in almost every test plan</td></tr>
+<tr><td>Tier 2 — Important</td><td>Module Controller, If Controller, Recording Controller</td><td>Used frequently for organization and conditions</td></tr>
+<tr><td>Tier 3 — Situational</td><td>Interleave, Random, Random Order, Runtime, While</td><td>Used for specific advanced scenarios</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="accordion">
+<div class="accordion-header">Quick Revision — Section 7 (22 Items) <span class="icon">&#9660;</span></div>
+<div class="accordion-body"><div class="accordion-body-inner"><ol>
+<li>Transaction Controller groups samplers into one logical transaction for reporting</li>
+<li>Aggregate Report shows transaction as single line with combined response time</li>
+<li>Generate Parent Sample checkbox creates parent sample with combined child timing</li>
+<li>Banking example: group balance check + transfer + confirm into one transaction</li>
+<li>Recording Controller receives captured samplers during proxy recording</li>
+<li>Simple Controller is a general-purpose logical grouping container</li>
+<li>Both Recording and Simple Controllers execute children sequentially</li>
+<li>Module Controller enables code reuse via Test Fragments</li>
+<li>Module Controller references a controller tree defined elsewhere in test plan</li>
+<li>Interleave Controller cycles through children: A → B → C → A → B...</li>
+<li>Random Controller picks one random child per iteration</li>
+<li>Interleave = deterministic cycling; Random = unpredictable selection</li>
+<li>Random Order Controller runs ALL children in random order once per iteration</li>
+<li>Runtime Controller runs children until specified time elapses</li>
+<li>Loop Controller repeats children fixed number of times</li>
+<li>Loop = iteration count; Runtime = time duration</li>
+<li>If Controller executes children when condition is true (single check)</li>
+<li>While Controller repeats children while condition remains true</li>
+<li>If = conditional branching; While = polling/retry loops</li>
+<li>Tier 1: Transaction, Simple, Loop Controllers — must know</li>
+<li>Tier 2: Module, If, Recording Controllers — important</li>
+<li>Tier 3: Interleave, Random, Random Order, Runtime, While — situational</li>
+</ol></div></div>
+</div>
+</section>
+
+<!-- SECTION 8 -->
+<section id="section-8" class="section-card">
+<h2>Section 8: Timers</h2>
+
+<h3>Why Timers?</h3>
+<h4>Real-World Problem</h4>
+<p>Without timers, JMeter sends requests as fast as possible — far faster than any real user. A human takes 3–10 seconds to read a page before clicking the next link. Without think time, your test creates unrealistic load patterns and inaccurate performance results.</p>
+
+<h4>DB Update Latency</h4>
+<p>Real users also wait for operations to complete. After submitting a form that triggers a database update, users typically wait before proceeding. Timers simulate this natural pause.</p>
+
+<h3>Timer Behavior Observation</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Scenario</th><th>Behavior</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>Without Timer</td><td>Requests fire immediately one after another</td><td>Unrealistic load; inflated throughput; inaccurate response time patterns</td></tr>
+<tr><td>With Timer</td><td>Pause inserted before each sampler (or after, depending on placement)</td><td>Realistic user think time; accurate load simulation</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Important:</strong> Timers are scoped — a timer applies to all samplers at the same level or below it in the test plan tree. Timer at Thread Group level pauses before every sampler in the group.
+</div>
+
+<h3>Constant Timer</h3>
+<p><strong>Fixed Delay:</strong> Pauses for the exact same duration before every sampler execution.</p>
+<h4>Configuration</h4>
+<p>Thread Delay (milliseconds): e.g., 3000 = 3-second pause before each request.</p>
+<h4>Demo</h4>
+<p>Constant Timer set to 2000ms → every request waits exactly 2 seconds before executing. Predictable and simple.</p>
+
+<h3>Gaussian Random Timer</h3>
+<p>Provides variable delay centered around a mean value with Gaussian (normal) distribution — most delays cluster near the mean, with occasional shorter/longer pauses.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Thread</th><th>Deviation (ms)</th><th>Constant Delay (ms)</th><th>Calculated Delay (ms)</th></tr></thead>
+<tbody>
+<tr><td>Thread 1</td><td>500</td><td>2000</td><td>~2100 (2000 + random Gaussian × 500)</td></tr>
+<tr><td>Thread 2</td><td>500</td><td>2000</td><td>~1850</td></tr>
+<tr><td>Thread 3</td><td>500</td><td>2000</td><td>~2300</td></tr>
+<tr><td>Thread 4</td><td>500</td><td>2000</td><td>~1950</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Formula:</strong> Delay = Constant Delay + (Random Gaussian × Deviation). Most values fall within ±1 deviation of the mean.</p>
+
+<h3>Poisson Random Timer</h3>
+<p>Similar to Gaussian but uses Poisson distribution. Lambda (mean delay) determines the average pause. Better for modeling events that occur independently over time (e.g., time between customer arrivals).</p>
+
+<h3>Constant Throughput Timer</h3>
+<h4>Petrol Bunk Analogy</h4>
+<p>Imagine a petrol station that can serve 60 cars per hour (1 per minute). Three scenarios:</p>
+<ol>
+<li><strong>Scenario 1 — 30 cars arrive in 30 minutes:</strong> Station serves smoothly, no queue. Timer ensures even spacing.</li>
+<li><strong>Scenario 2 — 60 cars arrive in 30 minutes:</strong> Station at capacity, slight delays. Timer throttles to maintain target rate.</li>
+<li><strong>Scenario 3 — 120 cars arrive in 30 minutes:</strong> Queue builds up, system overloaded. Timer cannot compensate — server is the bottleneck.</li>
+</ol>
+
+<h4>Key Throughput Insight</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concept</th><th>Explanation</th></tr></thead>
+<tbody>
+<tr><td>Target Throughput</td><td>Desired requests per minute (set in timer config)</td></tr>
+<tr><td>Timer Role</td><td>Delays threads to spread requests evenly across time</td></tr>
+<tr><td>Server Bottleneck</td><td>If server can't handle target rate, timer can't fix it — response times increase</td></tr>
+<tr><td>Calculation Mode</td><td>All active threads vs. current thread only</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Configuration</h4>
+<ul>
+<li><strong>Target throughput (samples per minute):</strong> e.g., 120 = 2 requests per second</li>
+<li><strong>Calculate Throughput based on:</strong> All active threads in current thread group</li>
+</ul>
+
+<h4>Petrol Station Analogy for Timer Behavior</h4>
+<p>The Constant Throughput Timer is the traffic controller at the petrol station entrance — it spaces out cars (requests) to maintain the target service rate. If cars arrive faster than the target, the controller makes them wait. If the station (server) is slow, the queue grows regardless.</p>
+
+<h4>Difference from Constant Timer</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Constant Timer</th><th>Constant Throughput Timer</th></tr></thead>
+<tbody>
+<tr><td>Controls</td><td>Fixed delay per request</td><td>Target request rate (throughput)</td></tr>
+<tr><td>Delay</td><td>Same every time (e.g., 3000ms)</td><td>Variable — adjusts based on actual throughput vs target</td></tr>
+<tr><td>Goal</td><td>Simulate user think time</td><td>Maintain specific load rate regardless of thread count</td></tr>
+<tr><td>Thread Scaling</td><td>More threads = more total requests (no rate control)</td><td>More threads = timer delays more to maintain same rate</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>When to Use / When NOT to Use</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Timer</th><th>Use When</th><th>Do NOT Use When</th></tr></thead>
+<tbody>
+<tr><td>Constant Timer</td><td>Simulating fixed user think time</td><td>You need variable/realistic pauses</td></tr>
+<tr><td>Gaussian Random Timer</td><td>Realistic variable think time around a mean</td><td>You need exact fixed delays</td></tr>
+<tr><td>Poisson Random Timer</td><td>Modeling independent event arrivals</td><td>Simple think time simulation</td></tr>
+<tr><td>Constant Throughput Timer</td><td>Maintaining specific request rate across varying thread counts</td><td>Testing maximum server capacity (timer limits load artificially)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Key Takeaway:</strong> Use Constant/Gaussian timers to simulate realistic user behavior. Use Constant Throughput Timer to control load rate. Never use Constant Throughput Timer when your goal is to find the server's maximum capacity — it artificially limits the load.
+</div>
+
+<div class="accordion">
+<div class="accordion-header">Quick Revision — Section 8 (15 Items) <span class="icon">&#9660;</span></div>
+<div class="accordion-body"><div class="accordion-body-inner"><ol>
+<li>Without timers, JMeter sends requests unrealistically fast</li>
+<li>Real users take 3–10 seconds to read a page before next action</li>
+<li>Timers are scoped — apply to samplers at same level or below in tree</li>
+<li>Constant Timer: fixed delay before every sampler (e.g., 3000ms)</li>
+<li>Gaussian Random Timer: variable delay = Constant + (Gaussian Random × Deviation)</li>
+<li>Most Gaussian delays cluster near the mean value</li>
+<li>Poisson Random Timer: models independent event arrivals over time</li>
+<li>Constant Throughput Timer maintains target requests per minute</li>
+<li>Petrol bunk analogy: timer spaces requests like traffic controller at station entrance</li>
+<li>If server is bottleneck, timer can't fix it — response times increase</li>
+<li>Constant Timer controls delay; Constant Throughput Timer controls rate</li>
+<li>More threads with Constant Timer = more total requests</li>
+<li>More threads with Throughput Timer = more delays to maintain same rate</li>
+<li>Don't use Constant Throughput Timer for max capacity testing</li>
+<li>Use Gaussian for realistic think time; Throughput Timer for controlled load rate</li>
+</ol></div></div>
+</div>
+</section>
+
+<!-- SECTION 9 -->
+<section id="section-9" class="section-card">
+<h2>Section 9: Regular Expression Extractor (Correlation Basics)</h2>
+
+<h3>Practice Applications for JMeter</h3>
+<div class="callout"><strong>Warning:</strong> Do NOT use random websites for JMeter testing. They may <strong>block your IP</strong> if automated traffic is detected.</div>
+
+<table><thead><tr><th>Application</th><th>URL/Location</th><th>Notes</th></tr></thead><tbody>
+<tr><td>Web Tours (HP LoadRunner)</td><td>Local install</td><td>Windows only; on your local server</td></tr>
+<tr><td>BlazDemo</td><td>blazedemo.com</td><td>Flight booking practice</td></tr>
+<tr><td>The Internet Herokuapp</td><td>the-internet.herokuapp.com</td><td>Various test scenarios</td></tr>
+<tr><td>Mercury Web Tours</td><td>newtours.demoaut.com</td><td>Same as Web Tours but online</td></tr>
+</tbody></table>
+
+<h3>Why Regular Expression Extractor is Needed</h3>
+<h4>The Problem: Hard-Coded Values</h4>
+<ul>
+<li>When recording, JMeter captures exact values (e.g., username = "tomsmith")</li>
+<li>These are <strong>hard-coded</strong> — if the application changes values, the script breaks</li>
+<li>Dynamic values (session IDs, tokens) change on every run</li>
+</ul>
+
+<h4>The Solution: Regular Expression Extractor</h4>
+<ul>
+<li>Reads the <strong>response body</strong> of one request</li>
+<li><strong>Extracts</strong> specific values using regex patterns</li>
+<li><strong>Stores</strong> extracted values in variables</li>
+<li><strong>Passes</strong> those variables to the next request dynamically</li>
+<li>Also called <strong>Correlation</strong> (linking response data to subsequent requests)</li>
+</ul>
+
+<h3>How Regular Expression Extractor Works</h3>
+<pre><code>Request 1 (Login page) → Response contains username &amp; password
+        ↓
+Regular Expression Extractor captures values from Response 1
+        ↓
+Stores in variables: ${username}, ${password}
+        ↓
+Request 2 (Authentication) → Uses ${username} and ${password} dynamically</code></pre>
+
+<p><strong>Adding:</strong> Right-click on sampler → Add → Post Processors → Regular Expression Extractor</p>
+
+<h3>Configuration Fields</h3>
+
+<table><thead><tr><th>Field</th><th>Options/Values</th><th>Description</th></tr></thead><tbody>
+<tr><td>Apply To</td><td>Main sample only (default)</td><td>Extract from main sampler's response</td></tr>
+<tr><td>Field to Check</td><td>Body, Response Headers, Response Message, Response Code</td><td>Body is most common</td></tr>
+<tr><td>Name of Created Variable</td><td>e.g., <code>username</code></td><td>Access later using <code>${username}</code></td></tr>
+<tr><td>Regular Expression</td><td>Pattern with context + dynamic part</td><td>Must include surrounding text</td></tr>
+<tr><td>Template</td><td><code>$1$</code>, <code>$2$</code>, <code>$0$</code></td><td>Capture group number</td></tr>
+<tr><td>Match No.</td><td>1 (first), 0 (random), -1 (all)</td><td>Which occurrence to pick</td></tr>
+<tr><td>Default Value</td><td>Fallback value</td><td>Used if regex finds no match</td></tr>
+</tbody></table>
+
+<h3>Regular Expression Syntax</h3>
+<table><thead><tr><th>Symbol</th><th>Meaning</th><th>Example</th></tr></thead><tbody>
+<tr><td><code>.</code></td><td>Any single character</td><td>Matches a, 1, @, etc.</td></tr>
+<tr><td><code>+</code></td><td>One or more of preceding</td><td><code>.+</code> = one or more of any char</td></tr>
+<tr><td><code>?</code></td><td>Non-greedy (lazy) match</td><td><code>.+?</code> = match as few as possible</td></tr>
+<tr><td><code>()</code></td><td>Capture Group</td><td><code>(.+?)</code> = capture matched content</td></tr>
+</tbody></table>
+
+<div class="callout">The magic pattern <code>.+?</code> matches <strong>any text of any length</strong> dynamically. Visit <code>rexegg.com</code> for complete regex reference.</div>
+
+<h3>Practical Example: Extracting Username</h3>
+<p>Response contains: <code>Enter &lt;em&gt;tomsmith&lt;/em&gt; for username</code></p>
+<p>Regular Expression: <code>Enter &lt;em&gt;(.+?)&lt;/em&gt; for username</code></p>
+
+<table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>
+<tr><td>Name of variable</td><td><code>username</code></td></tr>
+<tr><td>Regular Expression</td><td><code>Enter &lt;em&gt;(.+?)&lt;/em&gt; for username</code></td></tr>
+<tr><td>Template</td><td><code>$1$</code></td></tr>
+<tr><td>Match No.</td><td><code>1</code></td></tr>
+</tbody></table>
+
+<h3>Capture Groups Explained</h3>
+<p>Anything inside <code>()</code> is a Capture Group. Multiple groups are numbered left to right.</p>
+
+<table><thead><tr><th>Template</th><th>What it Returns</th></tr></thead><tbody>
+<tr><td><code>$0$</code></td><td>Entire matched string</td></tr>
+<tr><td><code>$1$</code></td><td>Group 1 only (e.g., "tomsmith")</td></tr>
+<tr><td><code>$2$</code></td><td>Group 2 only (e.g., "SuperSecretPassword")</td></tr>
+</tbody></table>
+
+<h3>Multiple Values from Single Extractor (_g concept)</h3>
+<div class="callout"><strong>Interview Question:</strong> "You don't need multiple Extractors. Use the <code>_g</code> (global group) concept. Access Group 1 with <code>${var_g1}</code>, Group 2 with <code>${var_g2}</code>."</div>
+
+<table><thead><tr><th>Auto-Created Variable</th><th>Contains</th></tr></thead><tbody>
+<tr><td><code>${username}</code></td><td>Same as <code>${username_g1}</code> (when template = $1$)</td></tr>
+<tr><td><code>${username_g0}</code></td><td>Entire matched string (Group 0)</td></tr>
+<tr><td><code>${username_g1}</code></td><td>Group 1 value (e.g., "tomsmith")</td></tr>
+<tr><td><code>${username_g2}</code></td><td>Group 2 value (e.g., "SuperSecretPassword")</td></tr>
+</tbody></table>
+
+<h3>Debug Sampler</h3>
+<ul>
+<li>Shows ALL variable values at a specific point in execution</li>
+<li>Add: Right-click Thread Group → Add → Sampler → Debug Sampler</li>
+<li>Place after the Post Processor</li>
+<li>Essential for troubleshooting regex extractions</li>
+</ul>
+
+<details class="revision"><summary>Quick Revision — Section 9 (16 items)</summary>
+<ol>
+<li><strong>Don't use random websites</strong> — JMeter load can get your IP blocked</li>
+<li><strong>Practice apps</strong> — Web Tours (local), BlazDemo, Herokuapp, Mercury Web Tours</li>
+<li><strong>Hard-coding problem</strong> — Recorded values don't change; script breaks if app changes</li>
+<li><strong>Regular Expression Extractor</strong> — Post Processor that extracts dynamic values from responses</li>
+<li><strong>Post Processor placement</strong> — Under the request whose RESPONSE contains the data</li>
+<li><strong>Field to Check</strong> — Usually "Body" (response body)</li>
+<li><strong>Regex pattern <code>.+?</code></strong> — Any character, one or more, non-greedy</li>
+<li><strong>Capture Groups <code>()</code></strong> — Parentheses define what to extract; numbered left to right</li>
+<li><strong>Template <code>$1$</code></strong> — Get Group 1; <code>$2$</code> = Group 2; <code>$0$</code> = entire match</li>
+<li><strong>Match No. = 1</strong> — Take first occurrence found</li>
+<li><strong>Variable usage</strong> — <code>${variableName}</code> in subsequent requests</li>
+<li><strong>Multiple values, one extractor</strong> — Use <code>${var_g1}</code>, <code>${var_g2}</code></li>
+<li><strong>Debug Sampler</strong> — Shows all variable values; essential for troubleshooting</li>
+<li><strong>Default value</strong> — Fallback if regex finds nothing</li>
+<li><strong>Correlation</strong> — Capturing dynamic response data and passing to next request</li>
+<li><strong>rexegg.com</strong> — Recommended resource for regex syntax</li>
+</ol>
+</details>
+</section>
+
+<!-- SECTION 10 -->
+<section id="section-10" class="section-card">
+<h2>Section 10: Creating HTTP Requests Manually &amp; CSV Data-Driven Testing</h2>
+
+<h3>Creating HTTP Requests Without Recording</h3>
+<ul>
+<li>Sometimes recording is not possible due to site restrictions</li>
+<li>Understanding HTTP requests/responses allows manual script creation</li>
+<li>Observe network traffic with browser Developer Tools → replicate in JMeter</li>
+</ul>
+
+<div class="callout">JMeter works purely on <strong>HTTP Requests and Responses</strong>. It never opens any UI/browser. Manual creation means YOU observe the traffic and create samplers yourself.</div>
+
+<h3>Using Browser Developer Tools (Network Tab)</h3>
+<ol>
+<li>Open target page in browser</li>
+<li>Right-click → <strong>Inspect</strong> → <strong>Network</strong> tab</li>
+<li>Select "All" to monitor all requests</li>
+<li>Perform the action (e.g., click Register)</li>
+<li>Observe the HTTP request that fires</li>
+</ol>
+
+<table><thead><tr><th>Detail</th><th>Where to Find</th><th>Example</th></tr></thead><tbody>
+<tr><td>Request URL</td><td>Headers section</td><td><code>http://IP:1080/cgi-bin/login.pl</code></td></tr>
+<tr><td>Request Method</td><td>Headers section</td><td>POST</td></tr>
+<tr><td>Form Data / Payload</td><td>Payload tab</td><td><code>username=rahul&amp;password=123</code></td></tr>
+<tr><td>Response</td><td>Response/Preview tab</td><td>"Thank you for registering..."</td></tr>
+</tbody></table>
+
+<h3>HTTP Request Sampler Fields</h3>
+<table><thead><tr><th>Field</th><th>Value</th><th>How to Find</th></tr></thead><tbody>
+<tr><td>Protocol</td><td><code>HTTP</code> or <code>HTTPS</code></td><td>From the URL prefix</td></tr>
+<tr><td>Server Name or IP</td><td><code>192.168.x.x</code></td><td>From the request URL</td></tr>
+<tr><td>Port Number</td><td><code>1080</code></td><td>After the colon in URL</td></tr>
+<tr><td>Method</td><td><code>POST</code></td><td>Network tab → Request Method</td></tr>
+<tr><td>Path</td><td><code>/cgi-bin/login.pl</code></td><td>Everything after IP:Port</td></tr>
+</tbody></table>
+
+<p><strong>Shortcut:</strong> Copy all form data from browser → In JMeter HTTP Request Parameters tab → Click <strong>"Add from Clipboard"</strong> — all name-value pairs auto-populated!</p>
+
+<h3>CSV Data Set Config (Data-Driven Testing)</h3>
+<h4>The Problem</h4>
+<ul>
+<li>Hard-coded registration data (username, password, country)</li>
+<li>Need to register multiple users (100, 500, 1000) with UNIQUE data</li>
+<li>Business team provides data → feed into JMeter</li>
+</ul>
+
+<h4>Creating the CSV File</h4>
+<table><thead><tr><th>Username</th><th>Password</th><th>Country</th></tr></thead><tbody>
+<tr><td>rahulshetty2</td><td>rahul</td><td>India</td></tr>
+<tr><td>rahulshetty3</td><td>rahul</td><td>USA</td></tr>
+<tr><td>rahulshetty4</td><td>rahul</td><td>China</td></tr>
+<tr><td>rahulshetty5</td><td>rahul</td><td>China</td></tr>
+<tr><td>rahulshetty6</td><td>rahul</td><td>India</td></tr>
+<tr><td>rahulshetty7</td><td>rahul</td><td>USA</td></tr>
+</tbody></table>
+
+<h4>Configuration Fields</h4>
+<table><thead><tr><th>Field</th><th>Value</th><th>Explanation</th></tr></thead><tbody>
+<tr><td>Filename</td><td><code>C:\path\to\TestData.csv</code></td><td>Full path to CSV file</td></tr>
+<tr><td>Variable Names</td><td><code>username,password,country</code></td><td>Comma-separated, mapped to columns</td></tr>
+<tr><td>Delimiter</td><td><code>,</code></td><td>Column separator</td></tr>
+<tr><td>Recycle on EOF</td><td><code>False</code></td><td>Don't restart from row 1</td></tr>
+<tr><td>Stop thread on EOF</td><td><code>True</code></td><td>Stop if no more data</td></tr>
+</tbody></table>
+
+<h4>Variable Mapping</h4>
+<pre><code>CSV Row 1: rahulshetty2, rahul, India
+                ↓          ↓       ↓
+Variables:  ${username}  ${password}  ${country}</code></pre>
+
+<h4>Recycle on EOF Explained</h4>
+<table><thead><tr><th>Setting</th><th>Behavior</th></tr></thead><tbody>
+<tr><td>Recycle = True</td><td>Thread 7 reuses Row 1, Thread 8 reuses Row 2...</td></tr>
+<tr><td>Recycle = False</td><td>Thread 7 has no data → stops</td></tr>
+<tr><td>Stop thread = True</td><td>Thread stops gracefully when no data</td></tr>
+<tr><td>Stop thread = False</td><td>Thread continues with empty/null values</td></tr>
+</tbody></table>
+
+<h4>Replace Hard-Coded Values</h4>
+<table><thead><tr><th>Parameter</th><th>Before (Hard-coded)</th><th>After (Dynamic)</th></tr></thead><tbody>
+<tr><td>username</td><td><code>rahulshetty1</code></td><td><code>${username}</code></td></tr>
+<tr><td>password</td><td><code>rahul</code></td><td><code>${password}</code></td></tr>
+<tr><td>country</td><td><code>India</code></td><td><code>${country}</code></td></tr>
+</tbody></table>
+
+<div class="callout"><strong>Real-World:</strong> Business says "Register 1000 users in 2 minutes." Create CSV with 1000 records → Set threads to 1000 → Run → Done in seconds! Much faster than UI automation.</div>
+
+<h3>Recording vs Manual</h3>
+<table><thead><tr><th>Approach</th><th>When to Use</th></tr></thead><tbody>
+<tr><td>Record &amp; Playback</td><td>Preferred; automatic; focus on load/assertions/reports</td></tr>
+<tr><td>Manual Creation</td><td>When recording is blocked; need precise control</td></tr>
+</tbody></table>
+
+<details class="revision"><summary>Quick Revision — Section 10 (16 items)</summary>
+<ol>
+<li><strong>Manual HTTP Request</strong> — Created without recording; by observing browser Network tab</li>
+<li><strong>Browser Network tab</strong> — Right-click → Inspect → Network → shows all HTTP requests/responses</li>
+<li><strong>Request details needed</strong> — Protocol, Server/IP, Port, Method, Path, Parameters</li>
+<li><strong>Add from Clipboard</strong> — Shortcut to paste all form parameters from browser</li>
+<li><strong>POST method</strong> — Used when sending form data (registration, login)</li>
+<li><strong>Path</strong> — URL portion after IP:Port (e.g., <code>/cgi-bin/login.pl</code>)</li>
+<li><strong>Response Code 200</strong> — Success; request processed correctly</li>
+<li><strong>CSV Data Set Config</strong> — Reads external CSV and maps columns to variables</li>
+<li><strong>Variable mapping</strong> — Comma-separated names in order of CSV columns</li>
+<li><strong>${variableName}</strong> — Syntax to use CSV variable in HTTP Request</li>
+<li><strong>Recycle on EOF = False</strong> — Don't reuse data rows</li>
+<li><strong>Stop thread on EOF = True</strong> — Stop gracefully when CSV data runs out</li>
+<li><strong>Threads must match data</strong> — 6 CSV rows → max 6 threads</li>
+<li><strong>Real-world speed</strong> — JMeter registers 6 users in 2 seconds</li>
+<li><strong>Recording preferred</strong> — Saves time; manual for when recording is blocked</li>
+<li><strong>Response Assertion</strong> — Validates success; catches errors automatically</li>
+</ol>
+</details>
+</section>
+
+<!-- SECTION 11 -->
+<section id="section-11" class="section-card">
+<h2>Section 11: BeanShell Scripting in JMeter</h2>
+
+<h3>What is BeanShell?</h3>
+<ul>
+<li>Lightweight scripting language similar to <strong>Java</strong></li>
+<li>Almost identical Java syntax — if you know basic Java, BeanShell is easy</li>
+<li>Add custom logic, conditions, and data manipulation within JMeter</li>
+<li>Can modify variables, process data, add conditions, loops</li>
+</ul>
+
+<h3>Where BeanShell is Used</h3>
+<table><thead><tr><th>Processor Type</th><th>When it Runs</th><th>Use Case</th></tr></thead><tbody>
+<tr><td><strong>BeanShell PreProcessor</strong></td><td>BEFORE sampler executes</td><td>Modify input data, set conditions</td></tr>
+<tr><td><strong>BeanShell PostProcessor</strong></td><td>AFTER sampler executes</td><td>Check results, log info, validate</td></tr>
+</tbody></table>
+
+<h3>Built-in Variables</h3>
+<table><thead><tr><th>Variable</th><th>Purpose</th><th>Scope</th></tr></thead><tbody>
+<tr><td><code>vars</code></td><td>Get/Set variables in Thread Group</td><td>Thread Group level only</td></tr>
+<tr><td><code>props</code></td><td>Get/Set properties at Test Plan level</td><td>Shared across ALL Thread Groups</td></tr>
+<tr><td><code>ctx</code></td><td>Access JMeterContext (thread metadata)</td><td>Current thread context</td></tr>
+<tr><td><code>prev</code></td><td>Access previous sampler's result</td><td>PostProcessor only</td></tr>
+<tr><td><code>log</code></td><td>Print messages to console/log</td><td>Output logging</td></tr>
+</tbody></table>
+
+<h3><code>vars</code> — Thread Group Variables</h3>
+<pre><code>// Get a variable
+String country = vars.get("country");
+
+// Set/update a variable
+vars.put("username", newUsername);</code></pre>
+<div class="callout"><code>vars</code> can ONLY access variables within the same Thread Group. Cannot access other Thread Groups or Test Plan level variables.</div>
+
+<h3><code>props</code> — Test Plan Level Properties</h3>
+<pre><code>// Get a property (shared across all Thread Groups)
+String result = props.get("result");
+
+// Set a property
+props.put("result", "PASS");</code></pre>
+
+<h3><code>ctx</code> — JMeterContext</h3>
+<table><thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>ctx.getThreadNum()</code></td><td>int</td><td>Current thread number (0-based)</td></tr>
+<tr><td><code>ctx.getVariables()</code></td><td>JMeterVariables</td><td>All variables for current thread</td></tr>
+<tr><td><code>ctx.isRecording()</code></td><td>boolean</td><td>Whether recording mode is active</td></tr>
+<tr><td><code>ctx.getPreviousResult()</code></td><td>SampleResult</td><td>Previous sampler result</td></tr>
+</tbody></table>
+
+<h3><code>prev</code> — Previous Sampler Result (PostProcessor Only)</h3>
+<table><thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>prev.getResponseCode()</code></td><td>String</td><td>HTTP status code ("200")</td></tr>
+<tr><td><code>prev.getResponseMessage()</code></td><td>String</td><td>HTTP status message ("OK")</td></tr>
+<tr><td><code>prev.getResponseDataAsString()</code></td><td>String</td><td>Full response body</td></tr>
+<tr><td><code>prev.getThreadName()</code></td><td>String</td><td>Name of the thread</td></tr>
+</tbody></table>
+
+<h3>Practical Example: BeanShell PreProcessor</h3>
+<p><strong>Scenario:</strong> If country = "china", append "china" to username. Also add unique prefix (thread number + constant).</p>
+<pre><code>String newUsername;
+log.info(vars.get("country"));
+log.info(ctx.getThreadNum() + " is the thread number");
+
+prefix = ctx.getThreadNum() + 35;
+String country = vars.get("country");
+
+if(country.equals("china"))
+{
+    newUsername = prefix.toString() + vars.get("username") + "china";
+}
+else
+{
+    newUsername = prefix.toString() + vars.get("username");
+}
+
+vars.put("username", newUsername);
+log.info("New username is " + newUsername);</code></pre>
+
+<h4>Result (constant = 35, 6 threads):</h4>
+<table><thead><tr><th>Thread</th><th>Country</th><th>Original</th><th>New Username</th></tr></thead><tbody>
+<tr><td>0</td><td>India</td><td>rahulshetty20</td><td>35rahulshetty20</td></tr>
+<tr><td>1</td><td>USA</td><td>rahulshetty30</td><td>36rahulshetty30</td></tr>
+<tr><td>2</td><td>China</td><td>rahulshetty40</td><td>37rahulshetty40china</td></tr>
+<tr><td>3</td><td>China</td><td>rahulshetty50</td><td>38rahulshetty50china</td></tr>
+<tr><td>4</td><td>India</td><td>rahulshetty60</td><td>39rahulshetty60</td></tr>
+<tr><td>5</td><td>USA</td><td>rahulshetty70</td><td>40rahulshetty70</td></tr>
+</tbody></table>
+
+<h3>Practical Example: BeanShell PostProcessor</h3>
+<pre><code>log.info(prev.getResponseCode().toString());
+
+if(prev.getResponseMessage().contains("unauthorized"))
+{
+    log.info("Authentication issue");
+}
+else if(prev.getResponseMessage().contains("OK"))
+{
+    log.info("Test Passed");
+    props.put("result", "PASS");
+}</code></pre>
+
+<h3>BeanShell Syntax Rules</h3>
+<ol>
+<li><strong>Semicolons required</strong> at end of every statement</li>
+<li><strong>Data types optional</strong> — BeanShell infers type (unlike Java)</li>
+<li><strong>Java syntax fully valid</strong> — any Java code works</li>
+<li><strong>String concatenation</strong> with <code>+</code> operator</li>
+<li><strong><code>.toString()</code></strong> needed when concatenating int with String</li>
+<li><strong><code>.equals()</code></strong> for String comparison (not <code>==</code>)</li>
+<li><strong><code>.contains()</code></strong> to check if string contains a substring</li>
+</ol>
+
+<h3>Variable Scope Summary</h3>
+<pre><code>Test Plan (props — accessible everywhere)
+├── Variable: "result" → props.get("result") / props.put("result", "PASS")
+│
+├── Thread Group 1 (vars — local only)
+│   ├── CSV: username, password, country → vars.get("username")
+│   └── BeanShell can use: vars, props, ctx, prev, log
+│
+└── Thread Group 2 (vars — separate scope)
+    ├── Cannot access Thread Group 1's "username"
+    └── CAN access Test Plan's "result" via props</code></pre>
+
+<details class="revision"><summary>Quick Revision — Section 11 (18 items)</summary>
+<ol>
+<li><strong>BeanShell</strong> — Lightweight Java-like scripting language</li>
+<li><strong>PreProcessor</strong> — Runs BEFORE sampler; modify input data</li>
+<li><strong>PostProcessor</strong> — Runs AFTER sampler; check results, log info</li>
+<li><strong><code>vars.get("name")</code></strong> — Retrieve variable from Thread Group scope</li>
+<li><strong><code>vars.put("name", value)</code></strong> — Update variable within Thread Group</li>
+<li><strong><code>props.get("name")</code></strong> — Get Test Plan level property (shared)</li>
+<li><strong><code>props.put("name", value)</code></strong> — Set Test Plan level property</li>
+<li><strong><code>ctx.getThreadNum()</code></strong> — Get current thread number (0-based)</li>
+<li><strong><code>prev.getResponseCode()</code></strong> — Get HTTP response code — PostProcessor only</li>
+<li><strong><code>prev.getResponseMessage()</code></strong> — Get response message — PostProcessor only</li>
+<li><strong><code>log.info("message")</code></strong> — Print to console; view in Options → Log Viewer</li>
+<li><strong>Semicolons required</strong> — Every statement ends with <code>;</code></li>
+<li><strong>Data types optional</strong> — BeanShell infers types</li>
+<li><strong><code>.toString()</code></strong> — Convert int to String for concatenation</li>
+<li><strong><code>.equals()</code></strong> — Compare Strings (not <code>==</code>)</li>
+<li><strong>Prefix trick</strong> — Thread number + constant creates unique usernames</li>
+<li><strong>vars scope</strong> — Thread Group only; use <code>props</code> for cross-TG variables</li>
+<li><strong>Real-world use</strong> — Dynamic username generation, conditional logic, result logging</li>
+</ol>
+</details>
+</section>
+
+<!-- SECTION 12 -->
+<section id="section-12" class="section-card">
+<h2>Section 12: Correlation in JMeter (Dynamic Session Handling)</h2>
+
+<h3>What is Correlation?</h3>
+<ul>
+<li><strong>Definition:</strong> Capturing dynamic values from a previous HTTP response and passing them to subsequent requests</li>
+<li>Values that change on every execution (session IDs, tokens, CSRF tokens) cannot be hard-coded</li>
+<li>Must be extracted dynamically at runtime</li>
+</ul>
+<div class="callout">Correlation is one of the most frequently used concepts in real-time projects, especially for login scenarios.</div>
+
+<h3>The Problem: Dynamic Session Values</h3>
+<ul>
+<li>Server generates a unique <strong>userSession</strong> value on every login</li>
+<li>Hard-coded session works ONCE but fails on subsequent runs</li>
+<li>Error: <em>"You have reached this page incorrectly, perhaps a bad user session value"</em></li>
+</ul>
+
+<h3>The 3-Step Correlation Process</h3>
+<table><thead><tr><th>Step</th><th>Action</th><th>Purpose</th></tr></thead><tbody>
+<tr><td>1</td><td>Run script → observe failure</td><td>Identify the dynamic parameter</td></tr>
+<tr><td>2</td><td>Investigate Network tab responses</td><td>Find which call generates the dynamic value</td></tr>
+<tr><td>3</td><td>Add Regex Extractor + use <code>${variable}</code></td><td>Extract and inject dynamically</td></tr>
+</tbody></table>
+
+<h3>Script Structure (End-to-End)</h3>
+<pre><code>Thread Group (1 thread, 1 loop)
+├── 1. Get Session (GET /cgi-bin/nav.pl?in=home)
+│   └── Regular Expression Extractor → captures sessionId
+├── 2. Login (POST /cgi-bin/login.pl)
+│   └── Uses ${sessionId} in userSession parameter
+├── 3. Select Destination (POST /cgi-bin/reservations.pl)
+├── 4. Select Flight (POST /cgi-bin/reservations.pl)
+├── 5. Confirm Details (POST /cgi-bin/reservations.pl)
+└── View Results Tree</code></pre>
+
+<h3>GET vs POST Parameters</h3>
+<table><thead><tr><th>Parameter Type</th><th>HTTP Method</th><th>Where They Go</th><th>Example</th></tr></thead><tbody>
+<tr><td>Query Parameters</td><td>GET</td><td>Appended to URL after <code>?</code></td><td><code>/nav.pl?in=home</code></td></tr>
+<tr><td>Form Parameters</td><td>POST</td><td>In request body (Payload)</td><td><code>username=rahul&amp;password=rahul</code></td></tr>
+</tbody></table>
+
+<h3>Regex Extractor Configuration for Session</h3>
+<table><thead><tr><th>Field</th><th>Value</th><th>Explanation</th></tr></thead><tbody>
+<tr><td>Apply to</td><td>Main sample only</td><td>The Get Session sampler</td></tr>
+<tr><td>Field to check</td><td>Body</td><td>Session value is in HTML</td></tr>
+<tr><td>Name of variable</td><td><code>sessionId</code></td><td>Variable to store value</td></tr>
+<tr><td>Regular Expression</td><td><code>name="userSession" value="(.+?)"</code></td><td>Pattern to match</td></tr>
+<tr><td>Template</td><td><code>$1$</code></td><td>Capture Group 1</td></tr>
+<tr><td>Match No.</td><td><code>1</code></td><td>First match</td></tr>
+</tbody></table>
+
+<h3>Using the Extracted Variable</h3>
+<table><thead><tr><th>Parameter Name</th><th>Value</th></tr></thead><tbody>
+<tr><td>userSession</td><td><code>${sessionId}</code></td></tr>
+<tr><td>username</td><td><code>rahul</code></td></tr>
+<tr><td>password</td><td><code>rahul</code></td></tr>
+</tbody></table>
+<p><strong>Before correlation:</strong> "Bad user session value" error<br>
+<strong>After correlation:</strong> "Welcome to Web Tours booking page" success!</p>
+
+<h3>RegExp Tester</h3>
+<ol>
+<li>Run script once (even if it fails)</li>
+<li>View Results Tree → select the response</li>
+<li>Click <strong>"RegExp Tester"</strong> tab</li>
+<li>Paste regex → Click "Test" → verify extraction</li>
+</ol>
+
+<h3>Debugging Tips</h3>
+<table><thead><tr><th>Problem</th><th>Cause</th><th>Fix</th></tr></thead><tbody>
+<tr><td>"URI does not specify valid hostname"</td><td>Missing domain/port</td><td>Fill in all connection details</td></tr>
+<tr><td>"Bad user session value"</td><td>Hard-coded/expired session</td><td>Add correlation</td></tr>
+<tr><td>Script passes but wrong response</td><td>No assertion added</td><td>Add Response Assertion</td></tr>
+<tr><td>Green status but wrong response</td><td>HTTP 200 ≠ functional success</td><td>Check response body content</td></tr>
+</tbody></table>
+
+<details class="revision"><summary>Quick Revision — Section 12 (15 items)</summary>
+<ol>
+<li><strong>Correlation</strong> — Capturing dynamic values from responses for subsequent requests</li>
+<li><strong>Why needed</strong> — Session IDs, tokens change every run; hard-coded values fail</li>
+<li><strong>userSession problem</strong> — Each login generates unique session; old = error</li>
+<li><strong>Step 1</strong> — Run script, observe failure, identify dynamic parameter</li>
+<li><strong>Step 2</strong> — Check Network tab responses to find source</li>
+<li><strong>Step 3</strong> — Add HTTP Request + Regex Extractor to capture it</li>
+<li><strong>GET vs POST</strong> — GET params in URL; POST params in Parameters tab</li>
+<li><strong>Regex for session</strong> — <code>name="userSession" value="(.+?)"</code></li>
+<li><strong>Variable usage</strong> — <code>${sessionId}</code> in subsequent requests</li>
+<li><strong>RegExp Tester</strong> — Built-in tool to verify regex before running</li>
+<li><strong>Focus on .pl calls</strong> — Functional calls; ignore static resources</li>
+<li><strong>Talk to developers</strong> — If can't find dynamic value source</li>
+<li><strong>Always add assertions</strong> — HTTP 200 ≠ functional success</li>
+<li><strong>Real-time frequency</strong> — Used in almost every login scenario</li>
+<li><strong>Script structure</strong> — Get Session → Login (with session) → Business flow</li>
+</ol>
+</details>
+</section>
+
+<!-- SECTION 13 -->
+<section id="section-13" class="section-card">
+<h2>Section 13: Non-GUI Mode &amp; BlazeMeter Cloud Testing</h2>
+
+<h3>What is Non-GUI Mode?</h3>
+<ul>
+<li>Running JMeter tests <strong>without opening the JMeter GUI tool</strong></li>
+<li>Tests executed via <strong>command line/command prompt</strong></li>
+<li>GUI consumes system resources (RAM, CPU)</li>
+<li>Non-GUI mode gives <strong>more accurate results</strong></li>
+</ul>
+
+<h3>Why Use Non-GUI Mode?</h3>
+<table><thead><tr><th>Reason</th><th>Explanation</th></tr></thead><tbody>
+<tr><td><strong>Accuracy</strong></td><td>GUI open = some resources consumed by tool itself</td></tr>
+<tr><td><strong>CI/CD Integration</strong></td><td>Jenkins needs commands, cannot open JMeter GUI</td></tr>
+<tr><td><strong>Resource savings</strong></td><td>Minor but real — especially for large load tests</td></tr>
+<tr><td><strong>Automation</strong></td><td>Can be scripted and scheduled without human interaction</td></tr>
+</tbody></table>
+
+<div class="callout"><strong>Primary Reason: CI/CD (Jenkins)</strong> — Jenkins can only execute commands. For CI/CD pipelines, Non-GUI mode is <strong>strongly recommended</strong>.</div>
+
+<h3>The Command</h3>
+<pre><code>jmeter -n -t CookieManager.jmx -l C:\results.jtl</code></pre>
+
+<table><thead><tr><th>Argument</th><th>Meaning</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>jmeter</code></td><td>Activate JMeter</td><td>Starts JMeter engine</td></tr>
+<tr><td><code>-n</code></td><td>Non-GUI mode</td><td>Run without opening the tool</td></tr>
+<tr><td><code>-t</code></td><td>Test plan</td><td>Followed by .jmx filename or full path</td></tr>
+<tr><td><code>-l</code></td><td>Log/Results</td><td>Followed by output file path (.jtl)</td></tr>
+</tbody></table>
+
+<h3>File Extensions</h3>
+<table><thead><tr><th>Extension</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>.jmx</code></td><td>JMeter test plan (script you create)</td></tr>
+<tr><td><code>.jtl</code></td><td>JMeter test log (results output)</td></tr>
+</tbody></table>
+
+<h3>Viewing Non-GUI Results</h3>
+<table><thead><tr><th>Method</th><th>Description</th><th>Report Quality</th></tr></thead><tbody>
+<tr><td><strong>Command Line + .jtl</strong></td><td>Open in Excel; check response codes</td><td>Low (pass/fail only)</td></tr>
+<tr><td><strong>Taurus</strong></td><td>Framework with terminal graphs</td><td>Medium</td></tr>
+<tr><td><strong>BlazeMeter Cloud</strong></td><td>Upload .jmx, run on cloud servers</td><td>High (professional)</td></tr>
+</tbody></table>
+
+<h3>BlazeMeter Cloud Testing</h3>
+<ul>
+<li>Cloud-based performance testing platform</li>
+<li>Takes your .jmx and runs on <strong>high-performance servers</strong></li>
+<li>Provides detailed graphical reports (modeled after HP LoadRunner)</li>
+</ul>
+
+<table><thead><tr><th>Problem</th><th>BlazeMeter Solution</th></tr></thead><tbody>
+<tr><td>Laptop can't handle 5000 users</td><td>Run on BlazeMeter's powerful servers</td></tr>
+<tr><td>Need detailed graphical reports</td><td>Beautiful charts, timelines, percentiles</td></tr>
+<tr><td>No infrastructure for load testing</td><td>BlazeMeter provides dedicated servers</td></tr>
+<tr><td>Client wants professional reports</td><td>Screenshots of BlazeMeter dashboards</td></tr>
+</tbody></table>
+
+<h4>How to Use BlazeMeter</h4>
+<ol>
+<li>Go to <code>blazemeter.com</code> → Register</li>
+<li>Login → Click <strong>"Create Test"</strong></li>
+<li>Select "I have a JMeter test"</li>
+<li><strong>Upload your .jmx file</strong></li>
+<li>Configure: users, ramp-up, duration, server location</li>
+<li>Click <strong>"Run Test"</strong></li>
+<li>Wait 2-4 minutes → View reports</li>
+</ol>
+
+<p><strong>Free account:</strong> Max 1 user. Upgraded account: thousands of users.</p>
+
+<h4>BlazeMeter Reports Include:</h4>
+<ul>
+<li>Throughput graphs, Response time graphs</li>
+<li>90th/95th percentile</li>
+<li>Bandwidth, Timeline reports</li>
+<li>Per-request statistics</li>
+<li>Load statistics over time</li>
+</ul>
+
+<details class="revision"><summary>Quick Revision — Section 13 (14 items)</summary>
+<ol>
+<li><strong>Non-GUI Mode</strong> — Run JMeter via command line without opening the tool</li>
+<li><strong>Why</strong> — More accurate results; required for CI/CD (Jenkins)</li>
+<li><strong>Command</strong> — <code>jmeter -n -t TestPlan.jmx -l results.jtl</code></li>
+<li><strong>-n</strong> = Non-GUI; <strong>-t</strong> = Test plan; <strong>-l</strong> = Results log</li>
+<li><strong>.jmx</strong> — JMeter test plan; <strong>.jtl</strong> — JMeter test log</li>
+<li><strong>Run as Administrator</strong> — Required for command prompt</li>
+<li><strong>Navigate to bin directory</strong> — Must be in JMeter's bin folder</li>
+<li><strong>.jtl in Excel</strong> — Check response codes (200=pass, 4xx=fail)</li>
+<li><strong>BlazeMeter</strong> — Cloud platform; upload .jmx; professional reports</li>
+<li><strong>Free account</strong> — 1 user max; upgraded = thousands</li>
+<li><strong>BlazeMeter reports</strong> — Throughput, response time, percentiles, bandwidth</li>
+<li><strong>Taurus</strong> — Alternative for terminal-based graphical reports</li>
+<li><strong>Recommendation</strong> — BlazeMeter for professional reports; .jtl for quick checks</li>
+<li><strong>CI/CD</strong> — Non-GUI mode is mandatory for Jenkins</li>
+</ol>
+</details>
+</section>
+
+<!-- SECTION 14 -->
+<section id="section-14" class="section-card">
+<h2>Section 14: Distributed Mode (Master-Slave Architecture)</h2>
+
+<h3>Why Distributed Mode is Needed</h3>
+<h4>The Problem: Single Machine Limitations</h4>
+<ul>
+<li>Running 5000+ users on one machine → <strong>memory fills up</strong>, heap overflow, inaccurate results</li>
+<li>Limited CPU, RAM, heap configuration cannot handle thousands of threads</li>
+<li>No point running 5000 users if results are inaccurate</li>
+</ul>
+
+<h4>The Real-World Need</h4>
+<ul>
+<li>E-commerce sites (Amazon, Flipkart) get millions of users on sale days</li>
+<li>Must test with 5000, 10000, 15000+ users</li>
+<li>Single machine CANNOT handle this realistically</li>
+</ul>
+
+<h3>What is Distributed Mode?</h3>
+<ul>
+<li><strong>Definition:</strong> Distributing JMeter test across multiple machines</li>
+<li>One <strong>Master</strong> controls the test</li>
+<li>Multiple <strong>Slaves</strong> execute portions of the load</li>
+<li>All slaves hit the target simultaneously</li>
+<li>Results collected back at Master</li>
+</ul>
+
+<h3>Architecture</h3>
+<pre><code>                    ┌─── Slave 1 (1000 users) ───┐
+                    │                              │
+Master (JMeter) ───├─── Slave 2 (1000 users) ───├───→ Target Application
+  (5000 users      │                              │      (e.g., Amazon)
+   configured)     ├─── Slave 3 (1000 users) ───┤
+                    │                              │
+                    ├─── Slave 4 (1000 users) ───┤
+                    │                              │
+                    └─── Slave 5 (1000 users) ───┘</code></pre>
+
+<h3>Setup Requirements</h3>
+<ul>
+<li>All machines must have <strong>same JMeter version</strong></li>
+<li>All on <strong>same network/subnet</strong></li>
+<li>Same or similar operating systems</li>
+<li>No firewall/antivirus blocking connections</li>
+</ul>
+
+<h3>Step 1: Configure Slave Machine</h3>
+<ol>
+<li>Navigate to JMeter's <strong>bin directory</strong></li>
+<li>Open <code>jmeter.properties</code></li>
+<li>Find <code>server.rmi.ssl.disable</code> → set to <strong><code>true</code></strong> (uncomment)</li>
+<li>Save the file</li>
+<li>Run <code>jmeter-server.bat</code></li>
+<li>Wait for: <strong>"Created remote object endpoint"</strong></li>
+<li><strong>Note the Slave's IP address</strong></li>
+</ol>
+
+<h3>Step 2: Configure Master Machine</h3>
+<ol>
+<li>Open <code>jmeter.properties</code> in Master's bin directory</li>
+<li>Set <code>server.rmi.ssl.disable</code> to <strong><code>true</code></strong></li>
+<li>Find <code>remote_hosts</code> → replace <code>127.0.0.1</code> with <strong>Slave's IP</strong></li>
+<li>Multiple slaves: <code>remote_hosts=192.168.1.10,192.168.1.11,192.168.1.12</code></li>
+<li>Save and restart JMeter</li>
+</ol>
+
+<h3>Step 3: Run Test on Slave(s)</h3>
+<ol>
+<li>Open JMeter on Master → Load test plan</li>
+<li>Go to <strong>Run → Start Remote</strong> → Select Slave IP</li>
+<li>Test executes on Slave (not Master)</li>
+<li>Results appear back in Master's JMeter</li>
+</ol>
+
+<h3>Configuration Summary</h3>
+<table><thead><tr><th>Property</th><th>Default</th><th>Change To</th><th>Machine</th></tr></thead><tbody>
+<tr><td><code>server.rmi.ssl.disable</code></td><td><code>false</code> (commented)</td><td><code>true</code> (uncommented)</td><td>Both Master &amp; Slave</td></tr>
+<tr><td><code>remote_hosts</code></td><td><code>127.0.0.1</code></td><td>Slave's IP address</td><td>Master only</td></tr>
+</tbody></table>
+
+<h3>Troubleshooting</h3>
+<table><thead><tr><th>Problem</th><th>Cause</th><th>Solution</th></tr></thead><tbody>
+<tr><td>Connection exception</td><td>Firewall/antivirus blocking</td><td>Disable firewall and antivirus</td></tr>
+<tr><td>Cannot connect to slave</td><td>Different network/subnet</td><td>Connect both to same WiFi</td></tr>
+<tr><td>Version mismatch error</td><td>Different JMeter versions</td><td>Install same version</td></tr>
+<tr><td>Server won't start</td><td>SSL not disabled</td><td>Set <code>ssl.disable=true</code></td></tr>
+<tr><td>Test doesn't start</td><td>jmeter-server not running</td><td>Start jmeter-server.bat first</td></tr>
+</tbody></table>
+
+<details class="revision"><summary>Quick Revision — Section 14 (14 items)</summary>
+<ol>
+<li><strong>Distributed Mode</strong> — Split load across multiple machines</li>
+<li><strong>Why needed</strong> — Single machine can't handle 5000+ users</li>
+<li><strong>Master</strong> — Controls test, sends commands, collects results</li>
+<li><strong>Slave</strong> — Executes actual load on behalf of Master</li>
+<li><strong>Architecture</strong> — 5000 users ÷ 5 slaves = 1000 each</li>
+<li><strong>Same JMeter version</strong> — Mandatory on both machines</li>
+<li><strong>Same network</strong> — Both must be on same subnet/WiFi</li>
+<li><strong>Slave setup</strong> — Disable SSL → Run jmeter-server.bat → Note IP</li>
+<li><strong>Master setup</strong> — Disable SSL + Set remote_hosts = Slave IP</li>
+<li><strong>Run remotely</strong> — Run → Start Remote → Select slave IP</li>
+<li><strong>Results</strong> — Executed on Slave, displayed on Master</li>
+<li><strong>Real-time use</strong> — High-traffic websites on sale days</li>
+<li><strong>Not always needed</strong> — Only for very high user counts</li>
+<li><strong>Firewall/Antivirus</strong> — Must be disabled for connection</li>
+</ol>
+</details>
+</section>
+
+<!-- SECTION 15 -->
+<section id="section-15" class="section-card">
+<h2>Section 15: Server Resource Monitoring (YourKit Java Profiler)</h2>
+
+<h3>Why Monitor Server Resources?</h3>
+<table><thead><tr><th>Perspective</th><th>What it Measures</th><th>Tools</th></tr></thead><tbody>
+<tr><td><strong>Application Performance</strong></td><td>Response time, throughput, error rate</td><td>JMeter Listeners</td></tr>
+<tr><td><strong>Server Resource Performance</strong></td><td>CPU usage, memory/heap, garbage collection</td><td>YourKit Java Profiler</td></tr>
+</tbody></table>
+
+<div class="callout"><strong>Key Insight:</strong> Every website runs on a <strong>server</strong> with limited CPU, RAM, heap memory. If server resources are exhausted → application becomes slow. Application might be fast, but if your server resources are low → you see slowness.</div>
+
+<h3>Two Monitoring Targets</h3>
+<table><thead><tr><th>Target</th><th>Meaning</th><th>Example</th></tr></thead><tbody>
+<tr><td><strong>Host Server</strong></td><td>Server where app is deployed</td><td>Google's servers, Amazon's servers</td></tr>
+<tr><td><strong>Client Server</strong></td><td>Your machine generating load</td><td>Your laptop running JMeter</td></tr>
+</tbody></table>
+
+<h3>YourKit Java Profiler</h3>
+<ul>
+<li>External tool for monitoring <strong>Java-based application performance</strong></li>
+<li>Listens to all applications running on JVM</li>
+<li>Shows: CPU usage, heap memory, non-heap memory, garbage collection, threads</li>
+<li><strong>Not included in JMeter</strong> — separate download required</li>
+</ul>
+
+<h4>Installation</h4>
+<ol>
+<li>Download from YourKit website (choose OS)</li>
+<li>Install → located in Program Files</li>
+<li>Navigate to <code>bin</code> folder → run <code>.exe</code></li>
+<li>Register with email → receive 15-day trial key</li>
+<li>Paste activation key → tool opens</li>
+</ol>
+
+<h3>Key Server Metrics</h3>
+
+<h4>CPU Usage</h4>
+<ul>
+<li><strong>Most important metric</strong> for server monitoring</li>
+<li>Shows percentage of CPU being consumed</li>
+<li>Not available in JMeter's built-in listeners</li>
+</ul>
+
+<table><thead><tr><th>CPU Usage</th><th>Status</th><th>Action</th></tr></thead><tbody>
+<tr><td>0-40%</td><td>Normal</td><td>No concerns</td></tr>
+<tr><td>40-50%</td><td>Acceptable</td><td>Monitor closely</td></tr>
+<tr><td>50-80%</td><td>Warning</td><td>Investigate; optimization needed</td></tr>
+<tr><td>80%+</td><td><strong>Critical</strong></td><td>System slow; report to team</td></tr>
+</tbody></table>
+
+<h4>Heap Memory</h4>
+<ul>
+<li><strong>Dynamic memory</strong> allocated by Java at runtime</li>
+<li>Objects created during execution stored in heap</li>
+<li>When task completes → Garbage Collector removes objects</li>
+<li>If heap fills up → system slows down significantly</li>
+<li>Monitor: allocated vs. used (e.g., 500MB allocated, 65MB used = healthy)</li>
+</ul>
+
+<h4>Non-Heap Memory</h4>
+<ul>
+<li><strong>Static memory</strong> — not dynamically created/destroyed</li>
+<li>Fixed allocations that persist throughout application lifecycle</li>
+</ul>
+
+<h4>Garbage Collection</h4>
+<ul>
+<li>Java's automatic memory cleanup process</li>
+<li>Removes unused objects from heap memory</li>
+<li>If too frequent → performance issue</li>
+</ul>
+
+<h3>Using YourKit with JMeter</h3>
+<ol>
+<li>Open YourKit Java Profiler</li>
+<li>See "Monitor Local Applications" section</li>
+<li><strong>Apache JMeter</strong> appears as JVM process</li>
+<li>Click <strong>"Attach to Application"</strong></li>
+<li>Go to <strong>"Performance Charts"</strong> tab</li>
+<li>Start your JMeter test script</li>
+<li>Watch graphs change in real-time</li>
+</ol>
+
+<h3>Real-World Examples</h3>
+<ul>
+<li>Running JMeter script → CPU jumps to 40% → <strong>Normal</strong></li>
+<li>Eclipse with 2000 scripts → CPU jumps to 50%+ → Expected (heavy IDE)</li>
+<li>Application causing 80%+ CPU → <strong>Report:</strong> "Possible dynamic object creation issue"</li>
+</ul>
+
+<div class="callout"><strong>Performance Testing = Application + Server:</strong> Don't just test application response times. Also monitor how the SERVER behaves under load. Client team needs BOTH reports:<br>1. Application metrics (from JMeter Listeners)<br>2. Server resource metrics (from YourKit or similar tools)</div>
+
+<details class="revision"><summary>Quick Revision — Section 15 (14 items)</summary>
+<ol>
+<li><strong>Server monitoring</strong> — Track CPU, memory, heap alongside app performance</li>
+<li><strong>Two perspectives</strong> — Host server + Client server</li>
+<li><strong>YourKit Java Profiler</strong> — External tool for monitoring JVM applications</li>
+<li><strong>CPU usage</strong> — Most critical metric; &gt;80% = system becomes slow</li>
+<li><strong>Heap memory</strong> — Dynamic memory; freed by garbage collector</li>
+<li><strong>Non-heap memory</strong> — Static allocations that persist</li>
+<li><strong>Garbage collection</strong> — Java's auto-cleanup of unused objects</li>
+<li><strong>Attach to Application</strong> — Must explicitly connect YourKit to JMeter's JVM</li>
+<li><strong>Performance Charts</strong> — Real-time CPU, memory, threads as test runs</li>
+<li><strong>&lt; 50% CPU</strong> — Healthy; <strong>&gt; 80% CPU</strong> — Critical</li>
+<li><strong>Not in JMeter</strong> — CPU/heap monitoring requires external tools</li>
+<li><strong>15-day trial</strong> — YourKit offers free trial</li>
+<li><strong>Real-time projects</strong> — Monitor both app AND server resources</li>
+<li><strong>Eclipse example</strong> — Heavy IDE consuming 50%+ CPU demonstrates importance</li>
+</ol>
+</details>
+</section>
+
+
+<!-- SECTION 16 -->
+<section id="section-16" class="section-card">
+<h2>Section 16: Performance Testing — 4-Year Experience Interview &amp; Career Guide</h2>
+
+<div class="callout"><strong>This section covers essential knowledge expected from a performance tester with 4+ years of experience.</strong> It includes interview questions, real-world scenarios, advanced concepts, and industry best practices not covered in the tutorial sections above.</div>
+
+<h3>Performance Testing Lifecycle (PTLC)</h3>
+<table><thead><tr><th>Phase</th><th>Activities</th><th>Deliverables</th></tr></thead><tbody>
+<tr><td>1. Requirements Gathering</td><td>Identify NFRs, SLAs, user volumes, peak hours, transaction mix</td><td>Performance Test Requirements Document</td></tr>
+<tr><td>2. Test Planning</td><td>Define scope, approach, environment, tools, entry/exit criteria</td><td>Performance Test Plan</td></tr>
+<tr><td>3. Script Development</td><td>Record/code scripts, add correlation, parameterization, assertions</td><td>Executable test scripts (.jmx)</td></tr>
+<tr><td>4. Test Environment Setup</td><td>Provision servers, configure monitoring, validate environment parity</td><td>Environment readiness checklist</td></tr>
+<tr><td>5. Test Execution</td><td>Run baseline, load, stress, endurance, spike tests</td><td>Raw results, JTL files, monitoring data</td></tr>
+<tr><td>6. Result Analysis</td><td>Analyze response times, throughput, errors, server resource utilization</td><td>Performance Test Report</td></tr>
+<tr><td>7. Bottleneck Identification</td><td>Identify CPU, memory, DB, network bottlenecks with dev team</td><td>Bottleneck analysis report</td></tr>
+<tr><td>8. Tuning &amp; Retest</td><td>Dev team tunes code/config, rerun tests to validate improvements</td><td>Comparison report (before vs after)</td></tr>
+</tbody></table>
+
+<h3>Non-Functional Requirements (NFRs) — What to Collect</h3>
+<table><thead><tr><th>NFR Parameter</th><th>Description</th><th>Example</th></tr></thead><tbody>
+<tr><td>Concurrent Users</td><td>Max simultaneous active users</td><td>500 concurrent users at peak</td></tr>
+<tr><td>Response Time SLA</td><td>Max acceptable response time per transaction</td><td>Login &lt; 3 sec, Search &lt; 2 sec</td></tr>
+<tr><td>Throughput Target</td><td>Transactions per second the system must handle</td><td>50 TPS for checkout flow</td></tr>
+<tr><td>Error Rate Threshold</td><td>Max acceptable error percentage</td><td>&lt; 1% error rate</td></tr>
+<tr><td>Resource Utilization</td><td>Max CPU, memory, disk I/O under load</td><td>CPU &lt; 70%, Memory &lt; 80%</td></tr>
+<tr><td>Endurance Duration</td><td>How long system should sustain load</td><td>8 hours continuous load</td></tr>
+<tr><td>Scalability Targets</td><td>Expected growth in user base</td><td>Handle 2x current load within 6 months</td></tr>
+</tbody></table>
+
+<h3>Types of Performance Tests — Detailed</h3>
+<table><thead><tr><th>Test Type</th><th>Purpose</th><th>Duration</th><th>Load</th></tr></thead><tbody>
+<tr><td>Baseline Test</td><td>Establish benchmark with single user</td><td>1 iteration</td><td>1 user</td></tr>
+<tr><td>Load Test</td><td>Validate against expected production load</td><td>30-60 min</td><td>Expected concurrent users</td></tr>
+<tr><td>Stress Test</td><td>Find breaking point beyond normal capacity</td><td>Until failure</td><td>Incrementally increase beyond expected</td></tr>
+<tr><td>Spike Test</td><td>Test sudden surge of users</td><td>Short burst</td><td>0 → max → 0 rapidly</td></tr>
+<tr><td>Endurance/Soak Test</td><td>Detect memory leaks, connection pool exhaustion</td><td>4-8+ hours</td><td>Normal expected load</td></tr>
+<tr><td>Scalability Test</td><td>Determine capacity limits and scaling behavior</td><td>Multiple runs</td><td>Incremental increase (100, 200, 500...)</td></tr>
+<tr><td>Volume Test</td><td>Test with large data volumes in database</td><td>Varies</td><td>Normal users + large DB</td></tr>
+<tr><td>Breakpoint Test</td><td>Find exact user count where system degrades</td><td>Incremental</td><td>Step increase until failure</td></tr>
+</tbody></table>
+
+<h3>Workload Modeling</h3>
+<ul>
+<li><strong>Transaction Mix:</strong> Distribution of different user actions (e.g., 40% browse, 30% search, 20% add-to-cart, 10% checkout)</li>
+<li><strong>Think Time:</strong> Pause between user actions simulating real human behavior (typically 3-10 seconds)</li>
+<li><strong>Pacing:</strong> Time between iteration start times to control throughput</li>
+<li><strong>Concurrency vs Total Users:</strong> Concurrent = active at same time; Total = all users over time</li>
+</ul>
+
+<h3>Little's Law — Calculating Concurrent Users</h3>
+<pre><code>Concurrent Users = Throughput × Average Response Time
+
+Example:
+- Throughput = 10 transactions/second
+- Average Response Time = 5 seconds
+- Concurrent Users = 10 × 5 = 50 users active at any moment</code></pre>
+
+<h3>Key Performance Metrics Deep Dive</h3>
+<table><thead><tr><th>Metric</th><th>What It Tells You</th><th>Acceptable Range</th><th>Red Flag</th></tr></thead><tbody>
+<tr><td>Response Time</td><td>End-user experience</td><td>&lt; 3 sec (web), &lt; 1 sec (API)</td><td>Increasing over time under same load</td></tr>
+<tr><td>Throughput (TPS)</td><td>Server processing capacity</td><td>Meets NFR target</td><td>Plateaus or decreases with more users</td></tr>
+<tr><td>Error Rate</td><td>System reliability</td><td>&lt; 1%</td><td>&gt; 5% needs investigation</td></tr>
+<tr><td>CPU Utilization</td><td>Processing overhead</td><td>&lt; 70%</td><td>&gt; 85% — scaling needed</td></tr>
+<tr><td>Memory Utilization</td><td>Memory pressure/leaks</td><td>&lt; 80%</td><td>Continuously growing = memory leak</td></tr>
+<tr><td>DB Query Time</td><td>Database performance</td><td>&lt; 100ms per query</td><td>Slow queries blocking threads</td></tr>
+<tr><td>Network Latency</td><td>Network bottleneck</td><td>&lt; 50ms LAN, &lt; 200ms WAN</td><td>High packet loss or retransmissions</td></tr>
+<tr><td>Connection Pool</td><td>Resource exhaustion</td><td>Usage &lt; 70% of pool size</td><td>Pool exhaustion = request queuing</td></tr>
+<tr><td>GC Frequency</td><td>JVM health</td><td>Minor GC only</td><td>Full GC events = performance cliff</td></tr>
+<tr><td>Apdex Score</td><td>User satisfaction index</td><td>&gt; 0.85</td><td>&lt; 0.5 = unacceptable</td></tr>
+</tbody></table>
+
+<h3>Advanced JMeter Techniques</h3>
+<h4>JSON Extractor (REST API Testing)</h4>
+<ul>
+<li>Alternative to Regular Expression Extractor for JSON responses</li>
+<li>Uses JSONPath expressions: <code>$.data.token</code>, <code>$.users[0].id</code></li>
+<li>Add: Post Processors → JSON Extractor</li>
+<li>Simpler than regex for API testing</li>
+</ul>
+
+<h4>JSR223 Sampler/Pre/PostProcessor (Groovy)</h4>
+<ul>
+<li><strong>Preferred over BeanShell</strong> in modern JMeter (better performance)</li>
+<li>Uses Groovy scripting language (compiles to bytecode)</li>
+<li>BeanShell is interpreted → slower; Groovy is compiled → faster</li>
+<li>Same built-in variables: <code>vars</code>, <code>props</code>, <code>ctx</code>, <code>prev</code>, <code>log</code></li>
+</ul>
+<pre><code>// Groovy example in JSR223 PostProcessor
+def responseCode = prev.getResponseCode()
+if (responseCode == '200') {
+    def token = new groovy.json.JsonSlurper()
+        .parseText(prev.getResponseDataAsString()).token
+    vars.put('authToken', token)
+    log.info("Token extracted: ${token}")
+}</code></pre>
+
+<h4>JMeter Properties File Tuning</h4>
+<table><thead><tr><th>Property</th><th>Default</th><th>Recommended</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>jmeter.save.saveservice.output_format</code></td><td>csv</td><td>csv</td><td>Result format (csv is faster than xml)</td></tr>
+<tr><td><code>jmeter.save.saveservice.response_data</code></td><td>false</td><td>false</td><td>Don't save response data in results (saves memory)</td></tr>
+<tr><td><code>jmeter.save.saveservice.assertion_results</code></td><td>none</td><td>all</td><td>Save assertion results for debugging</td></tr>
+<tr><td><code>httpclient4.retrycount</code></td><td>0</td><td>0</td><td>No auto-retry on failure (accurate error count)</td></tr>
+</tbody></table>
+
+<h4>JMeter Heap Memory Configuration</h4>
+<pre><code># In jmeter.bat or jmeter.sh, increase heap:
+set HEAP=-Xms1g -Xmx4g -XX:MaxMetaspaceSize=512m
+
+# For large tests (5000+ users):
+set HEAP=-Xms2g -Xmx8g -XX:MaxMetaspaceSize=1g</code></pre>
+
+<h3>Server-Side Monitoring Tools</h3>
+<table><thead><tr><th>Tool</th><th>What It Monitors</th><th>Integration</th></tr></thead><tbody>
+<tr><td>YourKit Java Profiler</td><td>CPU, heap, GC, threads (JVM)</td><td>Local attach to JVM process</td></tr>
+<tr><td>Grafana + InfluxDB</td><td>Real-time dashboards for any metric</td><td>JMeter Backend Listener</td></tr>
+<tr><td>AppDynamics / Dynatrace</td><td>Full-stack APM (Application Performance Monitoring)</td><td>Agent-based on app server</td></tr>
+<tr><td>PerfMon (JMeter Plugin)</td><td>CPU, memory, disk, network of target server</td><td>JMeter PerfMon Agent on server</td></tr>
+<tr><td>New Relic</td><td>Application performance, error tracking</td><td>Agent-based + API</td></tr>
+<tr><td>Prometheus + Grafana</td><td>Custom metrics, alerts, dashboards</td><td>Exporters on target servers</td></tr>
+<tr><td>JConsole / VisualVM</td><td>JVM monitoring (CPU, heap, threads)</td><td>JMX connection to JVM</td></tr>
+</tbody></table>
+
+<h3>Performance Test Report — What to Include</h3>
+<table><thead><tr><th>Section</th><th>Content</th></tr></thead><tbody>
+<tr><td>Executive Summary</td><td>Pass/Fail verdict, key findings, recommendations</td></tr>
+<tr><td>Test Scope</td><td>Transactions tested, NFRs, exclusions</td></tr>
+<tr><td>Test Environment</td><td>Server specs, app version, DB size, network topology</td></tr>
+<tr><td>Workload Model</td><td>User distribution, think times, transaction mix, ramp-up strategy</td></tr>
+<tr><td>Test Execution Summary</td><td>Test types run, duration, user counts</td></tr>
+<tr><td>Results — Response Time</td><td>Avg, 90th percentile, max per transaction vs SLA</td></tr>
+<tr><td>Results — Throughput</td><td>TPS achieved vs target</td></tr>
+<tr><td>Results — Errors</td><td>Error types, frequency, root cause</td></tr>
+<tr><td>Server Resource Utilization</td><td>CPU, memory, disk I/O, network graphs</td></tr>
+<tr><td>Bottleneck Analysis</td><td>Identified bottlenecks with evidence</td></tr>
+<tr><td>Recommendations</td><td>Tuning suggestions, scaling advice, retest plan</td></tr>
+<tr><td>Comparison (if applicable)</td><td>Before vs after tuning results</td></tr>
+</tbody></table>
+
+<h3>Common Bottlenecks &amp; Root Causes</h3>
+<table><thead><tr><th>Symptom</th><th>Likely Bottleneck</th><th>Investigation</th><th>Solution</th></tr></thead><tbody>
+<tr><td>High response time, low CPU</td><td>Database / External dependency</td><td>Check DB query execution plans</td><td>Index optimization, query tuning, caching</td></tr>
+<tr><td>High CPU, normal response time</td><td>Inefficient code / loops</td><td>CPU profiling with YourKit/JProfiler</td><td>Code optimization, algorithmic improvement</td></tr>
+<tr><td>Memory growing continuously</td><td>Memory leak</td><td>Heap dump analysis</td><td>Fix object lifecycle, close connections</td></tr>
+<tr><td>Throughput plateaus early</td><td>Thread pool / connection pool exhaustion</td><td>Check pool sizes and queue depths</td><td>Increase pool sizes, optimize connection reuse</td></tr>
+<tr><td>Errors spike under load</td><td>Resource exhaustion / timeouts</td><td>Check server logs, thread dumps</td><td>Increase resources, optimize timeouts</td></tr>
+<tr><td>Intermittent slowness</td><td>Garbage Collection pauses</td><td>GC logs analysis</td><td>Tune JVM memory, use G1GC or ZGC</td></tr>
+<tr><td>Network errors</td><td>Bandwidth / connection limits</td><td>Network monitoring, packet capture</td><td>CDN, load balancer tuning, compression</td></tr>
+</tbody></table>
+
+<h3>Interview Questions — 4-Year Experience Level</h3>
+
+<h4>Conceptual Questions</h4>
+<ol>
+<li><strong>Explain the Performance Testing Lifecycle.</strong><br>Answer: Requirements → Planning → Script Dev → Env Setup → Execution → Analysis → Bottleneck ID → Tuning &amp; Retest</li>
+<li><strong>What is the difference between Load, Stress, Spike, and Endurance testing?</strong><br>Load = expected users; Stress = beyond capacity; Spike = sudden surge; Endurance = sustained load over hours</li>
+<li><strong>How do you determine the number of virtual users for a test?</strong><br>Use Little's Law, production access logs, Google Analytics, or business requirements. Concurrent Users = TPS × Avg Response Time</li>
+<li><strong>What is correlation and why is it needed?</strong><br>Extracting dynamic server-generated values (session IDs, tokens) from responses and passing them to subsequent requests. Without it, scripts fail on replay.</li>
+<li><strong>What is Think Time and why is it important?</strong><br>Simulated pause between user actions. Without it, virtual users fire requests unrealistically fast, generating higher load than real users would.</li>
+<li><strong>Explain Apdex Score.</strong><br>Application Performance Index — measures user satisfaction. Apdex = (Satisfied + Tolerating/2) / Total. T = threshold (e.g., 3 sec). Score: 0 to 1.</li>
+<li><strong>What are the exit criteria for a performance test?</strong><br>All SLAs met, error rate within threshold, no memory leaks, resource utilization within limits, sign-off from stakeholders.</li>
+</ol>
+
+<h4>JMeter-Specific Questions</h4>
+<ol>
+<li><strong>BeanShell vs Groovy (JSR223)?</strong><br>Groovy is compiled → significantly faster. BeanShell is interpreted → slower. Always prefer JSR223/Groovy in production tests.</li>
+<li><strong>How to handle dynamic values?</strong><br>Regular Expression Extractor, JSON Extractor, CSS/JQuery Extractor, XPath Extractor, Boundary Extractor</li>
+<li><strong>How to run JMeter in CI/CD?</strong><br>Non-GUI mode: <code>jmeter -n -t test.jmx -l results.jtl -e -o report/</code>. Integrate via Jenkins JMeter plugin or shell step.</li>
+<li><strong>How to generate HTML reports?</strong><br><code>jmeter -g results.jtl -o report_folder/</code> or use <code>-e -o</code> flags during test execution.</li>
+<li><strong>What is JMeter Backend Listener?</strong><br>Sends real-time test results to InfluxDB/Graphite for live Grafana dashboards during test execution.</li>
+<li><strong>How to handle file uploads in JMeter?</strong><br>HTTP Request → Files Upload tab → specify file path, parameter name, and MIME type.</li>
+<li><strong>What is the difference between Throughput and Hits per Second?</strong><br>Throughput = successful transactions per second. Hits/sec = all HTTP requests (including embedded resources). Throughput is the meaningful business metric.</li>
+</ol>
+
+<h4>Real-World Scenario Questions</h4>
+<ol>
+<li><strong>Your test shows 0% errors but client says app is slow. Why?</strong><br>Response times may be high (meeting SLA but barely). Check 90th/95th percentile, not just average. Check server-side resource utilization.</li>
+<li><strong>How do you handle a test where scripts pass locally but fail in CI?</strong><br>Check environment differences, data availability, network connectivity, file paths, JMeter version compatibility.</li>
+<li><strong>Client says "test with 10,000 users." Your laptop can't handle it. What do you do?</strong><br>Use distributed testing (master-slave), cloud platforms (BlazeMeter, AWS), or optimize scripts (remove listeners, use CSV output).</li>
+<li><strong>Memory keeps growing during an 8-hour endurance test. What's happening?</strong><br>Likely a memory leak in the application. Capture heap dumps, analyze with MAT (Memory Analyzer Tool), identify leaked objects.</li>
+</ol>
+
+<h3>Performance Testing Best Practices</h3>
+<ol>
+<li>Always run a <strong>baseline test</strong> (1 user) before load testing</li>
+<li>Use <strong>correlation</strong> for all dynamic values — never hard-code session data</li>
+<li>Add <strong>assertions</strong> to validate functional correctness under load</li>
+<li>Use <strong>realistic think times</strong> (3-10 seconds between actions)</li>
+<li>Run tests in <strong>Non-GUI mode</strong> for accurate results</li>
+<li>Remove all <strong>View Results Tree listeners</strong> before load tests</li>
+<li>Use <strong>CSV output format</strong> instead of XML for better performance</li>
+<li>Monitor <strong>server resources</strong> (CPU, memory, DB) during test execution</li>
+<li>Use <strong>JSR223/Groovy</strong> instead of BeanShell for better performance</li>
+<li>Always <strong>compare with baseline</strong> to measure improvement</li>
+<li>Generate <strong>HTML Dashboard</strong> reports for stakeholders</li>
+<li>Store scripts in <strong>version control</strong> (Git) and integrate with CI/CD</li>
+<li>Test on an environment that <strong>mirrors production</strong> as closely as possible</li>
+<li>Document your <strong>workload model</strong> with transaction mix and think times</li>
+<li>Include <strong>ramp-up and ramp-down</strong> periods for realistic simulation</li>
+</ol>
+
+<h3>JMeter Shortcuts &amp; Tips</h3>
+<table><thead><tr><th>Shortcut / Tip</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>Ctrl+R</code></td><td>Run the test plan</td></tr>
+<tr><td><code>Ctrl+.</code></td><td>Stop the test</td></tr>
+<tr><td><code>Ctrl+Shift+R</code></td><td>Run remote (distributed) test</td></tr>
+<tr><td><code>Ctrl+E</code></td><td>Enable/Disable selected element</td></tr>
+<tr><td><code>Ctrl+T</code></td><td>Toggle element (enable/disable)</td></tr>
+<tr><td>Use <code>__time()</code> function</td><td>Generate timestamps: <code>${__time(yyyy-MM-dd,)}</code></td></tr>
+<tr><td>Use <code>__RandomString()</code></td><td>Generate random data: <code>${__RandomString(8,abcdef123,)}</code></td></tr>
+<tr><td>Use <code>__UUID()</code></td><td>Generate unique IDs: <code>${__UUID()}</code></td></tr>
+<tr><td>Use <code>-Xmx4g</code> in jmeter.bat</td><td>Increase JMeter heap for large tests</td></tr>
+<tr><td>HTML Report</td><td><code>jmeter -g results.jtl -o report/</code></td></tr>
+</tbody></table>
+
+<details class="revision"><summary>Quick Revision — Section 16 (20 items)</summary>
+<ol>
+<li><strong>PTLC</strong> — Requirements → Planning → Scripting → Env Setup → Execution → Analysis → Bottleneck ID → Tuning</li>
+<li><strong>NFRs</strong> — Concurrent users, response time SLA, throughput target, error rate, resource utilization limits</li>
+<li><strong>Little's Law</strong> — Concurrent Users = Throughput × Average Response Time</li>
+<li><strong>Baseline test</strong> — Always run with 1 user first to establish benchmark</li>
+<li><strong>Think Time</strong> — 3-10 sec pause between actions; simulates real human behavior</li>
+<li><strong>Groovy > BeanShell</strong> — JSR223/Groovy is compiled and faster; use in production tests</li>
+<li><strong>JSON Extractor</strong> — Use JSONPath for REST APIs instead of regex</li>
+<li><strong>HTML Dashboard</strong> — <code>jmeter -g results.jtl -o report/</code> generates professional reports</li>
+<li><strong>Backend Listener</strong> — Sends real-time data to InfluxDB for Grafana dashboards</li>
+<li><strong>Apdex Score</strong> — User satisfaction index; &gt;0.85 = good, &lt;0.5 = unacceptable</li>
+<li><strong>Memory leak detection</strong> — Run 4-8 hour endurance test; watch for continuous memory growth</li>
+<li><strong>Common bottlenecks</strong> — DB queries, connection pools, GC pauses, memory leaks, thread exhaustion</li>
+<li><strong>Performance report</strong> — Executive summary, results vs SLA, resource utilization, bottlenecks, recommendations</li>
+<li><strong>Distributed testing</strong> — Master-slave for 5000+ users; same JMeter version, same subnet</li>
+<li><strong>CI/CD integration</strong> — Non-GUI mode + Jenkins + HTML report generation</li>
+<li><strong>Workload model</strong> — Transaction mix, think times, pacing, concurrent vs total users</li>
+<li><strong>Heap tuning</strong> — <code>-Xms1g -Xmx4g</code> for normal; <code>-Xms2g -Xmx8g</code> for large tests</li>
+<li><strong>Server monitoring</strong> — PerfMon plugin, Grafana+InfluxDB, APM tools (AppDynamics, Dynatrace)</li>
+<li><strong>Exit criteria</strong> — All SLAs met, error rate within threshold, no leaks, stakeholder sign-off</li>
+<li><strong>Best practices</strong> — Non-GUI mode, CSV format, remove listeners, realistic think times, version control</li>
+</ol>
+</details>
+</section>
+
+
+</main>
+<button id="back-to-top" aria-label="Back to top">&#8593;</button>
+<script src="app.js"></script>
+</body>
+</html>
