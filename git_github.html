@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git &amp; GitHub — QA Automation Engineer Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Login Overlay -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-icon">&#128218;</div>
+    <h1>Learning Notes</h1>
+    <p>Sign in to access your knowledge base</p>
+    <form id="login-form">
+      <input type="text" id="login-user" placeholder="Username" autocomplete="off" autofocus>
+      <input type="password" id="login-pass" placeholder="Password">
+      <button type="submit">Sign In</button>
+      <div class="login-error" id="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<div id="progress-bar"></div>
+<button id="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+
+<aside id="sidebar">
+  <div class="logo"><span>&#128268;</span> Git &amp; GitHub</div>
+  <a href="index.html" class="back-to-home">&larr; All Topics</a>
+  <div id="search-container">
+    <input type="text" id="search-box" placeholder="Search notes..." aria-label="Search">
+    <span class="search-shortcut">Ctrl+K</span>
+  </div>
+  <div class="search-info"></div>
+  <nav id="nav-links">
+    <a href="#section-1">1. What is Git &amp; Why It Matters</a>
+    <a href="#section-2">2. Git vs GitHub</a>
+    <a href="#section-3">3. Three States Workflow</a>
+    <a href="#section-4">4. Essential Local Commands</a>
+    <a href="#section-5">5. Branching &amp; Merging</a>
+    <a href="#section-6">6. Remote Repositories</a>
+    <a href="#section-7">7. Undo &amp; Recover</a>
+    <a href="#section-8">8. Git for QA Automation</a>
+    <a href="#section-9">9. Git Hooks &amp; Shift-Left</a>
+    <a href="#section-10">10. Branching Strategies</a>
+    <a href="#section-11">11. git bisect &amp; Debugging</a>
+    <a href="#section-12">12. Cherry-Pick &amp; LFS</a>
+    <a href="#section-13">13. CI/CD Integration</a>
+    <a href="#section-14">14. Best Practices</a>
+    <a href="#section-15">15. Interview Prep</a>
+    <a href="#section-16">16. Cheat Sheet &amp; Revision</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" id="logout-btn">Logout</button>
+  </div>
+</aside>
+
+<main id="main-content">
+<div class="page-header">
+  <h1>Git &amp; GitHub for <em>QA Automation Engineers</em></h1>
+  <p>Complete Knowledge Base — From Fundamentals to Expert Level (4+ Years Experience)</p>
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num">16</div><div class="stat-label">Sections</div></div>
+    <div class="stat"><div class="stat-num">200+</div><div class="stat-label">Revision Items</div></div>
+    <div class="stat"><div class="stat-num">50+</div><div class="stat-label">Interview Q&amp;A</div></div>
+    <div class="stat"><div class="stat-num">4+ Yrs</div><div class="stat-label">Experience Level</div></div>
+  </div>
+</div>
+
+<div id="no-results" class="no-results">No matching content found.</div>
+
+<!-- ==================== SECTION 1 ==================== -->
+<section id="section-1" class="section-card">
+<h2>Section 1: What is Git &amp; Why It Matters</h2>
+
+<h3>Concept Explanation</h3>
+<p>Git is a <strong>Distributed Version Control System (DVCS)</strong> created by Linus Torvalds in 2005. It tracks every change to your files, allows you to revert to any previous state, and enables seamless collaboration among teams. Unlike centralized systems (SVN, TFS), every developer/tester has a full copy of the repository history locally.</p>
+
+<h4>Why Git is the Industry Standard</h4>
+<ul>
+<li><strong>Collaboration</strong> — Multiple developers and testers work on the same project without overwriting each other's work</li>
+<li><strong>Safety</strong> — Full "time machine" capability; revert any mistake instantly</li>
+<li><strong>Full History</strong> — Who changed what, when, and why (with commit messages)</li>
+<li><strong>Branching &amp; Merging</strong> — Experiment in isolated branches, then merge safely</li>
+<li><strong>Offline Work</strong> — Commit, branch, merge all work without internet</li>
+<li><strong>Speed</strong> — Operations are local; no network latency for commits/diffs/logs</li>
+</ul>
+<p>Over 70% of developers use Git — it's a <strong>non-negotiable skill</strong> for automation testers.</p>
+
+<h3>Real-Time Example</h3>
+<p>You're an automation tester working on a Selenium framework. A developer pushes code that breaks the login page. Without Git, you'd have no way to know which change caused the failure. With Git, you can:</p>
+<ol>
+<li>Run <code>git log --oneline</code> to see recent changes</li>
+<li>Use <code>git bisect</code> to find the exact commit that introduced the bug</li>
+<li>Use <code>git revert</code> to undo the problematic commit</li>
+<li>Share the fix via a Pull Request for team review</li>
+</ol>
+
+<h3>Project-Based Example</h3>
+<p>In a typical e-commerce automation project with 5 team members:</p>
+<ul>
+<li>Tester A writes login tests on <code>feature/login-tests</code> branch</li>
+<li>Tester B writes cart tests on <code>feature/cart-tests</code> branch</li>
+<li>Both push to remote, create PRs, CI runs tests automatically</li>
+<li>After review and CI pass, both merge to <code>main</code></li>
+<li>No conflicts, no overwriting, full audit trail</li>
+</ul>
+
+<h3>Architecture / Flow Diagram</h3>
+<div class="ascii-diagram">┌─────────────────────────────────────────────────────────────────┐
+│                    DISTRIBUTED VERSION CONTROL                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   Developer A          Remote Repository         Developer B    │
+│   ┌──────────┐        ┌──────────────┐        ┌──────────┐    │
+│   │ Full Repo│◄──────►│ GitHub/GitLab│◄──────►│ Full Repo│    │
+│   │ + History│  push  │   (Origin)   │  push  │ + History│    │
+│   │          │  pull  │              │  pull  │          │    │
+│   └──────────┘        └──────────────┘        └──────────┘    │
+│        ▲                      ▲                      ▲         │
+│        │                      │                      │         │
+│   QA Tester C            CI/CD Server         QA Tester D      │
+│   ┌──────────┐        ┌──────────────┐        ┌──────────┐    │
+│   │ Full Repo│◄──────►│  Runs Tests  │◄──────►│ Full Repo│    │
+│   │ + History│        │  on Every PR │        │ + History│    │
+│   └──────────┘        └──────────────┘        └──────────┘    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘</div>
+
+<h3>Advantages &amp; Disadvantages</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Advantages</th><th>Disadvantages</th></tr></thead>
+<tbody>
+<tr><td>Distributed — full history on every machine</td><td>Learning curve for beginners (many commands)</td></tr>
+<tr><td>Fast — local operations with no network dependency</td><td>Not ideal for large binary files (without LFS)</td></tr>
+<tr><td>Branching is cheap and fast</td><td>Merge conflicts can be complex</td></tr>
+<tr><td>Free and open-source</td><td>Command-line intimidating for non-technical users</td></tr>
+<tr><td>Strong ecosystem (GitHub, CI/CD, hooks)</td><td>Detached HEAD state confuses beginners</td></tr>
+<tr><td>Industry standard — required skill for QA roles</td><td>History rewriting can cause team issues if misused</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Best Practices</h3>
+<ol>
+<li>Commit often with small, logical changes — not giant blobs</li>
+<li>Write meaningful commit messages using Conventional Commits format</li>
+<li>Always <code>git pull --rebase</code> before pushing</li>
+<li>Use <code>.gitignore</code> from day one — never commit secrets or build artifacts</li>
+<li>Create branches for every feature/fix — never commit directly to <code>main</code></li>
+</ol>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Committing <code>.env</code> files with API keys or passwords</li>
+<li>Force pushing to shared branches without communication</li>
+<li>Vague commit messages like "fix", "update", "test"</li>
+<li>Accumulating massive uncommitted changes for days</li>
+<li>Ignoring merge conflicts instead of resolving them properly</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is Git and how is it different from SVN?</strong><br>Git is distributed (full repo on each machine), SVN is centralized (single server). Git works offline; SVN requires network for most operations.</li>
+<li><strong>Why is Git important for an automation tester?</strong><br>Version control for test scripts, collaboration in teams, CI/CD integration, debugging with bisect, branching for parallel test development.</li>
+<li><strong>What does "distributed" mean in DVCS?</strong><br>Every user has a complete copy of the repository including full history. No single point of failure.</li>
+</ol>
+
+<h3>Hands-On Exercise</h3>
+<pre><code># Exercise 1: Initialize your first test automation repo
+mkdir my-test-framework
+cd my-test-framework
+git init
+echo "# My Test Framework" > README.md
+git add README.md
+git commit -m "feat: initialize test automation framework"
+git log --oneline  # Verify your first commit</code></pre>
+
+<details class="revision"><summary>Quick Revision — Section 1 (12 items)</summary>
+<ol>
+<li>Git = Distributed Version Control System (DVCS)</li>
+<li>Created by Linus Torvalds in 2005</li>
+<li>Every clone has FULL history — no single point of failure</li>
+<li>Works offline — commit, branch, merge without internet</li>
+<li>Over 70% of developers use Git</li>
+<li>Non-negotiable skill for automation testers</li>
+<li>Key benefits: collaboration, safety, history, branching</li>
+<li>Operations are local = fast (no network latency)</li>
+<li>Branching is cheap and fast (unlike SVN)</li>
+<li>Not ideal for large binaries without Git LFS</li>
+<li>Strong ecosystem: GitHub, GitLab, Bitbucket, CI/CD</li>
+<li>Foundation for team-based quality assurance</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 2 ==================== -->
+<section id="section-2" class="section-card">
+<h2>Section 2: Git vs GitHub — The Core Distinction</h2>
+
+<h3>Concept Explanation</h3>
+<p>Git and GitHub are often confused but serve different purposes. Understanding the distinction is critical for professional QA engineers.</p>
+
+<h4>Git — The Tool</h4>
+<ul>
+<li>A distributed version control system</li>
+<li>Runs <strong>locally</strong> on your computer</li>
+<li>Installed as software (CLI or GUI tools like GitKraken, SourceTree)</li>
+<li>Works <strong>completely offline</strong> (commit, branch, merge, log)</li>
+<li>Tracks file changes and manages versions</li>
+<li>Handles branching and merging of code</li>
+<li>No built-in collaboration interface</li>
+<li>Open-source tool created by Linus Torvalds</li>
+</ul>
+
+<h4>GitHub — The Platform</h4>
+<ul>
+<li>A <strong>cloud-based hosting platform</strong> for Git repositories</li>
+<li>Runs online (cloud servers)</li>
+<li>Accessed via web browser, desktop apps, or Git commands</li>
+<li>Requires internet for push, pull, and sync</li>
+<li>Stores and backs up your repositories remotely</li>
+<li>Adds collaboration features: Pull Requests, Issues, Actions (CI/CD), Discussions, Code Review</li>
+<li>Owned by Microsoft</li>
+</ul>
+
+<h3>Comparison Table</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Git</th><th>GitHub</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>Version control tool</td><td>Cloud hosting platform</td></tr>
+<tr><td>Location</td><td>Local machine</td><td>Cloud (internet)</td></tr>
+<tr><td>Network</td><td>Works offline</td><td>Requires internet</td></tr>
+<tr><td>Function</td><td>Track changes, branch, merge</td><td>Collaborate, review, deploy</td></tr>
+<tr><td>Interface</td><td>Command line / GUI tools</td><td>Web UI + API</td></tr>
+<tr><td>Cost</td><td>Free (open source)</td><td>Free tier + paid plans</td></tr>
+<tr><td>Alternatives</td><td>Mercurial (rarely used)</td><td>GitLab, Bitbucket, Azure DevOps</td></tr>
+<tr><td>CI/CD</td><td>Hooks (local only)</td><td>GitHub Actions (cloud CI/CD)</td></tr>
+<tr><td>Created</td><td>2005 by Linus Torvalds</td><td>2008 by Tom Preston-Werner</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Real-Time Example</h3>
+<p>When you run <code>git commit -m "test: add login tests"</code> — that's <strong>Git</strong> (local).<br>
+When you run <code>git push origin main</code> — that's sending your local Git commits to <strong>GitHub</strong> (remote).<br>
+When a teammate opens a Pull Request for review — that's a <strong>GitHub</strong> feature (not Git).</p>
+
+<h3>Architecture / Flow Diagram</h3>
+<div class="ascii-diagram">┌─────────── YOUR MACHINE ───────────┐    ┌──────── GITHUB (CLOUD) ────────┐
+│                                    │    │                                │
+│  Working Dir → Staging → Local Repo│───►│  Remote Repo (origin)         │
+│      (edit)    (git add) (git commit)│   │    ├── Pull Requests          │
+│                                    │◄───│    ├── Issues                  │
+│  git log, git diff, git branch     │    │    ├── Actions (CI/CD)         │
+│  (ALL work offline with Git)       │    │    ├── Code Review             │
+│                                    │    │    └── Collaboration           │
+└────────────────────────────────────┘    └────────────────────────────────┘
+         │ git push (upload)                    │ git pull/fetch (download)
+         └──────────────────────────────────────┘</div>
+
+<h3>Git Hosting Platforms Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Platform</th><th>Owner</th><th>Best For</th><th>CI/CD</th></tr></thead>
+<tbody>
+<tr><td>GitHub</td><td>Microsoft</td><td>Open source, community, most popular</td><td>GitHub Actions</td></tr>
+<tr><td>GitLab</td><td>GitLab Inc.</td><td>Self-hosted, DevOps all-in-one</td><td>GitLab CI/CD (built-in)</td></tr>
+<tr><td>Bitbucket</td><td>Atlassian</td><td>Jira integration, enterprise teams</td><td>Bitbucket Pipelines</td></tr>
+<tr><td>Azure DevOps</td><td>Microsoft</td><td>Enterprise, .NET ecosystem, TFVC migration</td><td>Azure Pipelines</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Saying "I'll push to Git" — you push to GitHub/GitLab (the remote), not to Git</li>
+<li>Thinking you need internet to commit — commits are local Git operations</li>
+<li>Confusing GitHub Desktop (GUI app) with Git (the VCS tool)</li>
+<li>Assuming GitHub is the only way to use Git — it works perfectly standalone</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is the difference between Git and GitHub?</strong><br>Git = local version control tool. GitHub = cloud platform for hosting Git repos with collaboration features (PRs, Issues, Actions).</li>
+<li><strong>Can you use Git without GitHub?</strong><br>Yes. Git is fully functional locally. GitHub is just one of many hosting options.</li>
+<li><strong>Name alternatives to GitHub.</strong><br>GitLab (self-hosted), Bitbucket (Atlassian/Jira integration), Azure DevOps (Microsoft enterprise).</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Section 2 (10 items)</summary>
+<ol>
+<li>Git = Tool for version control (local)</li>
+<li>GitHub = Platform for collaboration using Git (cloud)</li>
+<li>Git works offline; GitHub requires internet</li>
+<li>Pull Requests, Issues, Actions = GitHub features (not Git)</li>
+<li>Alternatives: GitLab, Bitbucket, Azure DevOps</li>
+<li>git commit = Git (local) | git push = sends to GitHub (remote)</li>
+<li>GitHub owned by Microsoft since 2018</li>
+<li>GitLab best for self-hosted / DevOps all-in-one</li>
+<li>Bitbucket best for Jira integration</li>
+<li>You never "push to Git" — you push to a remote (GitHub/GitLab)</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 3 ==================== -->
+<section id="section-3" class="section-card">
+<h2>Section 3: Git Fundamentals — The Three States Workflow</h2>
+
+<h3>Concept Explanation</h3>
+<p>Git manages files through three distinct states. Understanding this workflow is fundamental to everything else in Git.</p>
+
+<h3>Architecture / Flow Diagram</h3>
+<div class="ascii-diagram">┌───────────────┐     git add      ┌───────────────┐    git commit    ┌───────────────┐
+│   Working     │ ──────────────► │   Staging     │ ──────────────► │  Repository   │
+│   Directory   │                 │   Area        │                 │  (.git)       │
+│               │ ◄────────────── │   (Index)     │                 │               │
+│  (Modified)   │   git restore   │  (Staged)     │                 │ (Committed)   │
+└───────────────┘                 └───────────────┘                 └───────────────┘
+       │                                                                    │
+       │                        git checkout / git restore                  │
+       ◄────────────────────────────────────────────────────────────────────┘</div>
+
+<h3>The Three States Explained</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>State</th><th>Location</th><th>Description</th><th>Command to Move Forward</th></tr></thead>
+<tbody>
+<tr><td><strong>Modified</strong></td><td>Working Directory</td><td>File is changed but not marked for commit</td><td><code>git add &lt;file&gt;</code></td></tr>
+<tr><td><strong>Staged</strong></td><td>Staging Area (Index)</td><td>File is marked to be included in next commit</td><td><code>git commit -m "msg"</code></td></tr>
+<tr><td><strong>Committed</strong></td><td>Repository (.git folder)</td><td>Changes permanently saved in Git history</td><td>Done — snapshot created</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>The Four File Statuses</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Status</th><th>Meaning</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>Untracked</strong></td><td>Git sees the file but has never tracked it</td><td>New test file just created</td></tr>
+<tr><td><strong>Tracked</strong></td><td>Already added/committed; can be modified, staged, or unmodified</td><td>Existing test file in repo</td></tr>
+<tr><td><strong>Ignored</strong></td><td>Listed in <code>.gitignore</code> — Git completely ignores it</td><td><code>test-reports/</code>, <code>.env</code></td></tr>
+<tr><td><strong>Staged</strong></td><td>Added to staging area, ready for commit</td><td>After <code>git add</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Real-Time Example</h3>
+<pre><code># You edit a test file
+vim tests/test_login.py          # File is now MODIFIED
+
+# Check status
+git status                       # Shows: modified: tests/test_login.py (red)
+
+# Stage the file
+git add tests/test_login.py      # File is now STAGED
+
+# Check again
+git status                       # Shows: modified: tests/test_login.py (green)
+
+# Commit
+git commit -m "test: add negative login scenarios"  # File is COMMITTED
+
+# Check again
+git status                       # Clean working tree — nothing to commit</code></pre>
+
+<h3>Project-Based Example</h3>
+<p>In a test automation project, your daily workflow looks like:</p>
+<ol>
+<li>Pull latest changes: <code>git pull --rebase</code></li>
+<li>Create/edit test files (Modified state)</li>
+<li>Review what changed: <code>git diff</code></li>
+<li>Stage specific files: <code>git add tests/login/</code></li>
+<li>Commit with meaningful message: <code>git commit -m "test(login): add SSO validation tests"</code></li>
+<li>Push to remote: <code>git push</code></li>
+</ol>
+
+<h3>Best Practices</h3>
+<ol>
+<li>Always use <code>git status</code> before committing to verify what's staged</li>
+<li>Use <code>git add -p</code> (interactive staging) to stage only specific hunks of a file</li>
+<li>Never use <code>git add .</code> blindly — check <code>git status</code> first</li>
+<li>Stage related changes together; unrelated changes in separate commits</li>
+<li>Use <code>git diff --staged</code> to review exactly what will be committed</li>
+</ol>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Using <code>git add .</code> and accidentally staging unwanted files (test reports, logs)</li>
+<li>Committing without checking <code>git status</code> first</li>
+<li>Not understanding that staging area is separate from working directory</li>
+<li>Thinking <code>git add</code> is the same as committing</li>
+</ul>
+
+<h3>Hands-On Exercise</h3>
+<pre><code># Exercise: Practice the three states
+mkdir git-states-practice && cd git-states-practice
+git init
+
+# Create a file (Untracked)
+echo "def test_login(): pass" > test_login.py
+git status   # Untracked file
+
+# Stage it (Staged)
+git add test_login.py
+git status   # Staged for commit
+
+# Commit it (Committed)
+git commit -m "test: add initial login test"
+git status   # Clean working tree
+
+# Modify it (Modified)
+echo "def test_logout(): pass" >> test_login.py
+git status   # Modified (red)
+git diff     # See the actual change</code></pre>
+
+<details class="revision"><summary>Quick Revision — Section 3 (12 items)</summary>
+<ol>
+<li>Three states: Modified → Staged → Committed</li>
+<li>Working Directory = where you edit files</li>
+<li>Staging Area (Index) = prepared changes for next commit</li>
+<li>Repository (.git) = permanent history</li>
+<li><code>git add</code> moves from Modified to Staged</li>
+<li><code>git commit</code> moves from Staged to Committed</li>
+<li>Four file statuses: Untracked, Tracked, Ignored, Staged</li>
+<li><code>git status</code> = always check before commit</li>
+<li><code>git diff</code> = see unstaged changes</li>
+<li><code>git diff --staged</code> = see what will be committed</li>
+<li><code>git add -p</code> = interactive partial staging</li>
+<li>Staging area lets you craft precise, logical commits</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 4 ==================== -->
+<section id="section-4" class="section-card">
+<h2>Section 4: Essential Local Commands (Daily 80%)</h2>
+
+<h3>Configuration (First Time Only)</h3>
+<pre><code>git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+git config --global init.defaultBranch main      # Use 'main' instead of 'master'
+git config --global core.autocrlf true           # Windows line endings fix
+git config --list                                # View all settings</code></pre>
+
+<h3>Starting a Repository</h3>
+<pre><code>git init                    # Initialize empty repo in current folder
+git clone &lt;repo-url&gt;        # Clone existing remote repo locally</code></pre>
+
+<h3>The Core Daily Cycle</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>When to Use</th></tr></thead>
+<tbody>
+<tr><td><code>git status</code></td><td>See what's changed, staged, untracked</td><td>Before every add/commit</td></tr>
+<tr><td><code>git add &lt;file&gt;</code></td><td>Stage a specific file</td><td>After editing a test file</td></tr>
+<tr><td><code>git add .</code></td><td>Stage ALL changes in current directory</td><td>When all changes are related</td></tr>
+<tr><td><code>git add -p</code></td><td>Interactively stage parts of a file</td><td>Selective staging (advanced)</td></tr>
+<tr><td><code>git commit -m "msg"</code></td><td>Save staged changes to history</td><td>After staging</td></tr>
+<tr><td><code>git commit -am "msg"</code></td><td>Stage + commit all TRACKED files</td><td>Quick commit (skip add)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Viewing History</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Output</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td><code>git log</code></td><td>Full commit history (detailed)</td><td>See all details</td></tr>
+<tr><td><code>git log --oneline</code></td><td>One line per commit (hash + message)</td><td>Quick overview</td></tr>
+<tr><td><code>git log --oneline --graph</code></td><td>ASCII branch visualization</td><td>See branch structure</td></tr>
+<tr><td><code>git log -p</code></td><td>Commits with actual code diffs</td><td>Review what changed</td></tr>
+<tr><td><code>git log --author="name"</code></td><td>Filter by author</td><td>See your own commits</td></tr>
+<tr><td><code>git log -n 5</code></td><td>Last 5 commits only</td><td>Recent activity</td></tr>
+<tr><td><code>git diff</code></td><td>Unstaged changes</td><td>What did I change?</td></tr>
+<tr><td><code>git diff --staged</code></td><td>Staged changes</td><td>What will be committed?</td></tr>
+<tr><td><code>git blame &lt;file&gt;</code></td><td>Who changed each line &amp; when</td><td>Find author of a bug</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Real-Time Example — QA Tester's Daily Workflow</h3>
+<pre><code># Morning: Pull latest
+git pull --rebase
+
+# Write tests
+# ... edit test_checkout.py ...
+
+# Check what changed
+git status
+git diff
+
+# Stage and commit
+git add tests/test_checkout.py
+git commit -m "test(checkout): add payment validation scenarios"
+
+# Push to remote
+git push</code></pre>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Using <code>git commit -am</code> and forgetting it doesn't include UNTRACKED (new) files</li>
+<li>Running <code>git add .</code> from root directory — accidentally staging unrelated files</li>
+<li>Not pulling before pushing — leads to rejection errors</li>
+<li>Writing commit messages like "updated tests" — meaningless in history</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What does <code>git add -p</code> do?</strong><br>Interactive staging — lets you stage specific hunks (parts) of a file instead of the whole file. Useful when a file has multiple unrelated changes.</li>
+<li><strong>Difference between <code>git log</code> and <code>git reflog</code>?</strong><br><code>git log</code> shows commit history of the current branch. <code>git reflog</code> shows ALL movements of HEAD including resets, checkouts — useful for recovery.</li>
+<li><strong>What does <code>git blame</code> show?</strong><br>Shows who last modified each line of a file and when. Used to trace the origin of specific code changes.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Section 4 (15 items)</summary>
+<ol>
+<li>Configure name, email, default branch ONCE with <code>git config --global</code></li>
+<li><code>git init</code> = new repo | <code>git clone</code> = copy existing</li>
+<li><code>git status</code> = most used command — check before every action</li>
+<li><code>git add &lt;file&gt;</code> = stage specific | <code>git add .</code> = stage all</li>
+<li><code>git add -p</code> = interactive partial staging (advanced)</li>
+<li><code>git commit -m "msg"</code> = save snapshot with message</li>
+<li><code>git commit -am "msg"</code> = stage+commit tracked files (skip add)</li>
+<li><code>git log --oneline --graph</code> = visual branch history</li>
+<li><code>git diff</code> = unstaged changes | <code>git diff --staged</code> = staged changes</li>
+<li><code>git blame</code> = who changed each line</li>
+<li>Always pull before push</li>
+<li><code>-am</code> does NOT include new untracked files</li>
+<li>Write meaningful commits: <code>test(scope): description</code></li>
+<li><code>git log -p</code> shows actual code changes in each commit</li>
+<li>Check status → add → commit → push = daily cycle</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 5 ==================== -->
+<section id="section-5" class="section-card">
+<h2>Section 5: Branching &amp; Merging Mastery</h2>
+
+<h3>Concept Explanation</h3>
+<p>A <strong>branch</strong> is a lightweight movable pointer to a commit. It lets you work on different features/tests in isolation without affecting the main codebase. Branching in Git is extremely fast and cheap (just creates a 41-byte file).</p>
+
+<h3>Branch Commands</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><code>git branch</code></td><td>List all local branches (* marks current)</td></tr>
+<tr><td><code>git branch &lt;name&gt;</code></td><td>Create new branch (stay on current)</td></tr>
+<tr><td><code>git checkout &lt;name&gt;</code></td><td>Switch to existing branch</td></tr>
+<tr><td><code>git checkout -b &lt;name&gt;</code></td><td>Create AND switch to new branch</td></tr>
+<tr><td><code>git switch &lt;name&gt;</code></td><td>Modern way to switch branches (Git 2.23+)</td></tr>
+<tr><td><code>git switch -c &lt;name&gt;</code></td><td>Modern way to create + switch</td></tr>
+<tr><td><code>git branch -d &lt;name&gt;</code></td><td>Delete branch (only if merged)</td></tr>
+<tr><td><code>git branch -D &lt;name&gt;</code></td><td>Force delete (even if unmerged)</td></tr>
+<tr><td><code>git branch -a</code></td><td>List all branches (local + remote)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Merging</h3>
+<pre><code># Standard merge workflow
+git checkout main              # Switch to target branch
+git merge feature/add-tests    # Merge feature into main
+
+# Create merge commit even for fast-forward
+git merge --no-ff feature/add-tests</code></pre>
+
+<h3>Merge vs Rebase — Two Integration Strategies</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Merge</th><th>Rebase</th></tr></thead>
+<tbody>
+<tr><td>What it does</td><td>Creates a new merge commit combining branches</td><td>Replays your commits on top of another branch</td></tr>
+<tr><td>History</td><td>Non-linear (preserves true timeline with branches)</td><td>Linear (clean, straight line)</td></tr>
+<tr><td>Merge commit</td><td>Yes (extra commit created)</td><td>No (commits are rewritten)</td></tr>
+<tr><td>Safety</td><td>Safe for shared branches</td><td>DANGEROUS for shared branches</td></tr>
+<tr><td>Commit hashes</td><td>Preserved</td><td>Changed (rewritten)</td></tr>
+<tr><td>Best for</td><td>Integrating into <code>main</code> / shared branches</td><td>Cleaning up feature branches before merge</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout"><strong>Golden Rule:</strong> Rebase YOUR private feature branch onto main. NEVER rebase main or any shared branch. Merge for integration into shared branches.</div>
+
+<h3>Architecture / Flow Diagram</h3>
+<div class="ascii-diagram">MERGE:                                    REBASE:
+                                         
+A─B─C─────F (main)                       A─B─C─D─E' (main + feature rebased)
+     \   /                                         \
+      D─E (feature)                                 D─E (old feature, abandoned)
+
+Merge creates commit F                   Rebase replays D,E as D',E' on top of C
+(combines C and E)                       (linear history, no merge commit)</div>
+
+<h3>Handling Merge Conflicts</h3>
+<pre><code># When merge conflicts occur:
+git merge feature/tests
+# CONFLICT: Merge conflict in tests/test_login.py
+
+# 1. Open the conflicted file — look for markers:
+# &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+# (your changes)
+# =======
+# (their changes)
+# &gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/tests
+
+# 2. Manually resolve (keep one, both, or combine)
+# 3. Stage the resolved file
+git add tests/test_login.py
+
+# 4. Complete the merge
+git commit -m "merge: resolve conflict in login tests"</code></pre>
+
+<h3>Real-Time Example (QA Team)</h3>
+<p>Two testers work on the same test file:</p>
+<ol>
+<li>Tester A on <code>feature/login-negative</code> adds negative test cases to <code>test_login.py</code></li>
+<li>Tester B on <code>feature/login-sso</code> adds SSO tests to the same file</li>
+<li>Tester A merges first — no conflict</li>
+<li>Tester B merges — conflict in <code>test_login.py</code> (both added to same location)</li>
+<li>Tester B resolves: keeps both sets of tests in proper order</li>
+</ol>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Rebasing <code>main</code> branch — rewrites shared history, breaks teammates' repos</li>
+<li>Deleting branches before ensuring merge was successful</li>
+<li>Not pulling latest <code>main</code> before creating a new branch</li>
+<li>Working directly on <code>main</code> without creating a feature branch</li>
+<li>Ignoring merge conflict markers (committing with <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> still in file)</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is the difference between <code>git merge</code> and <code>git rebase</code>?</strong><br>Merge creates a merge commit and preserves history. Rebase replays commits on top of target branch for linear history. Use merge for shared branches; rebase for private feature branches.</li>
+<li><strong>When would you use <code>--no-ff</code> with merge?</strong><br>When you want to always create a merge commit (even if fast-forward is possible). This preserves branch topology in history — you can see where a feature branch was merged.</li>
+<li><strong>How do you resolve a merge conflict?</strong><br>Open conflicted file, find <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> markers, manually choose correct code, remove markers, <code>git add</code>, <code>git commit</code>.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Section 5 (15 items)</summary>
+<ol>
+<li>Branch = lightweight pointer to a commit</li>
+<li><code>git checkout -b name</code> = create + switch (classic)</li>
+<li><code>git switch -c name</code> = create + switch (modern, Git 2.23+)</li>
+<li>Always create branches from updated <code>main</code></li>
+<li><code>git merge</code> = combine branches with merge commit</li>
+<li><code>git rebase</code> = replay commits for linear history</li>
+<li>Merge is safe for shared branches; rebase only for private</li>
+<li>NEVER rebase main or any public branch</li>
+<li><code>--no-ff</code> = always create merge commit (preserves topology)</li>
+<li>Conflicts show with <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> / <code>=======</code> / <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> markers</li>
+<li>Resolve → add → commit to complete conflicted merge</li>
+<li><code>git branch -d</code> = safe delete | <code>-D</code> = force delete</li>
+<li><code>git branch -a</code> = see all branches (local + remote)</li>
+<li>Feature branch workflow: create → work → PR → merge → delete</li>
+<li>Pull latest main before creating new branch</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 6 ==================== -->
+<section id="section-6" class="section-card">
+<h2>Section 6: Working with Remote Repositories (GitHub/GitLab)</h2>
+
+<h3>Core Remote Commands</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Action</th><th>Direction</th></tr></thead>
+<tbody>
+<tr><td><code>git clone &lt;url&gt;</code></td><td>Copy entire remote repo locally</td><td>Remote → Local</td></tr>
+<tr><td><code>git remote add origin &lt;url&gt;</code></td><td>Connect local repo to remote</td><td>Setup</td></tr>
+<tr><td><code>git remote -v</code></td><td>List all remotes with URLs</td><td>Info</td></tr>
+<tr><td><code>git fetch origin</code></td><td>Download new data but do NOT merge</td><td>Remote → Local (safe)</td></tr>
+<tr><td><code>git pull origin main</code></td><td>Fetch + merge into current branch</td><td>Remote → Local (merges)</td></tr>
+<tr><td><code>git pull --rebase</code></td><td>Fetch + rebase (cleaner history)</td><td>Remote → Local (rebase)</td></tr>
+<tr><td><code>git push -u origin main</code></td><td>First push + set upstream tracking</td><td>Local → Remote</td></tr>
+<tr><td><code>git push</code></td><td>Push committed changes to remote</td><td>Local → Remote</td></tr>
+<tr><td><code>git push origin &lt;branch&gt;</code></td><td>Push specific branch</td><td>Local → Remote</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Fetch vs Pull</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>git fetch</th><th>git pull</th></tr></thead>
+<tbody>
+<tr><td>Downloads data</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>Merges into branch</td><td>No (safe to inspect first)</td><td>Yes (automatic merge)</td></tr>
+<tr><td>Risk</td><td>Zero — just downloads</td><td>May cause merge conflicts</td></tr>
+<tr><td>Use case</td><td>See what changed before integrating</td><td>Quick update when confident</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout"><strong>Pro Tip:</strong> Always <code>git pull --rebase</code> before pushing. This keeps your commit history linear and avoids unnecessary merge commits.</div>
+
+<h3>Pull Request (PR) Workflow for QA Teams</h3>
+<div class="ascii-diagram">1. Create feature branch locally
+   git checkout -b feature/TC-123-login-tests
+
+2. Write/update tests, commit
+   git add . && git commit -m "test(login): add SSO tests"
+
+3. Push branch to remote
+   git push -u origin feature/TC-123-login-tests
+
+4. Open Pull Request on GitHub/GitLab
+   - Title: "test(login): Add SSO authentication tests"
+   - Describe changes, link to Jira ticket
+   - Request review from lead
+
+5. CI/CD runs tests automatically on PR
+   → GitHub Actions / Jenkins / GitLab CI
+
+6. Reviewers approve → Merge to main
+   → Delete feature branch after merge</div>
+
+<h3>Real-Time Example</h3>
+<pre><code># Clone the automation framework repo
+git clone https://github.com/your-org/test-automation.git
+cd test-automation
+
+# Create feature branch
+git checkout -b feature/TC-456-checkout-tests
+
+# Write tests...
+git add tests/test_checkout.py
+git commit -m "test(checkout): add payment gateway validation"
+
+# Push and create PR
+git push -u origin feature/TC-456-checkout-tests
+# → Go to GitHub → Create Pull Request</code></pre>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Pushing without pulling first — results in rejected push</li>
+<li>Using <code>git push --force</code> on shared branches — destroys teammates' work</li>
+<li>Not setting upstream with <code>-u</code> on first push — subsequent <code>git push</code> fails</li>
+<li>Cloning with HTTPS when SSH is configured (or vice versa) — authentication errors</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is the difference between <code>git fetch</code> and <code>git pull</code>?</strong><br><code>fetch</code> downloads remote changes without merging. <code>pull</code> = fetch + merge. Use fetch when you want to inspect changes first.</li>
+<li><strong>What does <code>git push -u origin main</code> do?</strong><br>Pushes the main branch to origin AND sets upstream tracking. After this, you can just use <code>git push</code> without specifying remote and branch.</li>
+<li><strong>What is <code>--force-with-lease</code>?</strong><br>A safer alternative to <code>--force</code>. It only force-pushes if no one else has pushed to the branch since your last fetch. Prevents overwriting others' work.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Section 6 (12 items)</summary>
+<ol>
+<li><code>git clone</code> = download remote repo with full history</li>
+<li><code>git remote add origin &lt;url&gt;</code> = connect local to remote</li>
+<li><code>git fetch</code> = download only (safe, no merge)</li>
+<li><code>git pull</code> = fetch + merge (may cause conflicts)</li>
+<li><code>git pull --rebase</code> = fetch + rebase (cleaner)</li>
+<li><code>git push -u origin branch</code> = first push with upstream tracking</li>
+<li>Always pull before push to avoid rejections</li>
+<li>Never <code>--force</code> on shared branches; use <code>--force-with-lease</code></li>
+<li>PR workflow: branch → commit → push → PR → review → merge</li>
+<li>CI/CD triggers on PR creation automatically</li>
+<li>Delete feature branch after merge to keep repo clean</li>
+<li>Use SSH keys for authentication (more secure than HTTPS tokens)</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 7 ==================== -->
+<section id="section-7" class="section-card">
+<h2>Section 7: Advanced Git — Undo, Recover, Rewrite History</h2>
+
+<h3>Undoing Changes — Complete Guide</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>What It Does</th><th>Changes State</th><th>Safe for Shared?</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td><code>git revert HEAD</code></td><td>Creates NEW commit that undoes last commit</td><td>Committed</td><td>Yes (safest)</td><td>Undo public commit without rewriting history</td></tr>
+<tr><td><code>git reset --soft HEAD~1</code></td><td>Removes last commit, keeps changes staged</td><td>Staged</td><td>No (private only)</td><td>Re-commit with different message/content</td></tr>
+<tr><td><code>git reset --mixed HEAD~1</code></td><td>Removes last commit, keeps changes unstaged</td><td>Modified</td><td>No (private only)</td><td>Rework changes before recommitting</td></tr>
+<tr><td><code>git reset --hard HEAD~1</code></td><td>Removes last commit AND deletes all changes</td><td>Gone forever</td><td>No (DESTRUCTIVE)</td><td>Completely discard last commit</td></tr>
+<tr><td><code>git commit --amend</code></td><td>Replace last commit with new one</td><td>Committed (rewritten)</td><td>No (private only)</td><td>Fix typo in commit message, add forgotten file</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Architecture / Flow Diagram</h3>
+<div class="ascii-diagram">RESET Modes Comparison:
+
+Commit History:  A ← B ← C (HEAD)
+
+git reset --soft HEAD~1:    A ← B (HEAD)    Changes from C are STAGED
+git reset --mixed HEAD~1:   A ← B (HEAD)    Changes from C are UNSTAGED  
+git reset --hard HEAD~1:    A ← B (HEAD)    Changes from C are DELETED ⚠️
+
+git revert HEAD:            A ← B ← C ← C' (HEAD)   C' undoes C (safe, new commit)</div>
+
+<h3>Stashing — Temporary Shelf</h3>
+<p>Stash saves your uncommitted work temporarily so you can switch branches cleanly.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><code>git stash</code></td><td>Save uncommitted changes to stash stack</td></tr>
+<tr><td><code>git stash list</code></td><td>View all stashes</td></tr>
+<tr><td><code>git stash pop</code></td><td>Apply latest stash AND remove from stack</td></tr>
+<tr><td><code>git stash apply</code></td><td>Apply latest stash but keep in stack</td></tr>
+<tr><td><code>git stash drop stash@{1}</code></td><td>Delete specific stash</td></tr>
+<tr><td><code>git stash -m "description"</code></td><td>Stash with meaningful name</td></tr>
+<tr><td><code>git stash branch &lt;name&gt;</code></td><td>Create branch from stash</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Real-Time Example</h3>
+<pre><code># Scenario: You're mid-work on login tests when an urgent bug fix is needed
+
+# Save current unfinished work
+git stash -m "WIP: login negative tests incomplete"
+
+# Switch to hotfix branch
+git checkout -b hotfix/broken-checkout
+# ... fix the bug, commit, push ...
+git checkout main && git merge hotfix/broken-checkout
+
+# Return to your work
+git checkout feature/login-tests
+git stash pop   # Restore your WIP changes</code></pre>
+
+<h3>Recovering Lost Commits — Git Reflog</h3>
+<pre><code># git reflog shows ALL HEAD movements (even after reset --hard)
+git reflog
+
+# Example output:
+# abc1234 HEAD@{0}: reset: moving to HEAD~1
+# def5678 HEAD@{1}: commit: test: add payment tests    ← the "lost" commit
+
+# Recover the lost commit
+git reset --hard def5678   # or
+git cherry-pick def5678    # Apply it as new commit</code></pre>
+
+<div class="callout"><strong>Lifesaver:</strong> <code>git reflog</code> keeps records for 90 days by default. If you accidentally <code>reset --hard</code>, you can STILL recover using reflog. Nothing in Git is truly lost (within 90 days).</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How would you undo a public commit that broke CI?</strong><br>Use <code>git revert &lt;hash&gt;</code> — it creates a new commit that undoes the changes without rewriting history.</li>
+<li><strong>Explain <code>git reset --soft</code>, <code>--mixed</code>, <code>--hard</code>.</strong><br>Soft: uncommit, keep staged. Mixed: uncommit, keep unstaged. Hard: uncommit AND delete changes. Only use on private/local branches.</li>
+<li><strong>You accidentally ran <code>git reset --hard</code> and lost work. How to recover?</strong><br>Use <code>git reflog</code> to find the lost commit hash, then <code>git reset --hard &lt;hash&gt;</code> or <code>git cherry-pick &lt;hash&gt;</code> to recover.</li>
+<li><strong>What is <code>git stash</code> used for?</strong><br>Temporarily shelving uncommitted changes to work on something else (like an urgent bugfix), then restoring later with <code>git stash pop</code>.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Section 7 (15 items)</summary>
+<ol>
+<li><code>git revert</code> = safe undo (creates new commit, preserves history)</li>
+<li><code>git reset --soft HEAD~1</code> = uncommit, keep changes staged</li>
+<li><code>git reset --mixed HEAD~1</code> = uncommit, keep changes unstaged</li>
+<li><code>git reset --hard HEAD~1</code> = DELETE last commit + changes (destructive)</li>
+<li><code>git commit --amend</code> = fix last commit (message or content)</li>
+<li>Use revert for public branches; reset for private only</li>
+<li><code>git stash</code> = temporary shelf for WIP changes</li>
+<li><code>git stash pop</code> = restore + remove | <code>apply</code> = restore + keep</li>
+<li><code>git stash -m "desc"</code> = name your stashes</li>
+<li><code>git reflog</code> = shows ALL HEAD movements (recovery tool)</li>
+<li>Reflog keeps data for 90 days — nothing truly lost</li>
+<li>Never reset --hard on shared branches</li>
+<li>Never amend commits already pushed to remote</li>
+<li><code>--force-with-lease</code> safer than <code>--force</code> if you must force push</li>
+<li>Recovery: reflog → find hash → reset/cherry-pick</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 8 ==================== -->
+<section id="section-8" class="section-card">
+<h2>Section 8: Git for QA Automation Engineers — Overview</h2>
+
+<h3>Why QA Engineers Need Advanced Git</h3>
+<p>As a QA Automation Engineer with 4+ years experience, you go beyond basic commit/push. You need Git skills for:</p>
+<ul>
+<li><strong>Shift-Left Testing</strong> — Enforce quality before code reaches CI (Git Hooks)</li>
+<li><strong>Bug Hunting</strong> — Find exact commits that introduced failures (git bisect)</li>
+<li><strong>Selective Deployment</strong> — Move specific test fixes between branches (cherry-pick)</li>
+<li><strong>Framework Management</strong> — Version your test framework with tags</li>
+<li><strong>Large Test Data</strong> — Handle big files without bloating the repo (Git LFS)</li>
+<li><strong>Shared Libraries</strong> — Reuse test utilities across projects (Submodules)</li>
+<li><strong>CI/CD Integration</strong> — Trigger automated test runs on every push/PR</li>
+</ul>
+
+<h3>QA Git Ecosystem Map</h3>
+<div class="ascii-diagram">┌─────────────────────── QA AUTOMATION GIT ECOSYSTEM ───────────────────────┐
+│                                                                           │
+│   LOCAL MACHINE                    REMOTE (GitHub/GitLab)                 │
+│   ┌─────────────────┐            ┌─────────────────────────────┐        │
+│   │ Test Scripts     │ ──push──► │  Repository                  │        │
+│   │ Page Objects     │            │  ├── Pull Requests           │        │
+│   │ Test Data        │ ◄──pull── │  ├── Branch Protection Rules  │        │
+│   │ Framework Config │            │  ├── CI/CD (GitHub Actions)  │        │
+│   └─────────────────┘            │  └── Code Review             │        │
+│          │                        └─────────────────────────────┘        │
+│   ┌──────▼──────────┐                       │                            │
+│   │ Git Hooks        │            ┌──────────▼───────────┐               │
+│   │ ├── pre-commit   │            │  CI Pipeline         │               │
+│   │ ├── pre-push     │            │  ├── Install deps    │               │
+│   │ └── commit-msg   │            │  ├── Run tests       │               │
+│   └─────────────────┘            │  ├── Generate report │               │
+│                                   │  └── Notify team     │               │
+│   ┌─────────────────┐            └──────────────────────┘               │
+│   │ .gitignore       │                                                   │
+│   │ .gitattributes   │                                                   │
+│   │ Git LFS          │                                                   │
+│   │ Submodules       │                                                   │
+│   └─────────────────┘                                                   │
+└───────────────────────────────────────────────────────────────────────────┘</div>
+
+<h3>Skills Expected at 4-Year Experience Level</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Skill Area</th><th>Beginner (0-1 yr)</th><th>Intermediate (1-3 yr)</th><th>Advanced (3-5 yr)</th></tr></thead>
+<tbody>
+<tr><td>Basic Commands</td><td>add, commit, push, pull</td><td>+ branch, merge, stash</td><td>+ rebase, cherry-pick, bisect</td></tr>
+<tr><td>Branching</td><td>Work on main only</td><td>Feature branches</td><td>Branching strategy design</td></tr>
+<tr><td>Conflict Resolution</td><td>Avoid/ask for help</td><td>Resolve simple conflicts</td><td>Complex merges, strategy selection</td></tr>
+<tr><td>CI/CD</td><td>Push triggers pipeline</td><td>Understand pipeline stages</td><td>Write/maintain CI config</td></tr>
+<tr><td>Recovery</td><td>Re-clone if something breaks</td><td>Stash, revert</td><td>Reflog, reset, interactive rebase</td></tr>
+<tr><td>Automation</td><td>None</td><td>Basic hooks</td><td>Custom hooks, LFS, submodules</td></tr>
+</tbody>
+</table>
+</div>
+
+<details class="revision"><summary>Quick Revision — Section 8 (10 items)</summary>
+<ol>
+<li>QA engineers need advanced Git: hooks, bisect, cherry-pick, LFS, submodules</li>
+<li>Shift-left = enforce quality before code reaches CI</li>
+<li>Git bisect = binary search to find bug-introducing commit</li>
+<li>Cherry-pick = selective commit deployment between branches</li>
+<li>Git tags = version your test framework</li>
+<li>Git LFS = handle large test data files</li>
+<li>Submodules = share test utilities across repos</li>
+<li>4-year tester should know: rebase, bisect, cherry-pick, hooks, CI config</li>
+<li>CI/CD integration = tests run automatically on every push/PR</li>
+<li>Branch protection rules = enforce review + CI pass before merge</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 9 ==================== -->
+<section id="section-9" class="section-card">
+<h2>Section 9: Git Hooks — Shift-Left Testing</h2>
+
+<h3>Concept Explanation</h3>
+<p>Git hooks are scripts that run <strong>automatically</strong> at certain Git events. They enforce quality gates locally before code ever reaches the remote repository. This is the essence of <strong>Shift-Left Testing</strong> — catching issues as early as possible.</p>
+<p>Hook scripts live in <code>.git/hooks/</code> directory (remove <code>.sample</code> extension to activate).</p>
+
+<h3>Hook Types for QA</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Hook</th><th>When It Runs</th><th>QA Use Case</th></tr></thead>
+<tbody>
+<tr><td><code>pre-commit</code></td><td>Before a commit is created</td><td>Lint test code, check for hardcoded secrets, enforce formatting</td></tr>
+<tr><td><code>pre-push</code></td><td>Before <code>git push</code></td><td>Run smoke/unit tests — block push if tests fail</td></tr>
+<tr><td><code>commit-msg</code></td><td>After user enters commit message</td><td>Validate format (Conventional Commits), require Jira ticket ID</td></tr>
+<tr><td><code>post-checkout</code></td><td>After <code>git checkout</code></td><td>Auto-install dependencies, set env vars for test framework</td></tr>
+<tr><td><code>post-merge</code></td><td>After a merge completes</td><td>Run <code>npm install</code> if package.json changed</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Example: pre-push Hook (Block Push if Tests Fail)</h3>
+<pre><code>#!/bin/bash
+# File: .git/hooks/pre-push (must be executable: chmod +x)
+echo "🧪 Running smoke tests before push..."
+pytest tests/smoke/ --maxfail=1 -q
+if [ $? -ne 0 ]; then
+    echo "❌ Tests failed. Push aborted."
+    echo "Fix failing tests before pushing."
+    exit 1
+fi
+echo "✅ All smoke tests passed. Pushing..."
+exit 0</code></pre>
+
+<h3>Example: commit-msg Hook (Enforce Conventional Commits)</h3>
+<pre><code>#!/bin/bash
+# File: .git/hooks/commit-msg
+MSG=$(cat "$1")
+PATTERN="^(feat|fix|test|refactor|chore|docs|style|ci)(\(.+\))?: .{10,}"
+if ! echo "$MSG" | grep -qE "$PATTERN"; then
+    echo "❌ Invalid commit message format!"
+    echo "Expected: type(scope): description (min 10 chars)"
+    echo "Example: test(login): add negative scenarios for empty password"
+    exit 1
+fi</code></pre>
+
+<h3>Team-Wide Hooks (Shared via Repo)</h3>
+<p>Hooks in <code>.git/hooks/</code> are NOT committed (local only). To share hooks across the team:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tool</th><th>Language</th><th>How It Works</th></tr></thead>
+<tbody>
+<tr><td><strong>Husky</strong></td><td>Node.js</td><td>Defines hooks in <code>package.json</code> or <code>.husky/</code> folder — auto-installs on <code>npm install</code></td></tr>
+<tr><td><strong>pre-commit</strong></td><td>Python</td><td>Defines hooks in <code>.pre-commit-config.yaml</code> — auto-installs on setup</td></tr>
+<tr><td><strong>lefthook</strong></td><td>Go</td><td>Fast, config in <code>lefthook.yml</code> — cross-platform</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Project-Based Example — pre-commit-config.yaml</h3>
+<pre><code># .pre-commit-config.yaml (Python-based projects)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: detect-private-key    # Prevent secret leaks
+
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black                 # Auto-format Python code
+
+  - repo: local
+    hooks:
+      - id: run-smoke-tests
+        name: Smoke Tests
+        entry: pytest tests/smoke/ -q --maxfail=1
+        language: system
+        pass_filenames: false
+        stages: [push]</code></pre>
+
+<h3>Best Practices</h3>
+<ol>
+<li>Keep pre-commit hooks FAST (&lt;5 seconds) — linting and formatting only</li>
+<li>Run heavier tests (unit/integration) in pre-push, not pre-commit</li>
+<li>Use shared hook tools (Husky/pre-commit) instead of manual .git/hooks</li>
+<li>Always allow bypass with <code>--no-verify</code> for emergencies (but document why)</li>
+<li>Don't run full test suites in hooks — that belongs in CI/CD</li>
+</ol>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Making hooks too slow (running full test suite on pre-commit)</li>
+<li>Forgetting <code>chmod +x</code> on hook scripts (won't execute on Unix)</li>
+<li>Not sharing hooks with team — only one person has quality gates</li>
+<li>Blocking push with flaky tests — use only reliable smoke tests in hooks</li>
+</ul>
+
+<details class="revision"><summary>Quick Revision — Section 9 (12 items)</summary>
+<ol>
+<li>Git hooks = scripts that run automatically at Git events</li>
+<li>Shift-Left = catch issues before they reach remote/CI</li>
+<li>pre-commit: lint, format, check secrets (FAST, &lt;5 sec)</li>
+<li>pre-push: run smoke/unit tests (block push if fail)</li>
+<li>commit-msg: validate commit message format</li>
+<li>Hooks live in <code>.git/hooks/</code> (local, not committed)</li>
+<li>Share via Husky (Node), pre-commit (Python), lefthook (Go)</li>
+<li>Keep hooks fast — heavy testing belongs in CI/CD</li>
+<li><code>chmod +x</code> required on Unix for hook execution</li>
+<li><code>--no-verify</code> bypasses hooks (emergency only)</li>
+<li>Never put full regression suite in hooks</li>
+<li>detect-private-key hook prevents secret leaks</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 10 ==================== -->
+<section id="section-10" class="section-card">
+<h2>Section 10: Test-Specific Branching Strategies</h2>
+
+<h3>Concept Explanation</h3>
+<p>In a QA automation team, branching strategy determines how test code flows from development to production. A well-defined strategy prevents conflicts, ensures test stability, and enables parallel development.</p>
+
+<h3>Recommended Branch Structure for QA Teams</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Branch</th><th>Purpose</th><th>Who Works Here</th><th>Merges To</th></tr></thead>
+<tbody>
+<tr><td><code>main</code></td><td>Stable, production-ready tests (always passing)</td><td>No direct commits</td><td>—</td></tr>
+<tr><td><code>develop</code></td><td>Integration branch for completed features</td><td>Merges from feature/*</td><td>main (releases)</td></tr>
+<tr><td><code>feature/*</code></td><td>New test cases, refactoring, data updates</td><td>Individual testers</td><td>develop</td></tr>
+<tr><td><code>hotfix/*</code></td><td>Urgent fixes for broken tests in main</td><td>Lead/On-call</td><td>main + develop</td></tr>
+<tr><td><code>release/*</code></td><td>Pre-release validation, final test runs</td><td>QA Lead</td><td>main + develop</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Architecture / Flow Diagram</h3>
+<div class="ascii-diagram">main:      ──●────────────────────●────────────────●──── (always stable)
+              \                  /                  /
+develop:       ──●──●──●──●──●──●──●──●──●──●──●── (integration)
+                  \     /  \        /
+feature/login:     ●──●    \      /
+                            \    /
+feature/cart:                ●──●
+
+hotfix/urgent:  ──────────────────●──● (branches from main, merges to both)
+                                     ↓
+                              merges to main AND develop</div>
+
+<h3>Recommended Workflow for QA Testers</h3>
+<ol>
+<li>Create <code>feature/TC-123-login-test</code> from <code>develop</code> (or <code>main</code>)</li>
+<li>Write/update tests, commit frequently with good messages</li>
+<li>Push branch and create Pull Request (PR)</li>
+<li>PR triggers CI to run tests automatically</li>
+<li>After review and CI passes, merge into <code>develop</code></li>
+<li>When release is ready, merge <code>develop</code> into <code>main</code></li>
+</ol>
+
+<h3>Branch Naming Conventions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Pattern</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Feature</td><td><code>feature/JIRA-ID-short-desc</code></td><td><code>feature/TC-123-login-tests</code></td></tr>
+<tr><td>Bug Fix</td><td><code>fix/JIRA-ID-short-desc</code></td><td><code>fix/BUG-456-broken-checkout-flow</code></td></tr>
+<tr><td>Hotfix</td><td><code>hotfix/short-desc</code></td><td><code>hotfix/urgent-test-failure</code></td></tr>
+<tr><td>Chore</td><td><code>chore/short-desc</code></td><td><code>chore/update-selenium-version</code></td></tr>
+<tr><td>Refactor</td><td><code>refactor/short-desc</code></td><td><code>refactor/page-object-cleanup</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Branch Protection Rules (GitHub/GitLab)</h3>
+<ul>
+<li><strong>Require PR reviews</strong> — At least 1-2 approvals before merge</li>
+<li><strong>Require CI pass</strong> — Tests must pass before merge is allowed</li>
+<li><strong>No direct push to main</strong> — All changes via PRs only</li>
+<li><strong>Require up-to-date branch</strong> — Must be rebased/merged with target before merge</li>
+<li><strong>Dismiss stale reviews</strong> — If new commits are pushed, old approvals are invalidated</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What branching strategy does your team use?</strong><br>We use GitFlow variant: main (stable), develop (integration), feature/* for new tests. All changes via PRs with mandatory CI pass and 1 reviewer approval.</li>
+<li><strong>How do you handle an urgent test fix needed in production?</strong><br>Create hotfix/* from main, fix, PR, merge to BOTH main and develop to keep them in sync.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Section 10 (10 items)</summary>
+<ol>
+<li>main = always stable, production-ready tests</li>
+<li>develop = integration branch for completed features</li>
+<li>feature/* = individual test development</li>
+<li>hotfix/* = urgent fixes from main (merge back to main + develop)</li>
+<li>Branch naming: type/JIRA-ID-short-description</li>
+<li>Never commit directly to main — always use PRs</li>
+<li>Branch protection: require reviews + CI pass</li>
+<li>PR workflow: branch → commit → push → PR → review → merge</li>
+<li>Delete feature branches after merge</li>
+<li>Keep branches short-lived (merge within 1-3 days)</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 11 ==================== -->
+<section id="section-11" class="section-card">
+<h2>Section 11: git bisect — Automated Bug Hunter</h2>
+
+<h3>Concept Explanation</h3>
+<p><code>git bisect</code> performs a <strong>binary search</strong> through commit history to find the exact commit that introduced a bug. Instead of checking every commit linearly (O(n)), it halves the range each step (O(log n)). For a QA tester, this is invaluable for identifying when a test started failing.</p>
+
+<h3>How Binary Search Works</h3>
+<div class="ascii-diagram">100 commits to search:
+
+Linear search: check 1, 2, 3, ... → up to 100 checks
+Binary search: check 50, 25, 12, 6, 3, 1 → only 7 checks!
+
+Commits: [GOOD] ● ● ● ● ● ● ● ● [BAD] ● ● ● ● ● ● ● ● [CURRENT - BAD]
+                              ▲
+                    bisect checks here first (middle)
+                    
+If middle is GOOD → bug is in right half
+If middle is BAD  → bug is in left half
+Repeat until found!</div>
+
+<h3>Manual Bisect</h3>
+<pre><code># Start bisect session
+git bisect start
+
+# Mark current commit as bad (test is failing here)
+git bisect bad
+
+# Mark a known good commit (test was passing here)
+git bisect good v1.0    # or a commit hash
+
+# Git checks out a middle commit — you test manually:
+# Run your test, then mark:
+git bisect good   # if test passes on this commit
+git bisect bad    # if test fails on this commit
+
+# Repeat until Git identifies the first bad commit
+# Output: "abc1234 is the first bad commit"
+
+# End bisect session
+git bisect reset</code></pre>
+
+<h3>Automated Bisect (Most Powerful for QA)</h3>
+<pre><code># Fully automated — Git runs your test at each step
+git bisect start
+git bisect bad                          # Current is broken
+git bisect good v1.0                    # This version was working
+git bisect run pytest tests/test_login.py -x   # Run this test automatically
+
+# Git will:
+# 1. Checkout middle commit
+# 2. Run pytest tests/test_login.py
+# 3. If exit code 0 (pass) → mark as good
+# 4. If exit code non-0 (fail) → mark as bad
+# 5. Repeat until faulty commit found
+# 6. Output: "abc1234 is the first bad commit"
+
+git bisect reset   # Clean up</code></pre>
+
+<h3>Handling Flaky Tests with --skip</h3>
+<pre><code># If a test is flaky (intermittent pass/fail), use skip:
+git bisect start
+git bisect bad
+git bisect good v1.0
+
+# During manual bisect, if result is ambiguous:
+git bisect skip   # Skip this commit, try another
+
+# For automated bisect with flaky tests:
+# Exit code 125 = skip this commit
+# Your script should return 125 for inconclusive results</code></pre>
+
+<h3>Real-Time Example</h3>
+<p>Scenario: Login test <code>test_login_valid_credentials</code> started failing 3 days ago. 50 commits have been made since it last passed.</p>
+<ol>
+<li>Find the last known good commit: <code>git log --oneline --since="3 days ago"</code></li>
+<li>Start automated bisect: <code>git bisect start && git bisect bad && git bisect good &lt;hash&gt;</code></li>
+<li><code>git bisect run pytest tests/test_login.py::test_login_valid_credentials -x</code></li>
+<li>In ~6 steps (log2(50)), Git finds the exact commit that broke the test</li>
+<li>Share the commit hash with the developer: "This commit broke login tests"</li>
+</ol>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is <code>git bisect</code> and how does a tester use it?</strong><br>Binary search through commits to find which one introduced a bug. QA can automate it with a test script — Git runs the test at each step and identifies the faulty commit.</li>
+<li><strong>How many steps does bisect take for 1000 commits?</strong><br>log2(1000) ≈ 10 steps. Binary search is extremely efficient.</li>
+<li><strong>What exit code should a bisect script return for skip?</strong><br>Exit code 125 tells Git to skip the current commit (useful for flaky tests or build failures).</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Section 11 (10 items)</summary>
+<ol>
+<li><code>git bisect</code> = binary search for bug-introducing commit</li>
+<li>O(log n) complexity — 7 steps for 100 commits, 10 for 1000</li>
+<li><code>git bisect start</code> → <code>bad</code> → <code>good</code> → test → mark → repeat</li>
+<li><code>git bisect run &lt;script&gt;</code> = fully automated</li>
+<li>Exit 0 = good, non-0 = bad, 125 = skip</li>
+<li><code>git bisect reset</code> = end session, return to original state</li>
+<li>Perfect for finding "when did this test start failing?"</li>
+<li><code>git bisect skip</code> = skip ambiguous/flaky commits</li>
+<li>Share faulty commit with dev team for quick resolution</li>
+<li>Most underused yet most powerful QA debugging tool</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 12 ==================== -->
+<section id="section-12" class="section-card">
+<h2>Section 12: Cherry-Pick, Git LFS &amp; Submodules</h2>
+
+<h3>git cherry-pick — Selective Commit Deployment</h3>
+<p>Apply a <strong>specific commit</strong> from one branch to another without merging the entire branch.</p>
+<pre><code># Apply a specific commit to current branch
+git checkout qa
+git cherry-pick &lt;commit-hash&gt;   # Bring just that test fix into qa
+
+# Cherry-pick multiple commits
+git cherry-pick abc123 def456 ghi789
+
+# Cherry-pick without committing (stage only)
+git cherry-pick --no-commit &lt;hash&gt;</code></pre>
+
+<h4>Use Cases for QA</h4>
+<ul>
+<li>Critical test fix needed on release branch, but develop has unstable tests — cherry-pick only the fix</li>
+<li>Backport a test improvement to an older version branch</li>
+<li>Apply a specific bug fix from one team member's branch</li>
+</ul>
+
+<h3>Git LFS — Large File Storage</h3>
+<p>Git is not designed for large binary files. Git LFS replaces large files with text pointers in the repo, storing actual files on a separate server.</p>
+
+<pre><code># Install Git LFS (one-time)
+git lfs install
+
+# Track large files by pattern
+git lfs track "*.iso"
+git lfs track "test-data/*.csv"
+git lfs track "*.mp4"          # Recorded test videos
+
+# Commit the .gitattributes (tracking config)
+git add .gitattributes
+git commit -m "chore: track large test files with LFS"
+
+# Then use git normally — LFS handles the rest
+git add test-data/large-dataset.csv
+git commit -m "test: add performance test dataset"
+git push</code></pre>
+
+<h4>When to Use LFS (QA Context)</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>File Type</th><th>Use LFS?</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Test data files (&gt;50MB)</td><td>Yes</td><td>CSV datasets, database dumps</td></tr>
+<tr><td>Recorded UI test videos</td><td>Yes</td><td>Playwright/Cypress recordings</td></tr>
+<tr><td>Browser binaries</td><td>Yes</td><td>Specific Chrome/Firefox versions</td></tr>
+<tr><td>Test scripts (.py, .java)</td><td>No</td><td>Small text files — normal Git</td></tr>
+<tr><td>Config files (.json, .yaml)</td><td>No</td><td>Small text — normal Git</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Git Submodules — Shared Test Libraries</h3>
+<p>When multiple projects share a common test utility library, use submodules to include it.</p>
+<pre><code># Add shared library as submodule
+git submodule add https://github.com/your-org/common-test-lib.git libs/common
+
+# After cloning a repo with submodules:
+git submodule update --init --recursive
+
+# Update submodule to latest
+cd libs/common
+git pull origin main
+cd ../..
+git add libs/common
+git commit -m "chore: update shared test library"</code></pre>
+
+<div class="callout"><strong>Submodule Gotcha:</strong> Submodules stay at a specific commit. They don't auto-update. Team members must run <code>git submodule update --init --recursive</code> after cloning.</div>
+
+<h3>.gitignore Patterns for Test Artifacts</h3>
+<pre><code># Test reports and results
+*.log
+*.xml
+*.trx
+*.html
+test-reports/
+allure-results/
+playwright-report/
+cypress/screenshots/
+cypress/videos/
+
+# Secrets and credentials
+.env
+.env.local
+secrets.yml
+*.pem
+*.key
+
+# Dependency caches
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS files
+.DS_Store
+Thumbs.db</code></pre>
+
+<h3>.gitattributes for Test Files</h3>
+<pre><code># Prevent merge conflicts in generated files
+test-results.xml merge=ours
+allure-report/** merge=ours
+
+# Ensure consistent line endings
+*.py text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+
+# Mark binary files
+*.png binary
+*.jpg binary</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>When would you use cherry-pick vs merge?</strong><br>Cherry-pick: when you need ONE specific commit on another branch. Merge: when you want ALL commits from a branch. Cherry-pick for targeted fixes; merge for feature completion.</li>
+<li><strong>What is Git LFS and when would a tester use it?</strong><br>Large File Storage for binary/large files. Testers use it for test data files, recorded videos, and browser binaries that would bloat the normal repo.</li>
+<li><strong>How do you share a common test utility across 5 repos?</strong><br>Option 1: Git submodules. Option 2: Package manager (publish as npm/pip package with version tags). Submodules for simple sharing; packages for proper versioning.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Section 12 (12 items)</summary>
+<ol>
+<li><code>git cherry-pick &lt;hash&gt;</code> = apply one commit to current branch</li>
+<li>Use cherry-pick for targeted fixes without full merge</li>
+<li>Git LFS = stores large files externally, text pointers in repo</li>
+<li><code>git lfs track "*.csv"</code> → commit .gitattributes</li>
+<li>Use LFS for: test data &gt;50MB, videos, binaries</li>
+<li>Submodules = include external repo inside your repo</li>
+<li><code>git submodule add &lt;url&gt; path/</code> = add submodule</li>
+<li>Submodules stay at specific commit — must manually update</li>
+<li><code>git submodule update --init --recursive</code> after clone</li>
+<li>.gitignore: always exclude reports, secrets, caches, IDE files</li>
+<li>.gitattributes: prevent merge conflicts in generated files</li>
+<li>Alternative to submodules: publish as package (npm/pip)</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 13 ==================== -->
+<section id="section-13" class="section-card">
+<h2>Section 13: CI/CD Integration with Git</h2>
+
+<h3>Concept Explanation</h3>
+<p>CI/CD (Continuous Integration / Continuous Delivery) automates the process of testing and deploying code. For QA engineers, this means <strong>tests run automatically</strong> on every push or PR — no manual triggering needed.</p>
+
+<h3>How Git Triggers CI/CD</h3>
+<div class="ascii-diagram">Developer/Tester pushes code
+         │
+         ▼
+Git Remote (GitHub/GitLab) receives push
+         │
+         ▼
+CI/CD Pipeline triggered (GitHub Actions / Jenkins / GitLab CI)
+         │
+         ├── Stage 1: Install dependencies
+         ├── Stage 2: Lint / Static analysis
+         ├── Stage 3: Unit tests
+         ├── Stage 4: Integration tests
+         ├── Stage 5: Generate test report
+         └── Stage 6: Notify team (Slack/Email)
+         │
+         ▼
+Results posted back to PR (pass/fail badge)</div>
+
+<h3>GitHub Actions Example — Run Tests on Every Push</h3>
+<pre><code># .github/workflows/tests.yml
+name: Run Test Suite
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest tests/ --junitxml=test-results.xml --html=report.html
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: |
+            test-results.xml
+            report.html</code></pre>
+
+<h3>Git Tags for Framework Versioning</h3>
+<pre><code># Create annotated tag (recommended)
+git tag -a v1.2.3 -m "Release: test suite with new login flows"
+
+# Push tags to remote
+git push origin v1.2.3
+git push origin --tags   # Push all tags
+
+# List tags
+git tag -l "v1.*"
+
+# Checkout specific version
+git checkout v1.2.3</code></pre>
+
+<h3>Semantic Versioning for Test Frameworks</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Version Part</th><th>When to Increment</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>MAJOR</strong> (X.0.0)</td><td>Breaking changes (framework restructure, removed features)</td><td>1.0.0 → 2.0.0</td></tr>
+<tr><td><strong>MINOR</strong> (0.X.0)</td><td>New features (new test modules, new utilities)</td><td>1.0.0 → 1.1.0</td></tr>
+<tr><td><strong>PATCH</strong> (0.0.X)</td><td>Bug fixes (fix flaky test, correct assertion)</td><td>1.1.0 → 1.1.1</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Branch Protection + CI Integration</h3>
+<ul>
+<li><strong>Required status checks</strong> — PR cannot merge unless CI pipeline passes</li>
+<li><strong>Required reviewers</strong> — At least 1 approval from lead</li>
+<li><strong>Auto-merge</strong> — When all checks pass and approved, merge automatically</li>
+<li><strong>Delete branch on merge</strong> — Auto-cleanup after merge</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How do you integrate tests with CI/CD using Git?</strong><br>Configure pipeline (GitHub Actions/Jenkins) to trigger on push/PR events. Pipeline checks out code, installs deps, runs tests, reports results back to PR.</li>
+<li><strong>How do you version your test framework?</strong><br>Use Git tags with semantic versioning (v1.2.3). Automate with tools like semantic-release based on Conventional Commits.</li>
+<li><strong>What happens if CI fails on a PR?</strong><br>With branch protection rules, the merge button is blocked. Developer/tester must fix the failure and push again. CI re-runs on the new push.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Section 13 (10 items)</summary>
+<ol>
+<li>CI/CD = automated test execution on every push/PR</li>
+<li>GitHub Actions: <code>.github/workflows/*.yml</code> defines pipelines</li>
+<li>Pipeline: checkout → install → lint → test → report → notify</li>
+<li><code>on: [push, pull_request]</code> = trigger events</li>
+<li>Git tags version your framework: <code>git tag -a v1.2.3 -m "msg"</code></li>
+<li>Semantic versioning: MAJOR.MINOR.PATCH</li>
+<li>Branch protection = require CI pass + reviews before merge</li>
+<li>Upload artifacts (reports) for post-run analysis</li>
+<li><code>strategy.matrix</code> = test across multiple versions</li>
+<li>Conventional Commits enable automated versioning</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 14 ==================== -->
+<section id="section-14" class="section-card">
+<h2>Section 14: Best Practices &amp; Professional Etiquette</h2>
+
+<h3>Commit Messages — Conventional Commits</h3>
+<pre><code>&lt;type&gt;(&lt;scope&gt;): &lt;short summary&gt;
+
+[optional body]
+
+[optional footer(s)]</code></pre>
+
+<h4>Types for QA/Testing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>When to Use</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><code>test</code></td><td>Add or update test cases</td><td><code>test(login): add negative cases for empty password</code></td></tr>
+<tr><td><code>fix</code></td><td>Fix a broken/flaky test</td><td><code>fix(checkout): resolve timing issue in payment test</code></td></tr>
+<tr><td><code>refactor</code></td><td>Improve test code without changing behavior</td><td><code>refactor(pages): extract base page object</code></td></tr>
+<tr><td><code>chore</code></td><td>Update dependencies, config</td><td><code>chore: update selenium to 4.15.0</code></td></tr>
+<tr><td><code>docs</code></td><td>Test documentation</td><td><code>docs: add README for test setup</code></td></tr>
+<tr><td><code>ci</code></td><td>CI/CD pipeline changes</td><td><code>ci: add parallel execution to GitHub Actions</code></td></tr>
+<tr><td><code>feat</code></td><td>New framework feature/utility</td><td><code>feat(utils): add retry mechanism for API calls</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Full Commit Message Example</h3>
+<pre><code>test(login): add negative test cases for empty password
+
+- Add 5 new scenarios using parameterization
+- Update fixture to handle empty field validation
+- Cover edge cases: spaces-only, special characters
+
+Closes #412</code></pre>
+
+<h3>Pull Request Best Practices for QA</h3>
+<ol>
+<li>Run tests locally before pushing (pre-push hook helps)</li>
+<li>Keep PRs small — 1-5 test cases per PR (easier to review)</li>
+<li>Include screenshots or logs for UI test changes</li>
+<li>Request review from automation lead AND one developer</li>
+<li>Use PR templates to standardize descriptions</li>
+<li>Link PR to Jira ticket / test case ID</li>
+<li>Respond to review comments within 24 hours</li>
+</ol>
+
+<h3>Do's and Don'ts</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Do's</th><th>Don'ts</th></tr></thead>
+<tbody>
+<tr><td>Commit often with small, logical changes</td><td>Don't commit large, unrelated changes together</td></tr>
+<tr><td>Write meaningful commit messages</td><td>Don't use vague messages: "fix", "update", "test"</td></tr>
+<tr><td>Pull before pushing</td><td>Don't force push to shared branches</td></tr>
+<tr><td>Use .gitignore for secrets/artifacts</td><td>Don't store passwords or API keys in Git</td></tr>
+<tr><td>Rebase private feature branches</td><td>Don't rebase main or shared branches</td></tr>
+<tr><td>Delete merged branches</td><td>Don't leave stale branches cluttering the repo</td></tr>
+<tr><td>Use descriptive branch names with Jira IDs</td><td>Don't name branches "test", "my-branch", "temp"</td></tr>
+<tr><td>Review teammate's code within 24 hours</td><td>Don't approve PRs without actually reading them</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Git Workflow Checklist (Daily)</h3>
+<ol>
+<li><code>git pull --rebase</code> — Start with latest code</li>
+<li>Create/switch to feature branch</li>
+<li>Write/update tests</li>
+<li><code>git status</code> — Review changes</li>
+<li><code>git diff</code> — Verify diff is correct</li>
+<li><code>git add</code> — Stage relevant files only</li>
+<li><code>git commit -m "type(scope): description"</code></li>
+<li><code>git push</code> — Push to remote</li>
+<li>Create PR if ready for review</li>
+<li>Address review comments, push updates</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Section 14 (12 items)</summary>
+<ol>
+<li>Conventional Commits: type(scope): description</li>
+<li>QA types: test, fix, refactor, chore, docs, ci, feat</li>
+<li>Keep PRs small (1-5 test cases), link to Jira</li>
+<li>Run tests locally before pushing</li>
+<li>Never commit secrets, reports, or IDE files</li>
+<li>Pull before push — always</li>
+<li>Rebase only private branches, merge for shared</li>
+<li>Delete branches after merge</li>
+<li>Use descriptive branch names: feature/JIRA-123-desc</li>
+<li>Respond to PR reviews within 24 hours</li>
+<li>Commit often, small and logical</li>
+<li>Daily: pull → branch → code → status → diff → add → commit → push</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 15 ==================== -->
+<section id="section-15" class="section-card">
+<h2>Section 15: Interview Prep — Git for QA Automation Roles</h2>
+
+<h3>Conceptual Questions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>What is the difference between <code>git pull</code> and <code>git fetch</code>?</td><td><code>fetch</code> only downloads from remote. <code>pull</code> = fetch + merge. Fetch is safer (no auto-merge).</td></tr>
+<tr><td>Explain <code>git reset --soft</code>, <code>--mixed</code>, <code>--hard</code></td><td>Soft: move HEAD, keep staged. Mixed: move HEAD, keep unstaged. Hard: move HEAD, DELETE all changes.</td></tr>
+<tr><td>What is a "detached HEAD" state?</td><td>You checked out a specific commit (not a branch). New commits won't belong to any branch unless you create one.</td></tr>
+<tr><td>How to undo a public commit that broke CI?</td><td><code>git revert &lt;hash&gt;</code> — creates new commit undoing changes safely (no history rewrite).</td></tr>
+<tr><td>What is <code>git bisect</code>?</td><td>Binary search to find the commit that introduced a bug. Automate with <code>git bisect run &lt;test-script&gt;</code>.</td></tr>
+<tr><td>Difference between merge and rebase?</td><td>Merge preserves history with merge commit. Rebase replays commits for linear history. Never rebase shared branches.</td></tr>
+<tr><td>What is <code>git stash</code>?</td><td>Temporarily shelves uncommitted changes. Restore with <code>stash pop</code>. Use when switching context urgently.</td></tr>
+<tr><td>What is <code>git cherry-pick</code>?</td><td>Apply a single specific commit to another branch without merging the whole branch.</td></tr>
+<tr><td>How to recover a deleted branch?</td><td><code>git reflog</code> to find last commit hash, then <code>git checkout -b &lt;name&gt; &lt;hash&gt;</code>.</td></tr>
+<tr><td>What are Git hooks?</td><td>Scripts that run automatically on Git events (pre-commit, pre-push). Used for shift-left testing.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Scenario-Based Questions (4-Year Experience Level)</h3>
+
+<h4>Q1: You accidentally committed a config file with an API key. What do you do?</h4>
+<ol>
+<li><strong>Immediately revoke the key</strong> (security first)</li>
+<li><code>git reset --soft HEAD~1</code> to undo the commit, keep files staged</li>
+<li>Add the file to <code>.gitignore</code></li>
+<li>Remove the key from the file, recommit</li>
+<li>If already pushed: <code>git push --force-with-lease</code> + notify team to re-pull</li>
+<li>Consider using <code>git filter-branch</code> or BFG Repo Cleaner to remove from ALL history</li>
+</ol>
+
+<h4>Q2: Test suite takes 30 minutes. How to avoid blocking developers during push?</h4>
+<ol>
+<li>Use <strong>pre-push hook for fast smoke tests only</strong> (&lt;2 minutes)</li>
+<li>Run full suite in <strong>CI/CD triggered by push</strong> (non-blocking)</li>
+<li>Implement <strong>parallel test execution</strong> in CI</li>
+<li>Use <strong>test caching</strong> — only run tests affected by changed files</li>
+<li>Tag critical tests for pre-push; rest for CI only</li>
+</ol>
+
+<h4>Q3: A flaky test fails nondeterministically. How to find the culprit commit?</h4>
+<ol>
+<li>Use <code>git bisect run</code> with a script that runs the test multiple times</li>
+<li>Script returns exit 0 if passes 3/3 times, exit 1 if fails, exit 125 if ambiguous</li>
+<li>Alternatively, use <code>git bisect skip</code> for ambiguous commits</li>
+<li>Isolate the test and check environment-dependent factors</li>
+</ol>
+
+<h4>Q4: Share a common test utility library across 5 microservice repos?</h4>
+<ol>
+<li><strong>Option 1: Git Submodules</strong> — include repo within repo at specific commit</li>
+<li><strong>Option 2: Package Manager</strong> — publish as npm/pip package with versioned tags</li>
+<li><strong>Option 3: Monorepo</strong> — all services + shared libs in one repo</li>
+<li>Recommendation: Package manager for mature teams (proper versioning, dependency management)</li>
+</ol>
+
+<h4>Q5: Two testers modify the same test file. How to handle the merge conflict?</h4>
+<ol>
+<li>Use feature branches — each tester on separate branch</li>
+<li>First merger faces no conflict; second tester resolves</li>
+<li>Open conflicted file, look for <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> markers</li>
+<li>Usually both changes should be kept (additive test cases)</li>
+<li>After resolving: <code>git add</code> → <code>git commit</code></li>
+<li>Prevention: split test files by feature area (login_tests.py, cart_tests.py)</li>
+</ol>
+
+<h4>Q6: How do you ensure code quality in your test automation repo?</h4>
+<ul>
+<li>Pre-commit hooks: linting (pylint/eslint), formatting (black/prettier)</li>
+<li>Pre-push hooks: smoke test execution</li>
+<li>Branch protection: require CI pass + 1 reviewer approval</li>
+<li>Conventional Commits enforced via commit-msg hook</li>
+<li>PR templates with checklist (tests pass, docs updated, no secrets)</li>
+<li>Automated code coverage reporting on PRs</li>
+</ul>
+
+<h3>Commands Every 4-Year QA Must Know</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Category</th><th>Commands</th></tr></thead>
+<tbody>
+<tr><td>Daily</td><td><code>status, add, commit, push, pull --rebase, log --oneline</code></td></tr>
+<tr><td>Branching</td><td><code>checkout -b, merge, branch -d, switch</code></td></tr>
+<tr><td>Undo</td><td><code>revert, reset (soft/mixed/hard), stash, commit --amend</code></td></tr>
+<tr><td>Advanced</td><td><code>rebase, cherry-pick, bisect, reflog, blame</code></td></tr>
+<tr><td>Remote</td><td><code>clone, fetch, pull, push -u, remote -v</code></td></tr>
+<tr><td>Framework</td><td><code>tag, lfs, submodule, .gitignore, .gitattributes</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<details class="revision"><summary>Quick Revision — Section 15 (15 items)</summary>
+<ol>
+<li>fetch = download only; pull = fetch + merge</li>
+<li>reset soft/mixed/hard: staged/unstaged/deleted</li>
+<li>Detached HEAD = checked out a commit, not a branch</li>
+<li>revert = safe undo (public); reset = private only</li>
+<li>bisect = binary search for bad commit (O(log n))</li>
+<li>Accidental secret commit: revoke key → reset → .gitignore → force-with-lease</li>
+<li>Long test suite: smoke in hooks, full in CI</li>
+<li>Flaky test bisect: run multiple times, exit 125 for skip</li>
+<li>Shared library: submodules or package manager</li>
+<li>Conflict resolution: keep both, add, commit</li>
+<li>Quality gates: hooks + branch protection + CI + PR reviews</li>
+<li>cherry-pick for targeted fixes; merge for full integration</li>
+<li>reflog recovers "lost" commits (90-day window)</li>
+<li>Tags for versioning: v1.2.3 (semantic versioning)</li>
+<li>4-year tester: must know rebase, bisect, cherry-pick, hooks, CI config</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 16 ==================== -->
+<section id="section-16" class="section-card">
+<h2>Section 16: Cheat Sheet &amp; Comprehensive Revision</h2>
+
+<h3>Setup &amp; Configuration</h3>
+<pre><code>git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+git config --global init.defaultBranch main
+git config --global core.autocrlf true   # Windows
+git config --list                         # View all</code></pre>
+
+<h3>Start &amp; Clone</h3>
+<pre><code>git init                    # New repo
+git clone &lt;url&gt;             # Clone existing
+git remote add origin &lt;url&gt; # Connect to remote</code></pre>
+
+<h3>Daily Cycle (90% of your work)</h3>
+<pre><code>git status                              # Check state
+git add .                               # Stage all
+git commit -m "test: add new TC-101"    # Commit
+git pull --rebase                       # Update from remote
+git push                                # Upload to remote</code></pre>
+
+<h3>Branching</h3>
+<pre><code>git checkout -b feature/my-tests   # Create + switch
+git branch                         # List branches
+git checkout main                  # Switch to main
+git merge feature/my-tests         # Merge feature
+git branch -d feature/my-tests     # Delete merged branch</code></pre>
+
+<h3>Undo &amp; Fix</h3>
+<pre><code>git revert &lt;commit&gt;           # Safe undo (public)
+git reset --soft HEAD~1       # Uncommit, keep staged
+git reset --mixed HEAD~1      # Uncommit, keep unstaged
+git reset --hard HEAD~1       # DELETE last commit ⚠️
+git stash && git stash pop    # Temporary shelf
+git commit --amend -m "msg"   # Fix last commit</code></pre>
+
+<h3>Debug &amp; Search</h3>
+<pre><code>git log --oneline --graph     # Visual history
+git diff                      # Unstaged changes
+git diff --staged             # Staged changes
+git blame &lt;file&gt;              # Who changed each line
+git bisect start              # Binary search for bugs
+git bisect run pytest test.py # Automated bug hunt</code></pre>
+
+<h3>QA-Specific Commands</h3>
+<pre><code>git cherry-pick &lt;hash&gt;                  # Apply specific commit
+git tag -a v1.0.0 -m "Release"          # Version framework
+git lfs track "*.csv"                   # Track large test data
+git submodule add &lt;url&gt; libs/common     # Share test utilities
+git reflog                              # Recovery tool</code></pre>
+
+<h3>.gitignore Minimum for QA Testers</h3>
+<pre><code># Test artifacts
+*.log
+*.xml
+*.trx
+test-reports/
+allure-results/
+playwright-report/
+
+# Secrets
+.env
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+__pycache__/
+venv/
+
+# IDE
+.vscode/
+.idea/</code></pre>
+
+<h3>Complete Command Reference Table</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Category</th><th>Command</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>Setup</td><td><code>git config --global user.name "N"</code></td><td>Set your identity</td></tr>
+<tr><td>Start</td><td><code>git init</code></td><td>Create new repo</td></tr>
+<tr><td>Start</td><td><code>git clone &lt;url&gt;</code></td><td>Copy remote repo</td></tr>
+<tr><td>Stage</td><td><code>git add &lt;file&gt;</code></td><td>Stage specific file</td></tr>
+<tr><td>Stage</td><td><code>git add .</code></td><td>Stage all changes</td></tr>
+<tr><td>Stage</td><td><code>git add -p</code></td><td>Interactive staging</td></tr>
+<tr><td>Commit</td><td><code>git commit -m "msg"</code></td><td>Save snapshot</td></tr>
+<tr><td>Commit</td><td><code>git commit --amend</code></td><td>Fix last commit</td></tr>
+<tr><td>Branch</td><td><code>git checkout -b &lt;name&gt;</code></td><td>Create + switch</td></tr>
+<tr><td>Branch</td><td><code>git merge &lt;branch&gt;</code></td><td>Combine branches</td></tr>
+<tr><td>Branch</td><td><code>git rebase &lt;branch&gt;</code></td><td>Linear history (private only)</td></tr>
+<tr><td>Remote</td><td><code>git push -u origin &lt;br&gt;</code></td><td>First push + track</td></tr>
+<tr><td>Remote</td><td><code>git pull --rebase</code></td><td>Update cleanly</td></tr>
+<tr><td>Remote</td><td><code>git fetch</code></td><td>Download without merge</td></tr>
+<tr><td>Undo</td><td><code>git revert &lt;hash&gt;</code></td><td>Safe undo (new commit)</td></tr>
+<tr><td>Undo</td><td><code>git reset --soft HEAD~1</code></td><td>Uncommit, keep staged</td></tr>
+<tr><td>Undo</td><td><code>git reset --hard HEAD~1</code></td><td>DELETE commit + changes</td></tr>
+<tr><td>Undo</td><td><code>git stash</code></td><td>Shelf uncommitted work</td></tr>
+<tr><td>Debug</td><td><code>git bisect run &lt;test&gt;</code></td><td>Find bug commit</td></tr>
+<tr><td>Debug</td><td><code>git reflog</code></td><td>Recovery history</td></tr>
+<tr><td>Debug</td><td><code>git blame &lt;file&gt;</code></td><td>Line-by-line authorship</td></tr>
+<tr><td>QA</td><td><code>git cherry-pick &lt;hash&gt;</code></td><td>Apply specific commit</td></tr>
+<tr><td>QA</td><td><code>git tag -a v1.0 -m "msg"</code></td><td>Version framework</td></tr>
+<tr><td>QA</td><td><code>git lfs track "*.csv"</code></td><td>Large file storage</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>FAQs — Frequently Asked Questions</h3>
+
+<h4>Q: Can I undo a <code>git reset --hard</code>?</h4>
+<p>Yes! Use <code>git reflog</code> to find the commit hash before the reset, then <code>git reset --hard &lt;hash&gt;</code>. Reflog keeps data for 90 days.</p>
+
+<h4>Q: Should I use merge or rebase?</h4>
+<p>Rebase for YOUR private feature branch (clean history). Merge for integrating into shared branches (main, develop). Never rebase public/shared branches.</p>
+
+<h4>Q: How often should I commit?</h4>
+<p>Every logical unit of work. Completed a test case? Commit. Fixed a bug? Commit. Don't accumulate a full day's work in one commit.</p>
+
+<h4>Q: What if I accidentally pushed secrets to GitHub?</h4>
+<p>1) Revoke the secret immediately. 2) Use BFG Repo Cleaner or <code>git filter-branch</code> to remove from ALL history. 3) Force push. 4) Notify team. GitHub also has secret scanning alerts.</p>
+
+<h4>Q: How do I keep my fork in sync with the original repo?</h4>
+<pre><code>git remote add upstream &lt;original-repo-url&gt;
+git fetch upstream
+git rebase upstream/main
+git push origin main</code></pre>
+
+<h4>Q: What's the difference between <code>git switch</code> and <code>git checkout</code>?</h4>
+<p><code>git switch</code> (Git 2.23+) is dedicated to branch switching. <code>git checkout</code> does many things (switch branch, restore files, detach HEAD). Use <code>switch</code> for clarity.</p>
+
+<h4>Q: How to see who wrote a specific line of code?</h4>
+<pre><code>git blame &lt;file&gt;              # Every line with author + date
+git log -p -S "search text"   # Find commits that added/removed specific text</code></pre>
+
+<h4>Q: How to squash multiple commits into one before merging?</h4>
+<pre><code># Interactive rebase — squash last 3 commits
+git rebase -i HEAD~3
+# In editor: change 'pick' to 'squash' for commits to combine
+# Save and write new commit message</code></pre>
+
+<details class="revision"><summary>Master Revision — All Sections (30 items)</summary>
+<ol>
+<li>Git = DVCS, works offline, full history on every machine</li>
+<li>GitHub = cloud platform (PRs, Issues, Actions) — not the same as Git</li>
+<li>Three states: Modified → Staged → Committed</li>
+<li>Four statuses: Untracked, Tracked, Ignored, Staged</li>
+<li>Daily cycle: status → add → commit → pull --rebase → push</li>
+<li>Branches are cheap — always use feature branches</li>
+<li>Merge = safe for shared branches; Rebase = private only</li>
+<li>Never rebase main/shared branches</li>
+<li>Fetch = download only; Pull = fetch + merge</li>
+<li>Reset soft/mixed/hard: staged/unstaged/deleted</li>
+<li>Revert = safe undo (new commit); Reset = rewrite (private only)</li>
+<li>Stash = temporary shelf for WIP changes</li>
+<li>Reflog = recovery tool (90-day window)</li>
+<li>Git hooks = shift-left quality gates (pre-commit, pre-push)</li>
+<li>Branch naming: type/JIRA-ID-short-desc</li>
+<li>Conventional Commits: type(scope): description</li>
+<li>Branch protection: require CI + reviews before merge</li>
+<li>git bisect = binary search for bug commits (O(log n))</li>
+<li>git cherry-pick = apply specific commit to another branch</li>
+<li>Git LFS for large files (&gt;50MB): test data, videos, binaries</li>
+<li>Submodules for shared test libraries across repos</li>
+<li>.gitignore: reports, secrets, caches, IDE files</li>
+<li>.gitattributes: merge strategies, line endings, binary markers</li>
+<li>CI/CD: GitHub Actions / Jenkins triggers on push/PR</li>
+<li>Tags for versioning: semantic v1.2.3 (MAJOR.MINOR.PATCH)</li>
+<li>PRs: keep small, link Jira, run tests locally first</li>
+<li>4-year skills: rebase, bisect, cherry-pick, hooks, CI config</li>
+<li>Never commit secrets — use .gitignore + secret scanning</li>
+<li>Conflict resolution: read markers → choose/combine → add → commit</li>
+<li>Git is your ally — practice daily, master the workflow</li>
+</ol>
+</details>
+</section>
+
+</main>
+<button id="back-to-top" aria-label="Back to top">&#8593;</button>
+<script src="app.js"></script>
+</body>
+</html>

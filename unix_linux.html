@@ -1,0 +1,2727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNIX/Linux for QA Automation Engineers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-icon">&#128427;</div>
+    <h1>Learning Notes</h1>
+    <p>Sign in to access your knowledge base</p>
+    <form id="login-form">
+      <input type="text" id="login-user" placeholder="Username" autocomplete="off" autofocus>
+      <input type="password" id="login-pass" placeholder="Password">
+      <button type="submit">Sign In</button>
+      <div class="login-error" id="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<div id="progress-bar"></div>
+<button id="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+
+<aside id="sidebar">
+  <div class="logo"><span>&#128427;</span> UNIX/Linux</div>
+  <a href="index.html" class="back-to-home">&larr; All Topics</a>
+  <div id="search-container">
+    <input type="text" id="search-box" placeholder="Search notes..." aria-label="Search">
+    <span class="search-shortcut">Ctrl+K</span>
+  </div>
+  <div class="search-info"></div>
+  <nav id="nav-links">
+    <a href="#section-1">1. Fundamentals <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-2">2. File Navigation <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-3">3. File Viewing <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-4">4. Searching Files <span class="badge-optional">Optional</span></a>
+    <a href="#section-5">5. File Permissions <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-6">6. Process Mgmt <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-7">7. Text Processing <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-8">8. Vi/Vim Editor <span class="badge-optional">Optional</span></a>
+    <a href="#section-9">9. Archive <span class="badge-optional">Optional</span></a>
+    <a href="#section-10">10. User Mgmt <span class="badge-optional">Optional</span></a>
+    <a href="#section-11">11. Environment Vars <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-12">12. Networking <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-13">13. Log Analysis <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-14">14. Shell Scripting <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-15">15. Selenium on Linux <span class="badge-optional">Optional</span></a>
+    <a href="#section-16">16. API Testing (curl) <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-17">17. CI/CD &amp; Jenkins <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-18">18. Prod Scenarios <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-19">19. Interview Prep <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-20">20. Cheat Sheet <span class="badge-must-know">Must Know</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" id="logout-btn">Logout</button>
+  </div>
+</aside>
+
+<main id="main-content">
+<div class="page-header">
+  <h1>UNIX/Linux for <em>QA Automation Engineers</em></h1>
+  <p>Complete Handbook — From Fundamentals to Production Support (3-8 Years Experience)</p>
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num">20</div><div class="stat-label">Modules</div></div>
+    <div class="stat"><div class="stat-num">300+</div><div class="stat-label">Commands</div></div>
+    <div class="stat"><div class="stat-num">200+</div><div class="stat-label">Interview Q&amp;A</div></div>
+    <div class="stat"><div class="stat-num">50+</div><div class="stat-label">Real Scenarios</div></div>
+  </div>
+</div>
+
+<div id="no-results" class="no-results">No matching content found.</div>
+
+<!-- ==================== INTERVIEW PRIORITY GUIDE ==================== -->
+<section class="section-card" style="border-left: 4px solid var(--success);">
+<h2>Interview Priority Guide</h2>
+<p>Not all modules are equally important for QA/SDET interviews. Here's what interviewers <strong>actually ask</strong>:</p>
+
+<h3><span class="badge-must-know">Must Know</span> — Always Asked (80% of Linux questions)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Priority</th><th>Topic</th><th>What They Ask</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>grep, tail -f, log analysis</td><td>"How do you investigate a production issue?"</td></tr>
+<tr><td>2</td><td>Process mgmt (ps, kill, top)</td><td>"How to find and kill a stuck process?"</td></tr>
+<tr><td>3</td><td>File permissions (chmod 755)</td><td>"Script fails with permission denied. Fix it."</td></tr>
+<tr><td>4</td><td>curl (API testing)</td><td>"Make a POST request with authentication"</td></tr>
+<tr><td>5</td><td>Environment vars (PATH, JAVA_HOME)</td><td>"'mvn: command not found' — what do you do?"</td></tr>
+<tr><td>6</td><td>awk, sed, sort | uniq -c</td><td>"Find top 5 errors in a log file"</td></tr>
+<tr><td>7</td><td>Shell scripting basics</td><td>"Write a script to check if server is up"</td></tr>
+<tr><td>8</td><td>find command</td><td>"Find files modified in last 24 hours"</td></tr>
+<tr><td>9</td><td>Networking (ping, netstat)</td><td>"How to check if a port is listening?"</td></tr>
+<tr><td>10</td><td>nohup, background processes</td><td>"How to run tests that survive SSH disconnect?"</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3><span class="badge-optional">Optional</span> — Rarely Asked (Good to Know, Not Interview Critical)</h3>
+<ul>
+<li><strong>Vi/Vim</strong> — Just know <code>:wq</code> and <code>i</code>. Nobody asks "navigate to line 42 in Vim"</li>
+<li><strong>tar/gzip/zip</strong> — Basic awareness. Maybe 1 in 50 interviews asks this</li>
+<li><strong>locate/whereis/which</strong> — <code>find</code> is enough. These are rarely asked</li>
+<li><strong>User management (useradd, passwd)</strong> — That's admin work, not QA</li>
+<li><strong>Selenium Grid setup on Linux</strong> — DevOps task. Know the concept, not installation steps</li>
+<li><strong>traceroute/dig/nslookup</strong> — ping + curl is enough for QA interviews</li>
+</ul>
+</section>
+
+<!-- ==================== MODULE 1 ==================== -->
+<section id="section-1" class="section-card">
+<h2>Module 1: UNIX/Linux Fundamentals</h2>
+
+<h3>What is UNIX?</h3>
+<p><strong>UNIX</strong> is a multi-user, multi-tasking operating system developed in 1969 at AT&T Bell Labs by Ken Thompson and Dennis Ritchie. It's the foundation of modern operating systems and introduced concepts like the file system hierarchy, pipes, and the shell.</p>
+
+<h3>What is Linux?</h3>
+<p><strong>Linux</strong> is a free, open-source UNIX-like operating system created by Linus Torvalds in 1991. It's the kernel (core) that powers most servers, CI/CD pipelines, cloud infrastructure, and containerized applications used in testing.</p>
+
+<h3>UNIX vs Linux</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>UNIX</th><th>Linux</th></tr></thead>
+<tbody>
+<tr><td>Source</td><td>Proprietary (closed source)</td><td>Open source (GPL license)</td></tr>
+<tr><td>Cost</td><td>Expensive licensing</td><td>Free</td></tr>
+<tr><td>Examples</td><td>HP-UX, Solaris, AIX, macOS</td><td>Ubuntu, CentOS, RHEL, Amazon Linux</td></tr>
+<tr><td>Hardware</td><td>Specific to vendor hardware</td><td>Runs on any hardware</td></tr>
+<tr><td>Usage in QA</td><td>Legacy enterprise apps</td><td>95% of CI/CD, Docker, Cloud</td></tr>
+<tr><td>Community</td><td>Limited vendor support</td><td>Massive community + documentation</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Linux Distributions for QA Engineers</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Distribution</th><th>Based On</th><th>QA Usage</th></tr></thead>
+<tbody>
+<tr><td><strong>Ubuntu</strong></td><td>Debian</td><td>Most common for CI/CD servers, Docker images, development</td></tr>
+<tr><td><strong>CentOS / Rocky Linux</strong></td><td>RHEL</td><td>Enterprise testing environments, production-like servers</td></tr>
+<tr><td><strong>Amazon Linux</strong></td><td>RHEL/Fedora</td><td>AWS EC2 instances for cloud testing</td></tr>
+<tr><td><strong>Alpine Linux</strong></td><td>Independent</td><td>Minimal Docker images (5MB base) for containerized tests</td></tr>
+<tr><td><strong>RHEL</strong></td><td>Fedora</td><td>Enterprise production environments</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Why QA Automation Engineers Need Linux</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Reason</th><th>Explanation</th></tr></thead>
+<tbody>
+<tr><td>Jenkins runs on Linux</td><td>90%+ of Jenkins servers are Linux. Build logs, job configs, workspace — all on Linux filesystem</td></tr>
+<tr><td>Selenium Grid on Linux</td><td>Hub/Nodes typically deployed on Linux servers or Docker containers (headless Chrome)</td></tr>
+<tr><td>Docker/Kubernetes</td><td>Containers are Linux-native. All Docker images use Linux base (even on Windows/Mac)</td></tr>
+<tr><td>CI/CD Pipelines</td><td>GitHub Actions, GitLab CI, Azure Pipelines — runners are Linux VMs</td></tr>
+<tr><td>Cloud Testing</td><td>AWS, GCP, Azure — test environments are Linux servers (SSH access)</td></tr>
+<tr><td>Log Investigation</td><td>Application logs live on Linux servers — grep, tail, awk for debugging</td></tr>
+<tr><td>Performance Testing</td><td>JMeter/Gatling run on Linux for non-GUI mode; server monitoring via Linux commands</td></tr>
+<tr><td>API Testing</td><td>curl for quick API validation; servers expose APIs on Linux</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Linux Architecture</h3>
+<div class="ascii-diagram">┌─────────────────────────────────────────────────────────┐
+│                    USER APPLICATIONS                     │
+│   (Selenium, JMeter, Maven, Jenkins, Docker, curl)      │
+├─────────────────────────────────────────────────────────┤
+│                         SHELL                           │
+│   (bash, sh, zsh — command interpreter)                 │
+│   Translates human commands → kernel calls              │
+├─────────────────────────────────────────────────────────┤
+│                        KERNEL                           │
+│   (Core of OS — manages hardware, memory, processes)    │
+│   ├── Process Management (ps, top, kill)                │
+│   ├── Memory Management (free, vmstat)                  │
+│   ├── File System (ext4, xfs — read/write files)        │
+│   ├── Device Drivers (disk, network, display)           │
+│   └── Network Stack (TCP/IP, sockets)                   │
+├─────────────────────────────────────────────────────────┤
+│                       HARDWARE                          │
+│   (CPU, RAM, Disk, Network Interface)                   │
+└─────────────────────────────────────────────────────────┘</div>
+
+<h3>Key Components Explained</h3>
+<h4>Kernel</h4>
+<p>The core of Linux that interfaces directly with hardware. QA engineers rarely interact with the kernel directly, but understanding it helps debug performance issues (CPU scheduling, memory allocation, I/O bottlenecks).</p>
+
+<h4>Shell</h4>
+<p>The command-line interpreter that executes your commands. <strong>Bash</strong> (Bourne Again Shell) is the default on most Linux systems. Every command you type in terminal goes through the shell.</p>
+<pre><code># Check your current shell
+echo $SHELL          # Output: /bin/bash
+
+# Available shells on the system
+cat /etc/shells</code></pre>
+
+<h4>Terminal</h4>
+<p>The interface (window) where you type shell commands. It's just a text-based UI to the shell. Tools: Terminal (Ubuntu), iTerm2 (Mac), PuTTY/MobaXterm (Windows SSH clients).</p>
+
+<h3>File System Structure</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Directory</th><th>Purpose</th><th>QA Relevance</th></tr></thead>
+<tbody>
+<tr><td><code>/</code></td><td>Root — everything starts here</td><td>Top of hierarchy</td></tr>
+<tr><td><code>/home</code></td><td>User home directories</td><td>Your automation projects live here</td></tr>
+<tr><td><code>/opt</code></td><td>Optional software</td><td>Jenkins, JMeter, Selenium Grid installed here</td></tr>
+<tr><td><code>/var/log</code></td><td>System and application logs</td><td>Investigate failures, check app logs</td></tr>
+<tr><td><code>/tmp</code></td><td>Temporary files (cleared on reboot)</td><td>Test artifacts, temp downloads</td></tr>
+<tr><td><code>/etc</code></td><td>Configuration files</td><td>App configs, environment settings</td></tr>
+<tr><td><code>/usr/bin</code></td><td>User binaries/programs</td><td>Installed tools (java, mvn, node)</td></tr>
+<tr><td><code>/usr/local</code></td><td>Locally installed software</td><td>Custom tool installations</td></tr>
+<tr><td><code>/proc</code></td><td>Virtual filesystem (running processes)</td><td>Process debugging, system info</td></tr>
+<tr><td><code>/dev</code></td><td>Device files</td><td>Rarely needed for QA</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Why do QA automation engineers need Linux knowledge?</strong><br>CI/CD servers (Jenkins), Selenium Grid, Docker containers, cloud test environments — all run on Linux. Log analysis, process management, and shell scripting are daily tasks.</li>
+<li><strong>What is the difference between Kernel and Shell?</strong><br>Kernel = core OS that manages hardware/resources. Shell = command interpreter that translates your text commands into kernel system calls.</li>
+<li><strong>Where are application logs typically stored on Linux?</strong><br><code>/var/log/</code> for system logs. Application-specific logs may be in <code>/opt/app/logs/</code> or configured paths.</li>
+<li><strong>What Linux distribution is most common for CI/CD?</strong><br>Ubuntu (ease of use, large package repository) and Amazon Linux (AWS native). Alpine for Docker images (minimal size).</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 1 (15 items)</summary>
+<ol>
+<li>UNIX = proprietary OS (1969); Linux = open-source UNIX-like (1991)</li>
+<li>Linux powers 95% of CI/CD, Docker, cloud infrastructure</li>
+<li>Kernel = hardware interface; Shell = command interpreter; Terminal = UI</li>
+<li>Bash is the default shell on most Linux systems</li>
+<li>Ubuntu most common for CI/CD; Alpine for Docker; RHEL for enterprise</li>
+<li>/home = user files; /opt = installed software; /var/log = logs; /tmp = temp</li>
+<li>Jenkins, Selenium Grid, Docker — all primarily Linux-based</li>
+<li>QA needs Linux for: log analysis, process mgmt, CI/CD, scripting</li>
+<li>File system is hierarchical starting from / (root)</li>
+<li>Everything in Linux is a file (including devices and processes)</li>
+<li>/etc = configs; /usr/bin = programs; /proc = virtual process info</li>
+<li>echo $SHELL shows current shell; cat /etc/shells shows available</li>
+<li>Linux is multi-user, multi-tasking — many testers can work simultaneously</li>
+<li>SSH is the primary way QA engineers access Linux servers remotely</li>
+<li>Understanding Linux architecture helps debug performance bottlenecks</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 2 ==================== -->
+<section id="section-2" class="section-card">
+<h2>Module 2: File System Navigation</h2>
+
+<h3>Core Navigation Commands</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>Example</th><th>Output</th></tr></thead>
+<tbody>
+<tr><td><code>pwd</code></td><td>Print Working Directory (where am I?)</td><td><code>pwd</code></td><td><code>/home/tester/automation</code></td></tr>
+<tr><td><code>ls</code></td><td>List directory contents</td><td><code>ls</code></td><td><code>src tests reports pom.xml</code></td></tr>
+<tr><td><code>ls -l</code></td><td>Long format (permissions, size, date)</td><td><code>ls -l</code></td><td>Detailed file listing</td></tr>
+<tr><td><code>ls -a</code></td><td>Show hidden files (starting with .)</td><td><code>ls -a</code></td><td>Includes <code>.git .env .gitignore</code></td></tr>
+<tr><td><code>ls -ltr</code></td><td>Long format, sorted by time (newest last)</td><td><code>ls -ltr</code></td><td>Most recent file at bottom</td></tr>
+<tr><td><code>ls -lh</code></td><td>Human-readable file sizes</td><td><code>ls -lh</code></td><td>Shows KB/MB/GB instead of bytes</td></tr>
+<tr><td><code>cd &lt;dir&gt;</code></td><td>Change directory</td><td><code>cd /opt/jenkins</code></td><td>Moves to jenkins folder</td></tr>
+<tr><td><code>cd ..</code></td><td>Go up one directory</td><td><code>cd ..</code></td><td>Parent directory</td></tr>
+<tr><td><code>cd ~</code></td><td>Go to home directory</td><td><code>cd ~</code></td><td><code>/home/tester</code></td></tr>
+<tr><td><code>cd -</code></td><td>Go to previous directory</td><td><code>cd -</code></td><td>Toggles between two directories</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>File &amp; Directory Operations</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><code>mkdir &lt;dir&gt;</code></td><td>Create directory</td><td><code>mkdir test-reports</code></td></tr>
+<tr><td><code>mkdir -p a/b/c</code></td><td>Create nested directories</td><td><code>mkdir -p reports/2026/july</code></td></tr>
+<tr><td><code>rmdir &lt;dir&gt;</code></td><td>Remove EMPTY directory <span class="badge-optional">Rarely used</span></td><td><code>rmdir old-reports</code></td></tr>
+<tr><td><code>touch &lt;file&gt;</code></td><td>Create empty file / update timestamp</td><td><code>touch test_data.csv</code></td></tr>
+<tr><td><code>cp &lt;src&gt; &lt;dest&gt;</code></td><td>Copy file</td><td><code>cp report.html /backup/</code></td></tr>
+<tr><td><code>cp -r &lt;dir&gt; &lt;dest&gt;</code></td><td>Copy directory recursively</td><td><code>cp -r test-reports/ /archive/</code></td></tr>
+<tr><td><code>mv &lt;src&gt; &lt;dest&gt;</code></td><td>Move or rename file/dir</td><td><code>mv old_name.py new_name.py</code></td></tr>
+<tr><td><code>rm &lt;file&gt;</code></td><td>Remove file</td><td><code>rm temp_data.json</code></td></tr>
+<tr><td><code>rm -r &lt;dir&gt;</code></td><td>Remove directory + contents</td><td><code>rm -r old-reports/</code></td></tr>
+<tr><td><code>rm -rf &lt;dir&gt;</code></td><td>Force remove (no confirmation)</td><td><code>rm -rf target/</code> (Maven clean)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Real-Time QA Use Cases</h3>
+<pre><code># Navigate to automation project
+cd /home/tester/selenium-automation/
+
+# Check what's in the project
+ls -la
+# drwxr-xr-x  src/
+# drwxr-xr-x  tests/
+# -rw-r--r--  pom.xml
+# -rw-r--r--  testng.xml
+# drwxr-xr-x  .git/
+
+# Find the latest test report
+ls -ltr target/surefire-reports/
+# Most recent file appears at bottom
+
+# Create directories for today's execution
+mkdir -p reports/$(date +%Y-%m-%d)/screenshots
+
+# Copy test reports to shared location
+cp -r target/surefire-reports/* /shared/reports/
+
+# Archive old reports (move to archive)
+mv reports/2026-06-* /archive/reports/
+
+# Clean build artifacts before new run
+rm -rf target/
+
+# Check Jenkins workspace
+cd /var/lib/jenkins/workspace/my-automation-job/
+ls -la</code></pre>
+
+<h3>Understanding <code>ls -l</code> Output</h3>
+<pre><code>$ ls -l
+-rw-r--r-- 1 tester qa-team 4096 Jul 10 08:30 testng.xml
+drwxr-xr-x 5 tester qa-team 4096 Jul 10 09:15 src/
+
+# Breakdown:
+# -rw-r--r--  → File type + permissions (- = file, d = directory)
+# 1           → Number of hard links
+# tester      → Owner
+# qa-team     → Group
+# 4096        → Size in bytes
+# Jul 10 08:30 → Last modified date/time
+# testng.xml  → File name</code></pre>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li><code>rm -rf /</code> — NEVER run this. Deletes entire system. Always double-check paths before rm -rf</li>
+<li>Running <code>rm -rf</code> in wrong directory — always <code>pwd</code> first</li>
+<li>Forgetting <code>-r</code> flag when copying directories — copies nothing silently</li>
+<li>Using spaces in file/directory names without quotes — <code>cd "my folder"</code> not <code>cd my folder</code></li>
+<li>Not using <code>-p</code> with mkdir for nested paths — fails if parent doesn't exist</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is the difference between <code>rm</code> and <code>rmdir</code>?</strong><br><code>rmdir</code> only removes EMPTY directories. <code>rm -r</code> removes directories with all contents recursively.</li>
+<li><strong>How do you find the most recently modified file in a directory?</strong><br><code>ls -ltr</code> — sorts by time with newest at bottom. Or <code>ls -lt | head -5</code> for top 5 newest.</li>
+<li><strong>What does <code>ls -la</code> show that <code>ls</code> doesn't?</strong><br>Hidden files (starting with .), detailed permissions, owner, group, size, and timestamps.</li>
+</ol>
+
+<h3>Hands-On Exercise</h3>
+<pre><code># Exercise: Set up automation project structure
+mkdir -p ~/automation-project/{src,tests,config,reports,test-data}
+cd ~/automation-project
+touch src/base_test.py tests/test_login.py config/settings.yaml
+touch .env .gitignore README.md
+ls -la    # Verify structure
+tree .    # Visual tree (install: apt install tree)</code></pre>
+
+<details class="revision"><summary>Quick Revision — Module 2 (15 items)</summary>
+<ol>
+<li><code>pwd</code> = where am I? | <code>ls</code> = what's here? | <code>cd</code> = move there</li>
+<li><code>ls -l</code> = detailed listing | <code>ls -a</code> = show hidden | <code>ls -ltr</code> = by time</li>
+<li><code>mkdir -p</code> = create nested directories in one command</li>
+<li><code>touch</code> = create empty file or update timestamp</li>
+<li><code>cp -r</code> = copy directory recursively | <code>cp</code> = copy file</li>
+<li><code>mv</code> = move OR rename (same command)</li>
+<li><code>rm -rf</code> = force recursive delete (DANGEROUS — verify path first)</li>
+<li><code>cd ~</code> = home | <code>cd ..</code> = parent | <code>cd -</code> = previous</li>
+<li>Always <code>pwd</code> before <code>rm -rf</code> to confirm location</li>
+<li><code>ls -lh</code> for human-readable sizes (KB/MB/GB)</li>
+<li>Hidden files start with dot (.) — visible with <code>ls -a</code></li>
+<li>Permissions format: <code>-rwxr-xr-x</code> (type + owner + group + others)</li>
+<li><code>rmdir</code> = empty dirs only | <code>rm -r</code> = dirs with contents</li>
+<li>Use <code>$(date +%Y-%m-%d)</code> in mkdir for date-based report folders</li>
+<li>Jenkins workspace: <code>/var/lib/jenkins/workspace/&lt;job-name&gt;/</code></li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 3 ==================== -->
+<section id="section-3" class="section-card">
+<h2>Module 3: File Viewing Commands <span class="badge-must-know">Frequently Asked</span></h2>
+
+<h3>Commands Overview</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td><code>cat</code></td><td>Display entire file content</td><td>Small files (&lt;100 lines)</td></tr>
+<tr><td><code>more</code></td><td>Page through file (forward only)</td><td>Medium files, basic paging</td></tr>
+<tr><td><code>less</code></td><td>Page through file (forward + backward)</td><td>Large files, searching within</td></tr>
+<tr><td><code>head</code></td><td>Display first N lines</td><td>Check file headers, CSV columns</td></tr>
+<tr><td><code>tail</code></td><td>Display last N lines</td><td>Recent log entries</td></tr>
+<tr><td><code>tail -f</code></td><td>Follow file in real-time</td><td>Live log monitoring</td></tr>
+<tr><td><code>grep</code></td><td>Search for patterns in files</td><td>Find errors, filter content</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Detailed Usage with Examples</h3>
+<pre><code># cat — Display entire file
+cat config.properties
+cat testng.xml
+
+# head — First N lines (default 10)
+head application.log           # First 10 lines
+head -20 application.log       # First 20 lines
+head -1 test_data.csv          # CSV header row only
+
+# tail — Last N lines (default 10)
+tail application.log           # Last 10 lines
+tail -50 application.log       # Last 50 lines
+tail -f application.log        # LIVE monitoring (Ctrl+C to stop)
+tail -f application.log | grep "ERROR"   # Live errors only
+
+# less — Interactive viewer (best for large files)
+less application.log
+# Navigation in less:
+# Space/f     = page forward
+# b           = page backward
+# /pattern    = search forward
+# ?pattern    = search backward
+# n           = next match
+# N           = previous match
+# G           = go to end
+# g           = go to beginning
+# q           = quit</code></pre>
+
+<h3>grep — The QA Engineer's Best Friend</h3>
+<pre><code># Basic search
+grep "ERROR" application.log                    # Lines containing ERROR
+grep -i "error" application.log                 # Case-insensitive
+grep -n "ERROR" application.log                 # With line numbers
+grep -c "ERROR" application.log                 # Count of matching lines
+
+# Context (surrounding lines)
+grep -A 5 "ERROR" app.log                       # 5 lines AFTER match
+grep -B 3 "ERROR" app.log                       # 3 lines BEFORE match
+grep -C 3 "ERROR" app.log                       # 3 lines BEFORE + AFTER
+
+# Recursive search in directory
+grep -r "NullPointerException" /var/log/        # Search all files in dir
+grep -rl "TODO" tests/                          # List filenames only
+
+# Multiple patterns
+grep -E "ERROR|WARN|FATAL" application.log      # OR patterns (egrep)
+grep "ERROR" app.log | grep -v "expected"       # Exclude pattern (-v = invert)
+
+# Regular expressions
+grep "2026-07-10.*ERROR" app.log                # Date-specific errors
+grep "response.*[45][0-9][0-9]" api.log         # 4xx/5xx status codes</code></pre>
+
+<h3>Real-Time QA Scenarios</h3>
+
+<h4>Scenario 1: Application Failed After Deployment — Investigate</h4>
+<pre><code># Step 1: Check recent logs
+tail -100 /var/log/application/app.log
+
+# Step 2: Find errors since deployment time
+grep "2026-07-10 14:" app.log | grep -i "error"
+
+# Step 3: Get full stack trace (5 lines after error)
+grep -A 20 "Exception" app.log | tail -50
+
+# Step 4: Monitor live for new errors
+tail -f app.log | grep --color "ERROR\|Exception"
+
+# Step 5: Count errors per hour
+grep "ERROR" app.log | awk '{print $1, $2}' | cut -d: -f1,2 | sort | uniq -c</code></pre>
+
+<h4>Scenario 2: Check Jenkins Build Logs</h4>
+<pre><code># Find the Jenkins build log
+ls -ltr /var/lib/jenkins/jobs/my-job/builds/
+
+# View console output of latest build
+cat /var/lib/jenkins/jobs/my-job/builds/lastFailedBuild/log
+
+# Find test failures
+grep -i "FAILED\|FAILURE" /var/lib/jenkins/jobs/my-job/builds/123/log
+
+# Count passed/failed tests
+grep -c "PASSED" build.log
+grep -c "FAILED" build.log</code></pre>
+
+<h4>Scenario 3: Monitor Automation Execution in Real-Time</h4>
+<pre><code># Watch test execution output live
+tail -f /home/tester/automation/target/test-output/output.log
+
+# Filter only test status updates
+tail -f execution.log | grep -E "PASS|FAIL|SKIP"
+
+# Watch for specific test failures
+tail -f execution.log | grep -i "assert\|failure\|error"</code></pre>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Using <code>cat</code> on huge log files (500MB+) — freezes terminal. Use <code>less</code> or <code>tail</code></li>
+<li>Forgetting <code>-i</code> flag — searching "error" misses "ERROR" and "Error"</li>
+<li>Not using <code>| grep -v</code> to filter noise from results</li>
+<li>Piping <code>tail -f</code> through too many greps — performance issues</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How do you monitor a log file in real-time?</strong><br><code>tail -f /path/to/logfile.log</code> — follows the file and shows new lines as they are appended.</li>
+<li><strong>How to find all ERROR lines in the last hour of a log?</strong><br><code>grep "$(date +%Y-%m-%d\ %H)" app.log | grep "ERROR"</code> or use <code>awk</code> for time range filtering.</li>
+<li><strong>Difference between <code>grep -r</code> and <code>grep -l</code>?</strong><br><code>-r</code> = recursive search in all files. <code>-l</code> = show only filenames (not the matching lines).</li>
+<li><strong>How to count the number of errors in a log file?</strong><br><code>grep -c "ERROR" app.log</code> — returns count of matching lines.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 3 (15 items)</summary>
+<ol>
+<li><code>cat</code> = full file (small files only)</li>
+<li><code>less</code> = interactive viewer (large files, search with /)</li>
+<li><code>head -N</code> = first N lines | <code>tail -N</code> = last N lines</li>
+<li><code>tail -f</code> = live file monitoring (essential for QA)</li>
+<li><code>grep "pattern" file</code> = search for text in files</li>
+<li><code>grep -i</code> = case-insensitive | <code>-n</code> = line numbers | <code>-c</code> = count</li>
+<li><code>grep -A/B/C N</code> = lines after/before/context around match</li>
+<li><code>grep -r</code> = recursive search in all files in directory</li>
+<li><code>grep -v</code> = invert (exclude matching lines)</li>
+<li><code>grep -E</code> = extended regex (egrep) for OR patterns</li>
+<li><code>tail -f log | grep "ERROR"</code> = live error monitoring</li>
+<li>Never <code>cat</code> huge files — use <code>less</code> or <code>tail</code></li>
+<li>In <code>less</code>: / to search, n for next, q to quit</li>
+<li>Pipe commands: <code>grep "ERROR" log | grep -v "expected" | wc -l</code></li>
+<li>Jenkins logs: <code>/var/lib/jenkins/jobs/&lt;job&gt;/builds/&lt;#&gt;/log</code></li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 4 ==================== -->
+<section id="section-4" class="section-card">
+<h2>Module 4: Searching Files <span class="badge-optional">Optional for Interview</span></h2>
+<div class="optional-note">Interviewers rarely ask about <code>locate</code>, <code>whereis</code>, or <code>which</code> in detail. Focus on <code>find</code> command basics only — the rest is good-to-know but won't come up in QA interviews.</div>
+
+<h3>Commands Overview</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>Speed</th><th>Searches</th></tr></thead>
+<tbody>
+<tr><td><code>find</code></td><td>Search by name, type, size, date</td><td>Slow (scans filesystem)</td><td>Real-time filesystem</td></tr>
+<tr><td><code>locate</code></td><td>Search by name (pre-built database)</td><td>Very fast</td><td>Database (updatedb)</td></tr>
+<tr><td><code>which</code></td><td>Find executable in PATH</td><td>Instant</td><td>PATH directories only</td></tr>
+<tr><td><code>whereis</code></td><td>Find binary, source, man page</td><td>Fast</td><td>Standard locations</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>find Command — Most Powerful</h3>
+<pre><code># Find by name
+find /home/tester -name "*.py"                      # All Python files
+find . -name "test_*.py"                            # Test files in current dir
+find . -iname "*.XML"                               # Case-insensitive
+
+# Find by type
+find . -type f                                       # Files only
+find . -type d                                       # Directories only
+find /var/log -type f -name "*.log"                 # Log files
+
+# Find by time (modification)
+find . -mtime -1                                     # Modified in last 24 hours
+find . -mtime +7                                     # Modified more than 7 days ago
+find . -mmin -30                                     # Modified in last 30 minutes
+find /var/log -mtime -1 -name "*.log"               # Today's logs
+
+# Find by size
+find . -size +100M                                   # Files larger than 100MB
+find /var/log -size +1G                             # Logs over 1GB (disk space issue)
+find . -size 0                                       # Empty files
+
+# Find + Action
+find . -name "*.log" -delete                        # Delete all log files
+find . -name "*.py" -exec grep -l "import selenium" {} \;  # Find files containing text
+find ./reports -mtime +30 -exec rm {} \;            # Delete reports older than 30 days
+
+# Find automation reports
+find /home/tester/project -name "*report*" -type f
+find . -name "*.html" -path "*/surefire-reports/*"
+
+# Find failed execution logs
+find /var/log -name "*.log" -mtime -1 -exec grep -l "FAILED" {} \;</code></pre>
+
+<h3>locate, which, whereis</h3>
+<pre><code># locate — Fast search (uses pre-built database)
+locate testng.xml                    # Find all testng.xml files
+locate -i "selenium"                 # Case-insensitive
+sudo updatedb                        # Update the database manually
+
+# which — Find executable in PATH
+which java                           # /usr/bin/java
+which mvn                            # /usr/local/bin/mvn
+which python3                        # /usr/bin/python3
+which chromedriver                   # Find chromedriver location
+
+# whereis — Find binary + docs
+whereis java                         # java: /usr/bin/java /usr/share/man/man1/java.1
+whereis jenkins                      # Finds all jenkins-related paths</code></pre>
+
+<h3>QA Use Cases</h3>
+<pre><code># Find all test reports generated today
+find /home/tester/project/target -name "*.html" -mtime 0
+
+# Find test data files larger than 50MB (candidates for Git LFS)
+find . -name "*.csv" -o -name "*.json" | xargs ls -lh | awk '$5 ~ /M/ {print}'
+
+# Find all configuration files in project
+find . -name "*.properties" -o -name "*.yaml" -o -name "*.yml"
+
+# Locate Jenkins installation
+which jenkins
+find / -name "jenkins.war" 2>/dev/null
+
+# Find files modified during test execution window (2-3 PM)
+find /var/log -newermt "2026-07-10 14:00" ! -newermt "2026-07-10 15:00"
+
+# Find all screenshots from failed tests
+find ./screenshots -name "*.png" -mmin -60</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How to find all log files modified in the last hour?</strong><br><code>find /var/log -name "*.log" -mmin -60</code></li>
+<li><strong>Difference between <code>find</code> and <code>locate</code>?</strong><br><code>find</code> searches filesystem in real-time (slower, always current). <code>locate</code> searches a pre-built database (faster, may be outdated — run <code>updatedb</code>).</li>
+<li><strong>How to find and delete files older than 30 days?</strong><br><code>find /path -mtime +30 -delete</code> or <code>find /path -mtime +30 -exec rm {} \;</code></li>
+<li><strong>How to find which Java version is being used?</strong><br><code>which java</code> then <code>java -version</code>. Or <code>readlink -f $(which java)</code> for actual path.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 4 (12 items)</summary>
+<ol>
+<li><code>find</code> = real-time search (slow but accurate)</li>
+<li><code>locate</code> = database search (fast but may be outdated)</li>
+<li><code>which</code> = find executable in PATH</li>
+<li><code>find . -name "pattern"</code> = search by filename</li>
+<li><code>find . -type f/d</code> = files/directories only</li>
+<li><code>find . -mtime -1</code> = modified in last 24 hours</li>
+<li><code>find . -mmin -30</code> = modified in last 30 minutes</li>
+<li><code>find . -size +100M</code> = files larger than 100MB</li>
+<li><code>find . -exec command {} \;</code> = execute on results</li>
+<li><code>find . -name "*.log" -delete</code> = find and delete</li>
+<li><code>2>/dev/null</code> = suppress permission denied errors</li>
+<li><code>which java</code> + <code>java -version</code> = verify tool installation</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 5 ==================== -->
+<section id="section-5" class="section-card">
+<h2>Module 5: File Permissions <span class="badge-must-know">Frequently Asked</span></h2>
+
+<h3>Concept Explanation</h3>
+<p>Every file and directory in Linux has three types of permissions for three categories of users. Understanding permissions is critical for QA engineers because <strong>permission issues are one of the most common causes of automation failures</strong>.</p>
+
+<h3>Permission Structure</h3>
+<div class="ascii-diagram">-rwxr-xr-- 1 tester qa-team 4096 Jul 10 08:30 run_tests.sh
+│└┬┘└┬┘└┬┘
+│ │   │   └── Others (everyone else):  r-- (read only)
+│ │   └────── Group (qa-team):         r-x (read + execute)
+│ └────────── Owner (tester):          rwx (read + write + execute)
+└──────────── File type:               - (regular file), d (directory)</div>
+
+<h3>Permission Types</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Permission</th><th>Symbol</th><th>Numeric</th><th>File Meaning</th><th>Directory Meaning</th></tr></thead>
+<tbody>
+<tr><td>Read</td><td><code>r</code></td><td>4</td><td>View file contents</td><td>List directory contents (ls)</td></tr>
+<tr><td>Write</td><td><code>w</code></td><td>2</td><td>Modify file contents</td><td>Create/delete files in directory</td></tr>
+<tr><td>Execute</td><td><code>x</code></td><td>1</td><td>Run as program/script</td><td>Enter directory (cd)</td></tr>
+<tr><td>No permission</td><td><code>-</code></td><td>0</td><td>Cannot access</td><td>Cannot access</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Common Permission Numbers</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Number</th><th>Permission</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td><code>777</code></td><td>rwxrwxrwx (everyone can do everything)</td><td>DANGEROUS — never use in production</td></tr>
+<tr><td><code>755</code></td><td>rwxr-xr-x (owner full, others read+execute)</td><td>Scripts, executables, directories</td></tr>
+<tr><td><code>644</code></td><td>rw-r--r-- (owner read/write, others read only)</td><td>Config files, data files</td></tr>
+<tr><td><code>600</code></td><td>rw------- (owner only)</td><td>SSH keys, secrets, .env files</td></tr>
+<tr><td><code>700</code></td><td>rwx------ (owner only, executable)</td><td>Private scripts</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>chmod — Change Permissions</h3>
+<pre><code># Numeric mode
+chmod 755 run_tests.sh        # Owner: rwx, Group: r-x, Others: r-x
+chmod 644 config.properties   # Owner: rw-, Group: r--, Others: r--
+chmod 600 .env                # Owner only: rw- (secrets!)
+
+# Symbolic mode
+chmod +x script.sh            # Add execute permission for all
+chmod u+x script.sh           # Add execute for owner only
+chmod g+w file.txt            # Add write for group
+chmod o-r file.txt            # Remove read from others
+chmod u+rwx,g+rx,o+r file    # Full symbolic specification
+
+# Recursive (all files in directory)
+chmod -R 755 /opt/automation/</code></pre>
+
+<h3>chown &amp; chgrp — Change Ownership</h3>
+<pre><code># Change owner
+sudo chown tester run_tests.sh
+sudo chown jenkins:jenkins /var/lib/jenkins/workspace/
+
+# Change owner and group together
+sudo chown tester:qa-team project/
+
+# Change group only
+sudo chgrp qa-team test-reports/
+
+# Recursive ownership change
+sudo chown -R jenkins:jenkins /opt/automation/</code></pre>
+
+<h3>QA Troubleshooting Scenarios</h3>
+
+<h4>Scenario 1: Automation Script Failed — Permission Denied</h4>
+<pre><code># Error: bash: ./run_tests.sh: Permission denied
+
+# Check permissions
+ls -l run_tests.sh
+# -rw-r--r-- 1 tester qa-team 1024 Jul 10 run_tests.sh
+# Problem: No execute permission (missing x)
+
+# Fix:
+chmod +x run_tests.sh
+# Or: chmod 755 run_tests.sh</code></pre>
+
+<h4>Scenario 2: Jenkins Unable to Execute Scripts</h4>
+<pre><code># Error in Jenkins console: Permission denied
+
+# Check who Jenkins runs as
+ps -ef | grep jenkins    # Usually runs as 'jenkins' user
+
+# Check file ownership
+ls -la /opt/automation/run_tests.sh
+# Owner: tester (not jenkins!)
+
+# Fix: Change ownership OR add jenkins to group
+sudo chown jenkins:jenkins /opt/automation/run_tests.sh
+# Or: sudo chmod 755 /opt/automation/run_tests.sh</code></pre>
+
+<h4>Scenario 3: SSH Key Permission Error</h4>
+<pre><code># Error: Permissions 0644 for 'id_rsa' are too open. Key will be ignored.
+
+# Fix: SSH keys MUST be 600 (owner read/write only)
+chmod 600 ~/.ssh/id_rsa
+chmod 644 ~/.ssh/id_rsa.pub   # Public key can be readable</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What does <code>chmod 755</code> mean?</strong><br>Owner: read+write+execute (7). Group: read+execute (5). Others: read+execute (5). Common for scripts and executables.</li>
+<li><strong>Your automation script fails with "Permission denied." How do you fix it?</strong><br>Check with <code>ls -l script.sh</code>. Add execute: <code>chmod +x script.sh</code>. Verify user running it has access.</li>
+<li><strong>What's the difference between <code>chmod</code> and <code>chown</code>?</strong><br><code>chmod</code> changes permissions (what can be done). <code>chown</code> changes ownership (who owns the file).</li>
+<li><strong>Why should SSH keys have 600 permission?</strong><br>SSH refuses keys that are readable by others (security). Only the owner should read/write private keys.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 5 (12 items)</summary>
+<ol>
+<li>Three permissions: Read (4), Write (2), Execute (1)</li>
+<li>Three user categories: Owner (u), Group (g), Others (o)</li>
+<li><code>chmod 755</code> = rwxr-xr-x (scripts/executables)</li>
+<li><code>chmod 644</code> = rw-r--r-- (config/data files)</li>
+<li><code>chmod 600</code> = rw------- (secrets, SSH keys)</li>
+<li><code>chmod +x</code> = add execute permission</li>
+<li><code>chown user:group file</code> = change ownership</li>
+<li>"Permission denied" = most common QA automation failure</li>
+<li>Jenkins runs as 'jenkins' user — files must be accessible</li>
+<li>Always <code>ls -l</code> to diagnose permission issues</li>
+<li>SSH keys: private = 600, public = 644</li>
+<li>Never use 777 in production — security vulnerability</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 6 ==================== -->
+<section id="section-6" class="section-card">
+<h2>Module 6: Process Management <span class="badge-must-know">Frequently Asked</span></h2>
+
+<h3>Why QA Engineers Need Process Management</h3>
+<p>When automation tests hang, Selenium Grid stops responding, or Jenkins builds consume excessive resources — you need to identify and manage processes. This is a <strong>daily skill</strong> for QA engineers working with Linux servers.</p>
+
+<h3>Core Commands</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>QA Use Case</th></tr></thead>
+<tbody>
+<tr><td><code>ps</code></td><td>List running processes (snapshot)</td><td>Find automation/selenium processes</td></tr>
+<tr><td><code>ps -ef</code></td><td>All processes with full details</td><td>Find any process by name/user</td></tr>
+<tr><td><code>ps aux</code></td><td>All processes with CPU/memory usage</td><td>Find resource-hungry processes</td></tr>
+<tr><td><code>top</code></td><td>Real-time process monitor</td><td>Watch CPU/memory during test run</td></tr>
+<tr><td><code>htop</code></td><td>Interactive process monitor (better UI)</td><td>Same as top but easier to use</td></tr>
+<tr><td><code>kill &lt;PID&gt;</code></td><td>Graceful terminate (SIGTERM)</td><td>Stop a stuck process</td></tr>
+<tr><td><code>kill -9 &lt;PID&gt;</code></td><td>Force kill (SIGKILL)</td><td>Kill unresponsive process</td></tr>
+<tr><td><code>jobs</code></td><td>List background jobs in current shell</td><td>Check running background tasks</td></tr>
+<tr><td><code>bg</code></td><td>Resume suspended job in background</td><td>Continue paused process</td></tr>
+<tr><td><code>fg</code></td><td>Bring background job to foreground</td><td>Interact with background process</td></tr>
+<tr><td><code>nohup</code></td><td>Run command immune to hangups</td><td>Run tests that survive SSH disconnect</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Practical Examples</h3>
+<pre><code># Find all Java processes (Selenium, Jenkins, JMeter)
+ps -ef | grep java
+ps aux | grep java
+
+# Find Selenium Grid processes
+ps -ef | grep selenium
+ps -ef | grep chromedriver
+
+# Find process by port (who's using port 4444?)
+lsof -i :4444
+netstat -tlnp | grep 4444
+
+# Check CPU/memory usage of specific process
+ps aux | grep jenkins | grep -v grep
+# USER  PID  %CPU %MEM   VSZ   RSS  TTY STAT START TIME COMMAND
+# jenkins 1234 15.2 8.5 4096000 512000 ? Sl Jul09 120:30 java -jar jenkins.war
+
+# top — Real-time monitoring
+top                        # Press 'q' to quit
+top -p 1234                # Monitor specific PID only
+top -u jenkins             # Show only jenkins user processes
+
+# Kill a stuck process
+kill 1234                  # Graceful termination (SIGTERM)
+kill -9 1234               # Force kill (last resort)
+
+# Kill all processes by name
+pkill -f chromedriver      # Kill all chromedriver instances
+pkill -f "selenium-server" # Kill Selenium Grid
+
+# Run tests in background (survives SSH disconnect)
+nohup mvn test > test_output.log 2>&1 &
+# Check it's running:
+jobs
+ps -ef | grep mvn</code></pre>
+
+<h3>QA Scenarios</h3>
+
+<h4>Scenario: Selenium Grid Stopped Responding</h4>
+<pre><code># Step 1: Check if Grid process is running
+ps -ef | grep selenium-server
+# If no output → process crashed. Restart it.
+
+# Step 2: Check port availability
+netstat -tlnp | grep 4444
+# If nothing → Grid is down
+# If something → Grid is up but maybe overloaded
+
+# Step 3: Check resource usage
+top -p $(pgrep -f selenium-server)
+# High CPU/memory → too many browser sessions
+
+# Step 4: Kill stuck Chrome processes
+pkill -f chromedriver
+pkill -f "chrome --headless"
+
+# Step 5: Restart Grid
+nohup java -jar selenium-server.jar -role hub > grid.log 2>&1 &</code></pre>
+
+<h4>Scenario: Automation Job Consuming 100% CPU</h4>
+<pre><code># Identify the culprit
+top    # Sort by CPU (press P)
+
+# Find specific automation process
+ps aux --sort=-%cpu | head -10
+
+# If it's stuck, kill it
+kill -9 &lt;PID&gt;
+
+# Check if it was a memory leak (JVM)
+ps aux | grep java | awk '{print $2, $4, $6, $11}'
+# PID  %MEM  RSS  COMMAND</code></pre>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Using <code>kill -9</code> as first option — always try <code>kill</code> (SIGTERM) first for graceful shutdown</li>
+<li>Killing wrong PID — always verify with <code>ps -ef | grep &lt;process&gt;</code> before killing</li>
+<li>Starting long tests without <code>nohup</code> — tests die when SSH session disconnects</li>
+<li>Not checking zombie processes — they consume PID table entries</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How to find and kill a stuck Selenium process?</strong><br><code>ps -ef | grep selenium</code> to find PID, then <code>kill PID</code> (graceful) or <code>kill -9 PID</code> (force).</li>
+<li><strong>Difference between <code>kill</code> and <code>kill -9</code>?</strong><br><code>kill</code> sends SIGTERM (graceful, process can cleanup). <code>kill -9</code> sends SIGKILL (immediate, no cleanup). Always try SIGTERM first.</li>
+<li><strong>How to run a test that survives SSH disconnect?</strong><br><code>nohup mvn test > output.log 2>&amp;1 &</code> — nohup prevents hangup signal, &amp; runs in background.</li>
+<li><strong>How to check which process is using port 8080?</strong><br><code>lsof -i :8080</code> or <code>netstat -tlnp | grep 8080</code> or <code>ss -tlnp | grep 8080</code></li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 6 (12 items)</summary>
+<ol>
+<li><code>ps -ef | grep name</code> = find process by name</li>
+<li><code>ps aux</code> = all processes with CPU/memory %</li>
+<li><code>top</code> = real-time monitoring (P=sort CPU, M=sort memory, q=quit)</li>
+<li><code>kill PID</code> = graceful stop | <code>kill -9 PID</code> = force kill</li>
+<li><code>pkill -f "pattern"</code> = kill all matching processes</li>
+<li><code>nohup command &amp;</code> = run in background, survive SSH disconnect</li>
+<li><code>lsof -i :port</code> = which process uses this port</li>
+<li><code>netstat -tlnp | grep port</code> = port check</li>
+<li>Always verify PID before killing</li>
+<li>Try SIGTERM before SIGKILL</li>
+<li>Zombie process = defunct (parent didn't collect exit status)</li>
+<li><code>top -u username</code> = monitor specific user's processes</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 7 ==================== -->
+<section id="section-7" class="section-card">
+<h2>Module 7: Text Processing Commands <span class="badge-must-know">Frequently Asked</span></h2>
+
+<h3>Why Text Processing is Critical for QA</h3>
+<p>QA engineers deal with logs, test results, CSV data, and API responses daily. Text processing commands let you <strong>extract, transform, filter, and analyze</strong> data without writing code.</p>
+
+<h3>Command Overview</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>QA Use</th></tr></thead>
+<tbody>
+<tr><td><code>grep</code></td><td>Filter lines matching pattern</td><td>Find errors, search logs</td></tr>
+<tr><td><code>awk</code></td><td>Column-based text processing</td><td>Extract specific fields from logs</td></tr>
+<tr><td><code>sed</code></td><td>Stream editor (find/replace)</td><td>Modify config files, clean data</td></tr>
+<tr><td><code>sort</code></td><td>Sort lines</td><td>Order results, find duplicates</td></tr>
+<tr><td><code>uniq</code></td><td>Remove duplicate lines</td><td>Unique errors, deduplicate</td></tr>
+<tr><td><code>cut</code></td><td>Extract columns by delimiter</td><td>CSV processing, log parsing</td></tr>
+<tr><td><code>tr</code></td><td>Translate/delete characters</td><td>Convert case, remove chars</td></tr>
+<tr><td><code>wc</code></td><td>Count lines/words/characters</td><td>Count test cases, errors</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>awk — Column Processing Powerhouse</h3>
+<pre><code># Basic: Print specific columns
+# Log format: "2026-07-10 14:30:22 ERROR LoginService - Authentication failed"
+awk '{print $1, $2, $3}' app.log         # Date, time, level
+awk '{print $3}' app.log                  # Level only (ERROR/INFO/WARN)
+awk '{print $NF}' app.log                 # Last field on each line
+
+# Filter by column value
+awk '$3 == "ERROR"' app.log               # Only ERROR lines
+awk '$3 == "ERROR" {print $0}' app.log    # Same, explicit
+
+# Custom delimiter (CSV processing)
+awk -F',' '{print $1, $3}' test_data.csv  # Columns 1 and 3 from CSV
+awk -F'|' '{print $2}' results.txt        # Pipe-delimited
+
+# Count errors by type
+awk '$3 == "ERROR" {count++} END {print "Errors:", count}' app.log
+
+# Extract response times from API log
+awk '/response_time/ {print $NF}' api.log | sort -n | tail -10  # Top 10 slowest
+
+# Average response time
+awk '/response_time/ {sum+=$NF; count++} END {print "Avg:", sum/count, "ms"}' api.log</code></pre>
+
+<h3>sed — Stream Editor</h3>
+<pre><code># Find and replace
+sed 's/old/new/' file.txt                 # Replace first occurrence per line
+sed 's/old/new/g' file.txt                # Replace ALL occurrences (global)
+sed -i 's/old/new/g' file.txt             # Edit file IN-PLACE
+
+# QA use cases
+sed -i 's/staging/production/g' config.properties      # Switch environment
+sed -i 's/http:/https:/g' test_urls.txt                # Update URLs
+sed 's/password=.*/password=***HIDDEN***/' config.log  # Mask passwords in logs
+
+# Delete lines
+sed '/^#/d' config.properties             # Remove comment lines
+sed '/^$/d' file.txt                      # Remove empty lines
+sed '1d' file.csv                         # Remove header row
+
+# Print specific lines
+sed -n '10,20p' app.log                   # Print lines 10-20
+sed -n '/ERROR/p' app.log                 # Print only ERROR lines (like grep)</code></pre>
+
+<h3>sort, uniq, cut, wc</h3>
+<pre><code># sort
+sort file.txt                             # Alphabetical sort
+sort -n file.txt                          # Numeric sort
+sort -r file.txt                          # Reverse sort
+sort -t',' -k3 -n data.csv               # Sort CSV by column 3 numerically
+
+# uniq (requires sorted input!)
+sort app.log | uniq                       # Remove duplicates
+sort app.log | uniq -c                    # Count occurrences
+sort app.log | uniq -c | sort -rn | head  # Top repeated lines
+
+# cut
+cut -d',' -f1,3 data.csv                 # Extract columns 1 and 3 from CSV
+cut -d':' -f1 /etc/passwd                # Extract usernames
+cut -c1-10 app.log                       # First 10 characters of each line
+
+# wc
+wc -l file.txt                           # Count lines
+wc -w file.txt                           # Count words
+grep -c "ERROR" app.log                  # Count error lines
+find . -name "*.py" | wc -l              # Count Python files
+
+# tr (translate)
+echo "Hello" | tr 'a-z' 'A-Z'            # HELLO (uppercase)
+echo "Hello" | tr -d 'l'                  # Heo (delete character)
+cat file.txt | tr '\t' ','                # Tab to comma (TSV→CSV)</code></pre>
+
+<h3>Advanced QA Examples — Combining Commands</h3>
+<pre><code># Count test failures by test class
+grep "FAILED" test-results.log | awk -F'.' '{print $NF}' | sort | uniq -c | sort -rn
+
+# Extract unique error messages
+grep "ERROR" app.log | awk '{$1=$2=$3=""; print $0}' | sort | uniq -c | sort -rn | head -20
+
+# Find top 10 slowest API endpoints
+grep "response_time" api.log | awk '{print $(NF-1), $NF}' | sort -k2 -n | tail -10
+
+# Count requests per status code
+grep "HTTP" access.log | awk '{print $9}' | sort | uniq -c | sort -rn
+# 45230  200
+#   890  404
+#   234  500
+#    56  503
+
+# Extract transaction IDs from failed requests
+grep "FAILED" transaction.log | awk -F'txn_id=' '{print $2}' | cut -d' ' -f1
+
+# Calculate error rate
+total=$(wc -l < access.log)
+errors=$(grep -c " 5[0-9][0-9] " access.log)
+echo "Error rate: $(echo "scale=2; $errors*100/$total" | bc)%"</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How to count the number of unique errors in a log file?</strong><br><code>grep "ERROR" app.log | sort | uniq -c | sort -rn</code></li>
+<li><strong>How to replace all occurrences of "staging" with "production" in a config file?</strong><br><code>sed -i 's/staging/production/g' config.properties</code></li>
+<li><strong>How to extract the 3rd column from a CSV file?</strong><br><code>awk -F',' '{print $3}' file.csv</code> or <code>cut -d',' -f3 file.csv</code></li>
+<li><strong>How to find the top 5 most common error messages?</strong><br><code>grep "ERROR" app.log | awk '{$1=$2=$3="";print}' | sort | uniq -c | sort -rn | head -5</code></li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 7 (15 items)</summary>
+<ol>
+<li><code>awk '{print $N}'</code> = print Nth column</li>
+<li><code>awk -F','</code> = set delimiter to comma (CSV)</li>
+<li><code>awk '$3 == "ERROR"'</code> = filter by column value</li>
+<li><code>sed 's/old/new/g'</code> = find/replace globally</li>
+<li><code>sed -i</code> = edit file in-place</li>
+<li><code>sort | uniq -c | sort -rn</code> = count + rank occurrences</li>
+<li><code>cut -d',' -f1,3</code> = extract CSV columns</li>
+<li><code>wc -l</code> = count lines</li>
+<li><code>tr 'a-z' 'A-Z'</code> = convert to uppercase</li>
+<li>Pipe commands: <code>grep | awk | sort | uniq | head</code></li>
+<li><code>uniq</code> requires sorted input (always <code>sort | uniq</code>)</li>
+<li><code>$NF</code> in awk = last field on the line</li>
+<li><code>grep -c</code> = count matches (faster than <code>grep | wc -l</code>)</li>
+<li><code>sed '/pattern/d'</code> = delete matching lines</li>
+<li>Combine: <code>grep "ERROR" log | awk '{print $4}' | sort | uniq -c</code></li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 8 ==================== -->
+<section id="section-8" class="section-card">
+<h2>Module 8: Vi/Vim Editor <span class="badge-optional">Optional for Interview</span></h2>
+<div class="optional-note">Interviewers almost never ask Vi/Vim commands in depth. Just know: <code>i</code> (insert), <code>Esc</code> (command mode), <code>:wq</code> (save &amp; quit), <code>:q!</code> (quit without saving). The rest is for your daily work convenience only.</div>
+
+<h3>Why QA Engineers Need Vi/Vim</h3>
+<p>When SSH'd into a Linux server, Vi/Vim is often the <strong>only text editor available</strong>. You need it to edit configuration files, update environment variables, modify test properties, and debug scripts directly on the server.</p>
+
+<h3>Three Modes</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Mode</th><th>Purpose</th><th>Enter Mode</th><th>Exit Mode</th></tr></thead>
+<tbody>
+<tr><td><strong>Command Mode</strong></td><td>Navigate, delete, copy, search</td><td>Press <code>Esc</code></td><td>—</td></tr>
+<tr><td><strong>Insert Mode</strong></td><td>Type/edit text</td><td>Press <code>i</code>, <code>a</code>, <code>o</code></td><td>Press <code>Esc</code></td></tr>
+<tr><td><strong>Ex Mode (Last Line)</strong></td><td>Save, quit, replace, settings</td><td>Press <code>:</code></td><td>Press <code>Enter</code> or <code>Esc</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Essential Commands</h3>
+<pre><code># Opening files
+vi filename.txt              # Open (or create) file
+vim +10 filename.txt         # Open at line 10
+vim +/ERROR app.log          # Open at first "ERROR"
+
+# Save and Quit (Ex mode — press : first)
+:w                           # Save (write)
+:q                           # Quit (fails if unsaved changes)
+:wq                          # Save and quit
+:q!                          # Quit WITHOUT saving (force)
+:wq!                         # Force save and quit
+ZZ                           # Save and quit (command mode shortcut)
+
+# Insert mode entry points
+i                            # Insert before cursor
+a                            # Insert after cursor
+o                            # New line below and insert
+O                            # New line above and insert
+A                            # Insert at end of line
+
+# Navigation (Command mode)
+h/j/k/l                      # Left/Down/Up/Right
+gg                           # Go to first line
+G                            # Go to last line
+:42                          # Go to line 42
+w                            # Jump word forward
+b                            # Jump word backward
+0                            # Beginning of line
+$                            # End of line
+
+# Search
+/pattern                     # Search forward
+?pattern                     # Search backward
+n                            # Next match
+N                            # Previous match
+
+# Search and Replace
+:%s/old/new/g                # Replace all in entire file
+:%s/old/new/gc               # Replace all with confirmation
+:10,20s/old/new/g            # Replace in lines 10-20
+
+# Delete
+dd                           # Delete current line
+5dd                          # Delete 5 lines
+dw                           # Delete word
+x                            # Delete character
+
+# Copy & Paste
+yy                           # Copy (yank) current line
+5yy                          # Copy 5 lines
+p                            # Paste below
+P                            # Paste above
+
+# Undo & Redo
+u                            # Undo
+Ctrl+r                       # Redo
+
+# Display line numbers
+:set number                  # Show line numbers
+:set nonumber                # Hide line numbers</code></pre>
+
+<h3>QA Use Cases</h3>
+<pre><code># Edit Jenkins configuration
+sudo vim /etc/default/jenkins
+
+# Update test environment URL
+vim config.properties
+# Press / then type "base.url" to find it
+# Press i to enter insert mode, make change
+# Press Esc, then :wq to save
+
+# Quick replace environment in config
+vim testng.xml
+:%s/staging/production/g
+:wq
+
+# Check a specific line in a log (e.g., line 542)
+vim +542 application.log
+
+# View read-only (don't accidentally edit)
+vim -R application.log       # or: view application.log</code></pre>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Forgetting to press <code>Esc</code> before typing commands — types random characters</li>
+<li>Not knowing how to quit — <code>:q!</code> is the escape hatch (quit without saving)</li>
+<li>Editing file without <code>sudo</code> — can't save (use <code>:w !sudo tee %</code> trick)</li>
+<li>Accidentally pressing <code>Caps Lock</code> — all navigation keys do different things</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How do you search and replace text in Vi?</strong><br><code>:%s/old/new/g</code> — % means whole file, g means global (all occurrences per line).</li>
+<li><strong>How do you go to line 100 in Vi?</strong><br>Command mode: <code>:100</code> or <code>100G</code> or <code>100gg</code></li>
+<li><strong>How to save a file when you opened it without sudo?</strong><br><code>:w !sudo tee %</code> — writes the file using sudo without reopening.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 8 (12 items)</summary>
+<ol>
+<li>Three modes: Command (Esc), Insert (i), Ex (:)</li>
+<li><code>i</code> = insert mode | <code>Esc</code> = back to command</li>
+<li><code>:wq</code> = save + quit | <code>:q!</code> = quit without saving</li>
+<li><code>/pattern</code> = search | <code>n</code> = next | <code>N</code> = previous</li>
+<li><code>:%s/old/new/g</code> = find/replace entire file</li>
+<li><code>dd</code> = delete line | <code>yy</code> = copy line | <code>p</code> = paste</li>
+<li><code>u</code> = undo | <code>Ctrl+r</code> = redo</li>
+<li><code>gg</code> = first line | <code>G</code> = last line | <code>:42</code> = line 42</li>
+<li><code>:set number</code> = show line numbers</li>
+<li><code>vim -R file</code> = read-only mode</li>
+<li>Always check mode before typing — press Esc if unsure</li>
+<li><code>:w !sudo tee %</code> = save when opened without sudo</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 9 ==================== -->
+<section id="section-9" class="section-card">
+<h2>Module 9: Archive &amp; Compression <span class="badge-optional">Optional for Interview</span></h2>
+<div class="optional-note">Rarely asked in QA interviews. Just know <code>tar -czf</code> (create) and <code>tar -xzf</code> (extract). The rest is for real-world work only.</div>
+
+<h3>Commands Overview</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>QA Use Case</th></tr></thead>
+<tbody>
+<tr><td><code>tar -czf</code></td><td>Create compressed archive (.tar.gz)</td><td>Archive test reports</td></tr>
+<tr><td><code>tar -xzf</code></td><td>Extract .tar.gz archive</td><td>Unpack shared artifacts</td></tr>
+<tr><td><code>gzip</code></td><td>Compress single file</td><td>Compress large log files</td></tr>
+<tr><td><code>gunzip</code></td><td>Decompress .gz file</td><td>Read compressed logs</td></tr>
+<tr><td><code>zip</code></td><td>Create .zip archive</td><td>Share reports (cross-platform)</td></tr>
+<tr><td><code>unzip</code></td><td>Extract .zip archive</td><td>Unpack downloaded artifacts</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Practical Examples</h3>
+<pre><code># tar — Create archive
+tar -czf reports_2026-07-10.tar.gz reports/         # Compress directory
+tar -czf logs_backup.tar.gz /var/log/app*.log       # Compress specific logs
+
+# tar — Extract archive
+tar -xzf reports_2026-07-10.tar.gz                  # Extract to current dir
+tar -xzf archive.tar.gz -C /destination/            # Extract to specific dir
+tar -tzf archive.tar.gz                             # List contents (don't extract)
+
+# tar flags explained:
+# c = create, x = extract, t = list
+# z = gzip compression, f = filename
+# v = verbose (show files being processed)
+
+# gzip/gunzip — Single file compression
+gzip large_report.html           # Creates large_report.html.gz (removes original)
+gunzip large_report.html.gz      # Restores original file
+gzip -k large_report.html        # Keep original file (-k)
+
+# zip/unzip — Cross-platform
+zip -r reports.zip reports/                  # Zip directory
+zip test_data.zip file1.csv file2.csv        # Zip specific files
+unzip reports.zip                            # Extract
+unzip -l reports.zip                         # List contents
+
+# QA Daily Usage:
+# Archive today's test execution results
+tar -czf execution_$(date +%Y%m%d_%H%M%S).tar.gz \
+    target/surefire-reports/ \
+    screenshots/ \
+    test-output/
+
+# Compress old logs to save disk space
+find /var/log -name "*.log" -mtime +7 -exec gzip {} \;
+
+# Send execution artifacts to shared drive
+tar -czf artifacts.tar.gz reports/ screenshots/ videos/
+scp artifacts.tar.gz user@server:/shared/results/</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How do you create a tar.gz archive of test reports?</strong><br><code>tar -czf reports.tar.gz reports/</code> — c=create, z=gzip, f=filename.</li>
+<li><strong>How to extract a tar.gz to a specific directory?</strong><br><code>tar -xzf archive.tar.gz -C /target/directory/</code></li>
+<li><strong>Difference between gzip and zip?</strong><br>gzip compresses single files only (use tar+gzip for directories). zip can handle directories and is cross-platform (Windows compatible).</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 9 (10 items)</summary>
+<ol>
+<li><code>tar -czf name.tar.gz dir/</code> = create compressed archive</li>
+<li><code>tar -xzf name.tar.gz</code> = extract archive</li>
+<li><code>tar -tzf name.tar.gz</code> = list contents without extracting</li>
+<li>c=create, x=extract, t=list, z=gzip, f=file, v=verbose</li>
+<li><code>gzip file</code> = compress (replaces original)</li>
+<li><code>gzip -k file</code> = compress and keep original</li>
+<li><code>zip -r name.zip dir/</code> = zip directory (cross-platform)</li>
+<li>Archive test reports with date: <code>reports_$(date +%Y%m%d).tar.gz</code></li>
+<li>Compress old logs: <code>find -mtime +7 -exec gzip {} \;</code></li>
+<li><code>-C /path</code> = extract to specific directory</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 10 ==================== -->
+<section id="section-10" class="section-card">
+<h2>Module 10: User Management <span class="badge-optional">Optional for Interview</span></h2>
+<div class="optional-note">Interviewers rarely deep-dive into user management. Just know <code>sudo</code>, <code>whoami</code>, and the concept that Jenkins runs as its own user. The commands <code>passwd</code>, <code>su</code>, and user creation are admin tasks — not QA interview material.</div>
+
+<h3>Core Commands</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>Example Output</th></tr></thead>
+<tbody>
+<tr><td><code>whoami</code></td><td>Current logged-in username</td><td><code>tester</code></td></tr>
+<tr><td><code>id</code></td><td>User ID, group ID, all groups</td><td><code>uid=1000(tester) gid=1000(qa) groups=1000(qa),27(sudo)</code></td></tr>
+<tr><td><code>who</code></td><td>Who is logged in to the system</td><td>Shows all active sessions</td></tr>
+<tr><td><code>w</code></td><td>Who is logged in + what they're doing</td><td>More detail than <code>who</code></td></tr>
+<tr><td><code>passwd</code></td><td>Change your password</td><td>Prompts for old + new password</td></tr>
+<tr><td><code>su &lt;user&gt;</code></td><td>Switch user</td><td><code>su jenkins</code> (need password)</td></tr>
+<tr><td><code>sudo &lt;cmd&gt;</code></td><td>Run command as root (superuser)</td><td><code>sudo systemctl restart nginx</code></td></tr>
+<tr><td><code>sudo -u &lt;user&gt; &lt;cmd&gt;</code></td><td>Run command as another user</td><td><code>sudo -u jenkins cat /var/lib/jenkins/config.xml</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>QA Context: Understanding Jenkins User</h3>
+<pre><code># Find what user Jenkins runs as
+ps -ef | grep jenkins
+# jenkins  1234  1  5 Jul09 ?  Sl  120:30 java -jar /usr/share/jenkins/jenkins.war
+
+# Jenkins user ID and groups
+id jenkins
+# uid=108(jenkins) gid=115(jenkins) groups=115(jenkins),998(docker)
+
+# Run command as Jenkins user (for debugging)
+sudo -u jenkins ls /var/lib/jenkins/workspace/
+sudo -u jenkins cat /var/lib/jenkins/config.xml
+
+# Check if Jenkins user can access your automation scripts
+sudo -u jenkins ls -la /opt/automation/run_tests.sh
+# If "Permission denied" → that's why Jenkins builds fail!
+
+# Add Jenkins to docker group (so it can run Docker)
+sudo usermod -aG docker jenkins
+sudo systemctl restart jenkins</code></pre>
+
+<h3>sudo vs su</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>sudo</th><th>su</th></tr></thead>
+<tbody>
+<tr><td>Purpose</td><td>Run ONE command as root/another user</td><td>Switch entire session to another user</td></tr>
+<tr><td>Password</td><td>YOUR password (if you're in sudoers)</td><td>TARGET user's password</td></tr>
+<tr><td>Audit</td><td>Logged in /var/log/auth.log</td><td>Less auditable</td></tr>
+<tr><td>Security</td><td>More secure (granular, time-limited)</td><td>Less secure (full shell access)</td></tr>
+<tr><td>Usage</td><td><code>sudo apt update</code></td><td><code>su - jenkins</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How do you check what user Jenkins runs as?</strong><br><code>ps -ef | grep jenkins</code> — first column shows the user. Or <code>cat /etc/default/jenkins</code>.</li>
+<li><strong>What is the difference between <code>sudo</code> and <code>su</code>?</strong><br>sudo runs one command with elevated privileges using YOUR password. su switches to another user's session entirely using THEIR password.</li>
+<li><strong>How to add a user to the docker group?</strong><br><code>sudo usermod -aG docker username</code> — then logout/login for it to take effect.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 10 (10 items)</summary>
+<ol>
+<li><code>whoami</code> = current user | <code>id</code> = user + group details</li>
+<li><code>sudo</code> = run as root (YOUR password)</li>
+<li><code>su user</code> = switch to user (THEIR password)</li>
+<li><code>sudo -u jenkins cmd</code> = run as jenkins user</li>
+<li>Jenkins typically runs as 'jenkins' user</li>
+<li><code>ps -ef | grep jenkins</code> = verify Jenkins user</li>
+<li><code>usermod -aG group user</code> = add user to group</li>
+<li>Permission issues often = wrong user running the process</li>
+<li><code>id jenkins</code> = check Jenkins user's groups</li>
+<li>Changes to groups require logout/login to take effect</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 11 ==================== -->
+<section id="section-11" class="section-card">
+<h2>Module 11: Environment Variables <span class="badge-must-know">Frequently Asked</span></h2>
+
+<h3>Concept Explanation</h3>
+<p>Environment variables are key-value pairs that configure how programs behave. For QA engineers, they determine which Java version runs, where Maven looks for dependencies, and how your automation framework connects to test environments.</p>
+
+<h3>Core Commands</h3>
+<pre><code># View environment variables
+echo $PATH                  # Executable search path
+echo $HOME                  # Home directory
+echo $USER                  # Current username
+echo $JAVA_HOME             # Java installation path
+env                         # ALL environment variables
+printenv                    # Same as env
+printenv JAVA_HOME          # Specific variable
+
+# Set variables (current session only)
+export MY_VAR="value"
+export TEST_ENV="staging"
+export BASE_URL="https://staging.myapp.com"
+
+# Set permanently (add to ~/.bashrc or ~/.bash_profile)
+echo 'export JAVA_HOME=/usr/lib/jvm/java-11-openjdk' >> ~/.bashrc
+source ~/.bashrc            # Reload without logout</code></pre>
+
+<h3>Critical Variables for QA</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Variable</th><th>Purpose</th><th>Typical Value</th></tr></thead>
+<tbody>
+<tr><td><code>JAVA_HOME</code></td><td>Java installation directory</td><td><code>/usr/lib/jvm/java-11-openjdk-amd64</code></td></tr>
+<tr><td><code>MAVEN_HOME</code></td><td>Maven installation directory</td><td><code>/opt/apache-maven-3.9.6</code></td></tr>
+<tr><td><code>PATH</code></td><td>Directories to search for executables</td><td>Includes bin directories of tools</td></tr>
+<tr><td><code>CLASSPATH</code></td><td>Java class search path</td><td>Test libraries and dependencies</td></tr>
+<tr><td><code>NODE_HOME</code></td><td>Node.js installation</td><td><code>/usr/local/lib/nodejs</code></td></tr>
+<tr><td><code>CHROME_BIN</code></td><td>Chrome binary path (headless)</td><td><code>/usr/bin/google-chrome</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Setting Up Automation Environment</h3>
+<pre><code># Complete setup for Selenium + Maven project
+# Add to ~/.bashrc:
+
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+export MAVEN_HOME=/opt/apache-maven-3.9.6
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+
+# For Node.js (Playwright/Cypress)
+export NODE_HOME=/usr/local/lib/nodejs/node-v20.10.0
+export PATH=$NODE_HOME/bin:$PATH
+
+# Test environment configuration
+export TEST_ENV=staging
+export BASE_URL=https://staging.myapp.com
+export API_KEY=your-api-key-here
+
+# Verify setup
+source ~/.bashrc
+java -version
+mvn -version
+echo $TEST_ENV</code></pre>
+
+<h3>PATH Variable Deep Dive</h3>
+<pre><code># PATH tells the shell WHERE to find executables
+echo $PATH
+# /usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin
+
+# When you type "java", shell searches each PATH directory left-to-right
+# First match wins
+
+# Add directory to PATH
+export PATH=/opt/new-tool/bin:$PATH    # Prepend (higher priority)
+export PATH=$PATH:/opt/new-tool/bin    # Append (lower priority)
+
+# Common issue: "command not found" means it's not in PATH
+which mvn         # Shows where mvn is (if found)
+# mvn not found  → Maven not installed OR not in PATH
+
+# Fix: Add Maven to PATH
+export PATH=$PATH:/opt/apache-maven-3.9.6/bin
+which mvn         # /opt/apache-maven-3.9.6/bin/mvn ✓</code></pre>
+
+<h3>Troubleshooting</h3>
+<pre><code># "JAVA_HOME is not set" error in Jenkins/Maven
+echo $JAVA_HOME               # Empty? That's the problem
+export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+echo $JAVA_HOME               # Should now show path
+
+# "mvn: command not found"
+which mvn                      # Not found
+find / -name "mvn" 2>/dev/null # Find it manually
+# /opt/apache-maven-3.9.6/bin/mvn
+export PATH=$PATH:/opt/apache-maven-3.9.6/bin
+
+# Variable set but not available in sub-processes
+MY_VAR="value"              # Only in current shell
+export MY_VAR="value"       # Available to child processes (MUST export)</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is the difference between setting a variable with and without <code>export</code>?</strong><br>Without export: only available in current shell. With export: available to all child processes (subshells, scripts launched from this shell).</li>
+<li><strong>How to make an environment variable permanent?</strong><br>Add the export line to <code>~/.bashrc</code> (user-level) or <code>/etc/environment</code> (system-level). Then <code>source ~/.bashrc</code>.</li>
+<li><strong>Jenkins build fails with "JAVA_HOME not set." How do you fix?</strong><br>Set JAVA_HOME in Jenkins global config (Manage Jenkins → Global Tool Configuration) or in the job's environment variables section.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 11 (12 items)</summary>
+<ol>
+<li><code>echo $VARIABLE</code> = view value | <code>env</code> = view all</li>
+<li><code>export VAR="value"</code> = set + make available to child processes</li>
+<li>Without <code>export</code> = current shell only</li>
+<li>Permanent: add to <code>~/.bashrc</code> then <code>source ~/.bashrc</code></li>
+<li>JAVA_HOME, MAVEN_HOME, PATH = critical for automation</li>
+<li>PATH = colon-separated list of executable search directories</li>
+<li>"command not found" usually = not in PATH</li>
+<li><code>which command</code> = verify executable is findable</li>
+<li>Jenkins env vars: Manage Jenkins → Configure System</li>
+<li>Test env config: BASE_URL, TEST_ENV, API_KEY as env vars</li>
+<li><code>source ~/.bashrc</code> = reload without logout</li>
+<li><code>export PATH=$PATH:/new/dir</code> = append to PATH</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 12 ==================== -->
+<section id="section-12" class="section-card">
+<h2>Module 12: Networking Commands</h2>
+
+<h3>Essential Networking Commands for QA</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>QA Use Case</th><th>Interview?</th></tr></thead>
+<tbody>
+<tr><td><code>ping</code></td><td>Test connectivity to host</td><td>Verify server is reachable</td><td><span class="badge-must-know">Asked</span></td></tr>
+<tr><td><code>curl</code></td><td>Transfer data via URLs</td><td>API testing, health checks</td><td><span class="badge-must-know">Asked</span></td></tr>
+<tr><td><code>netstat / ss</code></td><td>Network statistics / connections</td><td>Check port availability</td><td><span class="badge-must-know">Asked</span></td></tr>
+<tr><td><code>telnet</code></td><td>Test port connectivity</td><td>Check if port is open</td><td><span class="badge-must-know">Asked</span></td></tr>
+<tr><td><code>wget</code></td><td>Download files</td><td>Download test artifacts</td><td><span class="badge-optional">Rarely</span></td></tr>
+<tr><td><code>nslookup</code></td><td>DNS lookup</td><td>Verify domain resolution</td><td><span class="badge-optional">Rarely</span></td></tr>
+<tr><td><code>dig</code></td><td>DNS lookup (detailed)</td><td>Debug DNS issues</td><td><span class="badge-optional">Rarely</span></td></tr>
+<tr><td><code>traceroute</code></td><td>Show network path to host</td><td>Diagnose network latency</td><td><span class="badge-optional">Rarely</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Practical Examples</h3>
+<pre><code># Verify server connectivity
+ping -c 3 staging.myapp.com        # 3 pings only (not infinite)
+ping -c 1 -W 2 10.0.0.50          # 1 ping, 2 sec timeout
+
+# Check if port is open/listening
+netstat -tlnp | grep 8080          # Is something on port 8080?
+ss -tlnp | grep 8080               # Modern alternative
+telnet staging.myapp.com 443       # Test HTTPS port manually
+
+# DNS lookup
+nslookup staging.myapp.com         # Resolve domain to IP
+dig staging.myapp.com              # Detailed DNS info
+dig +short staging.myapp.com       # Just the IP
+
+# Trace network path (debug latency)
+traceroute staging.myapp.com
+
+# Download files
+wget https://downloads.apache.org/jmeter/binaries/apache-jmeter-5.6.3.zip
+wget -O custom_name.zip https://example.com/file.zip
+
+# curl — Quick API testing
+curl https://api.myapp.com/health              # GET request
+curl -I https://staging.myapp.com              # Headers only (check status)
+curl -o response.json https://api.myapp.com/users  # Save response to file</code></pre>
+
+<h3>QA Scenarios</h3>
+<pre><code># Scenario 1: Test environment unreachable
+ping -c 3 staging.myapp.com
+# If fails: network issue or server down
+nslookup staging.myapp.com
+# If fails: DNS resolution problem
+traceroute staging.myapp.com
+# Shows where the connection drops
+
+# Scenario 2: API returning timeout
+curl -w "Time: %{time_total}s\n" -o /dev/null -s https://api.myapp.com/slow-endpoint
+# Shows actual response time
+
+# Scenario 3: Verify all services are up after deployment
+curl -s -o /dev/null -w "%{http_code}" https://staging.myapp.com/health
+# Returns 200 if healthy
+
+# Scenario 4: Check if Selenium Grid port is accessible
+ss -tlnp | grep 4444
+# tcp LISTEN 0 50 *:4444 *:* users:(("java",pid=1234,fd=5))
+
+# Scenario 5: Multiple port checks
+for port in 8080 4444 3000 5432; do
+  echo -n "Port $port: "
+  (echo > /dev/tcp/localhost/$port) 2>/dev/null && echo "OPEN" || echo "CLOSED"
+done</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How do you check if a specific port is listening?</strong><br><code>netstat -tlnp | grep &lt;port&gt;</code> or <code>ss -tlnp | grep &lt;port&gt;</code></li>
+<li><strong>How to verify an API endpoint is responding correctly?</strong><br><code>curl -s -o /dev/null -w "%{http_code}" https://api.example.com/health</code> — returns HTTP status code.</li>
+<li><strong>What's the difference between <code>ping</code> and <code>telnet</code> for connectivity testing?</strong><br>Ping tests ICMP connectivity (is host alive?). Telnet tests specific TCP port (is service running?).</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 12 (12 items)</summary>
+<ol>
+<li><code>ping -c 3 host</code> = test connectivity (3 packets)</li>
+<li><code>curl url</code> = HTTP request (API testing swiss army knife)</li>
+<li><code>curl -I url</code> = headers only (quick status check)</li>
+<li><code>netstat -tlnp | grep port</code> = check port listeners</li>
+<li><code>ss -tlnp</code> = modern faster alternative to netstat</li>
+<li><code>nslookup domain</code> = DNS resolution</li>
+<li><code>traceroute host</code> = show network path (debug latency)</li>
+<li><code>wget url</code> = download files</li>
+<li><code>telnet host port</code> = test if specific port is open</li>
+<li><code>curl -w "%{time_total}" url</code> = measure response time</li>
+<li>Can't ping? Check: network → DNS → firewall → service</li>
+<li>Port not listening? Service is down or wrong port configured</li>
+</ol>
+</details>
+</section>
+
+
+<!-- ==================== MODULE 13 ==================== -->
+<section id="section-13" class="section-card">
+<h2>Module 13: Log Analysis for Testers <span class="badge-must-know">Frequently Asked</span></h2>
+
+<h3>Why Log Analysis is Critical for QA</h3>
+<p>As a QA engineer, you'll investigate application failures, slow APIs, and production issues daily. Log analysis using Linux commands is often <strong>faster and more efficient</strong> than using any GUI tool.</p>
+
+<h3>Log Analysis Workflow</h3>
+<div class="ascii-diagram">Issue Reported
+     │
+     ▼
+1. Identify log location (find, locate)
+     │
+     ▼
+2. Check recent entries (tail -100, tail -f)
+     │
+     ▼
+3. Filter for errors (grep ERROR, grep Exception)
+     │
+     ▼
+4. Get context (grep -B5 -A10 "pattern")
+     │
+     ▼
+5. Analyze patterns (awk, sort, uniq -c)
+     │
+     ▼
+6. Correlate timestamps (grep "timerange")
+     │
+     ▼
+Root Cause Identified → Report to Dev Team</div>
+
+<h3>Scenario 1: Production Login Failures</h3>
+<pre><code># Step 1: Find authentication logs
+find /var/log -name "*auth*" -o -name "*login*" | head
+
+# Step 2: Check recent login failures
+tail -500 /var/log/app/auth.log | grep -i "failed\|denied\|invalid"
+
+# Step 3: Count failures by user
+grep "login failed" auth.log | awk '{print $NF}' | sort | uniq -c | sort -rn | head -10
+# Output:
+#   145  user@email.com
+#    89  admin@company.com
+#    23  test@example.com
+
+# Step 4: Check if it's from specific IP (potential brute force)
+grep "login failed" auth.log | awk '{print $5}' | sort | uniq -c | sort -rn
+# If one IP has thousands → possible attack
+
+# Step 5: Get timeline of failures
+grep "login failed" auth.log | awk '{print $1, $2}' | cut -d: -f1,2 | uniq -c
+# Shows failures per hour</code></pre>
+
+<h3>Scenario 2: Slow API Response Investigation</h3>
+<pre><code># Step 1: Find API response time entries
+grep "response_time" api-gateway.log | tail -100
+
+# Step 2: Extract slow requests (>5000ms)
+awk '/response_time/ && $NF > 5000 {print $0}' api-gateway.log
+
+# Step 3: Identify slowest endpoints
+grep "response_time" api.log | awk '{print $(NF-2), $NF}' | sort -k2 -n | tail -20
+
+# Step 4: Average response time per endpoint
+awk -F'|' '/GET/ {sum[$3]+=$NF; count[$3]++} END {for(e in sum) print e, sum[e]/count[e] "ms"}' api.log
+
+# Step 5: Check if DB is the bottleneck
+grep "db_query_time" app.log | awk '{if($NF > 1000) print $0}' | wc -l
+
+# Step 6: Real-time monitoring of slow requests
+tail -f api.log | awk '/response_time/ && $NF > 3000 {print "\033[31m" $0 "\033[0m"}'</code></pre>
+
+<h3>Scenario 3: Database Connection Failures</h3>
+<pre><code># Find DB connection errors
+grep -i "connection\|timeout\|refused\|pool" app.log | grep -i "error\|fail\|exception"
+
+# Check connection pool exhaustion
+grep "pool" app.log | grep -i "exhaust\|full\|wait" | tail -20
+
+# Count DB errors over time
+grep "DBConnectionException" app.log | awk '{print $1, $2}' | cut -d: -f1 | uniq -c
+
+# Check if it correlates with high traffic
+grep "active_connections" app.log | awk '{print $1, $NF}' | tail -50</code></pre>
+
+<h3>Scenario 4: Server Crash / Out of Memory</h3>
+<pre><code># Check system logs for OOM (Out of Memory) killer
+sudo grep -i "oom\|out of memory\|killed process" /var/log/syslog
+sudo dmesg | grep -i "oom\|memory"
+
+# Check application heap dumps
+find /var/log -name "*.hprof" -mtime -1
+
+# Memory usage over time
+grep "heap\|memory" app.log | awk '/used/ {print $1, $2, $NF}'
+
+# Check disk space (log files filling disk)
+df -h                          # Filesystem usage
+du -sh /var/log/*              # Size of each log directory
+find /var/log -size +1G        # Logs over 1GB</code></pre>
+
+<h3>Scenario 5: Automation Job Failed at Midnight</h3>
+<pre><code># Check Jenkins build log
+cat /var/lib/jenkins/jobs/nightly-regression/builds/lastFailedBuild/log | tail -100
+
+# Find the exact failure point
+grep -n "BUILD FAILURE\|FATAL\|Exception" build.log | head -5
+
+# Check if it was an environment issue
+grep -i "connection refused\|timeout\|unavailable" build.log
+
+# Check if server was under load at that time
+sar -u -s 00:00:00 -e 01:00:00    # CPU usage midnight to 1AM
+sar -r -s 00:00:00 -e 01:00:00    # Memory usage
+
+# Check cron jobs that might have conflicted
+grep "CRON" /var/log/syslog | grep "$(date -d yesterday +%b\ %d)"</code></pre>
+
+<h3>Power Commands for Log Analysis</h3>
+<pre><code># Multi-line log entries (stack traces)
+grep -A 30 "NullPointerException" app.log | head -50
+
+# Extract unique exception types
+grep "Exception" app.log | sed 's/.*\(.*Exception\).*/\1/' | sort | uniq -c | sort -rn
+
+# Time-based filtering (logs between 2PM-3PM)
+awk '$2 >= "14:00:00" && $2 <= "15:00:00"' app.log
+
+# Compare today's errors vs yesterday
+today=$(grep -c "ERROR" app_$(date +%Y-%m-%d).log)
+yesterday=$(grep -c "ERROR" app_$(date -d yesterday +%Y-%m-%d).log)
+echo "Today: $today errors | Yesterday: $yesterday errors"
+
+# Error rate calculation
+total=$(wc -l < access.log)
+errors=$(grep -c " [45][0-9][0-9] " access.log)
+echo "Error rate: $(echo "scale=4; $errors/$total*100" | bc)%"</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How would you investigate a production issue using only Linux commands?</strong><br>1) <code>tail -f</code> for real-time monitoring. 2) <code>grep "ERROR"</code> to find errors. 3) <code>grep -B5 -A10</code> for context. 4) <code>awk + sort + uniq -c</code> to find patterns. 5) Correlate timestamps with deployment events.</li>
+<li><strong>How to find the top 5 most frequent errors in a log?</strong><br><code>grep "ERROR" app.log | awk '{$1=$2=$3="";print}' | sort | uniq -c | sort -rn | head -5</code></li>
+<li><strong>Application is slow. How to check if it's a DB issue from logs?</strong><br><code>grep "db_query_time\|slow query\|connection pool" app.log | awk '{if($NF > 1000) print}'</code></li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 13 (12 items)</summary>
+<ol>
+<li>Log analysis flow: find → tail → grep → context → patterns → root cause</li>
+<li><code>grep -B5 -A10 "ERROR"</code> = context around errors</li>
+<li><code>awk + sort + uniq -c + sort -rn</code> = frequency analysis</li>
+<li><code>tail -f log | grep "pattern"</code> = real-time filtering</li>
+<li>Login failures: grep failed → count by user → check IPs</li>
+<li>Slow API: find response_time → filter by threshold → identify endpoint</li>
+<li>DB issues: grep connection/timeout/pool errors</li>
+<li>OOM: check /var/log/syslog + dmesg for "oom" or "killed"</li>
+<li><code>df -h</code> = disk usage | <code>du -sh dir/</code> = directory size</li>
+<li>Time filtering: <code>awk '$2 >= "14:00" && $2 <= "15:00"'</code></li>
+<li>Stack traces: <code>grep -A 30 "Exception"</code></li>
+<li>Compare: count today's errors vs yesterday's</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 14 ==================== -->
+<section id="section-14" class="section-card">
+<h2>Module 14: Shell Scripting for QA <span class="badge-must-know">Frequently Asked</span></h2>
+
+<h3>Why Shell Scripting for QA Engineers</h3>
+<p>Shell scripts automate repetitive tasks: health checks, test triggers, report generation, log rotation, and environment setup. A QA engineer who can write shell scripts saves hours of manual work daily.</p>
+
+<h3>Script Basics</h3>
+<pre><code>#!/bin/bash
+# ↑ Shebang line — tells OS to use bash interpreter
+
+# Variables
+NAME="Selenium Test Suite"
+ENV="staging"
+DATE=$(date +%Y-%m-%d)
+REPORT_DIR="/home/tester/reports/$DATE"
+
+echo "Running: $NAME on $ENV"
+echo "Date: $DATE"
+echo "Reports: $REPORT_DIR"
+
+# Make script executable:
+# chmod +x script.sh
+# Run: ./script.sh</code></pre>
+
+<h3>Conditionals</h3>
+<pre><code>#!/bin/bash
+# Check if application is healthy before running tests
+
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://staging.myapp.com/health)
+
+if [ "$STATUS" -eq 200 ]; then
+    echo "✅ Application is healthy. Starting tests..."
+    mvn test -Denv=staging
+elif [ "$STATUS" -eq 503 ]; then
+    echo "⚠️ Application is in maintenance. Skipping tests."
+    exit 0
+else
+    echo "❌ Application returned $STATUS. Tests aborted."
+    exit 1
+fi</code></pre>
+
+<h3>Loops</h3>
+<pre><code>#!/bin/bash
+# Check multiple servers before test execution
+
+SERVERS=("app-server-1" "app-server-2" "db-server" "redis-server")
+
+echo "=== Pre-Test Health Check ==="
+for server in "${SERVERS[@]}"; do
+    if ping -c 1 -W 2 "$server" > /dev/null 2>&1; then
+        echo "✅ $server — Reachable"
+    else
+        echo "❌ $server — UNREACHABLE"
+        exit 1
+    fi
+done
+echo "All servers healthy. Proceeding with tests."
+
+# While loop — wait for service to be ready
+echo "Waiting for application to start..."
+RETRIES=30
+while [ $RETRIES -gt 0 ]; do
+    if curl -s http://localhost:8080/health | grep -q "UP"; then
+        echo "✅ Application is UP"
+        break
+    fi
+    echo "Waiting... ($RETRIES retries left)"
+    sleep 5
+    RETRIES=$((RETRIES - 1))
+done
+
+if [ $RETRIES -eq 0 ]; then
+    echo "❌ Application failed to start within timeout"
+    exit 1
+fi</code></pre>
+
+<h3>Functions</h3>
+<pre><code>#!/bin/bash
+# Reusable functions for test automation
+
+check_service() {
+    local service_url=$1
+    local service_name=$2
+    local status=$(curl -s -o /dev/null -w "%{http_code}" "$service_url")
+    if [ "$status" -eq 200 ]; then
+        echo "✅ $service_name is UP (HTTP $status)"
+        return 0
+    else
+        echo "❌ $service_name is DOWN (HTTP $status)"
+        return 1
+    fi
+}
+
+generate_report() {
+    local report_dir=$1
+    echo "Generating test report in $report_dir..."
+    mkdir -p "$report_dir"
+    cp target/surefire-reports/*.xml "$report_dir/"
+    cp target/screenshots/*.png "$report_dir/" 2>/dev/null
+    echo "Report generated: $report_dir"
+}
+
+# Usage
+check_service "https://staging.myapp.com/health" "Staging App"
+check_service "https://api.myapp.com/status" "API Gateway"
+generate_report "/reports/$(date +%Y-%m-%d)"</code></pre>
+
+<h3>Script Arguments</h3>
+<pre><code>#!/bin/bash
+# run_tests.sh — Accept environment and suite as arguments
+# Usage: ./run_tests.sh staging smoke
+
+ENV=${1:-staging}       # First arg (default: staging)
+SUITE=${2:-regression}  # Second arg (default: regression)
+THREADS=${3:-4}         # Third arg (default: 4)
+
+echo "Environment: $ENV"
+echo "Test Suite: $SUITE"
+echo "Parallel Threads: $THREADS"
+
+mvn test \
+    -Denv="$ENV" \
+    -Dsuite="$SUITE" \
+    -Dthreads="$THREADS" \
+    -Dsurefire.rerunFailingTestsCount=2
+
+EXIT_CODE=$?
+if [ $EXIT_CODE -ne 0 ]; then
+    echo "❌ Tests FAILED (exit code: $EXIT_CODE)"
+else
+    echo "✅ All tests PASSED"
+fi
+exit $EXIT_CODE</code></pre>
+
+<h3>Complete QA Script: Test Execution Monitor</h3>
+<pre><code>#!/bin/bash
+# monitor_execution.sh — Full test execution workflow
+
+LOG_FILE="execution_$(date +%Y%m%d_%H%M%S).log"
+REPORT_DIR="reports/$(date +%Y-%m-%d)"
+
+echo "========================================" | tee "$LOG_FILE"
+echo " Automation Execution - $(date)"         | tee -a "$LOG_FILE"
+echo "========================================" | tee -a "$LOG_FILE"
+
+# Pre-checks
+echo "[1/5] Running health checks..." | tee -a "$LOG_FILE"
+if ! curl -sf https://staging.myapp.com/health > /dev/null; then
+    echo "ABORT: Application not healthy" | tee -a "$LOG_FILE"
+    exit 1
+fi
+
+# Execute tests
+echo "[2/5] Starting test execution..." | tee -a "$LOG_FILE"
+mvn test -Denv=staging 2>&1 | tee -a "$LOG_FILE"
+TEST_EXIT=$?
+
+# Collect results
+echo "[3/5] Collecting results..." | tee -a "$LOG_FILE"
+mkdir -p "$REPORT_DIR"
+PASSED=$(grep -c "PASSED" "$LOG_FILE")
+FAILED=$(grep -c "FAILED" "$LOG_FILE")
+TOTAL=$((PASSED + FAILED))
+
+# Generate summary
+echo "[4/5] Generating summary..." | tee -a "$LOG_FILE"
+echo "================================" | tee -a "$LOG_FILE"
+echo " RESULTS: $PASSED/$TOTAL passed" | tee -a "$LOG_FILE"
+echo " Failed: $FAILED"                | tee -a "$LOG_FILE"
+echo "================================" | tee -a "$LOG_FILE"
+
+# Archive
+echo "[5/5] Archiving artifacts..." | tee -a "$LOG_FILE"
+tar -czf "$REPORT_DIR/artifacts.tar.gz" target/surefire-reports/ screenshots/ 2>/dev/null
+
+exit $TEST_EXIT</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Write a script to check if a server is up before running tests.</strong><br>Use <code>curl -sf URL/health</code>, check exit code with <code>$?</code>, proceed or abort.</li>
+<li><strong>How to pass arguments to a shell script?</strong><br><code>$1, $2, $3</code> etc. Use <code>${1:-default}</code> for defaults. <code>$@</code> for all args. <code>$#</code> for count.</li>
+<li><strong>How to run a script that monitors logs and alerts on errors?</strong><br><code>tail -f app.log | while read line; do if echo "$line" | grep -q "FATAL"; then send_alert; fi; done</code></li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 14 (12 items)</summary>
+<ol>
+<li><code>#!/bin/bash</code> = shebang (first line of every script)</li>
+<li><code>chmod +x script.sh</code> then <code>./script.sh</code> to run</li>
+<li>Variables: <code>VAR="value"</code> | Use: <code>$VAR</code> or <code>${VAR}</code></li>
+<li>Command substitution: <code>$(command)</code> e.g., <code>$(date +%Y-%m-%d)</code></li>
+<li><code>if [ condition ]; then ... elif ... else ... fi</code></li>
+<li><code>for item in list; do ... done</code></li>
+<li><code>while [ condition ]; do ... done</code></li>
+<li>Arguments: <code>$1</code>=first, <code>$2</code>=second, <code>${1:-default}</code></li>
+<li><code>$?</code> = exit code of last command (0=success)</li>
+<li><code>exit 0</code>=success | <code>exit 1</code>=failure</li>
+<li><code>tee</code> = output to screen AND file simultaneously</li>
+<li>Functions: <code>name() { commands; }</code> then call with <code>name arg1</code></li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 15 ==================== -->
+<section id="section-15" class="section-card">
+<h2>Module 15: UNIX for Selenium Projects <span class="badge-optional">Optional for Interview</span></h2>
+<div class="optional-note">This is more of a DevOps/setup topic. Interviewers may ask "How do you run tests on Linux server?" — answer: <code>nohup mvn test &amp;</code> with headless Chrome. The installation steps and Grid setup are rarely asked in QA interviews.</div>
+
+<h3>Running Selenium on Linux Server</h3>
+<pre><code># Install Java (required for Selenium)
+sudo apt update
+sudo apt install openjdk-11-jdk -y
+java -version
+
+# Install Maven
+sudo apt install maven -y
+mvn -version
+
+# Install Chrome (headless)
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+sudo apt update && sudo apt install google-chrome-stable -y
+google-chrome --version
+
+# Install ChromeDriver
+CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1)
+wget "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION" -O version.txt
+wget "https://chromedriver.storage.googleapis.com/$(cat version.txt)/chromedriver_linux64.zip"
+unzip chromedriver_linux64.zip
+sudo mv chromedriver /usr/local/bin/
+chromedriver --version</code></pre>
+
+<h3>Maven Commands for Test Execution</h3>
+<pre><code># Run all tests
+mvn test
+
+# Run specific test class
+mvn test -Dtest=LoginTest
+
+# Run specific test method
+mvn test -Dtest=LoginTest#testValidLogin
+
+# Run with specific TestNG suite
+mvn test -DsuiteXmlFile=testng-regression.xml
+
+# Run with environment parameter
+mvn test -Denv=staging -Dbrowser=chrome-headless
+
+# Run with parallel execution
+mvn test -Dthreads=4 -DsuiteXmlFile=parallel-suite.xml
+
+# Skip tests (useful for build-only)
+mvn install -DskipTests
+
+# Clean and test
+mvn clean test
+
+# Generate Surefire report
+mvn surefire-report:report
+
+# Run in background on Linux server
+nohup mvn test -Denv=staging > test_output.log 2>&1 &
+echo "PID: $!"
+tail -f test_output.log</code></pre>
+
+<h3>Selenium Grid on Linux</h3>
+<pre><code># Start Selenium Grid Hub
+nohup java -jar selenium-server-4.15.0.jar hub > hub.log 2>&1 &
+echo "Hub PID: $!"
+
+# Start Node (same or different machine)
+nohup java -jar selenium-server-4.15.0.jar node \
+    --hub http://hub-server:4444 \
+    --max-sessions 5 > node.log 2>&1 &
+
+# Verify Grid is running
+curl http://localhost:4444/status | python3 -m json.tool
+
+# Monitor Grid
+tail -f hub.log | grep -i "session\|error\|node"
+
+# Check active sessions
+curl -s http://localhost:4444/status | grep -o '"value":{[^}]*}' | python3 -m json.tool
+
+# Kill all Grid processes
+pkill -f selenium-server
+pkill -f chromedriver
+pkill -f chrome</code></pre>
+
+<h3>Log Monitoring During Test Execution</h3>
+<pre><code># Watch test execution log
+tail -f target/test-output/output.log
+
+# Count pass/fail in real-time
+watch -n 5 'grep -c "PASSED" test-output.log; grep -c "FAILED" test-output.log'
+
+# Find failed test names
+grep "FAILED" target/surefire-reports/*.txt | awk -F: '{print $2}'
+
+# Check for browser crashes
+grep -i "session.*deleted\|chrome.*crash\|timeout" test-output.log</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How do you run Selenium tests on a headless Linux server?</strong><br>Install Java + Maven + Chrome (headless) + ChromeDriver. Run with <code>mvn test -Dbrowser=chrome-headless</code>. Use <code>nohup</code> for long runs.</li>
+<li><strong>Selenium Grid node is not connecting. How to debug?</strong><br>1) Check if hub is running: <code>curl http://hub:4444/status</code>. 2) Check network: <code>ping hub-server</code>. 3) Check port: <code>telnet hub-server 4444</code>. 4) Check node logs: <code>tail -f node.log</code>.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 15 (10 items)</summary>
+<ol>
+<li>Selenium on Linux needs: Java + Maven + Chrome + ChromeDriver</li>
+<li><code>mvn test</code> = run tests | <code>mvn test -Dtest=ClassName</code> = specific</li>
+<li><code>-DsuiteXmlFile=file.xml</code> = run specific TestNG suite</li>
+<li><code>nohup mvn test > log 2>&1 &</code> = background execution</li>
+<li>Selenium Grid: <code>java -jar selenium-server.jar hub</code></li>
+<li><code>curl http://localhost:4444/status</code> = check Grid status</li>
+<li><code>pkill -f selenium</code> = kill Grid processes</li>
+<li>Headless Chrome: no display needed on server</li>
+<li><code>grep "FAILED" surefire-reports/</code> = find failures</li>
+<li>ChromeDriver version MUST match Chrome version</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 16 ==================== -->
+<section id="section-16" class="section-card">
+<h2>Module 16: API Testing with curl <span class="badge-must-know">Frequently Asked</span></h2>
+
+<h3>curl — The QA Swiss Army Knife</h3>
+<p><code>curl</code> is the most powerful command-line tool for HTTP requests. Every QA engineer must master it for quick API validation, debugging, and automation.</p>
+
+<h3>HTTP Methods</h3>
+<pre><code># GET — Retrieve data
+curl https://api.example.com/users
+curl https://api.example.com/users/123
+
+# POST — Create data
+curl -X POST https://api.example.com/users \
+    -H "Content-Type: application/json" \
+    -d '{"name": "John", "email": "john@test.com"}'
+
+# PUT — Update data (full replace)
+curl -X PUT https://api.example.com/users/123 \
+    -H "Content-Type: application/json" \
+    -d '{"name": "John Updated", "email": "john.new@test.com"}'
+
+# PATCH — Partial update
+curl -X PATCH https://api.example.com/users/123 \
+    -H "Content-Type: application/json" \
+    -d '{"email": "new-email@test.com"}'
+
+# DELETE — Remove data
+curl -X DELETE https://api.example.com/users/123</code></pre>
+
+<h3>Essential curl Flags</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Flag</th><th>Purpose</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><code>-X</code></td><td>HTTP method</td><td><code>-X POST</code></td></tr>
+<tr><td><code>-H</code></td><td>Add header</td><td><code>-H "Authorization: Bearer token"</code></td></tr>
+<tr><td><code>-d</code></td><td>Send data (body)</td><td><code>-d '{"key":"value"}'</code></td></tr>
+<tr><td><code>-o</code></td><td>Save output to file</td><td><code>-o response.json</code></td></tr>
+<tr><td><code>-s</code></td><td>Silent (no progress bar)</td><td><code>-s</code></td></tr>
+<tr><td><code>-v</code></td><td>Verbose (show full request/response)</td><td><code>-v</code></td></tr>
+<tr><td><code>-I</code></td><td>Headers only (HEAD request)</td><td><code>-I</code></td></tr>
+<tr><td><code>-w</code></td><td>Write out format (timings, status)</td><td><code>-w "%{http_code}"</code></td></tr>
+<tr><td><code>-u</code></td><td>Authentication (user:password)</td><td><code>-u admin:pass123</code></td></tr>
+<tr><td><code>-k</code></td><td>Skip SSL verification</td><td><code>-k</code> (for self-signed certs)</td></tr>
+<tr><td><code>-F</code></td><td>Form data / file upload</td><td><code>-F "file=@report.pdf"</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Authentication Examples</h3>
+<pre><code># Basic Auth
+curl -u username:password https://api.example.com/data
+
+# Bearer Token (OAuth2)
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..." \
+    https://api.example.com/protected
+
+# API Key in header
+curl -H "X-API-Key: your-api-key-here" \
+    https://api.example.com/data
+
+# Login + Extract Token + Use in subsequent request
+TOKEN=$(curl -s -X POST https://api.example.com/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"username":"admin","password":"admin123"}' | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
+
+curl -H "Authorization: Bearer $TOKEN" https://api.example.com/users</code></pre>
+
+<h3>Testing & Validation</h3>
+<pre><code># Check status code only
+curl -s -o /dev/null -w "%{http_code}" https://api.example.com/health
+# Output: 200
+
+# Measure response time
+curl -s -o /dev/null -w "Total: %{time_total}s\nConnect: %{time_connect}s\nTTFB: %{time_starttransfer}s\n" \
+    https://api.example.com/users
+
+# Validate response contains expected data
+curl -s https://api.example.com/users/1 | python3 -m json.tool
+# Pretty-printed JSON
+
+# Check specific field in response
+curl -s https://api.example.com/users/1 | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['name'])"
+
+# File upload
+curl -X POST https://api.example.com/upload \
+    -F "file=@test-report.pdf" \
+    -F "description=Monthly test report"
+
+# Download file
+curl -O https://api.example.com/reports/latest.pdf</code></pre>
+
+<h3>API Health Check Script</h3>
+<pre><code>#!/bin/bash
+# api_healthcheck.sh — Check multiple endpoints
+
+ENDPOINTS=(
+    "https://api.myapp.com/health|Health"
+    "https://api.myapp.com/users|Users API"
+    "https://api.myapp.com/orders|Orders API"
+)
+
+echo "=== API Health Check $(date) ==="
+ALL_HEALTHY=true
+
+for entry in "${ENDPOINTS[@]}"; do
+    IFS='|' read -r url name <<< "$entry"
+    status=$(curl -s -o /dev/null -w "%{http_code}" -m 10 "$url")
+    if [ "$status" -eq 200 ]; then
+        echo "✅ $name — HTTP $status"
+    else
+        echo "❌ $name — HTTP $status"
+        ALL_HEALTHY=false
+    fi
+done
+
+if [ "$ALL_HEALTHY" = true ]; then
+    echo "All APIs healthy!"
+    exit 0
+else
+    echo "Some APIs are DOWN!"
+    exit 1
+fi</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How to make a POST request with JSON body using curl?</strong><br><code>curl -X POST url -H "Content-Type: application/json" -d '{"key":"value"}'</code></li>
+<li><strong>How to check only the HTTP status code of a response?</strong><br><code>curl -s -o /dev/null -w "%{http_code}" url</code></li>
+<li><strong>How to measure API response time?</strong><br><code>curl -w "Total: %{time_total}s" -o /dev/null -s url</code></li>
+<li><strong>How to upload a file via API?</strong><br><code>curl -X POST url -F "file=@/path/to/file.pdf"</code></li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 16 (12 items)</summary>
+<ol>
+<li>GET: <code>curl url</code> | POST: <code>curl -X POST url -d 'body'</code></li>
+<li>PUT: <code>curl -X PUT url -d 'body'</code> | DELETE: <code>curl -X DELETE url</code></li>
+<li><code>-H "Content-Type: application/json"</code> = JSON body</li>
+<li><code>-H "Authorization: Bearer TOKEN"</code> = auth header</li>
+<li><code>-s -o /dev/null -w "%{http_code}"</code> = status code only</li>
+<li><code>-w "%{time_total}"</code> = response time measurement</li>
+<li><code>-v</code> = verbose (debug full request/response)</li>
+<li><code>-F "file=@path"</code> = file upload</li>
+<li><code>-k</code> = skip SSL verification (self-signed certs)</li>
+<li><code>-u user:pass</code> = basic authentication</li>
+<li>Pipe to <code>python3 -m json.tool</code> for pretty JSON</li>
+<li>Save token: <code>TOKEN=$(curl ... | jq -r '.token')</code></li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 17 ==================== -->
+<section id="section-17" class="section-card">
+<h2>Module 17: UNIX for CI/CD &amp; Jenkins</h2>
+
+<h3>Jenkins on Linux — Key Paths</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Path</th><th>Contains</th></tr></thead>
+<tbody>
+<tr><td><code>/var/lib/jenkins/</code></td><td>Jenkins home (configs, jobs, workspace)</td></tr>
+<tr><td><code>/var/lib/jenkins/workspace/</code></td><td>Job workspaces (cloned repos)</td></tr>
+<tr><td><code>/var/lib/jenkins/jobs/</code></td><td>Job configurations and build history</td></tr>
+<tr><td><code>/var/log/jenkins/</code></td><td>Jenkins system logs</td></tr>
+<tr><td><code>/etc/default/jenkins</code></td><td>Jenkins startup configuration (Debian)</td></tr>
+<tr><td><code>/etc/sysconfig/jenkins</code></td><td>Jenkins startup configuration (RHEL)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Jenkins Troubleshooting Scenarios</h3>
+
+<h4>Scenario 1: Job Failed — Permission Issues</h4>
+<pre><code># Check Jenkins user
+ps -ef | grep jenkins | head -1
+
+# Check if Jenkins can access the script
+sudo -u jenkins ls -la /opt/automation/run_tests.sh
+# Permission denied? Fix:
+sudo chmod 755 /opt/automation/run_tests.sh
+sudo chown jenkins:jenkins /opt/automation/</code></pre>
+
+<h4>Scenario 2: Build Failed — Missing Dependencies</h4>
+<pre><code># Check Java version Jenkins is using
+sudo -u jenkins java -version
+
+# Check Maven
+sudo -u jenkins mvn -version
+
+# Check PATH for Jenkins user
+sudo -u jenkins bash -c 'echo $PATH'
+sudo -u jenkins bash -c 'echo $JAVA_HOME'
+
+# Fix: Add to Jenkins environment
+sudo vim /etc/default/jenkins
+# Add: JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64</code></pre>
+
+<h4>Scenario 3: Disk Space Full — Builds Failing</h4>
+<pre><code># Check disk space
+df -h
+
+# Find what's using space in Jenkins
+du -sh /var/lib/jenkins/workspace/* | sort -rh | head -10
+du -sh /var/lib/jenkins/jobs/*/builds | sort -rh | head -10
+
+# Clean old builds (keep last 10)
+cd /var/lib/jenkins/jobs/my-job/builds/
+ls -d */ | sort -n | head -n -10 | xargs rm -rf
+
+# Clean workspace
+rm -rf /var/lib/jenkins/workspace/old-job/</code></pre>
+
+<h4>Scenario 4: Jenkins Won't Start</h4>
+<pre><code># Check service status
+sudo systemctl status jenkins
+
+# Check logs
+sudo tail -100 /var/log/jenkins/jenkins.log
+sudo journalctl -u jenkins --since "1 hour ago"
+
+# Check port conflict (8080 already in use?)
+netstat -tlnp | grep 8080
+
+# Restart Jenkins
+sudo systemctl restart jenkins
+sudo systemctl enable jenkins   # Start on boot</code></pre>
+
+<h3>Common CI/CD Linux Commands</h3>
+<pre><code># Service management
+sudo systemctl start jenkins
+sudo systemctl stop jenkins
+sudo systemctl restart jenkins
+sudo systemctl status jenkins
+
+# Docker commands (CI/CD)
+docker ps                              # Running containers
+docker logs container_name             # Container logs
+docker exec -it container_name bash    # Shell into container
+docker-compose up -d                   # Start services
+docker-compose down                    # Stop services
+
+# Cron jobs (scheduled test execution)
+crontab -e
+# Run regression every night at 2 AM:
+# 0 2 * * * /opt/automation/run_regression.sh >> /var/log/regression.log 2>&1
+
+# Cron format: MIN HOUR DOM MON DOW command
+# 0 2 * * *  = 2:00 AM every day
+# 0 */6 * * * = every 6 hours
+# 0 2 * * 1-5 = 2 AM weekdays only</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Jenkins build fails with "command not found." How to fix?</strong><br>The tool isn't in Jenkins' PATH. Add to Jenkins global env vars or install via Jenkins tool configuration. Verify with <code>sudo -u jenkins which &lt;command&gt;</code>.</li>
+<li><strong>Disk space full causing Jenkins failures. How to resolve?</strong><br><code>df -h</code> → <code>du -sh /var/lib/jenkins/workspace/*</code> → delete old workspaces and builds. Configure build rotation in job settings.</li>
+<li><strong>How to schedule a test to run at 2 AM every day?</strong><br>Cron: <code>0 2 * * * /path/to/script.sh</code>. Or Jenkins: "Build periodically" with <code>H 2 * * *</code>.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision — Module 17 (10 items)</summary>
+<ol>
+<li>Jenkins home: <code>/var/lib/jenkins/</code></li>
+<li>Jenkins logs: <code>/var/log/jenkins/jenkins.log</code></li>
+<li><code>systemctl start/stop/restart/status jenkins</code></li>
+<li><code>sudo -u jenkins command</code> = debug as Jenkins user</li>
+<li><code>df -h</code> + <code>du -sh</code> = find disk space issues</li>
+<li>Cron format: <code>MIN HOUR DOM MON DOW command</code></li>
+<li><code>crontab -e</code> = edit scheduled jobs</li>
+<li>Docker: <code>ps, logs, exec -it, compose up/down</code></li>
+<li>"command not found" = PATH issue for Jenkins user</li>
+<li>Clean old builds: keep last N, delete rest</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 18 ==================== -->
+<section id="section-18" class="section-card">
+<h2>Module 18: Production Support Scenarios</h2>
+
+<h3>Real-World Scenarios with Solutions</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Problem</th><th>Key Commands</th><th>Root Cause</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Automation job failed at midnight</td><td><code>tail build.log</code>, <code>grep ERROR</code></td><td>Environment was down for maintenance</td></tr>
+<tr><td>2</td><td>Application logs growing rapidly (disk full)</td><td><code>df -h</code>, <code>du -sh /var/log/*</code>, <code>find -size +1G</code></td><td>Debug logging left ON in production</td></tr>
+<tr><td>3</td><td>Disk space full</td><td><code>df -h</code>, <code>du -sh /* | sort -rh</code></td><td>Old Docker images/build artifacts not cleaned</td></tr>
+<tr><td>4</td><td>CPU utilization high (tests slow)</td><td><code>top</code>, <code>ps aux --sort=-%cpu</code></td><td>Runaway process or too many parallel tests</td></tr>
+<tr><td>5</td><td>Selenium Grid stopped responding</td><td><code>ps -ef | grep selenium</code>, <code>curl :4444/status</code></td><td>OOM killed the Java process</td></tr>
+<tr><td>6</td><td>Jenkins build failed</td><td><code>cat builds/lastFailed/log</code>, <code>grep FAILURE</code></td><td>Dependency download failed (network issue)</td></tr>
+<tr><td>7</td><td>API timeout issue</td><td><code>curl -w "%{time_total}" url</code>, <code>grep timeout app.log</code></td><td>Database connection pool exhausted</td></tr>
+<tr><td>8</td><td>Log file missing</td><td><code>find / -name "app.log"</code>, <code>ls -la /var/log/</code></td><td>Log rotation moved it; check .gz files</td></tr>
+<tr><td>9</td><td>Permission denied error</td><td><code>ls -la file</code>, <code>id</code>, <code>chmod/chown</code></td><td>Script not executable or wrong user</td></tr>
+<tr><td>10</td><td>Environment unreachable</td><td><code>ping</code>, <code>telnet host port</code>, <code>traceroute</code></td><td>Firewall rule change blocked access</td></tr>
+<tr><td>11</td><td>Docker container keeps restarting</td><td><code>docker logs container</code>, <code>docker inspect</code></td><td>Application crash on startup (config error)</td></tr>
+<tr><td>12</td><td>Test data file corrupted</td><td><code>wc -l file</code>, <code>head/tail file</code>, <code>file command</code></td><td>Encoding issue during transfer</td></tr>
+<tr><td>13</td><td>SSH connection refused</td><td><code>systemctl status sshd</code>, <code>netstat -tlnp | grep 22</code></td><td>SSH service down or port changed</td></tr>
+<tr><td>14</td><td>Cron job not triggering</td><td><code>crontab -l</code>, <code>grep CRON /var/log/syslog</code></td><td>Wrong cron syntax or PATH not set in cron</td></tr>
+<tr><td>15</td><td>Application returning 503</td><td><code>curl -I url</code>, <code>systemctl status app</code></td><td>App overloaded or in maintenance mode</td></tr>
+<tr><td>16</td><td>Memory leak in test execution</td><td><code>top</code>, <code>free -h</code>, <code>ps aux --sort=-%mem</code></td><td>Browser instances not properly closed</td></tr>
+<tr><td>17</td><td>Flaky test passes locally fails in CI</td><td><code>diff</code> configs, check env vars, timing</td><td>Different environment config or race condition</td></tr>
+<tr><td>18</td><td>Network latency causing test failures</td><td><code>ping</code>, <code>traceroute</code>, <code>curl -w timings</code></td><td>Cross-region communication delay</td></tr>
+<tr><td>19</td><td>Database connection limit reached</td><td><code>grep "connection" app.log</code>, <code>netstat | grep DB_IP</code></td><td>Connection pool not releasing connections</td></tr>
+<tr><td>20</td><td>Chrome/chromedriver version mismatch</td><td><code>google-chrome --version</code>, <code>chromedriver --version</code></td><td>Auto-update changed Chrome version</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Detailed Scenario: Automation Job Failed at Midnight</h3>
+<pre><code># 1. Check the build log
+cat /var/lib/jenkins/jobs/nightly-regression/builds/lastFailedBuild/log | tail -50
+
+# 2. Identify the error
+grep -n "FATAL\|BUILD FAILURE\|Exception" build.log | head -5
+
+# 3. Check if app was available at that time
+grep "$(date -d yesterday +%Y-%m-%d) 00:" /var/log/app/access.log | wc -l
+# If 0 lines → app was down
+
+# 4. Check system events around that time
+grep "$(date -d yesterday +%b\ %d) 00:" /var/log/syslog | grep -i "restart\|stop\|maintenance"
+
+# 5. Resolution
+# - Add pre-check in automation: verify app health before starting
+# - Add retry logic for transient failures
+# - Notify on-call team when nightly run fails</code></pre>
+
+<h3>Detailed Scenario: Disk Space Full</h3>
+<pre><code># 1. Identify the problem
+df -h
+# /dev/sda1  50G   49G  1G  98% /
+
+# 2. Find what's consuming space
+du -sh /* 2>/dev/null | sort -rh | head -10
+# 35G /var
+du -sh /var/* | sort -rh | head -5
+# 25G /var/lib/jenkins
+# 8G  /var/log
+
+# 3. Find large files
+find / -size +500M -type f 2>/dev/null | head -20
+
+# 4. Clean up
+# Old Jenkins builds
+find /var/lib/jenkins/jobs/*/builds -maxdepth 1 -type d -mtime +30 | xargs rm -rf
+
+# Old Docker images
+docker image prune -a --filter "until=720h"
+
+# Compressed old logs
+find /var/log -name "*.gz" -mtime +30 -delete
+
+# 5. Verify
+df -h   # Should show more free space now</code></pre>
+
+<details class="revision"><summary>Quick Revision — Module 18 (15 items)</summary>
+<ol>
+<li>Always start with: what error? → when? → what changed?</li>
+<li>Disk full: <code>df -h</code> → <code>du -sh</code> → <code>find -size</code> → clean</li>
+<li>High CPU: <code>top</code> → identify PID → <code>kill</code> if needed</li>
+<li>Service down: <code>systemctl status</code> → check logs → restart</li>
+<li>Network issue: <code>ping</code> → <code>telnet host port</code> → <code>traceroute</code></li>
+<li>Permission denied: <code>ls -la</code> → <code>chmod</code>/<code>chown</code></li>
+<li>Log missing: <code>find</code> → check rotation (.gz files)</li>
+<li>API slow: <code>curl -w timings</code> → check app logs → check DB</li>
+<li>Jenkins fail: check build log → verify env → check deps</li>
+<li>Docker issues: <code>docker logs</code> → <code>docker inspect</code></li>
+<li>Memory leak: <code>free -h</code> → <code>top</code> → identify growing process</li>
+<li>Cron not running: <code>crontab -l</code> → check syslog → verify PATH</li>
+<li>Always check: recent deployments, config changes, infra events</li>
+<li>Document: problem → investigation → root cause → fix → prevention</li>
+<li>Set up monitoring/alerts to catch issues before they become critical</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 19 ==================== -->
+<section id="section-19" class="section-card">
+<h2>Module 19: Interview Preparation — UNIX for QA</h2>
+
+<h3>Beginner Level Questions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>What is the difference between Linux and UNIX?</td><td>UNIX is proprietary; Linux is open-source UNIX-like. Linux is free and runs on any hardware.</td></tr>
+<tr><td>2</td><td>What does <code>pwd</code> do?</td><td>Print Working Directory — shows your current location in the filesystem.</td></tr>
+<tr><td>3</td><td>How to list hidden files?</td><td><code>ls -a</code> (hidden files start with dot)</td></tr>
+<tr><td>4</td><td>What is the difference between <code>rm</code> and <code>rmdir</code>?</td><td><code>rmdir</code> removes empty dirs only; <code>rm -r</code> removes dirs with contents.</td></tr>
+<tr><td>5</td><td>How to create nested directories?</td><td><code>mkdir -p parent/child/grandchild</code></td></tr>
+<tr><td>6</td><td>What does <code>chmod +x</code> do?</td><td>Adds execute permission to a file (makes it runnable as script).</td></tr>
+<tr><td>7</td><td>How to view last 20 lines of a file?</td><td><code>tail -20 filename</code></td></tr>
+<tr><td>8</td><td>What does <code>grep -i</code> do?</td><td>Case-insensitive search (matches "Error", "ERROR", "error").</td></tr>
+<tr><td>9</td><td>How to count lines in a file?</td><td><code>wc -l filename</code></td></tr>
+<tr><td>10</td><td>What is the root directory?</td><td><code>/</code> — the top of the filesystem hierarchy. Everything starts here.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Intermediate Level Questions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>How to find files modified in last 24 hours?</td><td><code>find . -mtime -1</code> or <code>find . -mmin -1440</code></td></tr>
+<tr><td>2</td><td>Difference between <code>grep</code> and <code>awk</code>?</td><td>grep filters lines by pattern; awk processes columns/fields within lines.</td></tr>
+<tr><td>3</td><td>How to monitor a log file in real-time?</td><td><code>tail -f logfile.log</code></td></tr>
+<tr><td>4</td><td>What does <code>ps -ef | grep java | grep -v grep</code> do?</td><td>Finds Java processes, excludes the grep process itself from results.</td></tr>
+<tr><td>5</td><td>How to kill a process?</td><td><code>kill PID</code> (graceful) or <code>kill -9 PID</code> (force). Find PID with <code>ps -ef | grep name</code>.</td></tr>
+<tr><td>6</td><td>What is <code>nohup</code> used for?</td><td>Run command that survives logout/SSH disconnect. Output goes to nohup.out.</td></tr>
+<tr><td>7</td><td>How to compress a directory?</td><td><code>tar -czf archive.tar.gz directory/</code></td></tr>
+<tr><td>8</td><td>What does <code>chmod 755</code> mean?</td><td>Owner: rwx (7), Group: r-x (5), Others: r-x (5). Full for owner, read+execute for others.</td></tr>
+<tr><td>9</td><td>How to find which process is using port 8080?</td><td><code>netstat -tlnp | grep 8080</code> or <code>lsof -i :8080</code></td></tr>
+<tr><td>10</td><td>Difference between <code>export VAR</code> and <code>VAR=value</code>?</td><td>Without export: current shell only. With export: available to child processes/subshells.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Advanced Level Questions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>How to find top 5 error messages in a log?</td><td><code>grep ERROR log | awk '{$1=$2="";print}' | sort | uniq -c | sort -rn | head -5</code></td></tr>
+<tr><td>2</td><td>How to schedule a test to run at 2 AM daily?</td><td>Cron: <code>0 2 * * * /path/to/run_tests.sh</code></td></tr>
+<tr><td>3</td><td>Jenkins fails with "Permission denied." Debug steps?</td><td>Check Jenkins user (<code>ps -ef | grep jenkins</code>), verify file permissions (<code>ls -la</code>), fix with <code>chown jenkins:jenkins</code> or <code>chmod 755</code>.</td></tr>
+<tr><td>4</td><td>Server disk is 95% full. How to investigate?</td><td><code>df -h</code> → <code>du -sh /* | sort -rh</code> → <code>find / -size +500M</code> → clean old logs/builds/images.</td></tr>
+<tr><td>5</td><td>Write a one-liner to check API health.</td><td><code>curl -sf -o /dev/null -w "%{http_code}" URL && echo "UP" || echo "DOWN"</code></td></tr>
+<tr><td>6</td><td>How to extract response time from curl?</td><td><code>curl -w "%{time_total}" -o /dev/null -s URL</code></td></tr>
+<tr><td>7</td><td>How to find which commit broke a test?</td><td><code>git bisect run pytest test_file.py</code> — binary search through commits.</td></tr>
+<tr><td>8</td><td>How to run tests in background and check later?</td><td><code>nohup mvn test > output.log 2>&1 &</code> then <code>tail -f output.log</code> or <code>cat output.log</code></td></tr>
+<tr><td>9</td><td>How to replace text in multiple files?</td><td><code>find . -name "*.py" -exec sed -i 's/old/new/g' {} \;</code></td></tr>
+<tr><td>10</td><td>What's the difference between <code>></code> and <code>>></code>?</td><td><code>></code> overwrites file. <code>>></code> appends to file. Use <code>>></code> for log files!</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Scenario-Based Questions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Scenario</th><th>Expected Approach</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Nightly regression failed. Investigate.</td><td>Check build log → grep for errors → check app health at that time → verify env was up</td></tr>
+<tr><td>2</td><td>Application slow after deployment.</td><td><code>tail -f</code> app log → check response times → <code>top</code> for CPU → check DB connections</td></tr>
+<tr><td>3</td><td>Cannot SSH into test server.</td><td><code>ping server</code> → <code>telnet server 22</code> → check firewall → check sshd status</td></tr>
+<tr><td>4</td><td>Test reports not generated.</td><td>Check if tests ran (<code>ps -ef</code>) → check directory permissions → check disk space</td></tr>
+<tr><td>5</td><td>Multiple Chrome processes consuming memory.</td><td><code>ps aux | grep chrome</code> → count → <code>pkill -f chrome</code> → fix test teardown</td></tr>
+<tr><td>6</td><td>API returns 500 in staging but works in dev.</td><td>Compare configs → check env vars → <code>curl -v</code> both envs → check staging logs</td></tr>
+<tr><td>7</td><td>Jenkins workspace running out of space.</td><td><code>du -sh /var/lib/jenkins/workspace/*</code> → delete old jobs → enable workspace cleanup plugin</td></tr>
+<tr><td>8</td><td>Cron job not executing automation suite.</td><td><code>crontab -l</code> → check syntax → <code>grep CRON /var/log/syslog</code> → verify PATH in cron</td></tr>
+<tr><td>9</td><td>New tester can't execute scripts. Permission error.</td><td>Check user groups (<code>id user</code>) → add to qa-team group → verify file group permissions</td></tr>
+<tr><td>10</td><td>Docker container exits immediately on start.</td><td><code>docker logs container</code> → check entrypoint → verify environment variables</td></tr>
+</tbody>
+</table>
+</div>
+
+<details class="revision"><summary>Quick Revision — Module 19 (10 items)</summary>
+<ol>
+<li>Know: ls, cd, pwd, grep, tail, find, chmod, ps, kill, curl</li>
+<li>Explain pipe chains: <code>grep | awk | sort | uniq -c | head</code></li>
+<li>Demonstrate: real-time log monitoring with <code>tail -f</code></li>
+<li>Troubleshoot: permission denied, command not found, disk full</li>
+<li>Script basics: variables, if/else, for loops, functions</li>
+<li>curl: GET/POST/PUT/DELETE with headers and body</li>
+<li>Process management: find, monitor, kill processes</li>
+<li>File permissions: numeric (755/644/600) and symbolic (chmod +x)</li>
+<li>Jenkins: paths, user, logs, troubleshooting</li>
+<li>Always answer with: command + what it does + when to use</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== MODULE 20 ==================== -->
+<section id="section-20" class="section-card">
+<h2>Module 20: QA Engineer UNIX Cheat Sheet</h2>
+
+<h3>Top 50 Commands Every QA Engineer Must Know</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Command</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>pwd</code></td><td>Where am I?</td></tr>
+<tr><td>2</td><td><code>ls -la</code></td><td>List all files with details</td></tr>
+<tr><td>3</td><td><code>cd /path</code></td><td>Change directory</td></tr>
+<tr><td>4</td><td><code>cat file</code></td><td>View file contents</td></tr>
+<tr><td>5</td><td><code>tail -f log</code></td><td>Live log monitoring</td></tr>
+<tr><td>6</td><td><code>tail -100 log</code></td><td>Last 100 lines</td></tr>
+<tr><td>7</td><td><code>grep "pattern" file</code></td><td>Search text in file</td></tr>
+<tr><td>8</td><td><code>grep -r "text" dir/</code></td><td>Recursive search</td></tr>
+<tr><td>9</td><td><code>grep -i "error" log</code></td><td>Case-insensitive search</td></tr>
+<tr><td>10</td><td><code>grep -c "ERROR" log</code></td><td>Count matches</td></tr>
+<tr><td>11</td><td><code>find . -name "*.log"</code></td><td>Find files by name</td></tr>
+<tr><td>12</td><td><code>find . -mtime -1</code></td><td>Files modified today</td></tr>
+<tr><td>13</td><td><code>chmod +x script.sh</code></td><td>Make executable</td></tr>
+<tr><td>14</td><td><code>chmod 755 file</code></td><td>rwxr-xr-x permissions</td></tr>
+<tr><td>15</td><td><code>chown user:group file</code></td><td>Change ownership</td></tr>
+<tr><td>16</td><td><code>ps -ef | grep name</code></td><td>Find process</td></tr>
+<tr><td>17</td><td><code>kill PID</code></td><td>Stop process (graceful)</td></tr>
+<tr><td>18</td><td><code>kill -9 PID</code></td><td>Force kill process</td></tr>
+<tr><td>19</td><td><code>top</code></td><td>Real-time process monitor</td></tr>
+<tr><td>20</td><td><code>df -h</code></td><td>Disk space usage</td></tr>
+<tr><td>21</td><td><code>du -sh dir/</code></td><td>Directory size</td></tr>
+<tr><td>22</td><td><code>free -h</code></td><td>Memory usage</td></tr>
+<tr><td>23</td><td><code>netstat -tlnp</code></td><td>Listening ports</td></tr>
+<tr><td>24</td><td><code>curl URL</code></td><td>HTTP request</td></tr>
+<tr><td>25</td><td><code>curl -X POST -d '{}'</code></td><td>POST request</td></tr>
+<tr><td>26</td><td><code>ping host</code></td><td>Test connectivity</td></tr>
+<tr><td>27</td><td><code>nslookup domain</code></td><td>DNS lookup</td></tr>
+<tr><td>28</td><td><code>tar -czf a.tar.gz dir/</code></td><td>Create archive</td></tr>
+<tr><td>29</td><td><code>tar -xzf a.tar.gz</code></td><td>Extract archive</td></tr>
+<tr><td>30</td><td><code>cp -r src/ dest/</code></td><td>Copy directory</td></tr>
+<tr><td>31</td><td><code>mv old new</code></td><td>Move/rename</td></tr>
+<tr><td>32</td><td><code>rm -rf dir/</code></td><td>Force delete (CAREFUL!)</td></tr>
+<tr><td>33</td><td><code>mkdir -p a/b/c</code></td><td>Create nested dirs</td></tr>
+<tr><td>34</td><td><code>echo $PATH</code></td><td>View PATH variable</td></tr>
+<tr><td>35</td><td><code>export VAR="val"</code></td><td>Set env variable</td></tr>
+<tr><td>36</td><td><code>which command</code></td><td>Find executable path</td></tr>
+<tr><td>37</td><td><code>whoami</code></td><td>Current user</td></tr>
+<tr><td>38</td><td><code>sudo command</code></td><td>Run as root</td></tr>
+<tr><td>39</td><td><code>nohup cmd &amp;</code></td><td>Background + survive logout</td></tr>
+<tr><td>40</td><td><code>awk '{print $3}' file</code></td><td>Print column 3</td></tr>
+<tr><td>41</td><td><code>sed 's/old/new/g' file</code></td><td>Find/replace</td></tr>
+<tr><td>42</td><td><code>sort | uniq -c</code></td><td>Count unique lines</td></tr>
+<tr><td>43</td><td><code>wc -l file</code></td><td>Count lines</td></tr>
+<tr><td>44</td><td><code>head -n file</code></td><td>First n lines</td></tr>
+<tr><td>45</td><td><code>vim file</code></td><td>Edit file on server</td></tr>
+<tr><td>46</td><td><code>scp file user@host:</code></td><td>Copy file to remote</td></tr>
+<tr><td>47</td><td><code>ssh user@host</code></td><td>Connect to remote</td></tr>
+<tr><td>48</td><td><code>docker ps</code></td><td>Running containers</td></tr>
+<tr><td>49</td><td><code>docker logs container</code></td><td>Container logs</td></tr>
+<tr><td>50</td><td><code>systemctl status svc</code></td><td>Service status</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Log Analysis Quick Reference</h3>
+<pre><code># Find errors
+grep -i "error\|exception\|fatal" app.log
+
+# Errors with context
+grep -B 3 -A 10 "Exception" app.log
+
+# Count errors by type
+grep "ERROR" log | awk '{print $4}' | sort | uniq -c | sort -rn
+
+# Real-time error monitoring
+tail -f app.log | grep --color "ERROR\|WARN"
+
+# Time-range filtering
+awk '$2 >= "14:00" && $2 <= "15:00"' app.log | grep ERROR</code></pre>
+
+<h3>API Testing Quick Reference</h3>
+<pre><code># GET
+curl https://api.example.com/users
+
+# POST with JSON
+curl -X POST URL -H "Content-Type: application/json" -d '{"key":"val"}'
+
+# Status code only
+curl -s -o /dev/null -w "%{http_code}" URL
+
+# Response time
+curl -w "%{time_total}s" -o /dev/null -s URL
+
+# With auth token
+curl -H "Authorization: Bearer $TOKEN" URL</code></pre>
+
+<h3>Troubleshooting Quick Reference</h3>
+<pre><code># Service down?
+systemctl status service_name
+sudo systemctl restart service_name
+
+# Port in use?
+netstat -tlnp | grep PORT
+lsof -i :PORT
+
+# Disk full?
+df -h && du -sh /* | sort -rh | head
+
+# High CPU?
+top (press P to sort by CPU)
+ps aux --sort=-%cpu | head
+
+# Can't connect?
+ping host → telnet host port → traceroute host
+
+# Permission denied?
+ls -la file → chmod 755 file OR chown user file</code></pre>
+
+<h3>Shell Scripting Quick Reference</h3>
+<pre><code>#!/bin/bash
+VAR="value"                    # Variable
+echo "$VAR"                    # Use variable
+RESULT=$(command)              # Command substitution
+if [ condition ]; then         # Conditional
+    commands
+fi
+for i in list; do             # Loop
+    commands
+done
+func_name() {                  # Function
+    echo "$1"                  # First argument
+}
+$? = exit code (0=success)
+$1,$2 = script arguments
+$# = argument count</code></pre>
+
+<details class="revision"><summary>Master Revision — All 20 Modules (25 items)</summary>
+<ol>
+<li>Linux = open-source OS powering CI/CD, Docker, cloud, servers</li>
+<li>Everything is a file in Linux; filesystem starts at /</li>
+<li>Three states: file permissions → rwx for owner/group/others</li>
+<li>Navigation: pwd, ls, cd, mkdir, cp, mv, rm</li>
+<li>Viewing: cat (small), less (large), tail -f (live), grep (search)</li>
+<li>Finding: find (real-time) vs locate (fast, database)</li>
+<li>Permissions: chmod 755 (scripts), 644 (configs), 600 (secrets)</li>
+<li>Processes: ps -ef, top, kill, kill -9, nohup</li>
+<li>Text processing: grep | awk | sed | sort | uniq -c</li>
+<li>Vi: i=insert, Esc=command, :wq=save+quit, /=search</li>
+<li>Archive: tar -czf (create) | tar -xzf (extract)</li>
+<li>Users: whoami, sudo, su, id (know Jenkins user!)</li>
+<li>Env vars: export PATH, JAVA_HOME, source ~/.bashrc</li>
+<li>Network: ping, curl, netstat/ss, nslookup, telnet</li>
+<li>Logs: tail -f + grep = real-time monitoring</li>
+<li>Scripting: variables, if/else, for loops, functions, $? exit code</li>
+<li>Selenium: Java + Maven + Chrome headless + nohup execution</li>
+<li>curl: GET/POST/PUT/DELETE, -H headers, -d body, -w timings</li>
+<li>Jenkins: /var/lib/jenkins/, systemctl, permissions, PATH</li>
+<li>Disk: df -h (usage) + du -sh (directory sizes)</li>
+<li>Troubleshoot: check logs → check processes → check resources → check network</li>
+<li>Never: rm -rf without pwd first, 777 in production, commit secrets</li>
+<li>Always: pull before push, chmod +x scripts, tail -f for debugging</li>
+<li>Interview: demonstrate command + explain purpose + give QA context</li>
+<li>Practice daily on a Linux VM or WSL — commands become muscle memory</li>
+</ol>
+</details>
+</section>
+
+</main>
+<button id="back-to-top" aria-label="Back to top">&#8593;</button>
+<script src="app.js"></script>
+</body>
+</html>
