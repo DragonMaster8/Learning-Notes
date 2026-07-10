@@ -1,0 +1,4081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes by Dipali</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-icon">&#128218;</div>
+    <h1>Learning Notes</h1>
+    <p>Sign in to access your knowledge base</p>
+    <form id="login-form">
+      <input type="text" id="login-user" placeholder="Username" autocomplete="off" autofocus>
+      <input type="password" id="login-pass" placeholder="Password">
+      <button type="submit">Sign In</button>
+      <div class="login-error" id="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<div id="progress-bar"></div>
+<button id="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+<button id="sidebar-expand-btn" aria-label="Show sidebar">&#9776;</button>
+
+<aside id="sidebar">
+  <button class="sidebar-collapse-btn" aria-label="Hide sidebar" title="Hide sidebar">&laquo;</button>
+  <div class="logo"><span>&#128218;</span> Dipali Notes</div>
+  <a href="index.html" class="back-to-home">&larr; All Topics</a>
+  <div id="search-container">
+    <input type="text" id="search-box" placeholder="Search notes..." aria-label="Search">
+    <span class="search-shortcut">Ctrl+K</span>
+  </div>
+  <div class="search-info"></div>
+  <nav id="nav-links">
+    <a href="#section-1">1. Manual Testing <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-2">2. Selenium WebDriver <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-3">3. Java for SDET <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-4">4. API Testing (Postman) <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-5">5. SQL <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-6">6. Interview Questions <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-7">7. Testing Types Deep Dive <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-8">8. API Testing Advanced <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-9">9. SQL Advanced (100 Q&A) <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-10">10. Git & GitHub <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-11">11. UAT Testing <span class="badge-must-know">Must Know</span></a>
+    <a href="#section-12">12. Tricky QA Scenarios <span class="badge-must-know">Must Know</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" id="logout-btn">Logout</button>
+  </div>
+</aside>
+
+<main id="main-content">
+<div class="page-header">
+  <h1>Notes by <em>Dipali</em></h1>
+  <p>Complete QA Automation Knowledge Repository</p>
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num">12</div><div class="stat-label">Modules</div></div>
+    <div class="stat"><div class="stat-num">1500+</div><div class="stat-label">Topics</div></div>
+    <div class="stat"><div class="stat-num">600+</div><div class="stat-label">Interview Q&amp;A</div></div>
+    <div class="stat"><div class="stat-num">50+</div><div class="stat-label">Programs</div></div>
+  </div>
+</div>
+
+<div id="no-results" class="no-results">No matching content found.</div>
+
+<!-- ==================== SECTION 1: MANUAL TESTING ==================== -->
+<section id="section-1" class="section-card">
+<h2>Section 1: Manual Testing</h2>
+<p>Complete manual testing knowledge covering SDLC, STLC, testing types, test case design, defect management, and Agile/Scrum &mdash; essential foundation for every QA engineer.</p>
+
+<h3>SDLC &mdash; Software Development Life Cycle</h3>
+<p><strong>SDLC</strong> is a structured process for planning, creating, testing, and deploying software. It defines phases from idea to maintenance ensuring quality at every step.</p>
+
+<h4>7 Stages of SDLC</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Stage</th><th>Description</th><th>QA Involvement</th></tr></thead>
+<tbody>
+<tr><td><strong>1. Requirement Collection</strong></td><td>Gather functional &amp; non-functional requirements from stakeholders via BRD, FRD, user stories</td><td>Review requirements for testability, clarity, completeness</td></tr>
+<tr><td><strong>2. Feasibility Study</strong></td><td>Analyze technical, economic, legal, operational feasibility</td><td>Estimate testing effort, tools, environment needs</td></tr>
+<tr><td><strong>3. Design</strong></td><td>System architecture, HLD, LLD, database design, UI mockups</td><td>Review design docs; identify test scenarios early</td></tr>
+<tr><td><strong>4. Coding</strong></td><td>Developers write code per design specifications</td><td>Unit testing support; static code review participation</td></tr>
+<tr><td><strong>5. Testing</strong></td><td>Execute test cases, report defects, regression, UAT</td><td>Primary QA phase &mdash; STLC execution</td></tr>
+<tr><td><strong>6. Deployment</strong></td><td>Release to production/staging; smoke testing post-deploy</td><td>Smoke tests, deployment verification, rollback validation</td></tr>
+<tr><td><strong>7. Maintenance</strong></td><td>Bug fixes, enhancements, patches after release</td><td>Regression testing, impact analysis for changes</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>SDLC Models</h3>
+
+<h4>Waterfall Model</h4>
+<p>Sequential linear approach &mdash; each phase must complete before the next begins. Requirements are fixed upfront.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Advantages</strong></td><td>Simple, well-documented, easy to manage, clear milestones, stable requirements</td></tr>
+<tr><td><strong>Disadvantages</strong></td><td>No working software until late, difficult to accommodate changes, testing starts late, high risk</td></tr>
+<tr><td><strong>When to Use</strong></td><td>Short projects, fixed requirements, regulatory/compliance projects, well-understood domains</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Spiral Model</h4>
+<p>Risk-driven iterative model combining waterfall with prototyping. Each spiral: Plan &rarr; Risk Analysis &rarr; Engineering &rarr; Evaluation.</p>
+<ul>
+<li><strong>Best for:</strong> Large, complex, high-risk projects (e.g., banking, aerospace)</li>
+<li><strong>Advantage:</strong> Early risk identification; prototyping reduces uncertainty</li>
+<li><strong>Disadvantage:</strong> Expensive; requires risk assessment expertise</li>
+</ul>
+
+<h4>V-Model (Verification &amp; Validation)</h4>
+<p>Extension of waterfall where each development phase has a corresponding testing phase.</p>
+<div class="ascii-diagram">Requirements &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&rarr; Acceptance Testing
+     &darr;                                      &darr;
+System Design &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&rarr; System Testing
+     &darr;                                      &darr;
+Architecture Design &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&rarr; Integration Testing
+     &darr;                                      &darr;
+Module Design &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&rarr; Unit Testing
+     &darr;                                      &darr;
+        Coding / Implementation</div>
+<p><strong>Verification</strong> = "Are we building the product right?" (reviews, inspections). <strong>Validation</strong> = "Are we building the right product?" (actual testing).</p>
+
+<h4>Prototype Model</h4>
+<p>Build a throwaway/exploratory prototype to clarify requirements before full development. User feedback drives refinement.</p>
+<ul>
+<li><strong>Types:</strong> Throwaway (discarded after feedback) vs Evolutionary (becomes final product)</li>
+<li><strong>Best for:</strong> UI-heavy apps, unclear requirements, new technology</li>
+</ul>
+
+<h4>Agile Model</h4>
+<p>Iterative, incremental approach delivering working software in short sprints (1&ndash;4 weeks). Embraces change; continuous feedback.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Principle</th><th>Agile Value</th></tr></thead>
+<tbody>
+<tr><td>Individuals &amp; interactions</td><td>Over processes &amp; tools</td></tr>
+<tr><td>Working software</td><td>Over comprehensive documentation</td></tr>
+<tr><td>Customer collaboration</td><td>Over contract negotiation</td></tr>
+<tr><td>Responding to change</td><td>Over following a plan</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Agile / Scrum Framework</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Component</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>Scrum Team</strong></td><td>Product Owner (prioritizes backlog), Scrum Master (facilitates process), Development Team (3&ndash;9 members build product)</td></tr>
+<tr><td><strong>Product Backlog</strong></td><td>Ordered list of all features, bugs, enhancements &mdash; maintained by Product Owner</td></tr>
+<tr><td><strong>Sprint Backlog</strong></td><td>Subset of product backlog committed for current sprint</td></tr>
+<tr><td><strong>Sprint Planning</strong></td><td>Team selects backlog items, breaks into tasks, estimates effort (story points/hours)</td></tr>
+<tr><td><strong>Daily Stand-up</strong></td><td>15-min meeting: What did I do? What will I do? Any blockers?</td></tr>
+<tr><td><strong>Sprint Review</strong></td><td>Demo completed work to stakeholders; gather feedback</td></tr>
+<tr><td><strong>Sprint Retrospective</strong></td><td>Team reflects: What went well? What to improve? Action items for next sprint</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Software Testing Fundamentals</h3>
+
+<h4>7 Principles of Software Testing</h4>
+<ol>
+<li><strong>Testing shows presence of defects</strong> &mdash; not their absence</li>
+<li><strong>Exhaustive testing is impossible</strong> &mdash; use risk-based prioritization</li>
+<li><strong>Early testing</strong> &mdash; find defects in requirements/design phase (shift-left)</li>
+<li><strong>Defect clustering</strong> &mdash; 80% bugs in 20% modules (Pareto principle)</li>
+<li><strong>Pesticide paradox</strong> &mdash; repeating same tests won't find new bugs; update test cases</li>
+<li><strong>Testing is context-dependent</strong> &mdash; e-commerce vs medical device need different approaches</li>
+<li><strong>Absence-of-errors fallacy</strong> &mdash; bug-free software may still fail if requirements are wrong</li>
+</ol>
+
+<h4>Manual Testing vs Automation Testing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Manual Testing</th><th>Automation Testing</th></tr></thead>
+<tbody>
+<tr><td>Execution</td><td>Human executes test cases</td><td>Tools/scripts execute tests</td></tr>
+<tr><td>Best for</td><td>Exploratory, usability, adhoc, new features</td><td>Regression, repetitive, load, data-driven</td></tr>
+<tr><td>Cost</td><td>Lower initial; higher long-term for regression</td><td>Higher initial; lower long-term for stable features</td></tr>
+<tr><td>Speed</td><td>Slower</td><td>Faster for large test suites</td></tr>
+<tr><td>Accuracy</td><td>Human error possible</td><td>Consistent, repeatable</td></tr>
+<tr><td>Tools</td><td>No special tools required</td><td>Selenium, Postman, JMeter, etc.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>White Box Testing (WBT) vs Black Box Testing (BBT)</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>White Box (WBT)</th><th>Black Box (BBT)</th></tr></thead>
+<tbody>
+<tr><td>Also known as</td><td>Structural, Glass Box, Code-based</td><td>Functional, Specification-based</td></tr>
+<tr><td>Knowledge required</td><td>Internal code structure</td><td>Requirements/specifications only</td></tr>
+<tr><td>Performed by</td><td>Developers</td><td>QA/Testers</td></tr>
+<tr><td>Techniques</td><td>Statement, Branch, Path coverage</td><td>ECP, BVA, Error Guessing</td></tr>
+<tr><td>Focus</td><td>How code works internally</td><td>What software should do externally</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Black Box Testing Types (12 Types)</h3>
+
+<h4>1. Functionality Testing</h4>
+<p>Verify each function of the application works per requirements. Test all features, fields, buttons, links, APIs.</p>
+<p><strong>Example:</strong> Login with valid credentials &rarr; dashboard loads; invalid credentials &rarr; error message displayed.</p>
+
+<h4>2. Integration Testing</h4>
+<p>Test interfaces between integrated modules/components.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Approach</th><th>Description</th><th>Stubs/Drivers</th></tr></thead>
+<tbody>
+<tr><td><strong>Top-Down</strong></td><td>Test from top modules downward; lower modules stubbed</td><td>Stubs simulate lower modules</td></tr>
+<tr><td><strong>Bottom-Up</strong></td><td>Test from lowest modules upward; upper modules use drivers</td><td>Drivers simulate upper modules</td></tr>
+<tr><td><strong>Non-Incremental (Big Bang)</strong></td><td>All modules integrated at once then tested</td><td>Hard to isolate defects</td></tr>
+<tr><td><strong>Incremental (Sandwich/Hybrid)</strong></td><td>Combination of top-down and bottom-up</td><td>Both stubs and drivers</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>3. System Testing</h4>
+<p>End-to-end testing of complete integrated system against requirements. Includes functional + non-functional testing in production-like environment.</p>
+
+<h4>4. Acceptance Testing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Full Form</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>UAT</strong></td><td>User Acceptance Testing</td><td>End users validate system meets business needs</td></tr>
+<tr><td><strong>BAT</strong></td><td>Business Acceptance Testing</td><td>Business stakeholders verify business processes</td></tr>
+<tr><td><strong>CAT</strong></td><td>Contract Acceptance Testing</td><td>Verify contract/agreement criteria met</td></tr>
+<tr><td><strong>RAT</strong></td><td>Regulation Acceptance Testing</td><td>Compliance with regulatory standards (FDA, GDPR)</td></tr>
+<tr><td><strong>OAT</strong></td><td>Operational Acceptance Testing</td><td>Backup/recovery, maintenance, failover readiness</td></tr>
+<tr><td><strong>Alpha Testing</strong></td><td>&mdash;</td><td>In-house testing at developer site before release</td></tr>
+<tr><td><strong>Beta Testing</strong></td><td>&mdash;</td><td>Real users test in real environment before final release</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>5. Smoke Testing</h4>
+<p>Quick shallow test of critical functionalities after a build to decide if build is stable enough for further testing. Also called <strong>Build Verification Testing (BVT)</strong>.</p>
+<p><strong>Example:</strong> App launches &rarr; login works &rarr; main page loads &rarr; logout works. If any fails, reject build.</p>
+
+<h4>6. Adhoc / Monkey Testing</h4>
+<p><strong>Adhoc:</strong> Unplanned, random testing without documentation &mdash; relies on tester experience.<br>
+<strong>Monkey Testing:</strong> Random inputs/actions to crash the application &mdash; no predefined test cases.</p>
+
+<h4>7. Performance Testing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Description</th><th>Example Scenario</th></tr></thead>
+<tbody>
+<tr><td><strong>Load Testing</strong></td><td>Test under expected user load</td><td>1000 concurrent users for 30 min</td></tr>
+<tr><td><strong>Stress Testing</strong></td><td>Test beyond normal capacity to find breaking point</td><td>5000 users until server crashes</td></tr>
+<tr><td><strong>Volume Testing</strong></td><td>Large amounts of data handled by application</td><td>Insert 10 million records in DB</td></tr>
+<tr><td><strong>Soak/Endurance Testing</strong></td><td>Sustained load over extended period</td><td>500 users for 48 hours &mdash; check memory leaks</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>8. Regression Testing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Scope</th></tr></thead>
+<tbody>
+<tr><td><strong>Unit Regression</strong></td><td>Re-test specific unit/module after code change</td></tr>
+<tr><td><strong>Regional Regression</strong></td><td>Test affected area + adjacent modules</td></tr>
+<tr><td><strong>Full Regression</strong></td><td>Complete test suite re-executed &mdash; before major release</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>9. Exploratory Testing</h4>
+<p>Simultaneous learning, test design, and test execution. Tester explores application without predefined scripts &mdash; finds edge cases through intuition.</p>
+
+<h4>10. Usability Testing</h4>
+<p>Evaluate user-friendliness: navigation, layout, accessibility, learnability. Real users perform tasks while observers note difficulties.</p>
+
+<h4>11. Compatibility Testing</h4>
+<p>Verify application works across browsers (Chrome, Firefox, Safari, Edge), OS (Windows, Mac, Linux), devices (mobile, tablet, desktop), screen resolutions.</p>
+
+<h4>12. Globalization Testing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>I18N (Internationalization)</strong></td><td>Design app to support multiple languages/regions without code changes. Unicode, date/currency formats</td></tr>
+<tr><td><strong>L10N (Localization)</strong></td><td>Adapt app for specific locale &mdash; translate UI, adjust formats, cultural adaptations</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Non-Functional Testing Types</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>Yellow Box Testing</strong></td><td>Combination of WBT and BBT &mdash; partial knowledge of internal structure</td></tr>
+<tr><td><strong>Comparison Testing</strong></td><td>Compare product with competitor or previous version</td></tr>
+<tr><td><strong>Accessibility Testing</strong></td><td>Verify app usable by people with disabilities (WCAG, screen readers)</td></tr>
+<tr><td><strong>Reliability Testing</strong></td><td>Verify system operates without failure for specified time period</td></tr>
+<tr><td><strong>Recovery Testing</strong></td><td>Test system's ability to recover from crashes, hardware failures</td></tr>
+<tr><td><strong>Compliance Testing</strong></td><td>Verify adherence to industry standards and regulations</td></tr>
+<tr><td><strong>Pilot Testing</strong></td><td>Test in limited real-world environment before full rollout</td></tr>
+<tr><td><strong>Migration Testing</strong></td><td>Verify data/system migration from old to new platform</td></tr>
+<tr><td><strong>Interrupt Testing</strong></td><td>Test behavior when interruptions occur (calls, notifications, network loss)</td></tr>
+<tr><td><strong>System Integration Testing (SIT)</strong></td><td>Test integration between different systems (e.g., app + payment gateway + CRM)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Test Cases</h3>
+
+<h4>Why Write Test Cases?</h4>
+<ul>
+<li>Ensure complete test coverage of requirements</li>
+<li>Provide repeatable, consistent testing</li>
+<li>Enable traceability (requirement &rarr; test case &rarr; result)</li>
+<li>Facilitate knowledge transfer and onboarding</li>
+<li>Support regression testing and automation</li>
+<li>Document evidence for audits and compliance</li>
+</ul>
+
+<h4>Test Case Template</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Section</th><th>Fields</th></tr></thead>
+<tbody>
+<tr><td><strong>Header</strong></td><td>Test Case ID, Title, Module, Created By, Date, Version, Requirement ID</td></tr>
+<tr><td><strong>Body</strong></td><td>Preconditions, Test Steps, Test Data, Expected Result</td></tr>
+<tr><td><strong>Footer</strong></td><td>Actual Result, Status (Pass/Fail), Executed By, Execution Date, Defect ID, Comments</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Example Test Case:</strong></p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Field</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Test Case ID</td><td>TC_LOGIN_001</td></tr>
+<tr><td>Title</td><td>Verify login with valid credentials</td></tr>
+<tr><td>Precondition</td><td>User registered with email test@mail.com</td></tr>
+<tr><td>Test Steps</td><td>1. Navigate to login page 2. Enter valid email 3. Enter valid password 4. Click Login</td></tr>
+<tr><td>Test Data</td><td>Email: test@mail.com, Password: Test@123</td></tr>
+<tr><td>Expected Result</td><td>User redirected to dashboard; welcome message displayed</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Test Case Design Techniques</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Technique</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>Error Guessing</strong></td><td>Tester uses experience to guess error-prone areas</td><td>Empty fields, special characters in name field, SQL injection in search</td></tr>
+<tr><td><strong>ECP (Equivalence Class Partitioning)</strong></td><td>Divide input into valid/invalid partitions; test one value per partition</td><td>Age field: valid (18&ndash;60), invalid (&lt;18, &gt;60). Test: 25, 10, 65</td></tr>
+<tr><td><strong>BVA (Boundary Value Analysis)</strong></td><td>Test values at boundaries of partitions</td><td>Age 18&ndash;60: test 17, 18, 19, 59, 60, 61</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Test Case Review Process</h4>
+<ol>
+<li><strong>Author self-review</strong> &mdash; check completeness, clarity</li>
+<li><strong>Peer review</strong> &mdash; fellow tester reviews for coverage gaps</li>
+<li><strong>Lead/Manager review</strong> &mdash; verify alignment with requirements</li>
+<li><strong>BA/Developer review</strong> &mdash; validate expected results accuracy</li>
+<li><strong>Sign-off</strong> &mdash; approved test cases ready for execution</li>
+</ol>
+
+<h3>Severity &amp; Priority</h3>
+
+<h4>4 Severity Levels</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Severity</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>Blocker (S1)</strong></td><td>Complete system/application crash; no workaround</td><td>Application won't launch; database connection fails on startup</td></tr>
+<tr><td><strong>Critical (S2)</strong></td><td>Major feature completely broken; no workaround</td><td>Payment processing fails for all users; login broken</td></tr>
+<tr><td><strong>Major (S3)</strong></td><td>Feature partially broken; workaround exists</td><td>Search returns wrong results but filter works; export CSV has wrong format</td></tr>
+<tr><td><strong>Minor (S4)</strong></td><td>Cosmetic/UI issue; no functional impact</td><td>Typo in label, misaligned button, wrong font color</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>3 Priority Levels</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Priority</th><th>Description</th><th>When to Fix</th></tr></thead>
+<tbody>
+<tr><td><strong>High (P1)</strong></td><td>Must fix immediately &mdash; blocks release</td><td>Before next deployment</td></tr>
+<tr><td><strong>Medium (P2)</strong></td><td>Should fix in current/next sprint</td><td>Within 1&ndash;2 sprints</td></tr>
+<tr><td><strong>Low (P3)</strong></td><td>Can fix when time permits</td><td>Backlog / future release</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>4 Severity-Priority Combinations</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Combination</th><th>Example</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><strong>High Severity + High Priority</strong></td><td>Login page crash on production</td><td>Fix immediately; hotfix release</td></tr>
+<tr><td><strong>High Severity + Low Priority</strong></td><td>Crash in rarely-used admin report feature</td><td>Fix in next planned release</td></tr>
+<tr><td><strong>Low Severity + High Priority</strong></td><td>Company logo wrong on login page before demo</td><td>Fix before demo despite minor severity</td></tr>
+<tr><td><strong>Low Severity + Low Priority</strong></td><td>Minor alignment issue on settings page</td><td>Add to backlog; fix when convenient</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Defects / Bug Management</h3>
+
+<h4>Bug Life Cycle</h4>
+<div class="ascii-diagram">New &rarr; Assign &rarr; Open &rarr; Fixed &rarr; Retest &rarr; Closed
+                              &darr;              &darr;
+                           Reject        Reopen &rarr; Assign</div>
+
+<h4>All Defect Statuses</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Status</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>New</strong></td><td>Defect logged, not yet reviewed</td></tr>
+<tr><td><strong>Assign / Open</strong></td><td>Assigned to developer for fixing</td></tr>
+<tr><td><strong>Fixed</strong></td><td>Developer fixed; ready for retest</td></tr>
+<tr><td><strong>Closed</strong></td><td>Tester verified fix; defect resolved</td></tr>
+<tr><td><strong>Reopen</strong></td><td>Fix didn't work; sent back to developer</td></tr>
+<tr><td><strong>Reject</strong></td><td>Not a valid defect (works as designed, duplicate report)</td></tr>
+<tr><td><strong>Duplicate</strong></td><td>Same defect already reported</td></tr>
+<tr><td><strong>Cannot Fix</strong></td><td>Technically impossible or too costly to fix</td></tr>
+<tr><td><strong>Deferred</strong></td><td>Postponed to future release</td></tr>
+<tr><td><strong>Not Reproducible</strong></td><td>Cannot replicate the issue</td></tr>
+<tr><td><strong>Request for Enhancement</strong></td><td>Not a bug &mdash; new feature request</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Defect-Related Concepts</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concept</th><th>Definition</th></tr></thead>
+<tbody>
+<tr><td><strong>Defect Leakage</strong></td><td>Defects found by customer/end-user that escaped testing &mdash; measured as escaped defects / total defects</td></tr>
+<tr><td><strong>Defect Masking</strong></td><td>One defect hides another; fixing first reveals hidden defect</td></tr>
+<tr><td><strong>Defect Seeding</strong></td><td>Intentionally injecting known defects to evaluate testing effectiveness</td></tr>
+<tr><td><strong>Defect Cascading</strong></td><td>One defect triggers multiple other defects in dependent modules</td></tr>
+<tr><td><strong>Defect Clustering</strong></td><td>Most defects concentrated in small number of modules (Pareto 80/20)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>STLC &mdash; Software Testing Life Cycle</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Phase</th><th>Activities</th><th>Deliverables</th></tr></thead>
+<tbody>
+<tr><td><strong>1. System Study</strong></td><td>Understand requirements, architecture, workflows</td><td>Requirement understanding document</td></tr>
+<tr><td><strong>2. Test Plan</strong></td><td>Define scope, approach, resources, schedule, risks</td><td>Test Plan document</td></tr>
+<tr><td><strong>3. Write Test Cases</strong></td><td>Design test cases using ECP, BVA, error guessing</td><td>Test cases, test data</td></tr>
+<tr><td><strong>4. Traceability Matrix</strong></td><td>Map requirements to test cases</td><td>RTM (Requirement Traceability Matrix)</td></tr>
+<tr><td><strong>5. Test Execution</strong></td><td>Execute test cases, log results, report defects</td><td>Test execution reports</td></tr>
+<tr><td><strong>6. Defect Tracking</strong></td><td>Log, track, retest defects through lifecycle</td><td>Defect reports, metrics</td></tr>
+<tr><td><strong>7. Execution Report</strong></td><td>Summarize test results, coverage, pass/fail metrics</td><td>Test Summary Report</td></tr>
+<tr><td><strong>8. Retrospective</strong></td><td>Review process, lessons learned, improvements</td><td>Retrospective notes</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Traceability Matrix Types</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Direction</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><strong>Forward Traceability</strong></td><td>Requirements &rarr; Test Cases</td><td>Ensure every requirement has test coverage</td></tr>
+<tr><td><strong>Backward Traceability</strong></td><td>Test Cases &rarr; Requirements</td><td>Ensure no unnecessary/orphan test cases</td></tr>
+<tr><td><strong>Bi-directional</strong></td><td>Both directions</td><td>Complete mapping &mdash; most comprehensive approach</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What are the 7 stages of SDLC?</strong><br>Requirement Collection, Feasibility Study, Design, Coding, Testing, Deployment, Maintenance.</li>
+<li><strong>Difference between SDLC and STLC?</strong><br>SDLC covers entire software development; STLC is the testing subset within SDLC's Testing phase with its own phases (planning, design, execution, closure).</li>
+<li><strong>What is the difference between Severity and Priority?</strong><br>Severity = impact on application functionality. Priority = urgency of fixing. High severity bug in rarely-used feature may have low priority.</li>
+<li><strong>Explain ECP and BVA with example.</strong><br>Password field (6&ndash;12 chars): ECP partitions &mdash; valid (6&ndash;12), too short (&lt;6), too long (&gt;12). BVA tests: 5, 6, 7, 11, 12, 13.</li>
+<li><strong>What is defect leakage?</strong><br>Defects that escape to production/customer. Formula: (Defects found in production / Total defects) &mdash; 100.</li>
+<li><strong>Difference between Smoke and Sanity testing?</strong><br>Smoke = broad shallow test of critical features on new build. Sanity = narrow deep test of specific changed functionality.</li>
+<li><strong>What is RTM and why is it important?</strong><br>Requirement Traceability Matrix maps requirements to test cases ensuring 100% coverage and no orphan tests.</li>
+<li><strong>Explain V-Model.</strong><br>Each development phase has corresponding test phase: Requirements&rarr;Acceptance, Design&rarr;System, Architecture&rarr;Integration, Module Design&rarr;Unit Testing.</li>
+<li><strong>What are the 7 principles of testing?</strong><br>Testing shows defects exist; exhaustive testing impossible; early testing; defect clustering; pesticide paradox; context-dependent; absence-of-errors fallacy.</li>
+<li><strong>Difference between Alpha and Beta testing?</strong><br>Alpha = in-house at developer site. Beta = real users in real environment before final release.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 1 (20 items)</summary>
+<ol>
+<li>SDLC 7 stages: Requirements &rarr; Feasibility &rarr; Design &rarr; Coding &rarr; Testing &rarr; Deployment &rarr; Maintenance</li>
+<li>Waterfall = sequential; Agile = iterative sprints; V-Model = test phase per dev phase</li>
+<li>Scrum: PO + SM + Dev Team; Sprint Planning, Daily Standup, Review, Retrospective</li>
+<li>7 Testing Principles: defects exist, exhaustive impossible, test early, clustering, pesticide paradox</li>
+<li>WBT = code knowledge; BBT = requirements only; Yellow Box = partial code knowledge</li>
+<li>12 BBT types: Functionality, Integration, System, Acceptance, Smoke, Adhoc, Performance, Regression, Exploratory, Usability, Compatibility, Globalization</li>
+<li>Integration: Top-Down (stubs), Bottom-Up (drivers), Big Bang (non-incremental)</li>
+<li>Acceptance: UAT, BAT, CAT, RAT, OAT, Alpha, Beta</li>
+<li>Performance: Load, Stress, Volume, Soak/Endurance</li>
+<li>Regression: Unit, Regional, Full</li>
+<li>I18N = design for multiple locales; L10N = adapt for specific locale</li>
+<li>Test case: Header (ID, title) + Body (steps, data, expected) + Footer (actual, status)</li>
+<li>Design techniques: Error Guessing, ECP (partitions), BVA (boundaries)</li>
+<li>Severity: Blocker, Critical, Major, Minor</li>
+<li>Priority: High, Medium, Low &mdash; independent of severity</li>
+<li>Bug lifecycle: New &rarr; Assign &rarr; Fixed &rarr; Closed/Reopen</li>
+<li>Defect leakage = escaped bugs; masking = one bug hides another</li>
+<li>STLC: Study &rarr; Plan &rarr; Write TCs &rarr; RTM &rarr; Execute &rarr; Track &rarr; Report &rarr; Retrospective</li>
+<li>RTM: Forward (req&rarr;TC), Backward (TC&rarr;req), Bi-directional</li>
+<li>Smoke = build verification; Sanity = focused check after changes</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 2: SELENIUM WEBDRIVER ==================== -->
+<section id="section-2" class="section-card">
+<h2>Section 2: Selenium WebDriver</h2>
+<p>Complete Selenium WebDriver automation guide &mdash; setup, locators, WebElement methods, Actions, waits, frames, alerts, and debugging.</p>
+
+<h3>What is Automation Testing?</h3>
+<p><strong>Automation Testing</strong> uses tools and scripts to execute pre-defined test cases automatically, compare actual vs expected results, and generate reports without manual intervention.</p>
+
+<h4>Benefits of Automation Testing</h4>
+<ul>
+<li><strong>Speed:</strong> Execute thousands of tests in minutes vs days manually</li>
+<li><strong>Repeatability:</strong> Same tests run identically every time</li>
+<li><strong>Regression:</strong> Re-run full suite after every code change</li>
+<li><strong>Data-driven:</strong> Same test with multiple data sets (CSV, Excel, JSON)</li>
+<li><strong>Parallel execution:</strong> Run tests on multiple browsers/machines simultaneously</li>
+<li><strong>24/7 execution:</strong> CI/CD pipelines run tests overnight</li>
+<li><strong>Cost-effective long-term:</strong> Reduces manual effort for stable features</li>
+</ul>
+
+<h3>Selenium Introduction</h3>
+<p><strong>Selenium</strong> is an open-source suite of tools for automating web browsers. Supports multiple languages (Java, Python, C#, JavaScript) and browsers (Chrome, Firefox, Edge, Safari).</p>
+
+<h4>Advantages</h4>
+<ul>
+<li>Open source and free</li>
+<li>Cross-browser and cross-platform support</li>
+<li>Large community and extensive documentation</li>
+<li>Integrates with TestNG, JUnit, Maven, Jenkins, Cucumber</li>
+<li>Supports headless browser execution</li>
+</ul>
+
+<h4>Drawbacks</h4>
+<ul>
+<li>Only for web applications (not desktop/mobile native apps)</li>
+<li>No built-in reporting &mdash; needs TestNG/Jenkins/ExtentReports</li>
+<li>Dynamic elements and flaky tests require robust wait strategies</li>
+<li>Cannot automate captcha, barcode scanning, or OTP without workarounds</li>
+<li>Maintenance overhead when UI changes frequently</li>
+</ul>
+
+<h4>Selenium Components</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Component</th><th>Description</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td><strong>Selenium IDE</strong></td><td>Record &amp; playback Firefox/Chrome extension</td><td>Active &mdash; prototyping, quick scripts</td></tr>
+<tr><td><strong>Selenium RC (Remote Control)</strong></td><td>Client-server architecture; JS injection</td><td>Deprecated &mdash; replaced by WebDriver</td></tr>
+<tr><td><strong>Selenium WebDriver</strong></td><td>Direct browser communication via native drivers</td><td>Primary tool &mdash; industry standard</td></tr>
+<tr><td><strong>Selenium Grid</strong></td><td>Parallel test execution across browsers/OS/machines</td><td>Active &mdash; Hub + Node architecture</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>WebDriver Setup</h3>
+
+<h4>Step 1: Configure JAR Files</h4>
+<pre><code>&lt;!-- pom.xml Maven dependencies --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.seleniumhq.selenium&lt;/groupId&gt;
+    &lt;artifactId&gt;selenium-java&lt;/artifactId&gt;
+    &lt;version&gt;4.15.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+
+<h4>Step 2: Configure Browser Driver</h4>
+<p>Selenium 4+ uses Selenium Manager to auto-download drivers. Manual setup also possible:</p>
+<pre><code>// Set driver path (if not using Selenium Manager)
+System.setProperty("webdriver.chrome.driver", "path/to/chromedriver.exe");</code></pre>
+
+<h4>Step 3: Browser Setup</h4>
+<pre><code>// Chrome
+WebDriver driver = new ChromeDriver();
+
+// Firefox
+WebDriver driver = new FirefoxDriver();
+
+// Edge
+WebDriver driver = new EdgeDriver();
+
+// IE (deprecated but supported)
+WebDriver driver = new InternetExplorerDriver();
+
+// Headless Chrome
+ChromeOptions options = new ChromeOptions();
+options.addArguments("--headless");
+WebDriver driver = new ChromeDriver(options);</code></pre>
+
+<h3>WebDriver Methods</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Method</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><code>get(String url)</code></td><td>Navigate to URL; waits for page load</td><td><code>driver.get("https://example.com");</code></td></tr>
+<tr><td><code>getTitle()</code></td><td>Returns page title</td><td><code>String title = driver.getTitle();</code></td></tr>
+<tr><td><code>getCurrentUrl()</code></td><td>Returns current page URL</td><td><code>String url = driver.getCurrentUrl();</code></td></tr>
+<tr><td><code>quit()</code></td><td>Closes ALL browser windows and ends session</td><td><code>driver.quit();</code></td></tr>
+<tr><td><code>close()</code></td><td>Closes CURRENT window only</td><td><code>driver.close();</code></td></tr>
+<tr><td><code>manage().window().maximize()</code></td><td>Maximize browser window</td><td><code>driver.manage().window().maximize();</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Locators</h3>
+<p>Locators identify web elements on a page. Selenium provides 8 locator strategies:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Locator</th><th>Syntax</th><th>When to Use</th></tr></thead>
+<tbody>
+<tr><td><code>By.id()</code></td><td><code>driver.findElement(By.id("username"));</code></td><td>Unique ID &mdash; fastest, most reliable</td></tr>
+<tr><td><code>By.name()</code></td><td><code>driver.findElement(By.name("email"));</code></td><td>Form elements with name attribute</td></tr>
+<tr><td><code>By.className()</code></td><td><code>driver.findElement(By.className("btn-primary"));</code></td><td>CSS class &mdash; may match multiple elements</td></tr>
+<tr><td><code>By.tagName()</code></td><td><code>driver.findElement(By.tagName("input"));</code></td><td>HTML tag &mdash; usually with other locators</td></tr>
+<tr><td><code>By.linkText()</code></td><td><code>driver.findElement(By.linkText("Click Here"));</code></td><td>Exact link text match</td></tr>
+<tr><td><code>By.partialLinkText()</code></td><td><code>driver.findElement(By.partialLinkText("Click"));</code></td><td>Partial link text match</td></tr>
+<tr><td><code>By.cssSelector()</code></td><td><code>driver.findElement(By.cssSelector("#id .class"));</code></td><td>CSS selectors &mdash; fast and flexible</td></tr>
+<tr><td><code>By.xpath()</code></td><td><code>driver.findElement(By.xpath("//input[@id='user']"));</code></td><td>Most powerful &mdash; traverse DOM tree</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>XPath Types</h4>
+<pre><code>// Absolute XPath &mdash; full path from root (fragile, not recommended)
+/html/body/div[1]/form/input[1]
+
+// Relative XPath &mdash; starts from anywhere (preferred)
+//input[@id='username']
+//button[contains(@class, 'submit')]
+//span[text()='Welcome']
+//div[@id='menu']//a[contains(text(), 'Home')]
+
+// Dynamic XPath &mdash; handles changing attributes
+//input[starts-with(@id, 'user_')]
+//div[contains(@class, 'dynamic-class')]</code></pre>
+
+<h3>WebElement Interface</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Method</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><code>sendKeys(String)</code></td><td>Type text into input field</td><td><code>element.sendKeys("Hello World");</code></td></tr>
+<tr><td><code>click()</code></td><td>Click element</td><td><code>element.click();</code></td></tr>
+<tr><td><code>getText()</code></td><td>Get visible text of element</td><td><code>String text = element.getText();</code></td></tr>
+<tr><td><code>getAttribute(String)</code></td><td>Get attribute value</td><td><code>String val = element.getAttribute("href");</code></td></tr>
+<tr><td><code>clear()</code></td><td>Clear input field</td><td><code>element.clear();</code></td></tr>
+<tr><td><code>isDisplayed()</code></td><td>Check if element is visible</td><td><code>element.isDisplayed();</code></td></tr>
+<tr><td><code>isEnabled()</code></td><td>Check if element is enabled</td><td><code>element.isEnabled();</code></td></tr>
+<tr><td><code>isSelected()</code></td><td>Check if checkbox/radio is selected</td><td><code>element.isSelected();</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Actions Class &mdash; Mouse Operations</h3>
+<pre><code>Actions actions = new Actions(driver);
+
+// Move mouse to element (hover)
+actions.moveToElement(element).perform();
+
+// Drag and drop
+actions.dragAndDrop(sourceElement, targetElement).perform();
+
+// Double click
+actions.doubleClick(element).perform();
+
+// Right click (context click)
+actions.contextClick(element).perform();
+
+// Chaining multiple actions
+actions.moveToElement(menu).click().build().perform();
+
+// Click and hold
+actions.clickAndHold(element).moveToElement(target).release().perform();</code></pre>
+
+<h3>Robot Class &mdash; Keyboard Operations</h3>
+<pre><code>import java.awt.Robot;
+import java.awt.event.KeyEvent;
+
+Robot robot = new Robot();
+
+// Press and release a key
+robot.keyPress(KeyEvent.VK_ENTER);
+robot.keyRelease(KeyEvent.VK_ENTER);
+
+// Keyboard shortcut Ctrl+C
+robot.keyPress(KeyEvent.VK_CONTROL);
+robot.keyPress(KeyEvent.VK_C);
+robot.keyRelease(KeyEvent.VK_C);
+robot.keyRelease(KeyEvent.VK_CONTROL);
+
+// Type characters (for non-WebElement inputs)
+robot.keyPress(KeyEvent.VK_A);
+robot.keyRelease(KeyEvent.VK_A);</code></pre>
+
+<h3>Handling Alerts</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Alert Type</th><th>Description</th><th>Methods</th></tr></thead>
+<tbody>
+<tr><td><strong>Simple Alert</strong></td><td>OK button only</td><td><code>accept()</code></td></tr>
+<tr><td><strong>Confirm Alert</strong></td><td>OK and Cancel buttons</td><td><code>accept()</code>, <code>dismiss()</code></td></tr>
+<tr><td><strong>Prompt Alert</strong></td><td>Input field + OK/Cancel</td><td><code>sendKeys()</code>, <code>accept()</code>, <code>dismiss()</code></td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>Alert alert = driver.switchTo().alert();
+
+// Simple/Confirm &mdash; click OK
+alert.accept();
+
+// Confirm &mdash; click Cancel
+alert.dismiss();
+
+// Prompt &mdash; enter text
+alert.sendKeys("Test Input");
+alert.accept();
+
+// Get alert text
+String alertText = alert.getText();</code></pre>
+
+<h3>JavaScriptExecutor</h3>
+<pre><code>JavascriptExecutor js = (JavascriptExecutor) driver;
+
+// Execute JavaScript
+js.executeScript("alert('Hello');");
+
+// Click element via JS (when normal click fails)
+js.executeScript("arguments[0].click();", element);
+
+// Scroll into view
+js.executeScript("arguments[0].scrollIntoView(true);", element);
+
+// Set attribute value
+js.executeScript("arguments[0].setAttribute('value', 'newValue');", element);
+
+// Get attribute value
+String value = (String) js.executeScript("return arguments[0].getAttribute('value');", element);
+
+// Scroll to bottom of page
+js.executeScript("window.scrollTo(0, document.body.scrollHeight);");</code></pre>
+
+<h3>TakesScreenshot</h3>
+<pre><code>import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.TakesScreenshot;
+import java.io.File;
+
+// Capture screenshot
+TakesScreenshot ts = (TakesScreenshot) driver;
+File source = ts.getScreenshotAs(OutputType.FILE);
+
+// Save to destination
+File destination = new File("./screenshots/test.png");
+FileUtils.copyFile(source, destination);</code></pre>
+
+<h3>Element Visibility Methods</h3>
+<pre><code>WebElement element = driver.findElement(By.id("submit"));
+
+boolean displayed = element.isDisplayed();  // visible on page?
+boolean enabled = element.isEnabled();      // clickable/interactable?
+boolean selected = element.isSelected();    // checkbox/radio checked?</code></pre>
+
+<h3>Handling Frames</h3>
+<pre><code>// Switch to frame by index
+driver.switchTo().frame(0);
+
+// Switch to frame by name or ID
+driver.switchTo().frame("frameName");
+
+// Switch to frame by WebElement
+WebElement frameElement = driver.findElement(By.id("iframe1"));
+driver.switchTo().frame(frameElement);
+
+// Switch to parent frame
+driver.switchTo().parentFrame();
+
+// Switch to main page (exit all frames)
+driver.switchTo().defaultContent();</code></pre>
+
+<h3>Windows Handling</h3>
+<pre><code>// Get current window handle
+String mainWindow = driver.getWindowHandle();
+
+// Get all window handles
+Set&lt;String&gt; allWindows = driver.getWindowHandles();
+
+// Switch to new window
+for (String window : allWindows) {
+    if (!window.equals(mainWindow)) {
+        driver.switchTo().window(window);
+        break;
+    }
+}
+
+// Switch back to main window
+driver.switchTo().window(mainWindow);</code></pre>
+
+<h3>WebTable Handling</h3>
+<pre><code>// Find table
+WebElement table = driver.findElement(By.id("dataTable"));
+
+// Get all rows
+List&lt;WebElement&gt; rows = table.findElements(By.tagName("tr"));
+
+for (WebElement row : rows) {
+    // Get header cells
+    List&lt;WebElement&gt; headers = row.findElements(By.tagName("th"));
+    // Get data cells
+    List&lt;WebElement&gt; cells = row.findElements(By.tagName("td"));
+    
+    for (WebElement cell : cells) {
+        System.out.println(cell.getText());
+    }
+}
+
+// Get specific cell (row 2, column 3)
+WebElement cell = driver.findElement(By.xpath("//table[@id='dataTable']/tbody/tr[2]/td[3]"));</code></pre>
+
+<h3>Dropdown Handling &mdash; Select Class</h3>
+<pre><code>import org.openqa.selenium.support.ui.Select;
+
+WebElement dropdown = driver.findElement(By.id("country"));
+Select select = new Select(dropdown);
+
+// Select methods
+select.selectByValue("IN");           // by value attribute
+select.selectByVisibleText("India");  // by visible text
+select.selectByIndex(2);              // by index (0-based)
+
+// Get options
+List&lt;WebElement&gt; options = select.getOptions();
+
+// Get selected option
+WebElement selected = select.getFirstSelectedOption();
+
+// Deselect (multi-select only)
+select.deselectByValue("IN");
+select.deselectByVisibleText("India");
+select.deselectByIndex(2);
+select.deselectAll();
+
+// Check if multi-select
+boolean isMulti = select.isMultiple();</code></pre>
+
+<h3>Navigation Methods</h3>
+<pre><code>// Navigate to URL
+driver.navigate().to("https://example.com");
+
+// Browser navigation
+driver.navigate().forward();   // Go forward in history
+driver.navigate().back();      // Go back in history
+driver.navigate().refresh();   // Refresh current page
+
+// get() vs navigate().to()
+driver.get("https://example.com");           // Opens URL, waits for load
+driver.navigate().to("https://example.com"); // Same but also supports back/forward history</code></pre>
+
+<h3>Waits</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Wait Type</th><th>Description</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td><strong>Thread.sleep()</strong></td><td>Unconditional hard wait &mdash; pauses execution for fixed time</td><td><code>Thread.sleep(3000);</code> &mdash; avoid in production</td></tr>
+<tr><td><strong>Implicit Wait</strong></td><td>Global wait &mdash; applies to all findElement calls</td><td><code>driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));</code></td></tr>
+<tr><td><strong>Explicit Wait</strong></td><td>Wait for specific condition on specific element</td><td><code>WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));</code></td></tr>
+<tr><td><strong>Fluent Wait</strong></td><td>Explicit wait with polling interval and ignored exceptions</td><td><code>Wait&lt;WebDriver&gt; fluentWait = new FluentWait&lt;&gt;(driver)...</code></td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>// Explicit Wait example
+WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("submit")));
+
+// Wait for clickable
+wait.until(ExpectedConditions.elementToBeClickable(By.id("loginBtn")));
+
+// Wait for alert
+wait.until(ExpectedConditions.alertIsPresent());
+
+// Fluent Wait
+Wait&lt;WebDriver&gt; fluentWait = new FluentWait&lt;&gt;(driver)
+    .withTimeout(Duration.ofSeconds(30))
+    .pollingEvery(Duration.ofSeconds(2))
+    .ignoring(NoSuchElementException.class);
+WebElement element = fluentWait.until(driver -> driver.findElement(By.id("dynamic")));</code></pre>
+
+<h3>Debugging in IDE</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Action</th><th>Shortcut</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>Breakpoint</strong></td><td>Double-click line number</td><td>Pause execution at specific line</td></tr>
+<tr><td><strong>Step Over (F6)</strong></td><td>F6</td><td>Execute current line, move to next (don't enter methods)</td></tr>
+<tr><td><strong>Step Into (F5)</strong></td><td>F5</td><td>Enter method call to debug inside it</td></tr>
+<tr><td><strong>Resume / Close (F8)</strong></td><td>F8</td><td>Continue execution until next breakpoint; closes current debug step</td></tr>
+<tr><td><strong>Step Return (F7)</strong></td><td>F7</td><td>Finish current method and return to caller</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What are Selenium components?</strong><br>IDE (record/playback), RC (deprecated), WebDriver (primary), Grid (parallel execution).</li>
+<li><strong>Difference between findElement and findElements?</strong><br>findElement returns first matching WebElement (throws exception if none). findElements returns List (empty list if none).</li>
+<li><strong>Which locator is fastest?</strong><br>ID is fastest and most reliable. CSS Selector is second fastest. XPath is most flexible but slowest.</li>
+<li><strong>When to use Actions class?</strong><br>Mouse operations: hover, drag-drop, double-click, right-click, click-and-hold when standard click() doesn't work.</li>
+<li><strong>Implicit vs Explicit wait?</strong><br>Implicit = global timeout for all findElement. Explicit = wait for specific condition on specific element with WebDriverWait.</li>
+<li><strong>How to handle dropdown?</strong><br>Use Select class: selectByValue(), selectByVisibleText(), selectByIndex().</li>
+<li><strong>get() vs navigate().to()?</strong><br>Both open URL. navigate().to() additionally supports back(), forward(), refresh() via browser history.</li>
+<li><strong>quit() vs close()?</strong><br>quit() closes ALL windows and ends WebDriver session. close() closes only current window.</li>
+</ol>
+
+<h3>Page Object Model (POM)</h3>
+<p>Design pattern where each web page has a corresponding class containing locators and methods for that page.</p>
+<h4>Why POM?</h4>
+<ul>
+<li><strong>Maintainability:</strong> If UI changes, update only one class (not all tests)</li>
+<li><strong>Reusability:</strong> Same page methods used across multiple tests</li>
+<li><strong>Readability:</strong> Tests read like user actions, not locator details</li>
+<li><strong>Separation of concerns:</strong> Test logic separated from page structure</li>
+</ul>
+<h4>POM Structure</h4>
+<pre>// LoginPage.java
+public class LoginPage {
+    WebDriver driver;
+
+    @FindBy(id = "username") WebElement usernameField;
+    @FindBy(id = "password") WebElement passwordField;
+    @FindBy(id = "loginBtn") WebElement loginButton;
+
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+        PageFactory.initElements(driver, this);
+    }
+
+    public DashboardPage login(String user, String pass) {
+        usernameField.sendKeys(user);
+        passwordField.sendKeys(pass);
+        loginButton.click();
+        return new DashboardPage(driver);
+    }
+}
+
+// LoginTest.java
+@Test
+public void testValidLogin() {
+    LoginPage login = new LoginPage(driver);
+    DashboardPage dashboard = login.login("admin", "admin123");
+    Assert.assertTrue(dashboard.isWelcomeDisplayed());
+}</pre>
+
+<h3>TestNG Framework</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Annotation</th><th>Execution Order</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>@BeforeSuite</td><td>1st</td><td>Run once before all tests in suite</td></tr>
+<tr><td>@BeforeTest</td><td>2nd</td><td>Run before each &lt;test&gt; tag in XML</td></tr>
+<tr><td>@BeforeClass</td><td>3rd</td><td>Run before first method in class</td></tr>
+<tr><td>@BeforeMethod</td><td>4th</td><td>Run before each @Test method</td></tr>
+<tr><td>@Test</td><td>5th</td><td>Actual test method</td></tr>
+<tr><td>@AfterMethod</td><td>6th</td><td>Run after each @Test method</td></tr>
+<tr><td>@AfterClass</td><td>7th</td><td>Run after all methods in class</td></tr>
+<tr><td>@AfterTest</td><td>8th</td><td>Run after each &lt;test&gt; tag</td></tr>
+<tr><td>@AfterSuite</td><td>9th</td><td>Run once after all tests in suite</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>TestNG Features</h4>
+<ul>
+<li><strong>@DataProvider:</strong> Supply multiple test data sets to same test method</li>
+<li><strong>dependsOnMethods:</strong> Run test only if dependent test passed</li>
+<li><strong>priority:</strong> Control execution order (lower number runs first)</li>
+<li><strong>groups:</strong> Categorize tests (smoke, regression, sanity)</li>
+<li><strong>parallel:</strong> Run tests in parallel (methods, classes, or tests)</li>
+<li><strong>Listeners:</strong> ITestListener for custom reporting, retry logic</li>
+</ul>
+
+<h3>Automation Framework Architecture</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Framework Type</th><th>Description</th><th>When to Use</th></tr></thead>
+<tbody>
+<tr><td><strong>Data-Driven</strong></td><td>Test data separated from scripts (Excel, CSV, JSON)</td><td>Same test, different data combinations</td></tr>
+<tr><td><strong>Keyword-Driven</strong></td><td>Actions defined as keywords in external file</td><td>Non-technical testers need to write tests</td></tr>
+<tr><td><strong>Hybrid</strong></td><td>Combination of data-driven + keyword-driven + POM</td><td>Enterprise applications (most common)</td></tr>
+<tr><td><strong>BDD (Cucumber)</strong></td><td>Gherkin syntax (Given/When/Then)</td><td>Collaboration between QA, BA, PO</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Framework Components (Interview Answer)</h4>
+<ul>
+<li><strong>Base Class:</strong> Browser setup, driver initialization, common utilities</li>
+<li><strong>Page Objects:</strong> Locators + page methods per page</li>
+<li><strong>Test Classes:</strong> Test methods using page objects</li>
+<li><strong>Utilities:</strong> Excel reader, screenshot, logger, wait helpers</li>
+<li><strong>Config:</strong> Properties file (URL, browser, credentials)</li>
+<li><strong>Test Data:</strong> Excel/JSON files with test data</li>
+<li><strong>Reports:</strong> ExtentReports / Allure for rich HTML reports</li>
+<li><strong>CI/CD:</strong> Maven + Jenkins + testng.xml for execution</li>
+</ul>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 2 (20 items)</summary>
+<ol>
+<li>Selenium: IDE, RC (deprecated), WebDriver, Grid</li>
+<li>Setup: Maven dependency + browser driver (Chrome/Firefox/Edge)</li>
+<li>WebDriver methods: get(), getTitle(), getCurrentUrl(), quit(), maximize()</li>
+<li>8 Locators: id, name, className, tagName, linkText, partialLinkText, cssSelector, xpath</li>
+<li>XPath: Absolute (fragile), Relative (//tag[@attr='val']), Dynamic (contains, starts-with)</li>
+<li>WebElement: sendKeys(), click(), getText(), getAttribute(), isDisplayed/Enabled/Selected</li>
+<li>Actions: moveToElement, dragAndDrop, doubleClick, contextClick, build().perform()</li>
+<li>Robot: keyPress(), keyRelease(), KeyEvent for keyboard outside browser</li>
+<li>Alerts: Simple (accept), Confirm (accept/dismiss), Prompt (sendKeys + accept)</li>
+<li>JSExecutor: executeScript(), scrollIntoView, setAttribute, JS click</li>
+<li>Screenshot: TakesScreenshot.getScreenshotAs() + FileUtils.copyFile()</li>
+<li>Frames: switchTo().frame() &rarr; parentFrame() &rarr; defaultContent()</li>
+<li>Windows: getWindowHandle(), getWindowHandles(), switchTo().window()</li>
+<li>WebTable: tr/th/td with findElements or xpath row/col index</li>
+<li>Select class: selectByValue/VisibleText/Index, deselect methods</li>
+<li>Navigation: navigate().to/forward/back/refresh</li>
+<li>Thread.sleep = unconditional; Implicit = global; Explicit = condition-based</li>
+<li>WebDriverWait + ExpectedConditions for explicit waits</li>
+<li>Debug: Breakpoint, F6 step over, F8 resume</li>
+<li>Headless: ChromeOptions.addArguments("--headless")</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 3: JAVA PROGRAMS FOR SDET ==================== -->
+<section id="section-3" class="section-card">
+<h2>Section 3: Java Programs for SDET</h2>
+<p>Essential Java programming problems for SDET interviews &mdash; numbers, strings, and arrays with complete code and expected output.</p>
+
+<h3>Numbers Programs</h3>
+
+<h4>1. Check Odd or Even</h4>
+<pre><code>public class OddEven {
+    public static void main(String[] args) {
+        int num = 7;
+        if (num % 2 == 0)
+            System.out.println(num + " is Even");
+        else
+            System.out.println(num + " is Odd");
+    }
+}
+// Output: 7 is Odd</code></pre>
+
+<h4>2. Check Prime Number</h4>
+<pre><code>public class Prime {
+    public static void main(String[] args) {
+        int num = 17;
+        boolean isPrime = true;
+        if (num <= 1) isPrime = false;
+        for (int i = 2; i <= Math.sqrt(num); i++) {
+            if (num % i == 0) { isPrime = false; break; }
+        }
+        System.out.println(num + " is " + (isPrime ? "Prime" : "Not Prime"));
+    }
+}
+// Output: 17 is Prime</code></pre>
+
+<h4>3. Fibonacci Series</h4>
+<pre><code>public class Fibonacci {
+    public static void main(String[] args) {
+        int n = 10, a = 0, b = 1;
+        System.out.print("Fibonacci: " + a + " " + b + " ");
+        for (int i = 2; i < n; i++) {
+            int c = a + b;
+            System.out.print(c + " ");
+            a = b; b = c;
+        }
+    }
+}
+// Output: Fibonacci: 0 1 1 2 3 5 8 13 21 34</code></pre>
+
+<h4>4. Swap Two Numbers Without Third Variable</h4>
+<pre><code>public class Swap {
+    public static void main(String[] args) {
+        int a = 10, b = 20;
+        a = a + b;  // a = 30
+        b = a - b;  // b = 10
+        a = a - b;  // a = 20
+        System.out.println("a=" + a + ", b=" + b);
+    }
+}
+// Output: a=20, b=10</code></pre>
+
+<h4>5. Factorial</h4>
+<pre><code>public class Factorial {
+    public static void main(String[] args) {
+        int num = 5, fact = 1;
+        for (int i = 1; i <= num; i++) fact *= i;
+        System.out.println("Factorial of " + num + " = " + fact);
+    }
+}
+// Output: Factorial of 5 = 120</code></pre>
+
+<h4>6. Reverse a Number</h4>
+<pre><code>public class ReverseNumber {
+    public static void main(String[] args) {
+        int num = 12345, reverse = 0;
+        while (num != 0) {
+            reverse = reverse * 10 + num % 10;
+            num /= 10;
+        }
+        System.out.println("Reversed: " + reverse);
+    }
+}
+// Output: Reversed: 54321</code></pre>
+
+<h4>7. Armstrong Number</h4>
+<pre><code>public class Armstrong {
+    public static void main(String[] args) {
+        int num = 153, temp = num, sum = 0;
+        while (temp > 0) {
+            int digit = temp % 10;
+            sum += digit * digit * digit;
+            temp /= 10;
+        }
+        System.out.println(num + " is " + (sum == num ? "Armstrong" : "Not Armstrong"));
+    }
+}
+// Output: 153 is Armstrong (1^3 + 5^3 + 3^3 = 153)</code></pre>
+
+<h4>8. Count Number of Digits</h4>
+<pre><code>public class CountDigits {
+    public static void main(String[] args) {
+        int num = 123456, count = 0;
+        while (num != 0) { count++; num /= 10; }
+        System.out.println("Digits: " + count);
+    }
+}
+// Output: Digits: 6</code></pre>
+
+<h4>9. Palindrome Number</h4>
+<pre><code>public class PalindromeNumber {
+    public static void main(String[] args) {
+        int num = 12121, temp = num, reverse = 0;
+        while (temp != 0) {
+            reverse = reverse * 10 + temp % 10;
+            temp /= 10;
+        }
+        System.out.println(num + " is " + (num == reverse ? "Palindrome" : "Not Palindrome"));
+    }
+}
+// Output: 12121 is Palindrome</code></pre>
+
+<h4>10. Sum of Digits</h4>
+<pre><code>public class SumOfDigits {
+    public static void main(String[] args) {
+        int num = 12345, sum = 0;
+        while (num != 0) { sum += num % 10; num /= 10; }
+        System.out.println("Sum of digits: " + sum);
+    }
+}
+// Output: Sum of digits: 15</code></pre>
+
+<h3>String Programs</h3>
+
+<h4>11. Reverse a String</h4>
+<pre><code>public class ReverseString {
+    public static void main(String[] args) {
+        String str = "Hello World";
+        String reversed = new StringBuilder(str).reverse().toString();
+        System.out.println(reversed);
+    }
+}
+// Output: dlroW olleH</code></pre>
+
+<h4>12. Reverse Each Word in String</h4>
+<pre><code>public class ReverseEachWord {
+    public static void main(String[] args) {
+        String str = "Hello World Java";
+        String[] words = str.split(" ");
+        StringBuilder result = new StringBuilder();
+        for (String word : words) {
+            result.append(new StringBuilder(word).reverse()).append(" ");
+        }
+        System.out.println(result.toString().trim());
+    }
+}
+// Output: olleH dlroW avaJ</code></pre>
+
+<h4>13. Find Duplicate Characters (HashMap)</h4>
+<pre><code>import java.util.*;
+public class DuplicateChars {
+    public static void main(String[] args) {
+        String str = "programming";
+        Map&lt;Character, Integer&gt; map = new HashMap&lt;&gt;();
+        for (char c : str.toCharArray()) {
+            map.put(c, map.getOrDefault(c, 0) + 1);
+        }
+        map.forEach((k, v) -> { if (v > 1) System.out.println(k + " = " + v); });
+    }
+}
+// Output: r = 2, g = 2, m = 2</code></pre>
+
+<h4>14. Count Word Occurrences</h4>
+<pre><code>import java.util.*;
+public class WordOccurrence {
+    public static void main(String[] args) {
+        String str = "Java is great and Java is powerful";
+        Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+        for (String word : str.split(" ")) {
+            map.put(word, map.getOrDefault(word, 0) + 1);
+        }
+        map.forEach((k, v) -> System.out.println(k + " = " + v));
+    }
+}
+// Output: Java = 2, is = 2, great = 1, and = 1, powerful = 1</code></pre>
+
+<h4>15. Count Words in String</h4>
+<pre><code>public class CountWords {
+    public static void main(String[] args) {
+        String str = "Hello World from Java";
+        String[] words = str.trim().split("\\s+");
+        System.out.println("Word count: " + words.length);
+    }
+}
+// Output: Word count: 4</code></pre>
+
+<h4>16. String Permutations</h4>
+<pre><code>public class Permutations {
+    public static void permute(String str, int start, int end) {
+        if (start == end) System.out.println(str);
+        for (int i = start; i <= end; i++) {
+            str = swap(str, start, i);
+            permute(str, start + 1, end);
+            str = swap(str, start, i);
+        }
+    }
+    static String swap(String s, int i, int j) {
+        char[] ch = s.toCharArray();
+        char temp = ch[i]; ch[i] = ch[j]; ch[j] = temp;
+        return String.valueOf(ch);
+    }
+    public static void main(String[] args) { permute("ABC", 0, 2); }
+}
+// Output: ABC, ACB, BAC, BCA, CAB, CBA</code></pre>
+
+<h4>17. String Palindrome</h4>
+<pre><code>public class StringPalindrome {
+    public static void main(String[] args) {
+        String str = "madam";
+        String reversed = new StringBuilder(str).reverse().toString();
+        System.out.println(str + " is " + (str.equals(reversed) ? "Palindrome" : "Not Palindrome"));
+    }
+}
+// Output: madam is Palindrome</code></pre>
+
+<h4>18. Anagram Check</h4>
+<pre><code>import java.util.*;
+public class Anagram {
+    public static void main(String[] args) {
+        String s1 = "listen", s2 = "silent";
+        char[] a = s1.toCharArray(), b = s2.toCharArray();
+        Arrays.sort(a); Arrays.sort(b);
+        System.out.println(Arrays.equals(a, b) ? "Anagram" : "Not Anagram");
+    }
+}
+// Output: Anagram</code></pre>
+
+<h4>19. Count Vowels and Consonants</h4>
+<pre><code>public class VowelsConsonants {
+    public static void main(String[] args) {
+        String str = "Hello World";
+        int vowels = 0, consonants = 0;
+        for (char c : str.toLowerCase().toCharArray()) {
+            if (Character.isLetter(c)) {
+                if ("aeiou".indexOf(c) >= 0) vowels++;
+                else consonants++;
+            }
+        }
+        System.out.println("Vowels: " + vowels + ", Consonants: " + consonants);
+    }
+}
+// Output: Vowels: 3, Consonants: 7</code></pre>
+
+<h4>20. Unique Characters in String</h4>
+<pre><code>import java.util.*;
+public class UniqueChars {
+    public static void main(String[] args) {
+        String str = "programming";
+        Set&lt;Character&gt; set = new LinkedHashSet&lt;&gt;();
+        for (char c : str.toCharArray()) set.add(c);
+        System.out.println("Unique: " + set);
+    }
+}
+// Output: Unique: [p, r, o, g, a, m, i, n]</code></pre>
+
+<h4>21. Print Even Indexed Characters</h4>
+<pre><code>public class EvenIndexed {
+    public static void main(String[] args) {
+        String str = "Automation";
+        for (int i = 0; i < str.length(); i += 2)
+            System.out.print(str.charAt(i));
+    }
+}
+// Output: Atmtin</code></pre>
+
+<h4>22. Remove Spaces from String</h4>
+<pre><code>public class RemoveSpaces {
+    public static void main(String[] args) {
+        String str = "Hello World Java";
+        System.out.println(str.replace(" ", ""));
+    }
+}
+// Output: HelloWorldJava</code></pre>
+
+<h4>23. Print Each Letter Twice</h4>
+<pre><code>public class PrintTwice {
+    public static void main(String[] args) {
+        String str = "Java";
+        for (char c : str.toCharArray())
+            System.out.print("" + c + c);
+    }
+}
+// Output: JJaa vvaa</code></pre>
+
+<h4>24. Swap Two Strings Without Third Variable</h4>
+<pre><code>public class SwapStrings {
+    public static void main(String[] args) {
+        String a = "Hello", b = "World";
+        a = a + b;           // a = "HelloWorld"
+        b = a.substring(0, a.length() - b.length());  // b = "Hello"
+        a = a.substring(b.length());                 // a = "World"
+        System.out.println("a=" + a + ", b=" + b);
+    }
+}
+// Output: a=World, b=Hello</code></pre>
+
+<h4>25. Character Count (a2b2c3 format)</h4>
+<pre><code>import java.util.*;
+public class CharCount {
+    public static void main(String[] args) {
+        String str = "aabbbcccc";
+        Map&lt;Character, Integer&gt; map = new LinkedHashMap&lt;&gt;();
+        for (char c : str.toCharArray())
+            map.put(c, map.getOrDefault(c, 0) + 1);
+        map.forEach((k, v) -> System.out.print(k + "" + v));
+    }
+}
+// Output: a2b3c4</code></pre>
+
+<h4>26. Separate Uppercase and Lowercase</h4>
+<pre><code>public class SeparateCase {
+    public static void main(String[] args) {
+        String str = "HelloWorld123";
+        String upper = "", lower = "";
+        for (char c : str.toCharArray()) {
+            if (Character.isUpperCase(c)) upper += c;
+            else if (Character.isLowerCase(c)) lower += c;
+        }
+        System.out.println("Upper: " + upper + ", Lower: " + lower);
+    }
+}
+// Output: Upper: HW, Lower: elloorld</code></pre>
+
+<h4>27. Separate Alphabets and Numbers</h4>
+<pre><code>public class SeparateAlphaNum {
+    public static void main(String[] args) {
+        String str = "Hello123World456";
+        String alpha = "", num = "";
+        for (char c : str.toCharArray()) {
+            if (Character.isLetter(c)) alpha += c;
+            else if (Character.isDigit(c)) num += c;
+        }
+        System.out.println("Alpha: " + alpha + ", Num: " + num);
+    }
+}
+// Output: Alpha: HelloWorld, Num: 123456</code></pre>
+
+<h4>28. Longest Substring Without Repeating Characters</h4>
+<pre><code>import java.util.*;
+public class LongestSubstring {
+    public static void main(String[] args) {
+        String str = "abcabcbb";
+        Set&lt;Character&gt; set = new HashSet&lt;&gt;();
+        int max = 0, left = 0;
+        for (int right = 0; right < str.length(); right++) {
+            while (set.contains(str.charAt(right))) {
+                set.remove(str.charAt(left++));
+            }
+            set.add(str.charAt(right));
+            max = Math.max(max, right - left + 1);
+        }
+        System.out.println("Longest: " + max);
+    }
+}
+// Output: Longest: 3 (abc)</code></pre>
+
+<h3>Array Programs</h3>
+
+<h4>29. Common Elements in Two Arrays</h4>
+<pre><code>import java.util.*;
+public class CommonElements {
+    public static void main(String[] args) {
+        int[] a = {1, 2, 3, 4, 5}, b = {3, 4, 5, 6, 7};
+        Set&lt;Integer&gt; set = new HashSet&lt;&gt;();
+        for (int x : a) set.add(x);
+        for (int x : b) if (set.contains(x)) System.out.print(x + " ");
+    }
+}
+// Output: 3 4 5</code></pre>
+
+<h4>30. First and Last Element of ArrayList</h4>
+<pre><code>import java.util.*;
+public class FirstLast {
+    public static void main(String[] args) {
+        ArrayList&lt;String&gt; list = new ArrayList&lt;&gt;(Arrays.asList("Java", "Python", "Selenium"));
+        System.out.println("First: " + list.get(0) + ", Last: " + list.get(list.size() - 1));
+    }
+}
+// Output: First: Java, Last: Selenium</code></pre>
+
+<h4>31. Sort Array Without Built-in Sort</h4>
+<pre><code>public class SortArray {
+    public static void main(String[] args) {
+        int[] arr = {64, 34, 25, 12, 22};
+        for (int i = 0; i < arr.length; i++)
+            for (int j = i + 1; j < arr.length; j++)
+                if (arr[i] > arr[j]) { int t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+        for (int n : arr) System.out.print(n + " ");
+    }
+}
+// Output: 12 22 25 34 64</code></pre>
+
+<h4>32. Remove Duplicates from Array</h4>
+<pre><code>import java.util.*;
+public class RemoveDuplicatesArray {
+    public static void main(String[] args) {
+        int[] arr = {1, 2, 2, 3, 4, 4, 5};
+        Set&lt;Integer&gt; set = new LinkedHashSet&lt;&gt;();
+        for (int n : arr) set.add(n);
+        System.out.println(set);
+    }
+}
+// Output: [1, 2, 3, 4, 5]</code></pre>
+
+<h4>33. Remove Duplicates from ArrayList</h4>
+<pre><code>import java.util.*;
+public class RemoveDuplicatesList {
+    public static void main(String[] args) {
+        ArrayList&lt;Integer&gt; list = new ArrayList&lt;&gt;(Arrays.asList(1, 2, 2, 3, 3, 4));
+        Set&lt;Integer&gt; set = new LinkedHashSet&lt;&gt;(list);
+        System.out.println(new ArrayList&lt;&gt;(set));
+    }
+}
+// Output: [1, 2, 3, 4]</code></pre>
+
+<h4>34. Find Missing Number in Array</h4>
+<pre><code>public class MissingNumber {
+    public static void main(String[] args) {
+        int[] arr = {1, 2, 4, 5, 6};
+        int n = arr.length + 1, expected = n * (n + 1) / 2, actual = 0;
+        for (int num : arr) actual += num;
+        System.out.println("Missing: " + (expected - actual));
+    }
+}
+// Output: Missing: 3</code></pre>
+
+<h4>35. Find Largest and Smallest in Array</h4>
+<pre><code>public class LargestSmallest {
+    public static void main(String[] args) {
+        int[] arr = {10, 45, 2, 67, 89, 23};
+        int max = arr[0], min = arr[0];
+        for (int n : arr) { if (n > max) max = n; if (n < min) min = n; }
+        System.out.println("Largest: " + max + ", Smallest: " + min);
+    }
+}
+// Output: Largest: 89, Smallest: 2</code></pre>
+
+<h4>36. Search Element in Array</h4>
+<pre><code>public class SearchElement {
+    public static void main(String[] args) {
+        int[] arr = {10, 20, 30, 40, 50};
+        int target = 30, index = -1;
+        for (int i = 0; i < arr.length; i++)
+            if (arr[i] == target) { index = i; break; }
+        System.out.println(index >= 0 ? "Found at index " + index : "Not found");
+    }
+}
+// Output: Found at index 2</code></pre>
+
+<h4>37. Sum Only Integer Values in Array</h4>
+<pre><code>public class SumIntegers {
+    public static void main(String[] args) {
+        Object[] arr = {1, "hello", 2, 3.5, 4, "world", 5};
+        int sum = 0;
+        for (Object o : arr)
+            if (o instanceof Integer) sum += (Integer) o;
+        System.out.println("Sum: " + sum);
+    }
+}
+// Output: Sum: 12</code></pre>
+
+<h4>38. Find Min and Max in Array</h4>
+<pre><code>import java.util.*;
+public class MinMax {
+    public static void main(String[] args) {
+        int[] arr = {3, 1, 4, 1, 5, 9, 2, 6};
+        int min = Arrays.stream(arr).min().getAsInt();
+        int max = Arrays.stream(arr).max().getAsInt();
+        System.out.println("Min: " + min + ", Max: " + max);
+    }
+}
+// Output: Min: 1, Max: 9</code></pre>
+
+<h4>39. Count Odd and Even Numbers in Array</h4>
+<pre><code>public class CountOddEven {
+    public static void main(String[] args) {
+        int[] arr = {1, 2, 3, 4, 5, 6, 7, 8};
+        int odd = 0, even = 0;
+        for (int n : arr) { if (n % 2 == 0) even++; else odd++; }
+        System.out.println("Odd: " + odd + ", Even: " + even);
+    }
+}
+// Output: Odd: 4, Even: 4</code></pre>
+
+<h4>40. Find Non-Repeated Elements</h4>
+<pre><code>import java.util.*;
+public class NonRepeated {
+    public static void main(String[] args) {
+        int[] arr = {1, 2, 3, 2, 4, 1, 5};
+        Map&lt;Integer, Integer&gt; map = new HashMap&lt;&gt;();
+        for (int n : arr) map.put(n, map.getOrDefault(n, 0) + 1);
+        map.forEach((k, v) -> { if (v == 1) System.out.print(k + " "); });
+    }
+}
+// Output: 3 4 5</code></pre>
+
+<h4>41. hashCode() and equals()</h4>
+<pre><code>class Person {
+    String name;
+    Person(String name) { this.name = name; }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Person)) return false;
+        return name.equals(((Person) o).name);
+    }
+    @Override
+    public int hashCode() { return name.hashCode(); }
+    public static void main(String[] args) {
+        Person p1 = new Person("John"), p2 = new Person("John");
+        System.out.println("equals: " + p1.equals(p2));
+        System.out.println("hashCode same: " + (p1.hashCode() == p2.hashCode()));
+    }
+}
+// Output: equals: true, hashCode same: true
+// Rule: If equals() returns true, hashCode() MUST be same</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>How to reverse a string without StringBuilder?</strong><br>Convert to char array, swap characters from start and end using two pointers.</li>
+<li><strong>How to find duplicate characters in a string?</strong><br>Use HashMap to count frequency of each character; print entries with count > 1.</li>
+<li><strong>Difference between == and equals()?</strong><br>== compares references (memory address). equals() compares content (overridden in String, custom objects).</li>
+<li><strong>Why override hashCode() when overriding equals()?</strong><br>Contract: equal objects must have same hashCode. Required for HashMap/HashSet to work correctly.</li>
+<li><strong>How to find second largest element in array?</strong><br>Track largest and second largest in single pass through array.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 3 (15 items)</summary>
+<ol>
+<li>Numbers: Odd/Even (%2), Prime (sqrt loop), Fibonacci (a,b,c), Factorial, Reverse, Armstrong, Palindrome</li>
+<li>Swap without 3rd var: a=a+b, b=a-b, a=a-b (numbers) or substring (strings)</li>
+<li>Strings: reverse (StringBuilder), reverse each word (split+reverse), duplicate chars (HashMap)</li>
+<li>Anagram: sort both strings, compare. Palindrome: reverse and equals</li>
+<li>Vowels/Consonants: check against "aeiou". Unique chars: LinkedHashSet</li>
+<li>Char count format a2b3: LinkedHashMap frequency. Longest substring: sliding window + HashSet</li>
+<li>Arrays: common elements (HashSet), missing number (sum formula n*(n+1)/2)</li>
+<li>Sort without built-in: bubble sort nested loops. Remove duplicates: LinkedHashSet</li>
+<li>Largest/Smallest: single pass comparison. Search: linear scan</li>
+<li>Non-repeated: HashMap frequency == 1. Odd/Even count: modulo check</li>
+<li>hashCode + equals contract: equal objects &rarr; same hashCode</li>
+<li>Permutations: recursive swap and backtrack</li>
+<li>Separate upper/lower: Character.isUpperCase/isLowerCase</li>
+<li>Separate alpha/numeric: Character.isLetter/isDigit</li>
+<li>ArrayList first/last: get(0) and get(size-1)</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 4: API TESTING WITH POSTMAN ==================== -->
+<section id="section-4" class="section-card">
+<h2>Section 4: API Testing with Postman</h2>
+<p>Complete API testing guide &mdash; HTTP methods, JSON, Postman CRUD, validation, variables, chaining, and data-driven testing.</p>
+
+<h3>HTTP Methods</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Method</th><th>Purpose</th><th>Idempotent</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>GET</strong></td><td>Retrieve/read data from server</td><td>Yes</td><td>GET /users/1 &rarr; fetch user with ID 1</td></tr>
+<tr><td><strong>POST</strong></td><td>Create new resource on server</td><td>No</td><td>POST /users &rarr; create new user</td></tr>
+<tr><td><strong>PUT</strong></td><td>Update/replace entire resource</td><td>Yes</td><td>PUT /users/1 &rarr; replace user 1 completely</td></tr>
+<tr><td><strong>DELETE</strong></td><td>Remove resource from server</td><td>Yes</td><td>DELETE /users/1 &rarr; delete user 1</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>JSON Basics</h3>
+
+<h4>Key-Value Pairs</h4>
+<pre><code>{
+    "name": "John",
+    "age": 30,
+    "city": "Mumbai"
+}</code></pre>
+
+<h4>JSON Array</h4>
+<pre><code>{
+    "fruits": ["apple", "banana", "cherry"],
+    "numbers": [1, 2, 3, 4, 5]
+}</code></pre>
+
+<h4>JSON Object</h4>
+<pre><code>{
+    "user": {
+        "id": 1,
+        "name": "John",
+        "email": "john@mail.com"
+    }
+}</code></pre>
+
+<h4>Nested Objects</h4>
+<pre><code>{
+    "company": {
+        "name": "TechCorp",
+        "address": {
+            "street": "123 Main St",
+            "city": "Mumbai",
+            "pincode": 400001
+        },
+        "employees": [
+            {"id": 1, "name": "Alice"},
+            {"id": 2, "name": "Bob"}
+        ]
+    }
+}</code></pre>
+
+<h3>Creating Your Own REST API with json-server</h3>
+<pre><code># Install json-server globally
+npm install -g json-server
+
+# Create db.json file
+{
+    "users": [
+        {"id": 1, "name": "John", "email": "john@mail.com"},
+        {"id": 2, "name": "Jane", "email": "jane@mail.com"}
+    ],
+    "products": [
+        {"id": 1, "name": "Laptop", "price": 50000}
+    ]
+}
+
+# Start server
+json-server --watch db.json --port 3000
+
+# API endpoints automatically created:
+# GET    http://localhost:3000/users
+# GET    http://localhost:3000/users/1
+# POST   http://localhost:3000/users
+# PUT    http://localhost:3000/users/1
+# DELETE http://localhost:3000/users/1</code></pre>
+
+<h3>CRUD Operations in Postman</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operation</th><th>Method</th><th>URL</th><th>Body</th></tr></thead>
+<tbody>
+<tr><td><strong>Create</strong></td><td>POST</td><td>/users</td><td>{"name":"New User","email":"new@mail.com"}</td></tr>
+<tr><td><strong>Read</strong></td><td>GET</td><td>/users/1</td><td>None</td></tr>
+<tr><td><strong>Update</strong></td><td>PUT</td><td>/users/1</td><td>{"name":"Updated","email":"upd@mail.com"}</td></tr>
+<tr><td><strong>Delete</strong></td><td>DELETE</td><td>/users/1</td><td>None</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Response Validation</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Validation Type</th><th>Postman Test Script</th></tr></thead>
+<tbody>
+<tr><td><strong>Status Code</strong></td><td><code>pm.test("Status 200", () => pm.response.to.have.status(200));</code></td></tr>
+<tr><td><strong>Headers</strong></td><td><code>pm.test("Content-Type JSON", () => pm.response.to.have.header("Content-Type"));</code></td></tr>
+<tr><td><strong>Cookies</strong></td><td><code>pm.test("Cookie exists", () => pm.expect(pm.cookies.has("sessionId")).to.be.true);</code></td></tr>
+<tr><td><strong>Response Time</strong></td><td><code>pm.test("Response < 500ms", () => pm.expect(pm.response.responseTime).to.be.below(500));</code></td></tr>
+<tr><td><strong>Response Body</strong></td><td><code>pm.test("Body has name", () => pm.expect(pm.response.json().name).to.eql("John"));</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Data Type Validation</h3>
+<pre><code>// Single object validation
+pm.test("Validate user object", function() {
+    var json = pm.response.json();
+    pm.expect(json.id).to.be.a('number');
+    pm.expect(json.name).to.be.a('string');
+    pm.expect(json.email).to.include('@');
+});
+
+// Multiple objects validation
+pm.test("Validate all users", function() {
+    var users = pm.response.json();
+    users.forEach(function(user) {
+        pm.expect(user).to.have.property('id');
+        pm.expect(user).to.have.property('name');
+        pm.expect(user).to.have.property('email');
+    });
+});</code></pre>
+
+<h3>Array Content Validation</h3>
+<pre><code>pm.test("Array has 3 items", function() {
+    var json = pm.response.json();
+    pm.expect(json).to.be.an('array');
+    pm.expect(json).to.have.lengthOf(3);
+});
+
+pm.test("Array contains specific user", function() {
+    var json = pm.response.json();
+    var found = json.some(user => user.name === "John");
+    pm.expect(found).to.be.true;
+});</code></pre>
+
+<h3>Value Matching Validation</h3>
+<pre><code>pm.test("Exact value match", function() {
+    pm.expect(pm.response.json().status).to.eql("active");
+});
+
+pm.test("Partial match", function() {
+    pm.expect(pm.response.json().message).to.include("success");
+});
+
+pm.test("Not null check", function() {
+    pm.expect(pm.response.json().token).to.not.be.null;
+});</code></pre>
+
+<h3>JSON Schema Validation</h3>
+<pre><code>const schema = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "number"},
+        "name": {"type": "string"},
+        "email": {"type": "string"}
+    },
+    "required": ["id", "name", "email"]
+};
+
+pm.test("Schema validation", function() {
+    pm.response.to.have.jsonSchema(schema);
+});
+
+// Using tv4.validate (older approach)
+var json = pm.response.json();
+var valid = tv4.validate(json, schema);
+pm.test("tv4 schema valid", function() {
+    pm.expect(valid).to.be.true;
+});</code></pre>
+
+<h3>Postman Variables</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Variable Scope</th><th>Access</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td><strong>Global</strong></td><td><code>{{globalVar}}</code></td><td>Available across all collections and environments</td></tr>
+<tr><td><strong>Collection</strong></td><td><code>{{collectionVar}}</code></td><td>Available within a specific collection</td></tr>
+<tr><td><strong>Environment</strong></td><td><code>{{envVar}}</code></td><td>Changes per environment (dev, staging, prod)</td></tr>
+<tr><td><strong>Local</strong></td><td><code>{{localVar}}</code></td><td>Available within current request only</td></tr>
+<tr><td><strong>Data (CSV/JSON)</strong></td><td><code>{{columnName}}</code></td><td>From data file during collection run</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>// Set variable in Tests tab
+pm.environment.set("userId", pm.response.json().id);
+
+// Use in next request URL
+GET http://localhost:3000/users/{{userId}}
+
+// Set in Pre-request Script
+pm.collectionVariables.set("timestamp", Date.now());</code></pre>
+
+<h3>API Chaining</h3>
+<p>Pass response data from one API request to another request dynamically.</p>
+<pre><code>// Request 1: POST /users (Create user)
+// Tests tab:
+var json = pm.response.json();
+pm.environment.set("createdUserId", json.id);
+pm.environment.set("authToken", json.token);
+
+// Request 2: GET /users/{{createdUserId}} (Get created user)
+// Uses createdUserId from Request 1
+
+// Request 3: DELETE /users/{{createdUserId}}
+// Uses same variable to delete the user created in Request 1</code></pre>
+
+<h3>Pre-request Scripts &mdash; Random Data Generation</h3>
+<pre><code>// Generate random email
+var randomEmail = "user" + Math.floor(Math.random() * 10000) + "@test.com";
+pm.environment.set("randomEmail", randomEmail);
+
+// Generate random name
+var names = ["Alice", "Bob", "Charlie", "Diana"];
+var randomName = names[Math.floor(Math.random() * names.length)];
+pm.environment.set("randomName", randomName);
+
+// Generate UUID
+pm.environment.set("uuid", pm.variables.replaceIn("{{$guid}}"));
+
+// Current timestamp
+pm.environment.set("timestamp", new Date().toISOString());</code></pre>
+
+<h3>Parameterisation / Data Driven Testing</h3>
+<pre><code>// CSV file (testdata.csv):
+// username,password,expectedStatus
+// admin,admin123,200
+// user,user123,200
+// invalid,wrong,401
+
+// In Postman Collection Runner:
+// 1. Select collection
+// 2. Choose data file (CSV or JSON)
+// 3. Map columns to variables: {{username}}, {{password}}
+// 4. Run collection &mdash; each row = one iteration
+
+// Test script using data variables:
+pm.test("Login status for " + pm.iterationData.get("username"), function() {
+    pm.expect(pm.response.code).to.eql(parseInt(pm.iterationData.get("expectedStatus")));
+});</code></pre>
+
+<h3>Swagger / Petstore API Example</h3>
+<p>The Petstore API (https://petstore.swagger.io/) is a standard sample API for learning API testing.</p>
+<pre><code>// GET all pets
+GET https://petstore.swagger.io/v2/pet/findByStatus?status=available
+
+// POST create pet
+POST https://petstore.swagger.io/v2/pet
+Body: {
+    "id": 0,
+    "name": "Fluffy",
+    "status": "available",
+    "category": {"id": 1, "name": "Dogs"},
+    "photoUrls": ["http://example.com/photo.jpg"]
+}
+
+// GET pet by ID
+GET https://petstore.swagger.io/v2/pet/{{petId}}
+
+// PUT update pet
+PUT https://petstore.swagger.io/v2/pet
+
+// DELETE pet
+DELETE https://petstore.swagger.io/v2/pet/{{petId}}</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Difference between GET and POST?</strong><br>GET retrieves data (params in URL, idempotent). POST creates data (body payload, not idempotent).</li>
+<li><strong>What is API chaining in Postman?</strong><br>Using response data from one request as input for subsequent requests via environment/collection variables.</li>
+<li><strong>What HTTP status codes do you validate?</strong><br>200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, 404 Not Found, 500 Internal Server Error.</li>
+<li><strong>How to do data-driven testing in Postman?</strong><br>Collection Runner with CSV/JSON data file; each row runs as separate iteration with variables mapped to columns.</li>
+<li><strong>What are Postman variable scopes?</strong><br>Global &rarr; Collection &rarr; Environment &rarr; Local &rarr; Data (priority: Local > Data > Environment > Collection > Global).</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 4 (15 items)</summary>
+<ol>
+<li>HTTP: GET (read), POST (create), PUT (update), DELETE (remove)</li>
+<li>JSON: key-value pairs, arrays [], nested objects {}</li>
+<li>json-server: npm install, db.json, json-server --watch db.json</li>
+<li>Validate: Status code, Headers, Cookies, Response time, Body</li>
+<li>Data type validation: pm.expect().to.be.a('string'/'number')</li>
+<li>Array validation: .to.be.an('array'), .to.have.lengthOf(n)</li>
+<li>JSON Schema: pm.response.to.have.jsonSchema(schema) or tv4.validate</li>
+<li>Variables: Global, Collection, Environment, Local, Data (CSV/JSON)</li>
+<li>Set variable: pm.environment.set("key", value). Use: {{key}}</li>
+<li>API Chaining: extract from response &rarr; set variable &rarr; use in next request</li>
+<li>Pre-request: random email, UUID ({{$guid}}), timestamp generation</li>
+<li>Data-driven: Collection Runner + CSV/JSON file + pm.iterationData.get()</li>
+<li>Petstore API: standard Swagger sample for CRUD practice</li>
+<li>PUT vs PATCH: PUT replaces entire resource; PATCH updates partial fields</li>
+<li>Idempotent: GET, PUT, DELETE are idempotent; POST is not</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 5: SQL ==================== -->
+<section id="section-5" class="section-card">
+<h2>Section 5: SQL</h2>
+<p>Complete SQL reference for QA/SDET &mdash; DDL, DML, DCL, TCL, DQL commands, joins, constraints, views, and advanced queries.</p>
+
+<h3>SQL Command Types</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Full Form</th><th>Commands</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><strong>DDL</strong></td><td>Data Definition Language</td><td>CREATE, ALTER, DROP, TRUNCATE</td><td>Define/modify database structure</td></tr>
+<tr><td><strong>DML</strong></td><td>Data Manipulation Language</td><td>INSERT, UPDATE, DELETE</td><td>Manipulate data in tables</td></tr>
+<tr><td><strong>DCL</strong></td><td>Data Control Language</td><td>GRANT, REVOKE</td><td>Control access permissions</td></tr>
+<tr><td><strong>TCL</strong></td><td>Transaction Control Language</td><td>COMMIT, ROLLBACK, SAVEPOINT</td><td>Manage transactions</td></tr>
+<tr><td><strong>DQL</strong></td><td>Data Query Language</td><td>SELECT</td><td>Retrieve data from tables</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>CREATE TABLE</h3>
+<pre><code>CREATE TABLE employees (
+    emp_id      INT PRIMARY KEY,
+    first_name  VARCHAR(50) NOT NULL,
+    last_name   VARCHAR(50),
+    email       VARCHAR(100) UNIQUE,
+    salary      DECIMAL(10,2) DEFAULT 0.00,
+    dept_id     INT,
+    hire_date   DATE,
+    FOREIGN KEY (dept_id) REFERENCES departments(dept_id)
+);</code></pre>
+
+<h3>INSERT INTO</h3>
+<pre><code>-- With column names (recommended)
+INSERT INTO employees (emp_id, first_name, last_name, email, salary)
+VALUES (1, 'John', 'Doe', 'john@mail.com', 50000);
+
+-- Without column names (all columns in order)
+INSERT INTO employees
+VALUES (2, 'Jane', 'Smith', 'jane@mail.com', 60000, 1, '2024-01-15');
+
+-- Multiple rows
+INSERT INTO employees (emp_id, first_name, salary)
+VALUES (3, 'Bob', 45000), (4, 'Alice', 55000);</code></pre>
+
+<h3>SELECT with WHERE Clause</h3>
+<pre><code>SELECT first_name, last_name, salary
+FROM employees
+WHERE salary > 50000;
+
+SELECT * FROM employees WHERE dept_id = 1 AND salary > 40000;</code></pre>
+
+<h3>AND / OR Operators</h3>
+<pre><code>-- AND: both conditions must be true
+SELECT * FROM employees WHERE salary > 40000 AND dept_id = 1;
+
+-- OR: either condition can be true
+SELECT * FROM employees WHERE dept_id = 1 OR dept_id = 2;
+
+-- Combined with parentheses
+SELECT * FROM employees
+WHERE (dept_id = 1 OR dept_id = 2) AND salary > 50000;</code></pre>
+
+<h3>UPDATE Query</h3>
+<pre><code>UPDATE employees
+SET salary = 55000, email = 'newemail@mail.com'
+WHERE emp_id = 1;
+
+-- Update with calculation
+UPDATE employees SET salary = salary * 1.10 WHERE dept_id = 1;</code></pre>
+
+<h3>DELETE Query</h3>
+<pre><code>-- Delete specific rows
+DELETE FROM employees WHERE emp_id = 5;
+
+-- Delete all rows (table structure remains)
+DELETE FROM employees;
+
+-- TRUNCATE (faster, cannot rollback)
+TRUNCATE TABLE employees;</code></pre>
+
+<h3>LIKE Clause with Wildcards</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Wildcard</th><th>Meaning</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><code>%</code></td><td>Zero or more characters</td><td><code>WHERE name LIKE 'J%'</code> &rarr; John, Jane, Jack</td></tr>
+<tr><td><code>_</code></td><td>Exactly one character</td><td><code>WHERE name LIKE 'J_hn'</code> &rarr; John</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>SELECT * FROM employees WHERE first_name LIKE 'J%';      -- starts with J
+SELECT * FROM employees WHERE email LIKE '%@mail.com';  -- ends with @mail.com
+SELECT * FROM employees WHERE first_name LIKE '_a%';     -- 2nd char is 'a'</code></pre>
+
+<h3>TOP / LIMIT / ROWNUM</h3>
+<pre><code>-- SQL Server
+SELECT TOP 5 * FROM employees ORDER BY salary DESC;
+
+-- MySQL / PostgreSQL
+SELECT * FROM employees ORDER BY salary DESC LIMIT 5;
+
+-- Oracle
+SELECT * FROM employees WHERE ROWNUM <= 5 ORDER BY salary DESC;</code></pre>
+
+<h3>ORDER BY (ASC / DESC)</h3>
+<pre><code>SELECT * FROM employees ORDER BY salary ASC;           -- lowest first
+SELECT * FROM employees ORDER BY salary DESC;          -- highest first
+SELECT * FROM employees ORDER BY dept_id ASC, salary DESC;  -- multi-column sort</code></pre>
+
+<h3>GROUP BY with Aggregate Functions</h3>
+<pre><code>SELECT dept_id, COUNT(*) AS emp_count, AVG(salary) AS avg_salary
+FROM employees
+GROUP BY dept_id;</code></pre>
+
+<h3>DISTINCT Keyword</h3>
+<pre><code>SELECT DISTINCT dept_id FROM employees;
+SELECT DISTINCT first_name, last_name FROM employees;</code></pre>
+
+<h3>Alias (Table and Column)</h3>
+<pre><code>-- Column alias
+SELECT first_name AS fname, salary * 12 AS annual_salary FROM employees;
+
+-- Table alias
+SELECT e.first_name, d.dept_name
+FROM employees e
+INNER JOIN departments d ON e.dept_id = d.dept_id;</code></pre>
+
+<h3>UNION vs UNION ALL</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operator</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>UNION</strong></td><td>Combines results, removes duplicates</td></tr>
+<tr><td><strong>UNION ALL</strong></td><td>Combines results, keeps duplicates (faster)</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>SELECT first_name FROM employees
+UNION
+SELECT first_name FROM contractors;
+
+SELECT city FROM customers UNION ALL SELECT city FROM suppliers;</code></pre>
+
+<h3>Joins</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Join Type</th><th>Description</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td><strong>INNER JOIN</strong></td><td>Matching rows from both tables</td><td>Only matched records</td></tr>
+<tr><td><strong>LEFT JOIN</strong></td><td>All rows from left + matched from right</td><td>Left table priority; NULL for unmatched right</td></tr>
+<tr><td><strong>RIGHT JOIN</strong></td><td>All rows from right + matched from left</td><td>Right table priority; NULL for unmatched left</td></tr>
+<tr><td><strong>FULL JOIN</strong></td><td>All rows from both tables</td><td>NULL where no match on either side</td></tr>
+<tr><td><strong>SELF JOIN</strong></td><td>Table joined with itself</td><td>Compare rows within same table</td></tr>
+<tr><td><strong>CROSS JOIN</strong></td><td>Cartesian product of both tables</td><td>Every row of A paired with every row of B</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>-- INNER JOIN
+SELECT e.first_name, d.dept_name
+FROM employees e INNER JOIN departments d ON e.dept_id = d.dept_id;
+
+-- LEFT JOIN
+SELECT e.first_name, d.dept_name
+FROM employees e LEFT JOIN departments d ON e.dept_id = d.dept_id;
+
+-- SELF JOIN (employee and their manager)
+SELECT e.first_name AS employee, m.first_name AS manager
+FROM employees e
+JOIN employees m ON e.manager_id = m.emp_id;
+
+-- CROSS JOIN
+SELECT * FROM colors CROSS JOIN sizes;</code></pre>
+
+<h3>Constraints</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Constraint</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>NOT NULL</strong></td><td>Column cannot be empty</td><td><code>first_name VARCHAR(50) NOT NULL</code></td></tr>
+<tr><td><strong>DEFAULT</strong></td><td>Default value if none provided</td><td><code>salary DECIMAL DEFAULT 0.00</code></td></tr>
+<tr><td><strong>UNIQUE</strong></td><td>All values must be unique</td><td><code>email VARCHAR(100) UNIQUE</code></td></tr>
+<tr><td><strong>PRIMARY KEY</strong></td><td>Unique + NOT NULL identifier</td><td><code>emp_id INT PRIMARY KEY</code></td></tr>
+<tr><td><strong>FOREIGN KEY</strong></td><td>References PRIMARY KEY in another table</td><td><code>FOREIGN KEY (dept_id) REFERENCES departments(dept_id)</code></td></tr>
+<tr><td><strong>CHECK</strong></td><td>Validates condition on column</td><td><code>salary DECIMAL CHECK (salary > 0)</code></td></tr>
+<tr><td><strong>INDEX</strong></td><td>Speeds up data retrieval</td><td><code>CREATE INDEX idx_email ON employees(email);</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>NULL Values</h3>
+<pre><code>SELECT * FROM employees WHERE manager_id IS NULL;
+SELECT * FROM employees WHERE email IS NOT NULL;
+
+-- NULL in calculations returns NULL
+SELECT first_name, salary + bonus AS total FROM employees;  -- NULL if bonus is NULL
+SELECT first_name, COALESCE(bonus, 0) + salary AS total FROM employees;  -- handle NULL</code></pre>
+
+<h3>ALTER TABLE</h3>
+<pre><code>-- ADD column
+ALTER TABLE employees ADD phone VARCHAR(15);
+
+-- DROP column
+ALTER TABLE employees DROP COLUMN phone;
+
+-- MODIFY column
+ALTER TABLE employees MODIFY salary DECIMAL(12,2);
+
+-- ADD constraint
+ALTER TABLE employees ADD CONSTRAINT chk_salary CHECK (salary > 0);</code></pre>
+
+<h3>TRUNCATE TABLE</h3>
+<pre><code>TRUNCATE TABLE employees;  -- Deletes all rows, faster than DELETE, resets auto-increment</code></pre>
+
+<h3>Views</h3>
+<pre><code>-- CREATE VIEW
+CREATE VIEW high_earners AS
+SELECT emp_id, first_name, salary FROM employees WHERE salary > 80000;
+
+-- Query view
+SELECT * FROM high_earners;
+
+-- UPDATE through view
+UPDATE high_earners SET salary = 90000 WHERE emp_id = 1;
+
+-- INSERT through view (if simple view)
+INSERT INTO high_earners (emp_id, first_name, salary) VALUES (10, 'New', 85000);
+
+-- DELETE through view
+DELETE FROM high_earners WHERE emp_id = 10;
+
+-- DROP VIEW
+DROP VIEW high_earners;
+
+-- WITH CHECK OPTION (prevents updates violating view condition)
+CREATE VIEW dept1_employees AS
+SELECT * FROM employees WHERE dept_id = 1
+WITH CHECK OPTION;</code></pre>
+
+<h3>Aggregate Functions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>COUNT()</strong></td><td>Count rows</td><td><code>SELECT COUNT(*) FROM employees;</code></td></tr>
+<tr><td><strong>AVG()</strong></td><td>Average value</td><td><code>SELECT AVG(salary) FROM employees;</code></td></tr>
+<tr><td><strong>SUM()</strong></td><td>Total sum</td><td><code>SELECT SUM(salary) FROM employees;</code></td></tr>
+<tr><td><strong>MIN()</strong></td><td>Minimum value</td><td><code>SELECT MIN(salary) FROM employees;</code></td></tr>
+<tr><td><strong>MAX()</strong></td><td>Maximum value</td><td><code>SELECT MAX(salary) FROM employees;</code></td></tr>
+<tr><td><strong>FIRST()</strong></td><td>First record (MS Access)</td><td><code>SELECT FIRST(salary) FROM employees;</code></td></tr>
+<tr><td><strong>LAST()</strong></td><td>Last record (MS Access)</td><td><code>SELECT LAST(salary) FROM employees;</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>HAVING Clause</h3>
+<pre><code>-- Filter AFTER grouping (WHERE filters before grouping)
+SELECT dept_id, AVG(salary) AS avg_sal
+FROM employees
+GROUP BY dept_id
+HAVING AVG(salary) > 50000;</code></pre>
+
+<h3>IN and BETWEEN Operators</h3>
+<pre><code>-- IN operator
+SELECT * FROM employees WHERE dept_id IN (1, 2, 3);
+SELECT * FROM employees WHERE first_name IN ('John', 'Jane', 'Bob');
+
+-- BETWEEN operator
+SELECT * FROM employees WHERE salary BETWEEN 40000 AND 70000;
+SELECT * FROM employees WHERE hire_date BETWEEN '2023-01-01' AND '2024-12-31';</code></pre>
+
+<h3>Nth Highest / Minimum Salary Queries</h3>
+<pre><code>-- 2nd highest salary
+SELECT MAX(salary) FROM employees
+WHERE salary < (SELECT MAX(salary) FROM employees);
+
+-- Nth highest salary (N=3)
+SELECT DISTINCT salary FROM employees e1
+WHERE 3 = (SELECT COUNT(DISTINCT salary) FROM employees e2
+           WHERE e2.salary >= e1.salary);
+
+-- Using LIMIT (MySQL)
+SELECT DISTINCT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 2;
+
+-- 2nd lowest salary
+SELECT MIN(salary) FROM employees
+WHERE salary > (SELECT MIN(salary) FROM employees);
+
+-- DENSE_RANK approach
+SELECT salary FROM (
+    SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS rnk
+    FROM employees
+) WHERE rnk = 2;</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Difference between DELETE and TRUNCATE?</strong><br>DELETE removes rows one by one (can use WHERE, rollback possible). TRUNCATE removes all rows at once (faster, resets identity, minimal logging).</li>
+<li><strong>Difference between WHERE and HAVING?</strong><br>WHERE filters rows before grouping. HAVING filters groups after GROUP BY with aggregate functions.</li>
+<li><strong>What is a PRIMARY KEY vs FOREIGN KEY?</strong><br>PRIMARY KEY uniquely identifies each row (unique + NOT NULL). FOREIGN KEY references PRIMARY KEY in another table for referential integrity.</li>
+<li><strong>INNER JOIN vs LEFT JOIN?</strong><br>INNER returns only matching rows from both tables. LEFT returns all rows from left table + matched rows from right (NULL if no match).</li>
+<li><strong>How to find duplicate records?</strong><br><code>SELECT email, COUNT(*) FROM employees GROUP BY email HAVING COUNT(*) > 1;</code></li>
+<li><strong>UNION vs UNION ALL?</strong><br>UNION removes duplicates. UNION ALL keeps all rows including duplicates (better performance).</li>
+<li><strong>What is a VIEW?</strong><br>Virtual table based on SQL query result. Simplifies complex queries; provides security by hiding columns.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 5 (20 items)</summary>
+<ol>
+<li>DDL: CREATE, ALTER, DROP, TRUNCATE &mdash; structure</li>
+<li>DML: INSERT, UPDATE, DELETE &mdash; data manipulation</li>
+<li>DCL: GRANT, REVOKE &mdash; permissions</li>
+<li>TCL: COMMIT, ROLLBACK, SAVEPOINT &mdash; transactions</li>
+<li>DQL: SELECT &mdash; retrieve data</li>
+<li>LIKE: % (any chars), _ (one char)</li>
+<li>TOP/LIMIT/ROWNUM &mdash; restrict result rows</li>
+<li>ORDER BY ASC/DESC &mdash; sort results</li>
+<li>GROUP BY + aggregates: COUNT, AVG, SUM, MIN, MAX</li>
+<li>DISTINCT &mdash; unique values only</li>
+<li>Alias: AS for columns and tables</li>
+<li>UNION (no dupes) vs UNION ALL (with dupes)</li>
+<li>Joins: INNER, LEFT, RIGHT, FULL, SELF, CROSS</li>
+<li>Constraints: NOT NULL, DEFAULT, UNIQUE, PK, FK, CHECK, INDEX</li>
+<li>NULL: IS NULL, IS NOT NULL, COALESCE()</li>
+<li>ALTER: ADD, DROP, MODIFY columns</li>
+<li>Views: CREATE, SELECT, UPDATE, DELETE, DROP, WITH CHECK OPTION</li>
+<li>WHERE (before group) vs HAVING (after group)</li>
+<li>IN (list of values), BETWEEN (range)</li>
+<li>Nth highest: subquery with MAX/COUNT DISTINCT or DENSE_RANK</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 6: INTERVIEW QUESTIONS ==================== -->
+<section id="section-6" class="section-card">
+<h2>Section 6: Interview Questions</h2>
+<p>Capgemini and general QA/SDET interview questions with detailed answers &mdash; covering manual testing, Selenium, Java, API, SQL, and Git.</p>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Tell me about yourself.</strong><br>
+<strong>Sample Answer:</strong> "I am a QA Automation Engineer with [X] years of experience in manual and automation testing. I have expertise in Selenium WebDriver with Java, API testing using Postman, and SQL for database validation. In my current/previous role at [Company], I was responsible for designing test cases, developing automation frameworks using Page Object Model, executing regression suites, and collaborating with developers in Agile sprints. I have worked on [domain &mdash; e.g., banking/e-commerce] applications and have experience with CI/CD tools like Jenkins and Git. I am passionate about quality assurance and continuously learning new tools and technologies to improve test coverage and efficiency."</li>
+
+<li><strong>Explain Bug Life Cycle.</strong><br>
+Bug Life Cycle is the journey of a defect from discovery to closure:<br>
+<strong>New</strong> &rarr; Tester logs the defect<br>
+<strong>Assign/Open</strong> &rarr; Assigned to developer<br>
+<strong>Fixed</strong> &rarr; Developer fixes the bug<br>
+<strong>Retest</strong> &rarr; Tester verifies the fix<br>
+<strong>Closed</strong> &rarr; Fix confirmed, defect resolved<br>
+<strong>Reopen</strong> &rarr; Fix didn't work, sent back to developer<br>
+Other statuses: Reject, Duplicate, Cannot Fix, Deferred, Not Reproducible, Request for Enhancement.</li>
+
+<li><strong>Explain XPath types: Absolute, Relative, Dynamic.</strong><br>
+<strong>Absolute XPath:</strong> Complete path from root element &mdash; <code>/html/body/div[1]/form/input[1]</code>. Fragile; breaks when DOM structure changes.<br>
+<strong>Relative XPath:</strong> Starts from anywhere using <code>//</code> &mdash; <code>//input[@id='username']</code>. Preferred; more maintainable.<br>
+<strong>Dynamic XPath:</strong> Handles changing attributes &mdash; <code>//button[contains(@class,'submit')]</code>, <code>//input[starts-with(@id,'user_')]</code>, <code>//span[text()='Login']</code>.</li>
+
+<li><strong>What are Annotations in Selenium?</strong><br>
+TestNG/JUnit annotations that control test execution:<br>
+<code>@Test</code> &mdash; marks method as test case<br>
+<code>@BeforeMethod</code> &mdash; runs before each test (e.g., open browser)<br>
+<code>@AfterMethod</code> &mdash; runs after each test (e.g., close browser)<br>
+<code>@BeforeClass</code> &mdash; runs once before all tests in class<br>
+<code>@AfterClass</code> &mdash; runs once after all tests in class<br>
+<code>@BeforeSuite / @AfterSuite</code> &mdash; runs before/after entire test suite<br>
+<code>@DataProvider</code> &mdash; supplies data for data-driven tests<br>
+<code>@Parameters</code> &mdash; passes parameters from testng.xml<br>
+<code>@Ignore / @Test(enabled=false)</code> &mdash; skip test execution</li>
+
+<li><strong>What is the difference between get() and navigate().to()?</strong><br>
+Both navigate to a URL and wait for page load. <code>driver.get(url)</code> opens URL directly. <code>driver.navigate().to(url)</code> does the same but additionally supports browser history navigation: <code>navigate().back()</code>, <code>navigate().forward()</code>, <code>navigate().refresh()</code>. Use navigate().to() when you need to go back/forward during test.</li>
+
+<li><strong>How to handle multiple browser windows?</strong><br>
+<pre><code>String mainWindow = driver.getWindowHandle();
+Set&lt;String&gt; allWindows = driver.getWindowHandles();
+for (String window : allWindows) {
+    if (!window.equals(mainWindow)) {
+        driver.switchTo().window(window);
+        // perform actions on new window
+        driver.close();
+    }
+}
+driver.switchTo().window(mainWindow);</code></pre></li>
+
+<li><strong>Explain mouse actions with Actions class.</strong><br>
+Actions class performs complex mouse interactions:<br>
+<code>moveToElement(element)</code> &mdash; hover over element<br>
+<code>click()</code> &mdash; click element<br>
+<code>doubleClick(element)</code> &mdash; double click<br>
+<code>contextClick(element)</code> &mdash; right click<br>
+<code>dragAndDrop(source, target)</code> &mdash; drag and drop<br>
+<code>clickAndHold(element)</code> &mdash; click and hold<br>
+Always end with <code>.perform()</code> or <code>.build().perform()</code> to execute the action chain.</li>
+
+<li><strong>What are Selenium Locators?</strong><br>
+Locators identify web elements on a page. 8 types:<br>
+1. <code>By.id()</code> &mdash; fastest, most reliable<br>
+2. <code>By.name()</code> &mdash; form elements<br>
+3. <code>By.className()</code> &mdash; CSS class<br>
+4. <code>By.tagName()</code> &mdash; HTML tag<br>
+5. <code>By.linkText()</code> &mdash; exact link text<br>
+6. <code>By.partialLinkText()</code> &mdash; partial link text<br>
+7. <code>By.cssSelector()</code> &mdash; CSS selectors<br>
+8. <code>By.xpath()</code> &mdash; XML path expressions<br>
+Priority: ID > Name > CSS Selector > XPath</li>
+
+<li><strong>How to handle exceptions in Selenium?</strong><br>
+Common Selenium exceptions and handling:<br>
+<code>NoSuchElementException</code> &mdash; element not found; use explicit waits<br>
+<code>StaleElementReferenceException</code> &mdash; element detached from DOM; re-find element<br>
+<code>ElementNotInteractableException</code> &mdash; element not clickable; use JS click or scroll into view<br>
+<code>TimeoutException</code> &mdash; wait timed out; increase timeout or fix locator<br>
+<code>ElementClickInterceptedException</code> &mdash; another element blocking; scroll or use JS click<br>
+Use try-catch blocks and explicit waits to handle gracefully.</li>
+
+<li><strong>Explain multiple catch blocks in Java.</strong><br>
+Java allows multiple catch blocks for different exception types:<br>
+<pre><code>try {
+    driver.findElement(By.id("submit")).click();
+} catch (NoSuchElementException e) {
+    System.out.println("Element not found: " + e.getMessage());
+} catch (StaleElementReferenceException e) {
+    System.out.println("Stale element, retrying...");
+    driver.findElement(By.id("submit")).click();
+} catch (Exception e) {
+    System.out.println("General error: " + e.getMessage());
+}</code></pre>
+Catch most specific exceptions first, general Exception last. Multi-catch (Java 7+): <code>catch (NoSuchElementException | TimeoutException e)</code></li>
+
+<li><strong>How to perform keyboard actions?</strong><br>
+Using Actions class for keyboard:<br>
+<pre><code>Actions actions = new Actions(driver);
+actions.sendKeys(Keys.CONTROL + "a").perform();  // Select all
+actions.sendKeys(Keys.CONTROL + "c").perform();  // Copy
+actions.sendKeys(Keys.ENTER).perform();           // Press Enter
+actions.keyDown(Keys.SHIFT).sendKeys("hello").keyUp(Keys.SHIFT).perform();</code></pre>
+Using Robot class for OS-level keyboard:<br>
+<pre><code>Robot robot = new Robot();
+robot.keyPress(KeyEvent.VK_ENTER);
+robot.keyRelease(KeyEvent.VK_ENTER);</code></pre></li>
+
+<li><strong>Explain Waits: Implicit vs Explicit.</strong><br>
+<strong>Implicit Wait:</strong> Global timeout applied to all findElement calls. Set once: <code>driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));</code> Polls DOM until element found or timeout.<br>
+<strong>Explicit Wait:</strong> Wait for specific condition on specific element. <code>WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10)); wait.until(ExpectedConditions.elementToBeClickable(By.id("btn")));</code><br>
+Best practice: Use explicit waits for specific conditions. Avoid mixing implicit and explicit waits. Never use Thread.sleep() in production tests.</li>
+
+<li><strong>How to handle JavaScript alerts?</strong><br>
+<pre><code>Alert alert = driver.switchTo().alert();
+String alertText = alert.getText();  // Get alert message
+alert.accept();                       // Click OK
+alert.dismiss();                      // Click Cancel (confirm alerts)
+alert.sendKeys("input text");         // Type in prompt alert
+alert.accept();                       // Submit prompt</code></pre>
+Types: Simple (OK only), Confirm (OK/Cancel), Prompt (input + OK/Cancel). Must switch to alert before interacting.</li>
+
+<li><strong>What is Page Object Model (POM)?</strong><br>
+Design pattern where each web page is represented as a Java class. Page class contains locators (By.id, xpath) and methods (actions on elements). Test class calls page methods.<br>
+<strong>Benefits:</strong> Reusability, maintainability (UI change = update one page class), readability, separation of test logic and page structure.<br>
+<pre><code>public class LoginPage {
+    WebDriver driver;
+    By username = By.id("user");
+    By password = By.id("pass");
+    By loginBtn = By.id("login");
+    
+    public LoginPage(WebDriver driver) { this.driver = driver; }
+    public void login(String user, String pass) {
+        driver.findElement(username).sendKeys(user);
+        driver.findElement(password).sendKeys(pass);
+        driver.findElement(loginBtn).click();
+    }
+}</code></pre></li>
+
+<li><strong>What is the difference between verify() and assert()?</strong><br>
+<strong>assert (Hard Assert):</strong> If assertion fails, test stops immediately. Remaining test steps are not executed. Use TestNG <code>Assert.assertEquals()</code>.<br>
+<strong>verify (Soft Assert):</strong> If verification fails, test continues executing remaining steps. All failures reported at end. Use TestNG <code>SoftAssert</code>.<br>
+<pre><code>// Hard Assert &mdash; stops on failure
+Assert.assertEquals(actual, expected);
+
+// Soft Assert &mdash; continues on failure
+SoftAssert soft = new SoftAssert();
+soft.assertEquals(actual1, expected1);
+soft.assertEquals(actual2, expected2);
+soft.assertAll();  // Reports all failures at end</code></pre></li>
+
+<li><strong>How to integrate Selenium with API Testing?</strong><br>
+Combine UI and API testing in same framework:<br>
+1. Use RestAssured/HttpClient alongside Selenium in same test<br>
+2. API call to create test data &rarr; UI test validates display<br>
+3. UI action &rarr; API call validates backend state<br>
+4. Database validation via JDBC after UI actions<br>
+<pre><code>// Example: API setup + UI validation
+Response response = given().body(payload).post("/api/users");
+String userId = response.jsonPath().getString("id");
+driver.get("https://app.com/users/" + userId);
+Assert.assertTrue(driver.findElement(By.id("userName")).isDisplayed());</code></pre></li>
+
+<li><strong>What Git commands do you use?</strong><br>
+<pre><code>git clone &lt;url&gt;           # Clone repository
+git status                 # Check working tree status
+git add .                  # Stage all changes
+git commit -m "message"    # Commit staged changes
+git push origin branch     # Push to remote
+git pull origin branch     # Pull latest changes
+git checkout -b feature    # Create and switch to branch
+git merge feature          # Merge branch into current
+git log --oneline          # View commit history
+git diff                   # View changes
+git stash                  # Temporarily save changes
+git stash pop              # Restore stashed changes
+git branch                 # List branches
+git reset --hard HEAD~1    # Undo last commit (careful!)</code></pre></li>
+
+<li><strong>How to use cssSelector?</strong><br>
+CSS selectors locate elements using CSS syntax:<br>
+<pre><code>By.cssSelector("#username")              // By ID
+By.cssSelector(".btn-primary")           // By class
+By.cssSelector("input[name='email']")   // By attribute
+By.cssSelector("div > p")               // Direct child
+By.cssSelector("div p")                 // Descendant
+By.cssSelector("input[type='text']")    // By type attribute
+By.cssSelector("#form .submit-btn")     // Combined
+By.cssSelector("ul li:first-child")     // First child
+By.cssSelector("a[href*='login']")      // Contains in attribute</code></pre>
+Faster than XPath; works directly with browser's CSS engine.</li>
+
+<li><strong>What does deleteAllCookies() do?</strong><br>
+<code>driver.manage().deleteAllCookies();</code> deletes all cookies in the current browser session. Used to ensure clean state between tests &mdash; prevents login sessions, preferences, or cached data from affecting subsequent tests. Often called in @BeforeMethod to start fresh.<br>
+Related methods:<br>
+<code>driver.manage().getCookies()</code> &mdash; get all cookies<br>
+<code>driver.manage().addCookie(cookie)</code> &mdash; add specific cookie<br>
+<code>driver.manage().deleteCookieNamed("name")</code> &mdash; delete specific cookie</li>
+
+<li><strong>Explain your Roles &amp; Responsibilities.</strong><br>
+<strong>Sample Answer:</strong> "As a QA Automation Engineer, my responsibilities include:<br>
+&mdash; Understanding requirements and creating test plans and test cases<br>
+&mdash; Developing and maintaining automation framework using Selenium with Java/TestNG<br>
+&mdash; Executing manual and automated test suites &mdash; functional, regression, smoke testing<br>
+&mdash; API testing using Postman/RestAssured for backend validation<br>
+&mdash; Database testing using SQL queries for data integrity<br>
+&mdash; Defect reporting and tracking using JIRA, participating in defect triage<br>
+&mdash; CI/CD integration &mdash; running automated tests in Jenkins pipelines<br>
+&mdash; Collaborating with developers and BAs in Agile/Scrum ceremonies<br>
+&mdash; Mentoring junior team members and conducting knowledge sharing sessions<br>
+&mdash; Generating test reports and metrics for stakeholders"</li>
+
+<li><strong>What are Test Plan components?</strong><br>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Component</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Test Plan ID</td><td>Unique identifier</td></tr>
+<tr><td>Introduction/Objective</td><td>Purpose and scope of testing</td></tr>
+<tr><td>Scope</td><td>What to test and what NOT to test (in-scope/out-of-scope)</td></tr>
+<tr><td>Test Strategy</td><td>Approach &mdash; manual vs automation, types of testing</td></tr>
+<tr><td>Test Environment</td><td>Hardware, software, tools, test data requirements</td></tr>
+<tr><td>Entry Criteria</td><td>Conditions to start testing (build deployed, test cases ready)</td></tr>
+<tr><td>Exit Criteria</td><td>Conditions to stop testing (95% pass rate, no critical bugs)</td></tr>
+<tr><td>Deliverables</td><td>Test cases, reports, defect logs, summary report</td></tr>
+<tr><td>Schedule/Timeline</td><td>Milestones, start/end dates, resource allocation</td></tr>
+<tr><td>Risks &amp; Mitigation</td><td>Potential risks and contingency plans</td></tr>
+<tr><td>Roles &amp; Responsibilities</td><td>Who does what &mdash; testers, leads, developers</td></tr>
+<tr><td>Defect Management</td><td>Defect lifecycle, severity/priority guidelines, tool (JIRA)</td></tr>
+</tbody>
+</table>
+</div></li>
+
+<li><strong>What is the difference between driver.quit() and driver.close()?</strong><br>
+<strong>driver.close():</strong> Closes the CURRENT browser window/tab only. WebDriver session remains active if other windows are open. If it's the last window, session ends.<br>
+<strong>driver.quit():</strong> Closes ALL browser windows/tabs AND terminates the WebDriver session completely. Ends the connection to the browser driver. Always use quit() in @AfterMethod/@AfterClass to clean up resources properly.</li>
+
+<li><strong>Explain linkText() and partialLinkText().</strong><br>
+<strong>linkText():</strong> Finds anchor (&lt;a&gt;) element by EXACT link text match.<br>
+<code>driver.findElement(By.linkText("Click Here to Register"));</code><br>
+<strong>partialLinkText():</strong> Finds anchor element by PARTIAL link text match.<br>
+<code>driver.findElement(By.partialLinkText("Register"));</code><br>
+Use partialLinkText when link text is long or dynamic. Both only work on &lt;a&gt; tags with visible text. Case-sensitive.</li>
+</ol>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 6 (15 items)</summary>
+<ol>
+<li>Tell me about yourself: experience, skills, current role, domain, passion for QA</li>
+<li>Bug lifecycle: New &rarr; Assign &rarr; Fixed &rarr; Retest &rarr; Closed/Reopen</li>
+<li>XPath: Absolute (/html/...), Relative (//tag[@attr]), Dynamic (contains, starts-with)</li>
+<li>Annotations: @Test, @BeforeMethod, @AfterMethod, @BeforeClass, @DataProvider</li>
+<li>get() vs navigate().to(): navigate supports back/forward/refresh</li>
+<li>Multiple windows: getWindowHandle(), getWindowHandles(), switchTo().window()</li>
+<li>Actions: moveToElement, doubleClick, contextClick, dragAndDrop, perform()</li>
+<li>Locators priority: ID > Name > CSS > XPath (8 total locators)</li>
+<li>Exceptions: NoSuchElement, StaleElement, Timeout, ElementNotInteractable</li>
+<li>Multiple catch: specific first, general last; multi-catch with |</li>
+<li>Waits: Implicit (global), Explicit (WebDriverWait + ExpectedConditions)</li>
+<li>Alerts: switchTo().alert(), accept(), dismiss(), sendKeys()</li>
+<li>POM: page class with locators + methods; test class calls page methods</li>
+<li>Assert (hard, stops) vs Verify/SoftAssert (continues, assertAll at end)</li>
+<li>quit() closes all + ends session; close() closes current window only</li>
+</ol>
+</details>
+</section>
+
+
+
+<!-- ==================== SECTION 7: TESTING TYPES DEEP DIVE ==================== -->
+<section id="section-7" class="section-card">
+<h2>Section 7: Testing Types &mdash; Complete Deep Dive</h2>
+<p>Comprehensive guide to all software testing types &mdash; functional, non-functional, and specialized testing from a QA interview perspective.</p>
+
+<h3>Software Testing Classification</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Category</th><th>Focus</th><th>Examples</th></tr></thead>
+<tbody>
+<tr><td><strong>Functional Testing</strong></td><td>What the system does</td><td>Unit, Integration, System, Acceptance, Smoke, Sanity, Regression</td></tr>
+<tr><td><strong>Non-Functional Testing</strong></td><td>How well the system works</td><td>Performance, Load, Stress, Security, Usability, Compatibility</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Functional Testing Types</h3>
+
+<h4>1. Unit Testing</h4>
+<ul>
+<li><strong>What:</strong> Tests smallest unit of code (functions, classes) in isolation</li>
+<li><strong>Who:</strong> Developers</li>
+<li><strong>When:</strong> During coding phase</li>
+<li><strong>Tools:</strong> JUnit, NUnit, pytest, TestNG</li>
+<li><strong>Subtype &mdash; Gorilla Testing:</strong> Repetitively test one module to break it</li>
+</ul>
+
+<h4>2. Integration Testing</h4>
+<ul>
+<li><strong>What:</strong> Tests interactions between modules/components</li>
+<li><strong>Types:</strong>
+  <ul>
+    <li><strong>Big Bang:</strong> All modules integrated at once &mdash; convenient for small systems</li>
+    <li><strong>Top-Down:</strong> High-level modules tested first; uses <em>Stubs</em> as temporary modules</li>
+    <li><strong>Bottom-Up:</strong> Low-level modules tested first; uses <em>Drivers</em> as temporary modules</li>
+  </ul>
+</li>
+<li><strong>Tools:</strong> Postman, SoapUI, JUnit with mocks</li>
+</ul>
+
+<h4>3. System Testing</h4>
+<ul>
+<li>Complete end-to-end testing of the integrated software</li>
+<li><strong>Subtypes:</strong> Smoke Testing, Sanity Testing, End-to-End Testing</li>
+<li><strong>Tools:</strong> Selenium, Cypress, Playwright</li>
+</ul>
+
+<h4>4. Acceptance Testing</h4>
+<ul>
+<li><strong>Alpha Testing:</strong> Done internally by QA before release</li>
+<li><strong>Beta Testing:</strong> Done by limited external users</li>
+<li><strong>UAT:</strong> Business stakeholders validate the system</li>
+<li><strong>Contract Acceptance:</strong> Validates contractual obligations</li>
+<li><strong>Regulation Acceptance:</strong> Ensures legal/regulatory compliance</li>
+</ul>
+
+<h4>5. Smoke Testing vs Sanity Testing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Smoke Testing</th><th>Sanity Testing</th></tr></thead>
+<tbody>
+<tr><td>Coverage</td><td>Broad &mdash; all major areas</td><td>Narrow &mdash; specific fixes</td></tr>
+<tr><td>Purpose</td><td>Is the build stable for testing?</td><td>Are specific bugs fixed?</td></tr>
+<tr><td>Performed by</td><td>Testers and developers</td><td>Only testers</td></tr>
+<tr><td>Subset of</td><td>Acceptance testing</td><td>Regression testing</td></tr>
+<tr><td>Documentation</td><td>Can be automated</td><td>Usually without scripts</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>6. Regression Testing</h4>
+<ul>
+<li>Ensures new code changes don't break existing functionality</li>
+<li>Re-execution of test cases after bug fixes or enhancements</li>
+<li>Best candidate for automation</li>
+</ul>
+
+<h3>Non-Functional Testing Types</h3>
+
+<h4>Performance Testing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>Load Testing</strong></td><td>Test with expected load (equal to desired)</td><td>1000 users at 3/sec goal</td></tr>
+<tr><td><strong>Stress Testing</strong></td><td>Test beyond desired load</td><td>1100 users when designed for 1000</td></tr>
+<tr><td><strong>Scalability Testing</strong></td><td>Increase/decrease load to find capacity</td><td>Upward &amp; Downward scaling</td></tr>
+<tr><td><strong>Soak/Endurance Testing</strong></td><td>Sustained load over long duration</td><td>Overnight runs</td></tr>
+<tr><td><strong>Volume Testing</strong></td><td>Large data sets handling</td><td>Database with millions of records</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Security Testing</h4>
+<ul>
+<li><strong>Penetration Testing:</strong> Simulated attacks to find vulnerabilities</li>
+<li><strong>Fuzz Testing:</strong> Random malformed inputs to find crashes</li>
+<li><strong>SQL Injection Testing:</strong> Malicious SQL through input fields</li>
+<li><strong>XSS Testing:</strong> Cross-site scripting attacks</li>
+<li><strong>Session Hijacking:</strong> IP Spoofing, Session Prediction</li>
+<li><strong>Email/Content Spoofing:</strong> Fake headers and phishing</li>
+</ul>
+
+<h4>Compatibility Testing</h4>
+<ul>
+<li><strong>Cross-Browser:</strong> Chrome, Firefox, Safari, Edge</li>
+<li><strong>Cross-Platform:</strong> Windows, macOS, Linux, Android, iOS</li>
+<li><strong>Backward Compatibility:</strong> Works with older versions</li>
+</ul>
+
+<h3>Specialized Testing Types</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>Recovery Testing</strong></td><td>Verify software recovers from crashes, hardware failures, network issues</td></tr>
+<tr><td><strong>Ad-Hoc Testing</strong></td><td>Random testing without documentation; requires strong app knowledge</td></tr>
+<tr><td><strong>Monkey Testing</strong></td><td>Random inputs to try breaking the system; no rules</td></tr>
+<tr><td><strong>Exploratory Testing</strong></td><td>Simultaneous learning, designing, and executing tests</td></tr>
+<tr><td><strong>Retesting</strong></td><td>Testing only the specific bug after fix</td></tr>
+<tr><td><strong>Globalization Testing</strong></td><td>Application supports multiple languages globally</td></tr>
+<tr><td><strong>Localization Testing</strong></td><td>Application customized for specific region/culture</td></tr>
+<tr><td><strong>Migration Testing</strong></td><td>Testing during version upgrades or platform changes</td></tr>
+<tr><td><strong>Mutation Testing</strong></td><td>Injecting faults to determine test case effectiveness</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Bug Life Cycle</h3>
+<p>States a bug goes through: <strong>New &rarr; Assigned &rarr; Open &rarr; Fixed &rarr; Retesting &rarr; Verified &rarr; Closed</strong></p>
+<p>Other states: <strong>Duplicate</strong> | <strong>Rejected</strong> | <strong>Deferred</strong> | <strong>Not a Bug</strong> | <strong>Re-opened</strong></p>
+
+<h4>Severity vs Priority</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Combination</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>High Severity + High Priority</td><td>Application crashes on login (show stopper)</td></tr>
+<tr><td>High Severity + Low Priority</td><td>Crash on rare edge case no user would normally hit</td></tr>
+<tr><td>Low Severity + High Priority</td><td>Company name misspelled on homepage</td></tr>
+<tr><td>Low Severity + Low Priority</td><td>Error message has complex wording</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Test Design Techniques</h3>
+
+<h4>Boundary Value Analysis (BVA)</h4>
+<p>Test at boundaries of input domains. For range 18-30:</p>
+<ul>
+<li>Valid: 18 (min), 19 (min+1), 29 (max-1), 30 (max)</li>
+<li>Invalid: 17 (min-1), 31 (max+1)</li>
+</ul>
+
+<h4>Equivalence Partitioning (EP)</h4>
+<p>Divide input into valid/invalid partitions; test one value from each.</p>
+<p>Example: Username accepts a-z, length 4-10. Valid partition: alphabets. Invalid: numbers, special chars, blank.</p>
+
+<h4>Decision Table Testing</h4>
+<p>Capture input combinations and expected outputs in tabular form (Cause-Effect table).</p>
+
+<h4>State Transition Testing</h4>
+<p>Test transitions between states. Example: ATM &mdash; 3 wrong PINs locks account.</p>
+
+<h3>Test Metrics</h3>
+<ul>
+<li><strong>% Test Cases Executed</strong> = (Executed / Total Written) &times; 100</li>
+<li><strong>Defect Rejection Ratio</strong> = (Rejected / Total Raised) &times; 100</li>
+<li><strong>Defect Leakage Ratio</strong> = (Missed / Total Defects) &times; 100</li>
+<li><strong>Defect Density</strong> = Defect Count / Lines of Code</li>
+</ul>
+
+<h3>Key Concepts</h3>
+<ul>
+<li><strong>RTM (Requirement Traceability Matrix):</strong> Maps requirements to test cases to ensure 100% coverage</li>
+<li><strong>Test Plan:</strong> Detailed document with objectives, scope, schedule, resources, risks, entry/exit criteria</li>
+<li><strong>Test Strategy:</strong> High-level static document defining testing approach &amp; techniques</li>
+<li><strong>Defect Triage:</strong> Ordering defects by severity/priority when resources are limited</li>
+<li><strong>Defect Cascading:</strong> One defect leading to discovery of others</li>
+<li><strong>Error Guessing:</strong> Experience-based technique to predict faults</li>
+<li><strong>Error Seeding:</strong> Intentionally adding known faults to measure detection rate</li>
+</ul>
+
+<h3>Test Plan vs Test Strategy</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Test Plan</th><th>Test Strategy</th></tr></thead>
+<tbody>
+<tr><td>Level</td><td>Project-specific</td><td>Organization-level</td></tr>
+<tr><td>Nature</td><td>Dynamic (changes per release)</td><td>Static (rarely changes)</td></tr>
+<tr><td>Created by</td><td>Test Lead / QA Manager</td><td>Senior Management / QA Director</td></tr>
+<tr><td>Contains</td><td>Scope, schedule, resources, tools, entry/exit criteria</td><td>Testing approach, tools, types, standards</td></tr>
+<tr><td>Derivation</td><td>Derived from Test Strategy</td><td>Derived from BRS (Business Requirement Spec)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Entry and Exit Criteria</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Entry Criteria (Start Testing When)</th><th>Exit Criteria (Stop Testing When)</th></tr></thead>
+<tbody>
+<tr><td>Requirements signed off</td><td>All test cases executed</td></tr>
+<tr><td>Test environment ready</td><td>Defect density below threshold</td></tr>
+<tr><td>Test data prepared</td><td>No critical/high severity open defects</td></tr>
+<tr><td>Build deployed and smoke passed</td><td>Code coverage &ge; agreed percentage</td></tr>
+<tr><td>Test cases reviewed and approved</td><td>Stakeholder sign-off received</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Retesting vs Regression Testing</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Retesting</th><th>Regression Testing</th></tr></thead>
+<tbody>
+<tr><td>Purpose</td><td>Verify specific bug is fixed</td><td>Ensure new changes don't break existing features</td></tr>
+<tr><td>Scope</td><td>Only the reported defect</td><td>Entire affected module or system</td></tr>
+<tr><td>When</td><td>After bug fix</td><td>After any code change (fix, enhancement, config)</td></tr>
+<tr><td>Automation</td><td>Usually manual</td><td>Best candidate for automation</td></tr>
+<tr><td>Priority</td><td>Higher (targeted)</td><td>Higher (broader impact)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions &mdash; Testing Types</h3>
+
+<h4>Q1. What is the difference between Verification and Validation?</h4>
+<p><strong>Verification:</strong> "Are we building the product right?" &mdash; static testing (reviews, walkthroughs, inspections) without executing code.<br>
+<strong>Validation:</strong> "Are we building the right product?" &mdash; dynamic testing by executing the software against requirements.</p>
+
+<h4>Q2. Explain Shift-Left Testing.</h4>
+<p>Moving testing activities earlier in the SDLC. Instead of testing after development, QA participates from requirements phase. Benefits: early defect detection, lower fix cost, faster delivery. Examples: reviewing requirements, participating in design, writing test cases early, TDD, BDD.</p>
+
+<h4>Q3. What is Risk-Based Testing?</h4>
+<p>Prioritizing test cases based on risk (probability of failure &times; impact). High-risk areas get more coverage. Useful when time is limited. Risk factors: complexity, new technology, frequent changes, critical business impact.</p>
+
+<h4>Q4. Explain the difference between Error, Defect, Bug, and Failure.</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Term</th><th>Who Introduces</th><th>When</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>Error/Mistake</strong></td><td>Human (developer)</td><td>During coding</td><td>Wrong formula in calculation</td></tr>
+<tr><td><strong>Defect/Bug</strong></td><td>Found by QA</td><td>During testing</td><td>Login button not working</td></tr>
+<tr><td><strong>Failure</strong></td><td>Observed by end user</td><td>In production</td><td>App crashes on payment</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q5. What is Defect Age and Defect Removal Efficiency?</h4>
+<p><strong>Defect Age:</strong> Time between defect introduction and detection. Lower = better (shift-left).<br>
+<strong>DRE:</strong> (Defects found during testing / Total defects) &times; 100. Higher = better QA effectiveness.</p>
+
+<h4>Q6. When would you choose Exploratory Testing over Scripted Testing?</h4>
+<ul>
+<li>When requirements are unclear or changing rapidly</li>
+<li>When you need to find unexpected defects quickly</li>
+<li>When testing a new feature for the first time</li>
+<li>When time is very limited for test design</li>
+<li>When you want to learn the application behavior</li>
+</ul>
+
+<h4>Q7. What are the components of a good Bug Report?</h4>
+<p>Bug ID, Title, Description, Steps to Reproduce, Expected Result, Actual Result, Severity, Priority, Environment, Screenshots/Logs, Assignee, Reporter, Date, Build Number, Attachments.</p>
+
+<h4>Q8. What is Equivalence Class Partitioning with a real example?</h4>
+<p>For a field accepting age 18&ndash;60:<br>
+<strong>Valid partitions:</strong> 18&ndash;60 (test with 25)<br>
+<strong>Invalid partitions:</strong> &lt;18 (test with 10), &gt;60 (test with 75), non-numeric (test with "abc"), blank, negative numbers</p>
+
+<h4>Q9. Explain Decision Table Testing with example.</h4>
+<p>For a login with conditions: Valid Username (Y/N) and Valid Password (Y/N):</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Rule</th><th>Username</th><th>Password</th><th>Expected Result</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Valid</td><td>Valid</td><td>Login Success</td></tr>
+<tr><td>2</td><td>Valid</td><td>Invalid</td><td>Error: Wrong password</td></tr>
+<tr><td>3</td><td>Invalid</td><td>Valid</td><td>Error: User not found</td></tr>
+<tr><td>4</td><td>Invalid</td><td>Invalid</td><td>Error: Invalid credentials</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q10. What is State Transition Testing? Give an ATM example.</h4>
+<p>States: Idle &rarr; Card Inserted &rarr; PIN Entered &rarr; Amount Entered &rarr; Cash Dispensed.<br>
+Testing: Wrong PIN 1st attempt (remain in PIN state) &rarr; Wrong PIN 2nd &rarr; Wrong PIN 3rd &rarr; Card Blocked.</p>
+
+<h3>SDLC Models Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Model</th><th>Key Feature</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td><strong>Waterfall</strong></td><td>Sequential, no backtracking</td><td>Small, well-defined projects</td></tr>
+<tr><td><strong>Iterative</strong></td><td>Feedback to previous phases possible</td><td>Medium projects</td></tr>
+<tr><td><strong>Spiral</strong></td><td>Risk-driven, combines waterfall + iterative</td><td>High-risk projects</td></tr>
+<tr><td><strong>V-Model</strong></td><td>Testing associated with each dev phase</td><td>Critical systems</td></tr>
+<tr><td><strong>Agile</strong></td><td>Iterative + incremental, 1-3 week sprints</td><td>Changing requirements, fast delivery</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>STLC &mdash; Software Testing Life Cycle</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Phase</th><th>Activities</th><th>Deliverables</th></tr></thead>
+<tbody>
+<tr><td><strong>1. Requirement Analysis</strong></td><td>Understand requirements, identify testable items, clarify ambiguities</td><td>RTM (initial), Automation feasibility report</td></tr>
+<tr><td><strong>2. Test Planning</strong></td><td>Define scope, strategy, schedule, resources, tools, risks</td><td>Test Plan document</td></tr>
+<tr><td><strong>3. Test Case Design</strong></td><td>Write test cases, review, create test data</td><td>Test Cases, Test Data, RTM (updated)</td></tr>
+<tr><td><strong>4. Environment Setup</strong></td><td>Prepare hardware/software, install tools, verify readiness</td><td>Test environment ready, Smoke test results</td></tr>
+<tr><td><strong>5. Test Execution</strong></td><td>Execute test cases, log defects, retest fixes</td><td>Test execution report, Defect reports</td></tr>
+<tr><td><strong>6. Test Closure</strong></td><td>Evaluate exit criteria, lessons learned, archive artifacts</td><td>Test Closure report, Metrics</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Test Estimation Techniques</h3>
+<ul>
+<li><strong>Work Breakdown Structure (WBS):</strong> Break project into smaller tasks, estimate each</li>
+<li><strong>Function Point Analysis:</strong> Estimate based on functionality (inputs, outputs, files)</li>
+<li><strong>Three-Point Estimation:</strong> (Optimistic + 4&times;Most Likely + Pessimistic) / 6</li>
+<li><strong>Use Case Point:</strong> Based on number and complexity of use cases</li>
+<li><strong>Experience-Based:</strong> Historical data from similar projects</li>
+</ul>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 7</summary>
+<ol>
+<li>Functional testing = what system does; Non-functional = how well it works</li>
+<li>Integration: Big Bang (all at once), Top-Down (stubs), Bottom-Up (drivers)</li>
+<li>Smoke = build stable? Sanity = specific fix working?</li>
+<li>Load = expected load; Stress = beyond capacity</li>
+<li>BVA tests boundaries; EP reduces test cases via partitions</li>
+<li>Bug lifecycle: New &rarr; Assigned &rarr; Open &rarr; Fixed &rarr; Retest &rarr; Verified &rarr; Closed</li>
+<li>High Severity + Low Priority = rare crash; Low Severity + High Priority = visible typo</li>
+<li>RTM maps requirements to test cases for coverage validation</li>
+<li>Test Plan = dynamic, detailed; Test Strategy = static, high-level</li>
+<li>Defect Density = bugs / LOC; DRR = rejected / total raised</li>
+</ol>
+</details>
+</section>
+
+
+<!-- ==================== SECTION 8: API TESTING ADVANCED ==================== -->
+<section id="section-8" class="section-card">
+<h2>Section 8: API Testing &mdash; Advanced</h2>
+<p>Complete REST API testing knowledge including architecture, HTTP methods, authentication, status codes, test cases, and security testing.</p>
+
+<h3>What is API?</h3>
+<p><strong>API (Application Programming Interface)</strong> is a collection of functions and procedures that allows two applications to communicate. Think of it as a waiter taking your order to the kitchen and bringing back the food.</p>
+
+<h3>REST API Architecture</h3>
+<p>REST (REpresentational State Transfer) follows 6 constraints:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Constraint</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Uniform Interface</strong></td><td>Client &amp; server communicate using same resource format (JSON/XML)</td></tr>
+<tr><td><strong>Stateless</strong></td><td>Each request is independent; server doesn't store client state</td></tr>
+<tr><td><strong>Cacheable</strong></td><td>Responses can be cached to improve performance</td></tr>
+<tr><td><strong>Client-Server</strong></td><td>Separate concerns; can be developed independently</td></tr>
+<tr><td><strong>Layered System</strong></td><td>Multiple layers between client and server allowed</td></tr>
+<tr><td><strong>Code on Demand</strong></td><td>Server can send executable code to client (optional)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>REST vs SOAP</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Feature</th><th>REST</th><th>SOAP</th></tr></thead>
+<tbody>
+<tr><td>Protocol</td><td>Architectural style</td><td>Protocol (strict rules)</td></tr>
+<tr><td>Format</td><td>JSON, XML, HTML, text</td><td>XML only</td></tr>
+<tr><td>Speed</td><td>Faster, lightweight</td><td>Slower, more overhead</td></tr>
+<tr><td>State</td><td>Stateless</td><td>Can be stateful</td></tr>
+<tr><td>WSDL</td><td>Not required</td><td>Uses WSDL</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>HTTP Methods</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Method</th><th>Purpose</th><th>Idempotent</th><th>Body</th></tr></thead>
+<tbody>
+<tr><td><strong>GET</strong></td><td>Retrieve data</td><td>Yes</td><td>No</td></tr>
+<tr><td><strong>POST</strong></td><td>Create new resource</td><td>No</td><td>Yes</td></tr>
+<tr><td><strong>PUT</strong></td><td>Update entire resource</td><td>Yes</td><td>Yes</td></tr>
+<tr><td><strong>PATCH</strong></td><td>Partial update</td><td>No</td><td>Yes</td></tr>
+<tr><td><strong>DELETE</strong></td><td>Remove resource</td><td>Yes</td><td>Optional</td></tr>
+<tr><td><strong>OPTIONS</strong></td><td>Describe communication options</td><td>Yes</td><td>No</td></tr>
+<tr><td><strong>HEAD</strong></td><td>GET without response body</td><td>Yes</td><td>No</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>HTTP Status Codes</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Code</th><th>Meaning</th><th>Category</th></tr></thead>
+<tbody>
+<tr><td>200</td><td>OK &mdash; Success</td><td>Success</td></tr>
+<tr><td>201</td><td>Created &mdash; Resource added</td><td>Success</td></tr>
+<tr><td>204</td><td>No Content &mdash; Success, no data returned</td><td>Success</td></tr>
+<tr><td>400</td><td>Bad Request &mdash; Invalid input</td><td>Client Error</td></tr>
+<tr><td>401</td><td>Unauthorized &mdash; Missing/invalid token</td><td>Client Error</td></tr>
+<tr><td>403</td><td>Forbidden &mdash; Access denied</td><td>Client Error</td></tr>
+<tr><td>404</td><td>Not Found &mdash; Resource missing</td><td>Client Error</td></tr>
+<tr><td>405</td><td>Method Not Allowed</td><td>Client Error</td></tr>
+<tr><td>409</td><td>Conflict &mdash; Duplicate or version error</td><td>Client Error</td></tr>
+<tr><td>500</td><td>Internal Server Error &mdash; Backend failure</td><td>Server Error</td></tr>
+<tr><td>503</td><td>Service Unavailable &mdash; Overloaded/down</td><td>Server Error</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Authentication Methods</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Method</th><th>How it Works</th><th>Security Level</th></tr></thead>
+<tbody>
+<tr><td><strong>Basic Auth</strong></td><td>Username + password encoded in Base64</td><td>Low (not for production)</td></tr>
+<tr><td><strong>API Key</strong></td><td>Unique key sent in header/query param</td><td>Medium</td></tr>
+<tr><td><strong>Bearer Token (JWT)</strong></td><td>Stateless token in Authorization header</td><td>High</td></tr>
+<tr><td><strong>OAuth 2.0</strong></td><td>Delegated authorization without sharing password</td><td>Highest</td></tr>
+<tr><td><strong>Digest Auth</strong></td><td>Password transmitted encrypted with salt</td><td>Medium-High</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>What to Test in API Testing</h3>
+<ul>
+<li>Validate response status code is correct</li>
+<li>Verify response format (JSON/XML schema validation)</li>
+<li>Check all expected fields are present in response</li>
+<li>Verify correct data for each field</li>
+<li>Validate response time within acceptable limits</li>
+<li>Test request parameters are correctly passed</li>
+<li>Verify endpoint URL is correct</li>
+<li>Check response headers (Content-Type, Authorization, Cache-Control)</li>
+<li>Test error handling for malformed requests</li>
+<li>Validate authentication failure responses</li>
+<li>Test missing/invalid payload scenarios</li>
+<li>Verify pagination, sorting, and filtering</li>
+<li>Test concurrent requests and race conditions</li>
+<li>Validate rate limiting behavior</li>
+<li>Test CORS, CSRF, XSS, SQL Injection protection</li>
+<li>Verify file uploads and downloads</li>
+<li>Test versioning and backward compatibility</li>
+</ul>
+
+<h3>API Testing Tools</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tool</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td><strong>Postman</strong></td><td>Manual &amp; automated testing with collections, environments, CI/CD</td></tr>
+<tr><td><strong>Swagger</strong></td><td>API documentation and interactive console</td></tr>
+<tr><td><strong>Rest Assured</strong></td><td>Java-based API automation framework</td></tr>
+<tr><td><strong>Apache JMeter</strong></td><td>Load/performance testing of REST/SOAP APIs</td></tr>
+<tr><td><strong>SoapUI</strong></td><td>SOAP and REST API testing</td></tr>
+<tr><td><strong>Insomnia</strong></td><td>Lightweight Postman alternative</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>API Security Testing Checklist</h3>
+<ul>
+<li>SQL Injection: Insert malicious SQL via input fields</li>
+<li>XSS (Cross-Site Scripting): Inject scripts in responses</li>
+<li>CSRF (Cross-Site Request Forgery): Validate CSRF tokens</li>
+<li>SSL/TLS Certificate validation</li>
+<li>Input sanitization and validation</li>
+<li>Rate limiting and throttling</li>
+<li>Authentication bypass attempts</li>
+<li>Authorization (role-based access control)</li>
+<li>Data encryption at rest and in transit</li>
+</ul>
+
+<h3>Best Practices</h3>
+<ul>
+<li>Always test positive AND negative scenarios</li>
+<li>Use environment variables for dev/stage/prod</li>
+<li>Validate response schema and headers</li>
+<li>Automate tests in CI/CD pipelines</li>
+<li>Use mocks/stubs when backend isn't ready</li>
+<li>Monitor rate limits and throttling</li>
+<li>Always check error handling and fallback logic</li>
+</ul>
+
+<h3>API Interview Questions with Answers</h3>
+
+<h4>Q1. What is Idempotent? Which HTTP methods are idempotent?</h4>
+<p><strong>Idempotent</strong> means making the same request multiple times produces the same result. GET, PUT, DELETE, HEAD, OPTIONS are idempotent. POST and PATCH are NOT idempotent (POST creates new resource each time).</p>
+
+<h4>Q2. What is the difference between PUT and PATCH?</h4>
+<p><strong>PUT:</strong> Replaces the entire resource. Must send complete object. If fields are missing, they become null.<br>
+<strong>PATCH:</strong> Updates only specified fields. Partial update. Other fields remain unchanged.</p>
+<pre>// PUT - replaces entire user
+PUT /users/1 {"name": "John", "email": "john@test.com", "age": 30}
+
+// PATCH - updates only email
+PATCH /users/1 {"email": "newemail@test.com"}</pre>
+
+<h4>Q3. Explain OAuth 2.0 flow.</h4>
+<ol>
+<li>Client requests authorization from Resource Owner</li>
+<li>Resource Owner grants authorization code</li>
+<li>Client exchanges code for Access Token from Auth Server</li>
+<li>Client uses Access Token to access Resource Server</li>
+<li>Token expires &rarr; use Refresh Token to get new Access Token</li>
+</ol>
+
+<h4>Q4. What is API Versioning? Why is it important?</h4>
+<p>Maintaining multiple API versions to support backward compatibility. Methods:</p>
+<ul>
+<li><strong>URL Path:</strong> /api/v1/users, /api/v2/users</li>
+<li><strong>Query Parameter:</strong> /api/users?version=2</li>
+<li><strong>Header:</strong> Accept: application/vnd.api.v2+json</li>
+</ul>
+
+<h4>Q5. How do you handle API testing when backend is not ready?</h4>
+<p>Use <strong>Mock Servers</strong> (Postman Mock, WireMock, MockServer). Define expected requests/responses. Allows frontend and QA to proceed independently. Also useful for testing error scenarios that are hard to reproduce.</p>
+
+<h4>Q6. What is API Chaining? Give an example.</h4>
+<p>Using the response of one API call as input to the next:</p>
+<pre>1. POST /users &rarr; Response: {"id": 123}
+2. GET /users/123 &rarr; Verify user created
+3. PUT /users/123 &rarr; Update user
+4. DELETE /users/123 &rarr; Remove user</pre>
+
+<h4>Q7. How do you test API Rate Limiting?</h4>
+<ul>
+<li>Send requests exceeding the limit (e.g., 101 requests when limit is 100/min)</li>
+<li>Verify 429 (Too Many Requests) status code returned</li>
+<li>Check Retry-After header in response</li>
+<li>Verify rate limit resets after specified window</li>
+</ul>
+
+<h4>Q8. What is Contract Testing?</h4>
+<p>Verifying that the API provider and consumer agree on the interface (contract). Tools: Pact, Spring Cloud Contract. Ensures API changes don't break consumers without running full integration tests.</p>
+
+<h4>Q9. Difference between API Testing and UI Testing?</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>API Testing</th><th>UI Testing</th></tr></thead>
+<tbody>
+<tr><td>Layer</td><td>Business logic layer</td><td>Presentation layer</td></tr>
+<tr><td>Speed</td><td>Much faster</td><td>Slower (renders UI)</td></tr>
+<tr><td>Stability</td><td>More stable (no UI changes)</td><td>Fragile (UI changes often)</td></tr>
+<tr><td>Coverage</td><td>Broader (test logic directly)</td><td>User journey focused</td></tr>
+<tr><td>Tools</td><td>Postman, Rest Assured</td><td>Selenium, Cypress</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q10. How do you validate JSON Schema in API testing?</h4>
+<p>Use JSON Schema validation to ensure response structure matches expected format. Check: required fields present, correct data types, valid enum values, nested object structure, array item types. Tools: TV4, Ajv (JavaScript), Rest Assured (Java), jsonschema (Python).</p>
+
+<h4>Q11. What are common API defects you've found?</h4>
+<ul>
+<li>Missing error handling (500 instead of proper 4xx)</li>
+<li>Incorrect status codes (200 for failed requests)</li>
+<li>Missing pagination leading to performance issues</li>
+<li>Authentication bypass on certain endpoints</li>
+<li>SQL injection through unvalidated parameters</li>
+<li>Inconsistent response format across endpoints</li>
+<li>Missing CORS headers for cross-origin requests</li>
+<li>Race conditions in concurrent requests</li>
+</ul>
+
+<h4>Q12. Explain REST Assured basics for automation.</h4>
+<pre>// GET Request
+given()
+  .header("Authorization", "Bearer token123")
+.when()
+  .get("/api/users/1")
+.then()
+  .statusCode(200)
+  .body("name", equalTo("John"))
+  .body("email", containsString("@"));
+
+// POST Request
+given()
+  .contentType(ContentType.JSON)
+  .body("{\"name\":\"Jane\",\"email\":\"jane@test.com\"}")
+.when()
+  .post("/api/users")
+.then()
+  .statusCode(201)
+  .body("id", notNullValue());</pre>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 8</summary>
+<ol>
+<li>REST constraints: Uniform Interface, Stateless, Cacheable, Client-Server, Layered, Code on Demand</li>
+<li>GET=retrieve, POST=create, PUT=full update, PATCH=partial update, DELETE=remove</li>
+<li>200=OK, 201=Created, 400=Bad Request, 401=Unauthorized, 403=Forbidden, 404=Not Found, 500=Server Error</li>
+<li>Auth: Basic (Base64), API Key, Bearer/JWT, OAuth 2.0</li>
+<li>Always validate: status code, response body, headers, response time, schema</li>
+<li>Security: SQL Injection, XSS, CSRF, rate limiting, SSL</li>
+<li>Tools: Postman (manual+auto), Rest Assured (Java), JMeter (performance), Swagger (docs)</li>
+<li>Best practice: test both positive &amp; negative; use env variables; automate in CI/CD</li>
+</ol>
+</details>
+</section>
+
+
+<!-- ==================== SECTION 9: SQL ADVANCED ==================== -->
+<section id="section-9" class="section-card">
+<h2>Section 9: SQL Advanced &mdash; 100 Interview Questions</h2>
+<p>Comprehensive SQL interview preparation covering beginner to advanced topics with detailed answers, real-time scenarios, and optimization techniques.</p>
+
+<h3>Basic Level (Q1-25)</h3>
+
+<h4>Q1. What is SQL?</h4>
+<p>SQL (Structured Query Language) is a standard programming language used to interact with relational databases &mdash; store, retrieve, update, and delete data.</p>
+
+<h4>Q2. Types of SQL Commands</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Full Form</th><th>Commands</th></tr></thead>
+<tbody>
+<tr><td>DDL</td><td>Data Definition Language</td><td>CREATE, ALTER, DROP, TRUNCATE</td></tr>
+<tr><td>DML</td><td>Data Manipulation Language</td><td>SELECT, INSERT, UPDATE, DELETE</td></tr>
+<tr><td>DCL</td><td>Data Control Language</td><td>GRANT, REVOKE</td></tr>
+<tr><td>TCL</td><td>Transaction Control Language</td><td>COMMIT, ROLLBACK, SAVEPOINT</td></tr>
+<tr><td>DQL</td><td>Data Query Language</td><td>SELECT</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q3-5. Keys</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Key Type</th><th>Purpose</th><th>NULL Allowed?</th><th>Count per Table</th></tr></thead>
+<tbody>
+<tr><td><strong>Primary Key</strong></td><td>Uniquely identifies each row</td><td>No</td><td>Only 1</td></tr>
+<tr><td><strong>Foreign Key</strong></td><td>Links tables via referential integrity</td><td>Yes</td><td>Multiple</td></tr>
+<tr><td><strong>Unique Key</strong></td><td>Ensures column uniqueness</td><td>Yes (1 NULL)</td><td>Multiple</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q10. DELETE vs TRUNCATE vs DROP</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>What it Does</th><th>Rollback?</th><th>Speed</th><th>Structure?</th></tr></thead>
+<tbody>
+<tr><td>DELETE</td><td>Remove specific rows (WHERE)</td><td>Yes</td><td>Slow</td><td>Kept</td></tr>
+<tr><td>TRUNCATE</td><td>Remove all rows</td><td>No</td><td>Fast</td><td>Kept</td></tr>
+<tr><td>DROP</td><td>Delete entire table + structure</td><td>No</td><td>Fastest</td><td>Removed</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q11. WHERE vs HAVING</h4>
+<ul>
+<li><strong>WHERE:</strong> Filters rows BEFORE grouping (row-level)</li>
+<li><strong>HAVING:</strong> Filters groups AFTER GROUP BY (group-level)</li>
+</ul>
+
+<h4>Q12-18. Joins</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Join</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td><strong>INNER JOIN</strong></td><td>Only matching rows from both tables</td></tr>
+<tr><td><strong>LEFT JOIN</strong></td><td>All from left + matching from right (NULL if no match)</td></tr>
+<tr><td><strong>RIGHT JOIN</strong></td><td>All from right + matching from left (NULL if no match)</td></tr>
+<tr><td><strong>FULL JOIN</strong></td><td>All rows from both tables</td></tr>
+<tr><td><strong>SELF JOIN</strong></td><td>Table joined with itself (uses aliases)</td></tr>
+<tr><td><strong>CROSS JOIN</strong></td><td>Cartesian product (rows1 x rows2)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q19-20. UNION vs UNION ALL</h4>
+<ul>
+<li><strong>UNION:</strong> Combines results, removes duplicates (slower)</li>
+<li><strong>UNION ALL:</strong> Combines results, includes duplicates (faster)</li>
+</ul>
+
+<h4>Q21-22. Normalization vs Denormalization</h4>
+<ul>
+<li><strong>Normalization:</strong> Break large tables into smaller related tables (reduces redundancy)</li>
+<li><strong>Forms:</strong> 1NF (atomic values) &rarr; 2NF (no partial dependency) &rarr; 3NF (no transitive dependency) &rarr; BCNF</li>
+<li><strong>Denormalization:</strong> Combine tables for faster reads (used in data warehouses)</li>
+</ul>
+
+<h3>Intermediate Level (Q26-50)</h3>
+
+<h4>Q26-28. Subqueries</h4>
+<ul>
+<li><strong>Subquery:</strong> Query nested inside another query</li>
+<li><strong>Types:</strong> Single Row, Multiple Row, Correlated</li>
+<li><strong>Correlated Subquery:</strong> References outer query; executes once per outer row (slower)</li>
+</ul>
+
+<h4>Q32. Second Highest Salary</h4>
+<pre>SELECT MAX(Salary) FROM Employees
+WHERE Salary &lt; (SELECT MAX(Salary) FROM Employees);</pre>
+
+<h4>Q33. Find Duplicate Records</h4>
+<pre>SELECT Name, COUNT(*) FROM Employees
+GROUP BY Name HAVING COUNT(*) &gt; 1;</pre>
+
+<h4>Q36-37. Window Functions</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Function</th><th>Purpose</th><th>Duplicates</th><th>Skips Numbers</th></tr></thead>
+<tbody>
+<tr><td>ROW_NUMBER()</td><td>Unique sequential number</td><td>No</td><td>No</td></tr>
+<tr><td>RANK()</td><td>Rank with gaps</td><td>Yes (same rank)</td><td>Yes</td></tr>
+<tr><td>DENSE_RANK()</td><td>Rank without gaps</td><td>Yes (same rank)</td><td>No</td></tr>
+<tr><td>NTILE(n)</td><td>Divide into n groups</td><td>No</td><td>No</td></tr>
+<tr><td>LEAD()</td><td>Next row value</td><td>No</td><td>No</td></tr>
+<tr><td>LAG()</td><td>Previous row value</td><td>No</td><td>No</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q41-44. Indexing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Physical Order</th><th>Count per Table</th><th>Speed</th></tr></thead>
+<tbody>
+<tr><td><strong>Clustered</strong></td><td>Yes (sorts data physically)</td><td>Only 1</td><td>Faster retrieval</td></tr>
+<tr><td><strong>Non-Clustered</strong></td><td>No (stores pointers)</td><td>Multiple</td><td>Slightly slower</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q47-48. Stored Procedure vs Function</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Feature</th><th>Stored Procedure</th><th>Function</th></tr></thead>
+<tbody>
+<tr><td>Return</td><td>Multiple values or none</td><td>Single value or table</td></tr>
+<tr><td>DML Operations</td><td>Yes (INSERT, UPDATE, DELETE)</td><td>No</td></tr>
+<tr><td>Parameters</td><td>Input + Output</td><td>Input only</td></tr>
+<tr><td>Use in SELECT</td><td>No</td><td>Yes</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Advanced Level (Q51-75)</h3>
+
+<h4>Q51. ACID Properties</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Property</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Atomicity</strong></td><td>All or nothing &mdash; transaction succeeds completely or fails completely</td></tr>
+<tr><td><strong>Consistency</strong></td><td>Database remains valid before and after transaction</td></tr>
+<tr><td><strong>Isolation</strong></td><td>Concurrent transactions don't interfere with each other</td></tr>
+<tr><td><strong>Durability</strong></td><td>Committed changes are permanent even after crash</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q63. Nth Highest Salary (MySQL)</h4>
+<pre>SELECT DISTINCT Salary FROM Employees
+ORDER BY Salary DESC LIMIT 1 OFFSET N-1;</pre>
+
+<h4>Q75. Employees Earning More Than Manager</h4>
+<pre>SELECT e.Name AS Employee, e.Salary AS EmpSalary,
+       m.Name AS Manager, m.Salary AS MgrSalary
+FROM Employees e
+JOIN Employees m ON e.ManagerID = m.EmpID
+WHERE e.Salary &gt; m.Salary;</pre>
+
+<h3>Optimization (Q91-100)</h3>
+<h4>Top 10 SQL Query Optimization Techniques</h4>
+<ol>
+<li><strong>Use Indexes</strong> on columns in WHERE, JOIN, ORDER BY</li>
+<li><strong>Avoid SELECT *</strong> &mdash; select only needed columns</li>
+<li><strong>Use JOINs efficiently</strong> &mdash; INNER JOIN over OUTER JOIN when possible</li>
+<li><strong>Use EXISTS instead of IN</strong> for large datasets</li>
+<li><strong>Avoid functions in WHERE clause</strong></li>
+<li><strong>Use LIMIT/TOP</strong> to fetch only needed rows</li>
+<li><strong>Partition large tables</strong></li>
+<li><strong>Use CTEs and Temp Tables</strong> for intermediate results</li>
+<li><strong>Analyze Execution Plan</strong> (EXPLAIN in MySQL)</li>
+<li><strong>Avoid Deadlocks:</strong> consistent table access order, short transactions, proper indexing</li>
+</ol>
+
+<h3>Most Asked SQL Queries in Interviews</h3>
+
+<h4>Find employees with no manager</h4>
+<pre>SELECT * FROM Employees WHERE ManagerID IS NULL;</pre>
+
+<h4>Find departments with more than 5 employees</h4>
+<pre>SELECT DeptID, COUNT(*) AS EmpCount
+FROM Employees
+GROUP BY DeptID
+HAVING COUNT(*) &gt; 5;</pre>
+
+<h4>Find employees hired in last 30 days</h4>
+<pre>SELECT * FROM Employees
+WHERE HireDate &gt;= DATEADD(DAY, -30, GETDATE());</pre>
+
+<h4>Delete duplicate rows keeping one</h4>
+<pre>DELETE FROM Employees
+WHERE EmpID NOT IN (
+  SELECT MIN(EmpID) FROM Employees
+  GROUP BY Name, Email
+);</pre>
+
+<h4>Find Nth highest salary using CTE</h4>
+<pre>WITH RankedSalary AS (
+  SELECT Salary, DENSE_RANK() OVER (ORDER BY Salary DESC) AS Rnk
+  FROM Employees
+)
+SELECT DISTINCT Salary FROM RankedSalary WHERE Rnk = 3;</pre>
+
+<h4>Pivot: Rows to Columns</h4>
+<pre>SELECT Name,
+  SUM(CASE WHEN Subject = 'Math' THEN Marks END) AS Math,
+  SUM(CASE WHEN Subject = 'Science' THEN Marks END) AS Science
+FROM StudentMarks
+GROUP BY Name;</pre>
+
+<h4>Find employees who earn more than department average</h4>
+<pre>SELECT e.Name, e.Salary, e.DeptID
+FROM Employees e
+WHERE e.Salary &gt; (
+  SELECT AVG(Salary) FROM Employees
+  WHERE DeptID = e.DeptID
+);</pre>
+
+<h4>Consecutive days login (gap and islands)</h4>
+<pre>SELECT UserID, MIN(LoginDate) AS StartDate, MAX(LoginDate) AS EndDate,
+  COUNT(*) AS ConsecutiveDays
+FROM (
+  SELECT UserID, LoginDate,
+    DATEADD(DAY, -ROW_NUMBER() OVER (PARTITION BY UserID ORDER BY LoginDate), LoginDate) AS Grp
+  FROM UserLogins
+) T
+GROUP BY UserID, Grp
+HAVING COUNT(*) &gt;= 3;</pre>
+
+<h3>SQL for QA &mdash; Real Testing Scenarios</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Scenario</th><th>SQL Query</th></tr></thead>
+<tbody>
+<tr><td>Verify data after API creates user</td><td><code>SELECT * FROM Users WHERE email = 'test@api.com' ORDER BY created_at DESC LIMIT 1;</code></td></tr>
+<tr><td>Check for orphan records</td><td><code>SELECT o.* FROM Orders o LEFT JOIN Customers c ON o.CustID = c.ID WHERE c.ID IS NULL;</code></td></tr>
+<tr><td>Validate record count after migration</td><td><code>SELECT COUNT(*) FROM source_table; SELECT COUNT(*) FROM target_table;</code></td></tr>
+<tr><td>Find data inconsistencies</td><td><code>SELECT * FROM Orders WHERE TotalAmount != (SELECT SUM(Price*Qty) FROM OrderItems WHERE OrderID = Orders.ID);</code></td></tr>
+<tr><td>Verify soft delete works</td><td><code>SELECT * FROM Users WHERE ID = 5 AND is_deleted = 1;</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>OLTP vs OLAP</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Feature</th><th>OLTP</th><th>OLAP</th></tr></thead>
+<tbody>
+<tr><td>Purpose</td><td>Day-to-day transactions</td><td>Data analysis &amp; reporting</td></tr>
+<tr><td>Operations</td><td>INSERT, UPDATE, DELETE</td><td>Complex SELECT queries</td></tr>
+<tr><td>Data Volume</td><td>Small per transaction</td><td>Large amounts at once</td></tr>
+<tr><td>Example</td><td>Banking, E-commerce</td><td>Data Warehouses, BI Tools</td></tr>
+</tbody>
+</table>
+</div>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 9</summary>
+<ol>
+<li>DDL=structure, DML=data, DCL=access, TCL=transactions, DQL=queries</li>
+<li>Primary Key: unique + not null + only one; Foreign Key: references another table</li>
+<li>DELETE (row-by-row, rollback) vs TRUNCATE (all rows, no rollback) vs DROP (table gone)</li>
+<li>INNER JOIN = matching only; LEFT/RIGHT = all from one side; FULL = all from both</li>
+<li>Window Functions: ROW_NUMBER (unique), RANK (gaps), DENSE_RANK (no gaps)</li>
+<li>Clustered Index: 1 per table, physical sort; Non-Clustered: multiple, pointers</li>
+<li>ACID: Atomicity, Consistency, Isolation, Durability</li>
+<li>2nd highest salary: MAX WHERE Salary &lt; (MAX); Nth: ORDER BY DESC LIMIT 1 OFFSET N-1</li>
+<li>Optimize: indexes, avoid SELECT *, EXISTS over IN, analyze execution plan</li>
+<li>UNION removes duplicates (slow); UNION ALL keeps all (fast)</li>
+</ol>
+</details>
+</section>
+
+
+<!-- ==================== SECTION 10: GIT & GITHUB ==================== -->
+<section id="section-10" class="section-card">
+<h2>Section 10: Git &amp; GitHub Cheat Sheet</h2>
+<p>Essential Git commands and workflows for QA Engineers &mdash; version control, branching, collaboration, and CI/CD integration.</p>
+
+<h3>Git Basics</h3>
+<ul>
+<li><strong>Git</strong> is a version control system for tracking code changes</li>
+<li><strong>GitHub</strong> is a cloud platform that hosts Git repositories (owned by Microsoft since 2018)</li>
+<li>Over 70% of developers use Git</li>
+</ul>
+
+<h3>Git Workflow</h3>
+<p><strong>Modified &rarr; Staged &rarr; Committed</strong></p>
+<ol>
+<li>Files changed/added/deleted = <em>Modified</em></li>
+<li>Selected modified files are <em>Staged</em> (git add)</li>
+<li>Staged files are <em>Committed</em> (permanent snapshot)</li>
+</ol>
+
+<h3>Essential Commands</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>git init</code></td><td>Initialize Git in folder</td></tr>
+<tr><td><code>git add filename</code></td><td>Stage specific file</td></tr>
+<tr><td><code>git add -A</code></td><td>Stage all files</td></tr>
+<tr><td><code>git commit -m "msg"</code></td><td>Commit with message</td></tr>
+<tr><td><code>git commit -a -m "msg"</code></td><td>Commit without staging</td></tr>
+<tr><td><code>git status</code></td><td>Check file status</td></tr>
+<tr><td><code>git log --oneline</code></td><td>View commit history</td></tr>
+<tr><td><code>git branch name</code></td><td>Create new branch</td></tr>
+<tr><td><code>git checkout name</code></td><td>Switch to branch</td></tr>
+<tr><td><code>git checkout -b name</code></td><td>Create &amp; switch</td></tr>
+<tr><td><code>git merge name</code></td><td>Merge branch into current</td></tr>
+<tr><td><code>git branch -d name</code></td><td>Delete branch</td></tr>
+<tr><td><code>git remote add origin URL</code></td><td>Add remote repository</td></tr>
+<tr><td><code>git push origin</code></td><td>Push to remote</td></tr>
+<tr><td><code>git pull origin</code></td><td>Pull from remote (fetch + merge)</td></tr>
+<tr><td><code>git clone URL</code></td><td>Clone repository</td></tr>
+<tr><td><code>git branch -a</code></td><td>View all branches (local + remote)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Undo Operations</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>What it Does</th></tr></thead>
+<tbody>
+<tr><td><code>git revert HEAD</code></td><td>Create new commit that undoes last commit (safe, keeps history)</td></tr>
+<tr><td><code>git reset commithash</code></td><td>Move back to previous commit (discards later commits from log)</td></tr>
+<tr><td><code>git commit --amend -m "msg"</code></td><td>Modify most recent commit message</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Key Concepts for QA</h3>
+<ul>
+<li><strong>Branching Strategy:</strong> Feature branches, develop, release, hotfix</li>
+<li><strong>Pull Requests:</strong> Code review before merge</li>
+<li><strong>Merge Conflicts:</strong> Resolve when same file edited in parallel</li>
+<li><strong>Git Hooks:</strong> Automate actions on commit/push (shift-left testing)</li>
+<li><strong>git bisect:</strong> Binary search to find bug-introducing commit</li>
+</ul>
+
+<h3>Branching Strategies</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Strategy</th><th>Description</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td><strong>Git Flow</strong></td><td>main, develop, feature/*, release/*, hotfix/*</td><td>Large teams, scheduled releases</td></tr>
+<tr><td><strong>GitHub Flow</strong></td><td>main + feature branches only</td><td>CI/CD, continuous deployment</td></tr>
+<tr><td><strong>Trunk-Based</strong></td><td>Short-lived branches merged frequently to main</td><td>Small teams, fast iterations</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Merge vs Rebase</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Merge</th><th>Rebase</th></tr></thead>
+<tbody>
+<tr><td>History</td><td>Preserves all commits + merge commit</td><td>Linear history (rewrites commits)</td></tr>
+<tr><td>Safety</td><td>Safe for shared branches</td><td>Never rebase shared/public branches</td></tr>
+<tr><td>Use case</td><td>Feature branch into main</td><td>Update feature branch with latest main</td></tr>
+<tr><td>Command</td><td><code>git merge feature</code></td><td><code>git rebase main</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Git Stash</h3>
+<p>Temporarily save uncommitted changes without committing:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>git stash</code></td><td>Save current changes to stash</td></tr>
+<tr><td><code>git stash list</code></td><td>View all stashes</td></tr>
+<tr><td><code>git stash pop</code></td><td>Apply and remove latest stash</td></tr>
+<tr><td><code>git stash apply</code></td><td>Apply stash but keep it in list</td></tr>
+<tr><td><code>git stash drop</code></td><td>Delete a specific stash</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Cherry-Pick</h3>
+<p>Apply a specific commit from one branch to another without full merge:</p>
+<pre>git cherry-pick &lt;commit-hash&gt;</pre>
+<p><strong>QA Use Case:</strong> A hotfix committed to release branch needs to be applied to develop branch without merging everything.</p>
+
+<h3>.gitignore for QA Projects</h3>
+<pre># Common patterns for automation projects
+target/
+*.class
+*.log
+test-output/
+allure-results/
+screenshots/
+node_modules/
+.env
+*.jar</pre>
+
+<h3>Git Interview Questions for QA</h3>
+
+<h4>Q1. How do you resolve a merge conflict?</h4>
+<ol>
+<li>Git marks conflicting areas with &lt;&lt;&lt;, ===, &gt;&gt;&gt; markers</li>
+<li>Open the file, understand both versions</li>
+<li>Decide which changes to keep (or combine both)</li>
+<li>Remove conflict markers</li>
+<li><code>git add</code> the resolved file</li>
+<li><code>git commit</code> to complete the merge</li>
+</ol>
+
+<h4>Q2. What is git bisect? How does QA use it?</h4>
+<p>Binary search through commits to find which commit introduced a bug:</p>
+<pre>git bisect start
+git bisect bad          # current commit has the bug
+git bisect good abc123  # this older commit was fine
+# Git checks out middle commit - you test it
+git bisect good/bad     # tell git if this commit has the bug
+# Repeat until Git identifies the exact bad commit</pre>
+
+<h4>Q3. Difference between git fetch and git pull?</h4>
+<p><strong>git fetch:</strong> Downloads changes from remote but does NOT merge. Safe to see what changed.<br>
+<strong>git pull:</strong> fetch + merge in one step. Updates your local branch immediately.</p>
+
+<h4>Q4. How do you undo the last commit?</h4>
+<ul>
+<li><code>git reset --soft HEAD~1</code> &mdash; Undo commit, keep changes staged</li>
+<li><code>git reset --mixed HEAD~1</code> &mdash; Undo commit, unstage changes (default)</li>
+<li><code>git reset --hard HEAD~1</code> &mdash; Undo commit AND discard all changes (dangerous)</li>
+<li><code>git revert HEAD</code> &mdash; Create new commit that reverses last commit (safe for shared branches)</li>
+</ul>
+
+<h4>Q5. What Git commands do you use daily as a QA?</h4>
+<ul>
+<li><code>git pull origin develop</code> &mdash; Get latest code</li>
+<li><code>git checkout -b feature/test-login</code> &mdash; Create test branch</li>
+<li><code>git status</code> &mdash; Check what changed</li>
+<li><code>git add .</code> &amp; <code>git commit -m "msg"</code> &mdash; Save work</li>
+<li><code>git push origin feature/test-login</code> &mdash; Push for PR</li>
+<li><code>git log --oneline -10</code> &mdash; Check recent commits</li>
+<li><code>git stash</code> &mdash; Save WIP when switching tasks</li>
+</ul>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 10</summary>
+<ol>
+<li>Git = version control; GitHub = hosting platform</li>
+<li>Workflow: Modified &rarr; Staged (add) &rarr; Committed (commit)</li>
+<li>git add -A stages all; git commit -m "msg" commits</li>
+<li>git checkout -b name = create + switch to branch</li>
+<li>git merge = combine branches; always switch to target first</li>
+<li>git pull = fetch + merge from remote</li>
+<li>git revert = safe undo (new commit); git reset = move back (removes history)</li>
+<li>git log --oneline = compact history view</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 11: UAT TESTING ==================== -->
+<section id="section-11" class="section-card">
+<h2>Section 11: UAT &mdash; User Acceptance Testing</h2>
+<p>Complete guide to UAT &mdash; the final testing checkpoint before deployment where real users validate business requirements.</p>
+
+<h3>What is UAT?</h3>
+<ul>
+<li>Final phase of testing in SDLC</li>
+<li>Validates whether software meets business needs and user expectations</li>
+<li>NOT about finding technical bugs &mdash; about ensuring usability and business value</li>
+<li><strong>Fact:</strong> Over 60% of post-launch issues could be caught during UAT</li>
+<li><strong>Fact:</strong> Fixing a bug after release costs 6x more than during UAT</li>
+</ul>
+
+<h3>QA Testing vs UAT</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>QA Testing</th><th>UAT</th></tr></thead>
+<tbody>
+<tr><td>Who</td><td>QA testers/developers</td><td>Business users, clients, BA</td></tr>
+<tr><td>Purpose</td><td>Detect technical bugs</td><td>Validate business requirements</td></tr>
+<tr><td>Focus</td><td>System functionality ("Does it work?")</td><td>Business usability ("Does it work for me?")</td></tr>
+<tr><td>Stage</td><td>Before UAT</td><td>Final stage before go-live</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Who Performs UAT?</h3>
+<ul>
+<li>Business Users / End Users</li>
+<li>Clients or Customers</li>
+<li>Business Analysts (guide the process)</li>
+<li>Sometimes dedicated UAT testers</li>
+</ul>
+
+<h3>UAT Process (6 Steps)</h3>
+<ol>
+<li><strong>Requirement Analysis:</strong> Review business requirements, define scope</li>
+<li><strong>Test Planning:</strong> Who, when, how; prepare test environment</li>
+<li><strong>Test Case Preparation:</strong> Simple business scenario language</li>
+<li><strong>Test Execution:</strong> Users execute in UAT environment</li>
+<li><strong>Defect Reporting:</strong> Mismatches reported to dev team</li>
+<li><strong>Sign Off:</strong> Formal approval for production deployment</li>
+</ol>
+
+<h3>Types of UAT</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>Alpha Testing</strong></td><td>Internal employees test before release</td></tr>
+<tr><td><strong>Beta Testing</strong></td><td>Limited external users test in real environment</td></tr>
+<tr><td><strong>Contract Acceptance</strong></td><td>Validates contractual obligations are met</td></tr>
+<tr><td><strong>Regulation Acceptance</strong></td><td>Ensures legal/regulatory compliance</td></tr>
+<tr><td><strong>Operational Acceptance (OAT)</strong></td><td>Ready for day-to-day operations</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Challenges in UAT</h3>
+<ul>
+<li>Limited time &mdash; users busy with daily work</li>
+<li>Unclear requirements make validation difficult</li>
+<li>Environment must mirror production (costly)</li>
+<li>Communication gaps between technical and business teams</li>
+<li>Users may not know how to write proper defect reports</li>
+<li>Scope creep &mdash; users request new features during UAT</li>
+</ul>
+
+<h3>UAT Entry and Exit Criteria</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Entry Criteria</th><th>Exit Criteria</th></tr></thead>
+<tbody>
+<tr><td>All critical/high defects from system testing fixed</td><td>All UAT test cases executed</td></tr>
+<tr><td>UAT environment ready and stable</td><td>No critical/major defects open</td></tr>
+<tr><td>Business test cases prepared and reviewed</td><td>Business stakeholders signed off</td></tr>
+<tr><td>Test data available in UAT environment</td><td>All acceptance criteria met</td></tr>
+<tr><td>User training completed</td><td>Go/No-Go decision documented</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>QA Role in UAT</h3>
+<ul>
+<li><strong>Before UAT:</strong> Help prepare test cases, set up environment, prepare test data</li>
+<li><strong>During UAT:</strong> Support users, help reproduce issues, triage defects, track progress</li>
+<li><strong>After UAT:</strong> Consolidate feedback, verify fixes, prepare sign-off documentation</li>
+</ul>
+
+<h3>UAT Best Practices</h3>
+<ul>
+<li>Involve business users early in requirement gathering</li>
+<li>Keep test cases in business language (not technical)</li>
+<li>Use production-like data (anonymized if needed)</li>
+<li>Set clear timelines and milestones</li>
+<li>Have a dedicated UAT coordinator</li>
+<li>Document all feedback formally (not verbal)</li>
+<li>Define clear acceptance criteria upfront</li>
+</ul>
+
+<h3>UAT Interview Questions</h3>
+
+<h4>Q1. What happens if UAT fails?</h4>
+<p>Defects are logged and sent back to development. Fixes are made and re-deployed to UAT environment. Users re-test the fixed scenarios. If critical requirements fail repeatedly, the release may be postponed. A "No-Go" decision is documented.</p>
+
+<h4>Q2. Can QA testers do UAT?</h4>
+<p>Technically, QA can assist but should NOT perform UAT alone. UAT must involve actual business users/end users because they validate from a business perspective. QA validates technical functionality; UAT validates business value and user acceptance.</p>
+
+<h4>Q3. How do you handle scope creep during UAT?</h4>
+<p>Document new requests separately as "enhancement requests" or new user stories. Do not mix with UAT defects. Communicate that new features will be addressed in the next sprint/release. Keep UAT focused on agreed acceptance criteria only.</p>
+
+<h4>Q4. Difference between UAT and System Testing?</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>System Testing</th><th>UAT</th></tr></thead>
+<tbody>
+<tr><td>Who</td><td>QA Team</td><td>Business Users / End Users</td></tr>
+<tr><td>What</td><td>Technical requirements</td><td>Business requirements</td></tr>
+<tr><td>Environment</td><td>QA/Staging</td><td>UAT (production-like)</td></tr>
+<tr><td>Focus</td><td>Defect detection</td><td>Business validation</td></tr>
+<tr><td>Test Cases</td><td>Technical language</td><td>Business scenarios</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q5. What is a UAT Sign-Off?</h4>
+<p>Formal written approval from business stakeholders confirming that the software meets their requirements and is ready for production deployment. It includes: features validated, outstanding issues (with agreed workarounds), deployment date, rollback plan, and responsible parties.</p>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 11</summary>
+<ol>
+<li>UAT = final checkpoint before production; validates business needs</li>
+<li>QA = "Does it work?" vs UAT = "Does it work for me?"</li>
+<li>Performed by business users, clients, BA (NOT developers)</li>
+<li>Process: Requirements &rarr; Plan &rarr; Cases &rarr; Execute &rarr; Report &rarr; Sign Off</li>
+<li>Types: Alpha, Beta, Contract, Regulation, Operational</li>
+<li>Fixing post-release costs 6x more than during UAT</li>
+</ol>
+</details>
+</section>
+
+<!-- ==================== SECTION 12: TRICKY QA SCENARIOS ==================== -->
+<section id="section-12" class="section-card">
+<h2>Section 12: Tricky QA Interview Scenarios</h2>
+<p>20 high-signal QA interview questions that test how you think, problem-solve, and communicate &mdash; no single right answer.</p>
+
+<h3>Scenario-Based Questions</h3>
+
+<h4>1. How would you test an application with no documentation?</h4>
+<p><strong>Approach:</strong></p>
+<ol>
+<li>Start with <strong>exploratory testing</strong> &mdash; navigate the app, understand flows</li>
+<li>Check similar applications in the market for expected behavior</li>
+<li>Talk to developers, BAs, POs for domain knowledge</li>
+<li>Create your own documentation/mind maps as you explore</li>
+<li>Use <strong>Session-Based Test Management (SBTM)</strong> for structured exploration</li>
+<li>Focus on critical business flows first</li>
+<li>Use browser dev tools to understand API calls and data flow</li>
+</ol>
+<p><strong>Key point for interview:</strong> Show that you're proactive, not dependent on documentation.</p>
+
+<h4>2. A developer says your bug isn't valid. What do you do?</h4>
+<p><strong>Approach:</strong></p>
+<ol>
+<li>Stay professional &mdash; never make it personal</li>
+<li>Provide clear evidence: screenshots, videos, logs, steps to reproduce</li>
+<li>Reference the requirement/user story and acceptance criteria</li>
+<li>Ask: "What is the expected behavior from your perspective?"</li>
+<li>If still disagreed, escalate to BA/PO for clarification</li>
+<li>Document the discussion and decision</li>
+</ol>
+<p><strong>Key point:</strong> Goal is shared understanding. If requirement is ambiguous, it's a documentation issue, not a win/lose situation.</p>
+
+<h4>3. How do you decide what NOT to test?</h4>
+<p><strong>Risk-Based Testing approach:</strong></p>
+<ul>
+<li>Identify risk = (probability of failure) &times; (business impact)</li>
+<li>Skip: stable modules with no changes, low-impact features, thoroughly tested legacy code</li>
+<li>Always test: payment flows, user data, authentication, new features, recent bug fixes</li>
+<li>Discuss with PO/stakeholders and document decisions in test plan</li>
+<li>Use 80/20 rule: 80% of bugs found in 20% of modules</li>
+</ul>
+
+<h4>4. A bug is found in production. What do you check first?</h4>
+<p><strong>Systematic approach:</strong></p>
+<ol>
+<li><strong>Assess impact:</strong> How many users affected? Is it a showstopper?</li>
+<li><strong>Check application logs</strong> for error messages and stack traces</li>
+<li><strong>Review recent deployments</strong> &mdash; what changed?</li>
+<li><strong>Check monitoring tools</strong> (Grafana, Datadog, New Relic) for anomalies</li>
+<li><strong>Reproduce</strong> in lower environment with same data/config</li>
+<li><strong>Communicate</strong> with team, stakeholders about impact and ETA</li>
+<li><strong>Post-fix:</strong> Root Cause Analysis + add regression test</li>
+</ol>
+
+<h4>5. What if you're the only QA on the team?</h4>
+<p><strong>Strategy:</strong></p>
+<ul>
+<li>Prioritize: Critical business flows &gt; integration points &gt; edge cases</li>
+<li>Automate smoke/regression tests ASAP (saves time long-term)</li>
+<li>Promote quality culture: involve devs in testing (code reviews, unit tests)</li>
+<li>Use risk-based approach &mdash; you can't test everything, so be smart</li>
+<li>Shift-left: review requirements and designs early</li>
+<li>Create lightweight processes (checklists, not heavy documentation)</li>
+<li>Communicate clearly what's tested and what's not</li>
+</ul>
+
+<h4>6. Tests taking too long in CI. What would you do?</h4>
+<p><strong>Optimization strategies:</strong></p>
+<ol>
+<li><strong>Parallel execution:</strong> Split tests across multiple agents/threads</li>
+<li><strong>Test pyramid:</strong> More unit tests, fewer E2E tests</li>
+<li><strong>Smart tagging:</strong> Run smoke on every PR, full suite nightly</li>
+<li><strong>Optimize test setup/teardown:</strong> Use test fixtures efficiently</li>
+<li><strong>Remove redundant tests:</strong> Audit for overlap</li>
+<li><strong>Use headless browser</strong> for UI tests (faster than headed)</li>
+<li><strong>Data setup:</strong> Use API calls instead of UI for preconditions</li>
+</ol>
+
+<h4>7. How would you test an API with no documentation?</h4>
+<p><strong>Approach:</strong></p>
+<ul>
+<li>Use browser DevTools (Network tab) to capture API calls while using the app</li>
+<li>Use Postman/Insomnia to replay captured requests</li>
+<li>Analyze URL patterns to guess other endpoints</li>
+<li>Try common CRUD operations (GET, POST, PUT, DELETE)</li>
+<li>Check for Swagger/OpenAPI endpoints (/swagger-ui, /api-docs)</li>
+<li>Look at error messages for clues about expected parameters</li>
+<li>Test authentication by removing/modifying tokens</li>
+</ul>
+
+<h4>8. Bug found day before release. What now?</h4>
+<p><strong>Decision framework:</strong></p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Severity</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td>Critical (blocks core function)</td><td>STOP release. Fix immediately. Retest. Communicate delay.</td></tr>
+<tr><td>High (significant impact)</td><td>Assess risk with PO. Fix if time allows, else delay or hotfix plan.</td></tr>
+<tr><td>Medium (workaround exists)</td><td>Document workaround. Release with known issue. Fix in next sprint.</td></tr>
+<tr><td>Low (cosmetic)</td><td>Log it. Release. Fix later.</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Always:</strong> Communicate transparently with stakeholders. Document the decision.</p>
+
+<h4>9. How would you test a third-party integration?</h4>
+<ul>
+<li>Validate data exchange format (request/response contracts)</li>
+<li>Test failure scenarios: timeout, invalid response, service down</li>
+<li>Verify retry logic and fallback mechanisms</li>
+<li>Test with edge case data (special chars, large payloads)</li>
+<li>Monitor response times &mdash; third party might be slow</li>
+<li>Use mocks when third party is unavailable/unstable</li>
+<li>Verify error handling: what happens when 3rd party returns error?</li>
+<li>Check data privacy: what data is sent to third party?</li>
+</ul>
+
+<h4>10. App is stable but users keep reporting bugs. What do you do?</h4>
+<p><strong>Investigation steps:</strong></p>
+<ol>
+<li>Check if users are on different environment/version than QA tested</li>
+<li>Analyze user data &mdash; real data often differs from test data</li>
+<li>Check device/browser combinations users are on</li>
+<li>Review user workflows &mdash; they may use app differently than expected</li>
+<li>Look for intermittent issues (network, timing, load)</li>
+<li>Set up error monitoring (Sentry, Bugsnag) for real-time crash reports</li>
+<li>Add the missed scenarios to regression suite</li>
+</ol>
+
+<h4>11. How do you know when testing is "done"?</h4>
+<p><strong>Criteria for test completion:</strong></p>
+<ul>
+<li>All planned test cases executed (coverage &ge; 95%)</li>
+<li>No critical/high severity defects open</li>
+<li>Exit criteria from test plan met</li>
+<li>Defect discovery rate declining (defect convergence)</li>
+<li>Stakeholder confidence achieved</li>
+<li>Risk level acceptable to business</li>
+</ul>
+<p><strong>Key point:</strong> Testing is never truly "done" &mdash; you stop when the risk of continuing testing is lower than the risk of releasing.</p>
+
+<h4>12. Multiple bugs in same area. What does that tell you?</h4>
+<p><strong>Analysis:</strong></p>
+<ul>
+<li>Indicates <strong>defect clustering</strong> (Pareto principle: 80% bugs in 20% modules)</li>
+<li>The module is likely complex, poorly designed, or recently changed</li>
+<li>Increase test coverage in that area</li>
+<li>Recommend code review or refactoring to developers</li>
+<li>Add the area to regression priority list</li>
+<li>Root cause: possibly unclear requirements, tight deadlines, or new team members</li>
+</ul>
+
+<h4>13. How handle duplicate bug reports?</h4>
+<p><strong>Process:</strong></p>
+<ol>
+<li>Mark the newer one as "Duplicate" and link to the original</li>
+<li>Combine additional details from the duplicate into the original</li>
+<li>Communicate with the reporter (acknowledgment, not dismissal)</li>
+<li>Multiple duplicates may indicate: unclear bug titles, poor searchability, or widespread visibility of the issue</li>
+</ol>
+
+<h4>14. Joining team with no automation. What's your plan?</h4>
+<p><strong>90-day plan:</strong></p>
+<ol>
+<li><strong>Week 1-2:</strong> Understand the application, manual test flows, identify automation candidates</li>
+<li><strong>Week 3-4:</strong> Set up framework (tool selection, project structure, CI/CD integration)</li>
+<li><strong>Month 2:</strong> Automate smoke tests and top 10 critical flows</li>
+<li><strong>Month 3:</strong> Expand to regression suite, create reporting, document standards</li>
+</ol>
+<p><strong>Selection criteria for automation:</strong> Repetitive, stable, high-risk, data-driven, time-consuming manually.</p>
+
+<h4>15. How deal with flaky tests?</h4>
+<p><strong>Root causes and fixes:</strong></p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Root Cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Timing issues</td><td>Use explicit waits, not Thread.sleep</td></tr>
+<tr><td>Test data dependency</td><td>Create fresh data per test, cleanup after</td></tr>
+<tr><td>Environment instability</td><td>Use stable test environment, health checks</td></tr>
+<tr><td>Race conditions</td><td>Add synchronization, avoid shared state</td></tr>
+<tr><td>Element not loaded</td><td>Wait for specific conditions, not fixed time</td></tr>
+<tr><td>Order dependency</td><td>Make tests independent, use setup/teardown</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Never ignore flaky tests</strong> &mdash; they erode trust in the automation suite.</p>
+
+<h4>16. Developer wants you to skip a test for faster release?</h4>
+<p><strong>Response:</strong></p>
+<ol>
+<li>Ask WHY &mdash; understand the pressure</li>
+<li>Communicate the RISK of skipping (what could break?)</li>
+<li>Offer alternatives: reduced test scope, parallel testing, automated quick check</li>
+<li>If the decision is to skip, ensure it's documented (who approved, what's the risk)</li>
+<li>Escalate to management if risk is unacceptable</li>
+</ol>
+<p><strong>Key:</strong> QA doesn't block releases; QA provides information for informed decisions.</p>
+
+<h4>17. New feature to test with only a Jira title?</h4>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Request acceptance criteria from PO/BA immediately</li>
+<li>Ask developer for a quick demo or walkthrough</li>
+<li>Check design mockups or wireframes if available</li>
+<li>Look at similar existing features for expected behavior</li>
+<li>Start exploratory testing while waiting for clarification</li>
+<li>Document your assumptions and get them validated</li>
+</ol>
+
+<h4>18. Bug suspected but not consistently reproducible?</h4>
+<p><strong>Strategy for intermittent bugs:</strong></p>
+<ul>
+<li>Document all instances: time, data, environment, steps</li>
+<li>Look for patterns: specific time of day? After certain actions? Under load?</li>
+<li>Add detailed logging around the suspected area</li>
+<li>Try to reproduce under different conditions (load, data volume, concurrent users)</li>
+<li>Check for race conditions, memory leaks, or timeout issues</li>
+<li>File the bug with all findings, label as "intermittent", assign medium-high priority</li>
+<li>Set up monitoring/alerts for the specific error</li>
+</ul>
+
+<h4>19. How communicate QA value to product team?</h4>
+<p><strong>Metrics and communication:</strong></p>
+<ul>
+<li>Share defect metrics: bugs caught before vs after release</li>
+<li>Show cost savings: defect found in QA costs 10x less to fix than in production</li>
+<li>Highlight customer satisfaction improvements</li>
+<li>Report automation ROI (time saved per sprint)</li>
+<li>Share examples: "This bug would have affected X users and cost $Y"</li>
+<li>Quality dashboards visible to all stakeholders</li>
+</ul>
+
+<h4>20. Handed a legacy test suite you didn't write?</h4>
+<p><strong>Assessment and action plan:</strong></p>
+<ol>
+<li><strong>Audit:</strong> Run the entire suite, note pass/fail/flaky rates</li>
+<li><strong>Understand:</strong> Read code, map to features, identify patterns</li>
+<li><strong>Categorize:</strong> Working (keep), Flaky (fix), Redundant (remove), Missing (add)</li>
+<li><strong>Quick wins:</strong> Fix obvious failures, add documentation/comments</li>
+<li><strong>Long-term:</strong> Refactor gradually, don't rewrite everything at once</li>
+<li><strong>Standards:</strong> Establish naming conventions, structure for new tests</li>
+</ol>
+
+<h3>Real-Time Testing Scenarios</h3>
+
+<h4>How to test a customer registration page?</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Category</th><th>Test Cases</th></tr></thead>
+<tbody>
+<tr><td><strong>Positive</strong></td><td>Valid data registration, all mandatory fields filled, optional fields empty</td></tr>
+<tr><td><strong>Negative</strong></td><td>Invalid email format, weak password, duplicate email, SQL injection attempts</td></tr>
+<tr><td><strong>Boundary</strong></td><td>Min/max length for each field, special characters in name</td></tr>
+<tr><td><strong>Validation</strong></td><td>Error messages display, mandatory field indicators, real-time validation</td></tr>
+<tr><td><strong>Security</strong></td><td>Password masking, CAPTCHA, SSL, no password in URL/logs</td></tr>
+<tr><td><strong>Usability</strong></td><td>Tab order, autofill, mobile responsiveness, screen reader</td></tr>
+<tr><td><strong>Integration</strong></td><td>Confirmation email sent, data in database correct, welcome page redirect</td></tr>
+<tr><td><strong>Performance</strong></td><td>Page load time, response time on submit, concurrent registrations</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>How to approach testing in Agile?</h4>
+<ul>
+<li><strong>Sprint Planning:</strong> Review user stories, identify test scenarios, estimate QA effort</li>
+<li><strong>During Sprint:</strong> Write test cases parallel to development, continuous testing, exploratory testing</li>
+<li><strong>Daily Standup:</strong> Share progress, blockers, collaborate with devs on issues</li>
+<li><strong>Definition of Done:</strong> All acceptance criteria tested, no critical bugs, automation updated</li>
+<li><strong>Sprint Review:</strong> Demo tested features, highlight issues found</li>
+<li><strong>Retrospective:</strong> Suggest process improvements, tooling needs</li>
+<li><strong>Continuous:</strong> Maintain regression suite, update automation, monitor CI pipeline</li>
+</ul>
+
+<h4>No proper documentation available?</h4>
+<ul>
+<li>Schedule meetings with BAs, POs, and developers for knowledge transfer</li>
+<li>Use <strong>mind mapping</strong> to document your understanding visually</li>
+<li>Perform <strong>session-based exploratory testing</strong> with time-boxed sessions</li>
+<li>Check <strong>existing test cases</strong> (if any) for historical context</li>
+<li>Analyze <strong>user stories</strong> in Jira/backlog for acceptance criteria</li>
+<li>Use the application as a user would &mdash; create your own workflows</li>
+<li>Document everything you discover &mdash; becomes the living documentation</li>
+</ul>
+
+<h4>Testing a responsive web application?</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>What to Test</th><th>How</th></tr></thead>
+<tbody>
+<tr><td>Layout at breakpoints</td><td>Chrome DevTools &rarr; Toggle device toolbar (320px, 768px, 1024px, 1440px)</td></tr>
+<tr><td>Touch interactions</td><td>Real devices or BrowserStack</td></tr>
+<tr><td>Image scaling</td><td>Verify images don't overflow or pixelate</td></tr>
+<tr><td>Navigation menu</td><td>Hamburger menu on mobile, full nav on desktop</td></tr>
+<tr><td>Font readability</td><td>Text readable without zooming on mobile</td></tr>
+<tr><td>Form usability</td><td>Input fields properly sized, keyboard types correct</td></tr>
+<tr><td>Orientation</td><td>Portrait and landscape modes</td></tr>
+<tr><td>Performance</td><td>Load time on 3G/4G networks</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Limited time, large number of test cases?</h4>
+<ol>
+<li><strong>Risk-based prioritization:</strong> Test critical business flows first</li>
+<li><strong>Smoke + Sanity first:</strong> Ensure basic stability before deep testing</li>
+<li><strong>Automation:</strong> Run automated regression to save manual effort</li>
+<li><strong>Exploratory testing:</strong> Covers more ground than scripted in less time</li>
+<li><strong>Pair testing:</strong> Two testers collaborate, faster coverage</li>
+<li><strong>Communicate:</strong> Inform stakeholders what's covered and what's at risk</li>
+</ol>
+
+<h4>How do you test a login page? (50+ Test Cases)</h4>
+<ul>
+<li><strong>Functional:</strong> Valid login, invalid username, invalid password, both invalid, empty fields, case sensitivity, special chars</li>
+<li><strong>Security:</strong> SQL injection (admin' OR '1'='1), XSS in fields, brute force protection, account lockout after N attempts, password not visible in page source</li>
+<li><strong>Session:</strong> Session timeout, concurrent sessions, remember me, logout clears session</li>
+<li><strong>UI/UX:</strong> Tab order (username &rarr; password &rarr; login), Enter key submits form, error messages helpful, password masking toggle</li>
+<li><strong>Browser:</strong> Works on Chrome, Firefox, Safari, Edge, mobile browsers</li>
+<li><strong>Performance:</strong> Login response time &lt; 2 seconds, works under 1000 concurrent users</li>
+<li><strong>Integration:</strong> OAuth login (Google, Facebook), SSO, MFA/2FA, forgot password flow</li>
+</ul>
+
+<h4>How do you test an e-commerce checkout flow?</h4>
+<ul>
+<li>Add items to cart &rarr; verify quantities and prices</li>
+<li>Apply discount code &rarr; verify discount calculation</li>
+<li>Shipping address validation &rarr; test international addresses</li>
+<li>Payment methods: credit card, debit, UPI, wallet, COD</li>
+<li>Order confirmation email sent with correct details</li>
+<li>Inventory updated after purchase</li>
+<li>Concurrent purchase of last item (race condition)</li>
+<li>Network failure during payment &mdash; verify no double charge</li>
+<li>Session timeout during checkout &mdash; verify cart retained</li>
+<li>Verify tax calculations for different regions</li>
+</ul>
+
+<details class="revision"><summary>Quick Revision &mdash; Section 12</summary>
+<ol>
+<li>No docs? Exploratory testing + reverse engineering</li>
+<li>Bug disputed? Evidence-based collaboration, not confrontation</li>
+<li>What not to test? Risk-based prioritization</li>
+<li>Prod bug? Logs &rarr; recent deploys &rarr; reproduce &rarr; contain</li>
+<li>CI slow? Parallelize, split by type, smoke early + full nightly</li>
+<li>Flaky tests? Root cause (timing/data/race), don't ignore</li>
+<li>Legacy suite? Audit &rarr; run &rarr; understand &rarr; refactor slowly</li>
+<li>Testing "done"? Coverage + risk assessment + stakeholder confidence</li>
+<li>Agile? Acceptance criteria &rarr; scenarios &rarr; continuous testing &rarr; feedback</li>
+<li>Limited time? Prioritize critical paths + risk-based + exploratory</li>
+</ol>
+</details>
+</section>
+
+
+</main>
+<button id="back-to-top" aria-label="Back to top">&#8593;</button>
+<script src="app.js"></script>
+</body>
+</html>

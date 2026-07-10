@@ -109,6 +109,25 @@
           }
         });
       }
+
+      const collapseBtn = document.querySelector('.sidebar-collapse-btn');
+      const expandBtn = document.getElementById('sidebar-expand-btn');
+      if (collapseBtn && sidebar) {
+        collapseBtn.addEventListener('click', () => {
+          sidebar.classList.add('collapsed');
+          if (expandBtn) expandBtn.classList.add('visible');
+          const mainContent = document.getElementById('main-content');
+          if (mainContent) mainContent.style.marginLeft = '0';
+        });
+      }
+      if (expandBtn && sidebar) {
+        expandBtn.addEventListener('click', () => {
+          sidebar.classList.remove('collapsed');
+          expandBtn.classList.remove('visible');
+          const mainContent = document.getElementById('main-content');
+          if (mainContent) mainContent.style.marginLeft = '';
+        });
+      }
     }
   };
 
