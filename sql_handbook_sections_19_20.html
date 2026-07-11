@@ -1,0 +1,1066 @@
+<section id="section-19" class="section-card">
+<h2>Section 19: Stored Procedures, Triggers, Views &amp; Functions</h2>
+
+<p>Database objects beyond tables and indexes—views, stored procedures, functions, triggers, cursors, and temporary tables—form the programmable layer that QA engineers must understand to validate business logic at the data tier. This section covers creation syntax, testing strategies, and real-world automation patterns.</p>
+
+<h3>19.1 Views</h3>
+
+<h4>CREATE VIEW Syntax</h4>
+<p>A view is a virtual table defined by a stored query. It does not store data itself (unless materialized); it presents a filtered or joined projection of underlying tables.</p>
+
+<pre><code>-- Simple view: active customers only
+CREATE VIEW vw_active_customers AS
+SELECT customer_id, first_name, last_name, email, created_at
+FROM customers
+WHERE status = 'ACTIVE'
+  AND deleted_at IS NULL;
+
+-- View with joins and aggregations
+CREATE VIEW vw_order_summary AS
+SELECT
+    o.order_id,
+    o.customer_id,
+    c.email,
+    COUNT(oi.line_id)   AS line_count,
+    SUM(oi.quantity * oi.unit_price) AS order_total,
+    o.order_status,
+    o.created_at
+FROM orders o
+JOIN customers c ON c.customer_id = o.customer_id
+JOIN order_items oi ON oi.order_id = o.order_id
+GROUP BY o.order_id, o.customer_id, c.email, o.order_status, o.created_at;
+
+-- Query the view like a table
+SELECT * FROM vw_order_summary WHERE order_total &gt; 500;</code></pre>
+
+<h4>Advantages of Views</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Advantage</th><th>Description</th><th>QA Benefit</th></tr>
+</thead>
+<tbody>
+<tr><td>Abstraction</td><td>Hides complex joins and filters</td><td>Test against stable interface even when schema evolves</td></tr>
+<tr><td>Security</td><td>Column-level and row-level access control</td><td>Verify users see only permitted data</td></tr>
+<tr><td>Consistency</td><td>Single source of truth for business rules</td><td>Assert totals in view match manual calculations</td></tr>
+<tr><td>Simplification</td><td>Reduces repetitive SQL in test scripts</td><td>Reusable validation queries across suites</td></tr>
+<tr><td>Backward compatibility</td><td>Legacy apps can use views after refactor</td><td>Regression tests remain valid after table splits</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Updatable Views</h4>
+<p>Some views support INSERT, UPDATE, and DELETE when they map cleanly to a single base table without aggregations, DISTINCT, GROUP BY, or subqueries in the SELECT list.</p>
+
+<pre><code>CREATE VIEW vw_customer_contact AS
+SELECT customer_id, first_name, last_name, email, phone
+FROM customers
+WHERE status = 'ACTIVE';
+
+-- Valid update through view (maps to customers table)
+UPDATE vw_customer_contact
+SET phone = '+1-555-0199'
+WHERE customer_id = 10042;
+
+-- Non-updatable: aggregated view
+CREATE VIEW vw_monthly_revenue AS
+SELECT DATE_TRUNC('month', order_date) AS month, SUM(total) AS revenue
+FROM orders GROUP BY 1;
+-- UPDATE vw_monthly_revenue SET revenue = 0;  -- ERROR in most engines</code></pre>
+
+<div class="callout">
+<strong>QA Note:</strong> Always verify whether a view is updatable before writing tests that mutate data through it. PostgreSQL exposes <code>information_schema.views.is_updatable</code>; SQL Server uses <code>sp_helptext</code> and catalog views.
+</div>
+
+<h4>Materialized Views</h4>
+<p>Materialized views persist query results physically and must be refreshed. Common in PostgreSQL and Oracle; SQL Server uses indexed views with similar semantics.</p>
+
+<pre><code>-- PostgreSQL
+CREATE MATERIALIZED VIEW mv_daily_sales AS
+SELECT order_date, product_id, SUM(quantity) AS units_sold, SUM(line_total) AS revenue
+FROM order_items oi
+JOIN orders o ON o.order_id = oi.order_id
+GROUP BY order_date, product_id;
+
+CREATE UNIQUE INDEX idx_mv_daily_sales ON mv_daily_sales (order_date, product_id);
+
+-- Refresh after ETL load
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_sales;</code></pre>
+
+<h4>QA Use Case: Validation Views</h4>
+<p>QA teams create validation views that flag data anomalies. These become living test oracles runnable in CI pipelines.</p>
+
+<pre><code>CREATE VIEW qa_v_data_integrity AS
+SELECT 'orphan_order_items' AS issue, oi.line_id AS record_id
+FROM order_items oi
+LEFT JOIN orders o ON o.order_id = oi.order_id
+WHERE o.order_id IS NULL
+UNION ALL
+SELECT 'negative_inventory', product_id
+FROM inventory WHERE quantity_on_hand &lt; 0
+UNION ALL
+SELECT 'order_total_mismatch', o.order_id
+FROM orders o
+JOIN (
+    SELECT order_id, SUM(quantity * unit_price) AS calc_total
+    FROM order_items GROUP BY order_id
+) x ON x.order_id = o.order_id
+WHERE ABS(o.total_amount - x.calc_total) &gt; 0.01;
+
+-- CI assertion: expect zero rows
+SELECT COUNT(*) AS integrity_violations FROM qa_v_data_integrity;</code></pre>
+
+<h3>19.2 Stored Procedures</h3>
+
+<h4>CREATE PROCEDURE Syntax</h4>
+<pre><code>-- SQL Server / MySQL style
+DELIMITER //
+CREATE PROCEDURE sp_process_order(
+    IN  p_order_id      INT,
+    IN  p_payment_method VARCHAR(20),
+    OUT p_result_code   INT,
+    OUT p_result_msg    VARCHAR(255)
+)
+BEGIN
+    DECLARE v_customer_id INT;
+    DECLARE v_total       DECIMAL(12,2);
+    DECLARE v_stock_ok    BOOLEAN DEFAULT TRUE;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_result_code = -1;
+        SET p_result_msg = 'Unexpected error during order processing';
+    END;
+
+    START TRANSACTION;
+
+    SELECT customer_id, total_amount INTO v_customer_id, v_total
+    FROM orders WHERE order_id = p_order_id FOR UPDATE;
+
+    IF v_customer_id IS NULL THEN
+        SET p_result_code = 404;
+        SET p_result_msg = CONCAT('Order not found: ', p_order_id);
+        ROLLBACK;
+    ELSE
+        -- Check inventory for all line items
+        SELECT COUNT(*) = 0 INTO v_stock_ok
+        FROM order_items oi
+        JOIN inventory inv ON inv.product_id = oi.product_id
+        WHERE oi.order_id = p_order_id
+          AND inv.quantity_on_hand &lt; oi.quantity;
+
+        IF NOT v_stock_ok THEN
+            SET p_result_code = 409;
+            SET p_result_msg = 'Insufficient stock';
+            ROLLBACK;
+        ELSE
+            UPDATE inventory inv
+            JOIN order_items oi ON oi.product_id = inv.product_id
+            SET inv.quantity_on_hand = inv.quantity_on_hand - oi.quantity
+            WHERE oi.order_id = p_order_id;
+
+            UPDATE orders
+            SET order_status = 'CONFIRMED',
+                payment_method = p_payment_method,
+                confirmed_at = NOW()
+            WHERE order_id = p_order_id;
+
+            INSERT INTO order_audit (order_id, action, actor, created_at)
+            VALUES (p_order_id, 'CONFIRMED', CURRENT_USER(), NOW());
+
+            COMMIT;
+            SET p_result_code = 0;
+            SET p_result_msg = 'Order processed successfully';
+        END IF;
+    END IF;
+END //
+DELIMITER ;</code></pre>
+
+<h4>Parameters: IN, OUT, INOUT</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Mode</th><th>Direction</th><th>Example Use</th></tr>
+</thead>
+<tbody>
+<tr><td>IN</td><td>Caller → Procedure</td><td>Order ID, filter criteria, payment method</td></tr>
+<tr><td>OUT</td><td>Procedure → Caller</td><td>Result code, generated ID, error message</td></tr>
+<tr><td>INOUT</td><td>Both directions</td><td>Running counter, status flag updated in-place</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- INOUT example: increment retry counter
+CREATE PROCEDURE sp_retry_payment(INOUT p_retry_count INT, IN p_order_id INT)
+BEGIN
+    IF p_retry_count &gt;= 3 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Max retries exceeded';
+    END IF;
+    SET p_retry_count = p_retry_count + 1;
+    -- attempt payment logic here
+END;</code></pre>
+
+<h4>Control Flow: IF/ELSE and LOOP</h4>
+<pre><code>CREATE PROCEDURE sp_bulk_discount(IN p_min_order_value DECIMAL(10,2))
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE v_order_id INT;
+    DECLARE cur CURSOR FOR
+        SELECT order_id FROM orders
+        WHERE order_status = 'PENDING' AND total_amount &gt;= p_min_order_value;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO v_order_id;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        UPDATE orders SET discount_pct = 10 WHERE order_id = v_order_id;
+    END LOOP;
+    CLOSE cur;
+END;</code></pre>
+
+<h4>How to Test Stored Procedures</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Technique</th><th>Steps</th><th>Assertions</th></tr>
+</thead>
+<tbody>
+<tr><td>Direct CALL</td><td>Seed fixtures, CALL sp_process_order(...), inspect OUT params</td><td>result_code = 0, inventory decremented</td></tr>
+<tr><td>Transaction rollback</td><td>Wrap test in BEGIN...ROLLBACK</td><td>Side effects visible within session only</td></tr>
+<tr><td>Table-driven tests</td><td>CSV of inputs/expected outputs loaded into temp table</td><td>Compare actual vs expected result sets</td></tr>
+<tr><td>Negative paths</td><td>Missing order, insufficient stock, duplicate call</td><td>Correct error codes, no partial updates</td></tr>
+<tr><td>Concurrency</td><td>Two sessions process same order</td><td>One succeeds, other gets 409 or deadlock handled</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- Test harness example (MySQL)
+START TRANSACTION;
+INSERT INTO orders (order_id, customer_id, total_amount, order_status)
+VALUES (9001, 501, 150.00, 'PENDING');
+INSERT INTO order_items VALUES (9001, 101, 2, 75.00);
+INSERT INTO inventory VALUES (101, 50);
+
+SET @rc = NULL; SET @msg = NULL;
+CALL sp_process_order(9001, 'CREDIT_CARD', @rc, @msg);
+SELECT @rc AS result_code, @msg AS result_msg;  -- expect 0
+SELECT order_status FROM orders WHERE order_id = 9001;  -- expect CONFIRMED
+ROLLBACK;</code></pre>
+
+<h4>Calling from Java/JDBC</h4>
+<pre><code>import java.sql.*;
+
+public class OrderProcessorClient {
+    public static void main(String[] args) throws SQLException {
+        String url = "jdbc:mysql://localhost:3306/shop_db";
+        try (Connection conn = DriverManager.getConnection(url, "qa_user", "qa_pass");
+             CallableStatement cs = conn.prepareCall("{CALL sp_process_order(?, ?, ?, ?)}")) {
+
+            cs.setInt(1, 9001);                    // IN p_order_id
+            cs.setString(2, "CREDIT_CARD");        // IN p_payment_method
+            cs.registerOutParameter(3, Types.INTEGER);  // OUT p_result_code
+            cs.registerOutParameter(4, Types.VARCHAR); // OUT p_result_msg
+
+            cs.execute();
+
+            int resultCode = cs.getInt(3);
+            String resultMsg = cs.getString(4);
+            System.out.printf("Result: %d - %s%n", resultCode, resultMsg);
+
+            if (resultCode != 0) {
+                throw new RuntimeException("Order processing failed: " + resultMsg);
+            }
+        }
+    }
+}</code></pre>
+
+<h3>19.3 Functions</h3>
+
+<h4>Scalar vs Table-Valued Functions</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Type</th><th>Returns</th><th>Use Case</th><th>Callable From</th></tr>
+</thead>
+<tbody>
+<tr><td>Scalar (UDF)</td><td>Single value</td><td>Format SKU, calculate tax, validate email</td><td>SELECT, WHERE, CHECK constraints</td></tr>
+<tr><td>Table-Valued (TVF)</td><td>Result set (table)</td><td>Split delimited string, return hierarchy</td><td>FROM clause, JOIN target</td></tr>
+<tr><td>Inline TVF</td><td>Table (optimized)</td><td>Parameterized view logic</td><td>FROM clause; often inlined by optimizer</td></tr>
+<tr><td>Multi-statement TVF</td><td>Table (procedural)</td><td>Complex multi-step transformations</td><td>FROM clause; may be slower</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- Scalar: validate email format
+CREATE FUNCTION fn_is_valid_email(p_email VARCHAR(255))
+RETURNS BOOLEAN
+DETERMINISTIC
+BEGIN
+    RETURN p_email REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$';
+END;
+
+-- Table-valued: order line details for a customer
+CREATE FUNCTION fn_customer_orders(p_customer_id INT)
+RETURNS TABLE
+AS RETURN (
+    SELECT o.order_id, o.order_status, o.total_amount, o.created_at
+    FROM orders o
+    WHERE o.customer_id = p_customer_id
+);
+
+SELECT * FROM fn_customer_orders(501) WHERE order_status = 'CONFIRMED';</code></pre>
+
+<h4>Custom Validation Functions</h4>
+<pre><code>CREATE FUNCTION fn_validate_order_total(p_order_id INT)
+RETURNS VARCHAR(20)
+BEGIN
+    DECLARE v_header_total DECIMAL(12,2);
+    DECLARE v_line_total   DECIMAL(12,2);
+
+    SELECT total_amount INTO v_header_total FROM orders WHERE order_id = p_order_id;
+    SELECT SUM(quantity * unit_price) INTO v_line_total
+    FROM order_items WHERE order_id = p_order_id;
+
+    IF v_header_total IS NULL THEN RETURN 'NOT_FOUND';
+    ELSEIF ABS(v_header_total - IFNULL(v_line_total, 0)) &gt; 0.01 THEN RETURN 'MISMATCH';
+    ELSE RETURN 'VALID';
+    END IF;
+END;
+
+-- Use in QA query
+SELECT order_id, fn_validate_order_total(order_id) AS validation_status
+FROM orders WHERE created_at &gt;= CURDATE();</code></pre>
+
+<h3>19.4 Triggers</h3>
+
+<h4>BEFORE vs AFTER Triggers</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Timing</th><th>Fires</th><th>Typical Use</th><th>Can Modify NEW Row?</th></tr>
+</thead>
+<tbody>
+<tr><td>BEFORE INSERT/UPDATE</td><td>Before row written</td><td>Validation, default values, normalization</td><td>Yes (MySQL/PostgreSQL)</td></tr>
+<tr><td>AFTER INSERT/UPDATE/DELETE</td><td>After row committed to table</td><td>Audit trails, cascading side effects</td><td>No (row already persisted)</td></tr>
+<tr><td>INSTEAD OF</td><td>Replaces DML on views</td><td>Updatable view logic</td><td>View-specific</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Audit Trail Example</h4>
+<pre><code>CREATE TABLE customers_audit (
+    audit_id      BIGINT AUTO_INCREMENT PRIMARY KEY,
+    customer_id   INT NOT NULL,
+    action_type   ENUM('INSERT','UPDATE','DELETE') NOT NULL,
+    old_email     VARCHAR(255),
+    new_email     VARCHAR(255),
+    changed_by    VARCHAR(100),
+    changed_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+DELIMITER //
+CREATE TRIGGER trg_customers_audit_update
+AFTER UPDATE ON customers
+FOR EACH ROW
+BEGIN
+    IF OLD.email &lt;&gt; NEW.email OR OLD.status &lt;&gt; NEW.status THEN
+        INSERT INTO customers_audit (customer_id, action_type, old_email, new_email, changed_by)
+        VALUES (OLD.customer_id, 'UPDATE', OLD.email, NEW.email, CURRENT_USER());
+    END IF;
+END //
+DELIMITER ;</code></pre>
+
+<h4>How to Test Triggers</h4>
+<ol>
+<li><strong>Baseline count:</strong> Record row count in audit table before action.</li>
+<li><strong>Perform DML:</strong> INSERT/UPDATE/DELETE the target row with known values.</li>
+<li><strong>Assert audit row:</strong> Verify exactly one audit record with correct old/new values.</li>
+<li><strong>Negative case:</strong> Update non-tracked columns; assert no audit row created.</li>
+<li><strong>Rollback isolation:</strong> Use transactions in test fixtures to avoid polluting shared DB.</li>
+<li><strong>Disable check:</strong> Confirm trigger exists via <code>SHOW TRIGGERS</code> or catalog queries before blaming application code.</li>
+</ol>
+
+<pre><code>START TRANSACTION;
+SELECT COUNT(*) INTO @before FROM customers_audit WHERE customer_id = 10042;
+UPDATE customers SET email = 'new@test.com' WHERE customer_id = 10042;
+SELECT COUNT(*) INTO @after FROM customers_audit WHERE customer_id = 10042;
+SELECT @after - @before AS new_audit_rows;  -- expect 1
+SELECT action_type, old_email, new_email FROM customers_audit
+WHERE customer_id = 10042 ORDER BY audit_id DESC LIMIT 1;
+ROLLBACK;</code></pre>
+
+<h3>19.5 Cursors</h3>
+
+<h4>When to Use Cursors</h4>
+<ul>
+<li>Row-by-row processing when set-based SQL cannot express the logic (rare in modern SQL).</li>
+<li>Calling external procedures or complex conditional logic per row in legacy systems.</li>
+<li>Generating sequential identifiers or custom reports in stored procedures without window functions.</li>
+<li>Migrating data with row-level validation and error logging.</li>
+</ul>
+
+<h4>Performance Implications</h4>
+<div class="callout">
+<strong>Warning:</strong> Cursors are iteratively slow compared to set-based operations. A cursor processing 100,000 rows may take minutes where a single UPDATE/JOIN completes in seconds. Always attempt set-based rewrite first; use cursors only when necessary.
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Factor</th><th>Impact</th><th>QA Mitigation</th></tr>
+</thead>
+<tbody>
+<tr><td>Network round-trips</td><td>Each FETCH may hit server repeatedly</td><td>Benchmark SP runtime under load</td></tr>
+<tr><td>Lock duration</td><td>Long-open cursors hold locks</td><td>Test concurrent order processing</td></tr>
+<tr><td>Memory</td><td>Scrollable cursors buffer results</td><td>Monitor tempdb/ sort memory in perf tests</td></tr>
+<tr><td>Blocking</td><td>Row-by-row updates block readers</td><td>Validate timeout behavior under contention</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>19.6 Temporary Tables &amp; CTEs</h3>
+
+<h4>#temp vs ##temp (SQL Server)</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Type</th><th>Scope</th><th>Naming</th><th>Lifecycle</th></tr>
+</thead>
+<tbody>
+<tr><td>#local_temp</td><td>Current session</td><td>Prefix #</td><td>Dropped on session disconnect</td></tr>
+<tr><td>##global_temp</td><td>All sessions</td><td>Prefix ##</td><td>Dropped when last referencing session ends</td></tr>
+<tr><td>@table_variable</td><td>Batch/procedure</td><td>@ prefix</td><td>In-memory; limited statistics</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- Local temp: QA staging for test data comparison
+CREATE TABLE #expected_orders (order_id INT, expected_total DECIMAL(10,2));
+INSERT INTO #expected_orders VALUES (1, 99.99), (2, 150.00);
+
+SELECT e.order_id, e.expected_total, o.total_amount,
+       CASE WHEN ABS(e.expected_total - o.total_amount) &lt; 0.01 THEN 'PASS' ELSE 'FAIL' END AS result
+FROM #expected_orders e
+JOIN orders o ON o.order_id = e.order_id;
+
+-- CTE alternative (no physical table, better for read-only checks)
+WITH expected AS (
+    SELECT 1 AS order_id, 99.99 AS expected_total
+    UNION ALL SELECT 2, 150.00
+)
+SELECT * FROM expected e JOIN orders o ON o.order_id = e.order_id;</code></pre>
+
+<h4>CTEs as Alternatives</h4>
+<p>Common Table Expressions improve readability for hierarchical and multi-step queries without temp table overhead. Recursive CTEs traverse org charts or bill-of-materials. For QA, prefer CTEs when the intermediate result is read-only and session-scoped temp tables when you need indexes or repeated reference.</p>
+
+<pre><code>WITH order_totals AS (
+    SELECT order_id, SUM(quantity * unit_price) AS calc_total
+    FROM order_items GROUP BY order_id
+),
+mismatches AS (
+    SELECT o.order_id, o.total_amount, ot.calc_total
+    FROM orders o JOIN order_totals ot ON ot.order_id = o.order_id
+    WHERE ABS(o.total_amount - ot.calc_total) &gt; 0.01
+)
+SELECT COUNT(*) AS mismatch_count FROM mismatches;</code></pre>
+
+<h3>19.7 Object Hierarchy Diagram</h3>
+<div class="ascii-diagram">
+<pre>
+                    +---------------------------+
+                    |     DATABASE SCHEMA       |
+                    +---------------------------+
+                                 |
+         +-----------+-----------+-----------+-----------+
+         |           |           |           |           |
+         v           v           v           v           v
+    +--------+  +--------+  +--------+  +--------+  +--------+
+    | VIEWS  |  | STORED |  | FUNCS  |  |TRIGGERS|  | CURSORS|
+    |(Virtual|  | PROCS  |  |(Scalar/|  |(Event  |  |(Row    |
+    | Tables)|  |(Business| | TVF)   |  | Driven)|  | Iter)  |
+    +--------+  | Logic) |  +--------+  +--------+  +--------+
+         |      +--------+       |           |
+         |           |           |           |
+         |     +-----+-----+     |     +-----+-----+
+         |     | IN/OUT    |     |     | BEFORE/   |
+         |     | Params    |     |     | AFTER     |
+         |     | Control   |     |     | INSTEAD OF|
+         |     | Flow      |     |     +-----------+
+         |     +-----------+     |
+         |           |           |
+         v           v           v
+    +-----------------------------------+
+    |         BASE TABLES / DATA        |
+    |  customers | orders | inventory   |
+    +-----------------------------------+
+              ^
+              |
+    +---------+---------+
+    | TEMP TABLES / CTEs |
+    | (#temp, WITH ...)  |
+    +--------------------+
+</pre>
+</div>
+
+<h3>19.8 Interview Questions &amp; Answers</h3>
+
+<h4>Q1. What is the difference between a view and a table?</h4>
+<p><strong>A:</strong> A table stores physical rows on disk; a view is a saved query that presents data from underlying tables at query time. Views provide abstraction without duplicating storage (unless materialized).</p>
+
+<h4>Q2. When is a view updatable?</h4>
+<p><strong>A:</strong> When it maps to a single base table, has no DISTINCT/GROUP BY/aggregates in the SELECT list, and all NOT NULL columns without defaults are included. Engine-specific rules may further restrict updatability.</p>
+
+<h4>Q3. What is a materialized view and when would QA care?</h4>
+<p><strong>A:</strong> A materialized view stores precomputed results. QA must verify refresh jobs run on schedule and that stale data windows are acceptable for reporting tests.</p>
+
+<h4>Q4. IN vs OUT vs INOUT parameters?</h4>
+<p><strong>A:</strong> IN passes values into the procedure; OUT returns values to the caller; INOUT serves both directions—useful for counters or flags modified during execution.</p>
+
+<h4>Q5. How do you test a stored procedure that modifies multiple tables?</h4>
+<p><strong>A:</strong> Seed known fixtures, call the SP within a transaction, assert all affected tables, verify OUT parameters, then ROLLBACK. Include negative and concurrency scenarios.</p>
+
+<h4>Q6. Scalar function vs stored procedure?</h4>
+<p><strong>A:</strong> Functions return a value and are callable from SELECT; procedures perform actions (DML, multi-result) and are invoked via CALL/EXEC. Functions should avoid side effects in most engines.</p>
+
+<h4>Q7. What is a table-valued function?</h4>
+<p><strong>A:</strong> A function returning a result set usable in FROM clauses—essentially a parameterized view with procedural logic optional.</p>
+
+<h4>Q8. BEFORE vs AFTER trigger?</h4>
+<p><strong>A:</strong> BEFORE fires prior to row persistence and can modify incoming data; AFTER fires post-write and is ideal for audit logging and cascading effects.</p>
+
+<h4>Q9. How do triggers affect QA test design?</h4>
+<p><strong>A:</strong> Hidden side effects (audit rows, derived updates) must be accounted for in assertions. Tests should verify both application behavior and trigger-generated data.</p>
+
+<h4>Q10. Why avoid cursors in production SQL?</h4>
+<p><strong>A:</strong> Row-by-row processing is orders of magnitude slower than set-based operations, holds locks longer, and increases blocking risk.</p>
+
+<h4>Q11. #temp vs ##temp in SQL Server?</h4>
+<p><strong>A:</strong> #temp is session-scoped; ##temp is global across sessions until the last session referencing it disconnects.</p>
+
+<h4>Q12. CTE vs subquery?</h4>
+<p><strong>A:</strong> CTEs improve readability and allow recursion; subqueries inline. Performance is often identical—optimizer may treat them similarly.</p>
+
+<h4>Q13. Can you INSERT into a view?</h4>
+<p><strong>A:</strong> Only if the view is updatable per engine rules. Inserting into a joined view typically fails unless INSTEAD OF triggers handle it.</p>
+
+<h4>Q14. How call a stored procedure from JDBC?</h4>
+<p><strong>A:</strong> Use CallableStatement with <code>{CALL proc(?, ?, ?)}</code>, set IN params, registerOutParameter for OUT params, then execute().</p>
+
+<h4>Q15. What is an INSTEAD OF trigger?</h4>
+<p><strong>A:</strong> Fires in place of INSERT/UPDATE/DELETE on a view, allowing DML on otherwise non-updatable views by redirecting to base tables.</p>
+
+<h4>Q16. How validate data integrity using views in CI?</h4>
+<p><strong>A:</strong> Create qa_v_* views that UNION anomaly queries; pipeline fails if SELECT COUNT(*) &gt; 0.</p>
+
+<h4>Q17. DETERMINISTIC vs NOT DETERMINISTIC functions?</h4>
+<p><strong>A:</strong> Deterministic functions always return the same output for the same inputs (e.g., SHA256). Non-deterministic may vary (NOW(), RAND()). Affects indexing and replication.</p>
+
+<h4>Q18. What happens if a trigger raises an error?</h4>
+<p><strong>A:</strong> The entire triggering statement rolls back (in most engines), preventing partial updates—critical for QA negative testing.</p>
+
+<h4>Q19. How do you find all triggers on a table?</h4>
+<p><strong>A:</strong> SQL Server: <code>SELECT * FROM sys.triggers</code> joined to parent_id. MySQL: <code>SHOW TRIGGERS LIKE 'customers'</code>. PostgreSQL: <code>pg_trigger</code> catalog.</p>
+
+<h4>Q20. Explain recursive CTE with QA example.</h4>
+<p><strong>A:</strong> Recursive CTEs traverse hierarchies (categories, org trees). QA validates depth limits, cycle detection, and correct parent-child counts at each level.</p>
+
+<div class="callout">
+<strong>Section 19 Summary:</strong> Views simplify validation; stored procedures encapsulate business logic; functions compute reusable values; triggers enforce rules and audit changes. QA engineers should test these objects directly—not only through the application layer—to catch data-tier regressions early.
+</div>
+
+</section>
+
+<section id="section-20" class="section-card">
+<h2>Section 20: NoSQL &amp; Modern Database Concepts for QA</h2>
+
+<p>Modern QA extends beyond relational databases. NoSQL stores, caches, cloud-managed databases, DevOps migration tools, microservices patterns, and GraphQL APIs all introduce new validation surfaces. This section equips testers with practical commands, automation snippets, and interview-ready knowledge.</p>
+
+<h3>20.1 NoSQL Database Types</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Type</th><th>Data Model</th><th>Examples</th><th>Strengths</th><th>QA Focus Areas</th></tr>
+</thead>
+<tbody>
+<tr><td>Document</td><td>JSON/BSON documents</td><td>MongoDB, CouchDB, Firestore</td><td>Flexible schema, nested data</td><td>Schema validation rules, index usage, aggregation accuracy</td></tr>
+<tr><td>Key-Value</td><td>Key → opaque value</td><td>Redis, DynamoDB, Riak</td><td>Extreme speed, simplicity</td><td>TTL expiry, cache invalidation, serialization format</td></tr>
+<tr><td>Column-Family</td><td>Wide columns, row keys</td><td>Cassandra, HBase, ScyllaDB</td><td>Write-heavy, distributed scale</td><td>Consistency level (CL), tombstones, compaction lag</td></tr>
+<tr><td>Graph</td><td>Nodes + edges</td><td>Neo4j, Amazon Neptune</td><td>Relationship traversal</td><td>Path queries, orphan nodes, constraint violations</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>20.2 MongoDB Basics</h3>
+
+<h4>Connection &amp; CRUD Operations</h4>
+<pre><code>// MongoDB shell / mongosh examples
+use ecommerce_qa;
+
+// INSERT
+db.orders.insertOne({
+  orderId: "ORD-2026-001",
+  customerId: "CUST-501",
+  status: "PENDING",
+  items: [
+    { sku: "SKU-A", qty: 2, price: 29.99 },
+    { sku: "SKU-B", qty: 1, price: 49.99 }
+  ],
+  total: 109.97,
+  createdAt: new Date()
+});
+
+// FIND
+db.orders.find({ status: "PENDING" }).pretty();
+db.orders.find({ "items.sku": "SKU-A" });
+db.orders.find({ total: { $gte: 100 } }).sort({ createdAt: -1 });
+
+// UPDATE
+db.orders.updateOne(
+  { orderId: "ORD-2026-001" },
+  { $set: { status: "CONFIRMED", confirmedAt: new Date() } }
+);
+
+// DELETE
+db.orders.deleteOne({ orderId: "ORD-2026-001" });</code></pre>
+
+<h4>Aggregation for QA Validation</h4>
+<pre><code>db.orders.aggregate([
+  { $match: { status: "CONFIRMED" } },
+  { $unwind: "$items" },
+  { $group: {
+      _id: "$items.sku",
+      totalQty: { $sum: "$items.qty" },
+      revenue: { $sum: { $multiply: ["$items.qty", "$items.price"] } }
+  }},
+  { $sort: { revenue: -1 } }
+]);</code></pre>
+
+<h3>20.3 SQL vs MongoDB Comparison</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Operation</th><th>SQL</th><th>MongoDB</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Select all</td><td>SELECT * FROM orders;</td><td>db.orders.find({})</td></tr>
+<tr><td>2</td><td>Filter rows</td><td>WHERE status = 'PENDING'</td><td>find({ status: "PENDING" })</td></tr>
+<tr><td>3</td><td>Insert row</td><td>INSERT INTO orders VALUES (...)</td><td>insertOne({ ... })</td></tr>
+<tr><td>4</td><td>Update row</td><td>UPDATE orders SET status='X' WHERE id=1</td><td>updateOne({ _id: 1 }, { $set: { status: "X" } })</td></tr>
+<tr><td>5</td><td>Delete row</td><td>DELETE FROM orders WHERE id=1</td><td>deleteOne({ _id: 1 })</td></tr>
+<tr><td>6</td><td>Join tables</td><td>JOIN customers ON ...</td><td>$lookup in aggregation</td></tr>
+<tr><td>7</td><td>Group / aggregate</td><td>GROUP BY sku</td><td>$group in aggregation pipeline</td></tr>
+<tr><td>8</td><td>Sort</td><td>ORDER BY created_at DESC</td><td>.sort({ createdAt: -1 })</td></tr>
+<tr><td>9</td><td>Limit results</td><td>LIMIT 10</td><td>.limit(10)</td></tr>
+<tr><td>10</td><td>Count rows</td><td>SELECT COUNT(*) FROM orders</td><td>countDocuments({})</td></tr>
+<tr><td>11</td><td>Nested field filter</td><td>JSON column: data-&gt;'sku'</td><td>find({ "items.sku": "SKU-A" })</td></tr>
+<tr><td>12</td><td>Unique constraint</td><td>UNIQUE INDEX</td><td>createIndex({ orderId: 1 }, { unique: true })</td></tr>
+<tr><td>13</td><td>Transaction</td><td>BEGIN; COMMIT;</td><td>session.startTransaction()</td></tr>
+<tr><td>14</td><td>Schema enforcement</td><td>CREATE TABLE with types</td><td>JSON Schema validator on collection</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>20.4 MongoDB Automation: Java &amp; Python</h3>
+
+<h4>Java (MongoDB Driver)</h4>
+<pre><code>import com.mongodb.client.*;
+import org.bson.Document;
+import static com.mongodb.client.model.Filters.*;
+
+public class MongoOrderTest {
+    public static void main(String[] args) {
+        try (MongoClient client = MongoClients.create("mongodb://localhost:27017")) {
+            MongoDatabase db = client.getDatabase("ecommerce_qa");
+            MongoCollection&lt;Document&gt; orders = db.getCollection("orders");
+
+            // Insert test fixture
+            orders.insertOne(new Document("orderId", "QA-001")
+                .append("status", "PENDING")
+                .append("total", 99.99));
+
+            // Assert
+            long count = orders.countDocuments(eq("orderId", "QA-001"));
+            assert count == 1 : "Expected 1 order";
+
+            Document found = orders.find(eq("orderId", "QA-001")).first();
+            assert "PENDING".equals(found.getString("status"));
+
+            // Cleanup
+            orders.deleteOne(eq("orderId", "QA-001"));
+        }
+    }
+}</code></pre>
+
+<h4>Python (pymongo)</h4>
+<pre><code>from pymongo import MongoClient
+from datetime import datetime
+
+client = MongoClient("mongodb://localhost:27017")
+db = client["ecommerce_qa"]
+orders = db["orders"]
+
+def test_order_lifecycle():
+    order = {
+        "orderId": "PY-QA-001",
+        "status": "PENDING",
+        "items": [{"sku": "X1", "qty": 1, "price": 25.00}],
+        "total": 25.00,
+        "createdAt": datetime.utcnow()
+    }
+    orders.insert_one(order)
+    assert orders.count_documents({"orderId": "PY-QA-001"}) == 1
+
+    orders.update_one(
+        {"orderId": "PY-QA-001"},
+        {"$set": {"status": "SHIPPED"}}
+    )
+    updated = orders.find_one({"orderId": "PY-QA-001"})
+    assert updated["status"] == "SHIPPED"
+
+    orders.delete_one({"orderId": "PY-QA-001"})
+    assert orders.count_documents({"orderId": "PY-QA-001"}) == 0
+
+if __name__ == "__main__":
+    test_order_lifecycle()
+    print("All MongoDB tests passed.")</code></pre>
+
+<h3>20.5 Redis Basics</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Command</th><th>Syntax</th><th>Description</th><th>QA Use</th></tr>
+</thead>
+<tbody>
+<tr><td>SET</td><td>SET key value [EX seconds]</td><td>Store a string value</td><td>Seed cache before test</td></tr>
+<tr><td>GET</td><td>GET key</td><td>Retrieve value</td><td>Assert cache hit returns expected JSON</td></tr>
+<tr><td>KEYS</td><td>KEYS pattern</td><td>List keys matching pattern</td><td>Find test keys (avoid in prod—use SCAN)</td></tr>
+<tr><td>TTL</td><td>TTL key</td><td>Seconds until expiry (-1=no expiry, -2=missing)</td><td>Verify session timeout configured</td></tr>
+<tr><td>EXPIRE</td><td>EXPIRE key seconds</td><td>Set TTL on existing key</td><td>Test cache eviction behavior</td></tr>
+<tr><td>DEL</td><td>DEL key [key ...]</td><td>Delete one or more keys</td><td>Cache busting between tests</td></tr>
+<tr><td>INCR</td><td>INCR key</td><td>Atomic increment</td><td>Rate limit / counter validation</td></tr>
+<tr><td>HSET</td><td>HSET key field value</td><td>Set hash field</td><td>Validate user session hash structure</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code># Redis CLI examples
+SET session:user:501 "{\"cartId\":\"C-99\",\"items\":2}" EX 3600
+GET session:user:501
+TTL session:user:501
+HSET product:101 name "Widget" price "19.99" stock "50"
+HGETALL product:101
+INCR rate:api:user:501
+DEL session:user:501</code></pre>
+
+<h3>20.6 Cache Validation Scenarios</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Scenario</th><th>Setup</th><th>Expected Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Cache miss → DB fallback</td><td>DELETE cache key, call API</td><td>Response from DB; key populated in Redis</td></tr>
+<tr><td>2</td><td>Cache hit</td><td>Warm cache, call API twice</td><td>Second call faster; DB query count unchanged</td></tr>
+<tr><td>3</td><td>TTL expiration</td><td>SET key with EX 5, wait 6s</td><td>GET returns nil; next request refreshes</td></tr>
+<tr><td>4</td><td>Cache invalidation on update</td><td>Update DB record via API</td><td>Stale cache key deleted or updated</td></tr>
+<tr><td>5</td><td>Thundering herd</td><td>Expire popular key, burst traffic</td><td>Single DB query or lock prevents stampede</td></tr>
+<tr><td>6</td><td>Serialization mismatch</td><td>Store malformed JSON in cache</td><td>App handles gracefully; falls back or errors clearly</td></tr>
+<tr><td>7</td><td>Negative caching</td><td>Cache "not found" for invalid ID</td><td>Repeated lookups avoid DB; TTL prevents permanent false negative</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>20.7 Redis Validation with Python</h3>
+
+<pre><code>import redis
+import json
+import time
+
+r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+
+def test_session_cache_lifecycle():
+    key = "session:user:qa999"
+    r.delete(key)  # clean slate
+
+    # Simulate app writing session
+    session = {"userId": "qa999", "role": "tester", "cartItems": 3}
+    r.set(key, json.dumps(session), ex=60)
+
+    # Assert cache hit
+    cached = r.get(key)
+    assert cached is not None
+    assert json.loads(cached)["cartItems"] == 3
+
+    # Assert TTL in acceptable range
+    ttl = r.ttl(key)
+    assert 50 &lt;= ttl &lt;= 60, f"Unexpected TTL: {ttl}"
+
+    # Simulate logout / invalidation
+    r.delete(key)
+    assert r.get(key) is None
+
+def test_rate_limit_counter():
+    key = "rate:api:qa999"
+    r.delete(key)
+    for _ in range(5):
+        r.incr(key)
+    r.expire(key, 60)
+    assert int(r.get(key)) == 5
+
+if __name__ == "__main__":
+    test_session_cache_lifecycle()
+    test_rate_limit_counter()
+    print("Redis validation tests passed.")</code></pre>
+
+<h3>20.8 Cloud Databases for QA</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Service</th><th>Provider</th><th>Engine Options</th><th>QA Considerations</th></tr>
+</thead>
+<tbody>
+<tr><td>Amazon RDS</td><td>AWS</td><td>MySQL, PostgreSQL, SQL Server, Oracle</td><td>Snapshot restore for test envs; parameter groups; read replica lag testing</td></tr>
+<tr><td>Amazon Aurora</td><td>AWS</td><td>MySQL/PostgreSQL compatible</td><td>Failover testing; backtrack for point-in-time recovery validation</td></tr>
+<tr><td>Azure SQL Database</td><td>Microsoft</td><td>SQL Server</td><td>Elastic pools for cost; geo-replication RPO/RTO tests</td></tr>
+<tr><td>Azure Cosmos DB</td><td>Microsoft</td><td>Multi-model (Document, KV, Graph)</td><td>Consistency levels (Strong vs Session); RU consumption under load</td></tr>
+<tr><td>Google Cloud SQL</td><td>Google</td><td>MySQL, PostgreSQL, SQL Server</td><td>Clone instances for isolated QA; SSL connection enforcement</td></tr>
+<tr><td>Cloud Spanner</td><td>Google</td><td>Globally distributed relational</td><td>TrueTime transactions; cross-region latency assertions</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Tip:</strong> Use infrastructure-as-code (Terraform/CloudFormation) to spin up ephemeral QA databases from production snapshots with data masking applied—never copy raw PII to lower environments.
+</div>
+
+<h3>20.9 Database DevOps: Flyway vs Liquibase</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Flyway</th><th>Liquibase</th></tr>
+</thead>
+<tbody>
+<tr><td>Migration format</td><td>SQL scripts (V1__desc.sql)</td><td>SQL, XML, YAML, JSON changelogs</td></tr>
+<tr><td>Version tracking</td><td>flyway_schema_history table</td><td>databasechangelog table</td></tr>
+<tr><td>Rollback support</td><td>Undo scripts (Teams); manual down migrations</td><td>Built-in rollback tags and changeset rollback blocks</td></tr>
+<tr><td>Idempotency</td><td>Repeatable migrations (R__)</td><td>Preconditions and contexts</td></tr>
+<tr><td>Multi-DB support</td><td>Excellent</td><td>Excellent with abstraction</td></tr>
+<tr><td>QA integration</td><td>Run migrate in CI before tests</td><td>Same; validate with updateSQL dry-run</td></tr>
+<tr><td>Drift detection</td><td>flyway info / validate</td><td>diff command against reference</td></tr>
+<tr><td>Learning curve</td><td>Lower (plain SQL files)</td><td>Moderate (changelog concepts)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>20.10 Microservices Database Patterns</h3>
+
+<h4>Database per Service</h4>
+<p>Each microservice owns its database schema. No direct cross-service SQL joins. QA validates via API contracts and eventual consistency—not shared table assertions.</p>
+
+<h4>Event Sourcing</h4>
+<p>State changes stored as immutable events. Current state is derived by replaying events. QA verifies event ordering, idempotency, and snapshot accuracy.</p>
+
+<h4>CQRS (Command Query Responsibility Segregation)</h4>
+<p>Write model (commands) separated from read model (queries/projections). QA tests write path and read path independently, then validates projection lag bounds.</p>
+
+<h4>Microservices DB Architecture Diagram</h4>
+<div class="ascii-diagram">
+<pre>
+  +-------------+     +-------------+     +-------------+
+  |  Order Svc  |     | Payment Svc |     | Inventory   |
+  |   (API)     |     |   (API)     |     | Svc (API)   |
+  +------+------+     +------+------+     +------+------+
+         |                   |                   |
+         v                   v                   v
+  +-------------+     +-------------+     +-------------+
+  | orders_db   |     | payments_db |     | inventory_db|
+  | (PostgreSQL)|     | (PostgreSQL)|     | (MongoDB)   |
+  +-------------+     +-------------+     +-------------+
+         |                   |                   |
+         +--------+----------+---------+---------+
+                  |                    |
+                  v                    v
+           +-------------+      +-------------+
+           | Message Bus |      | Read Model  |
+           | (Kafka/SQS) |----->| (Elastic/   |
+           +-------------+      |  Redis)     |
+                                +-------------+
+                  |
+                  v
+           +-------------+
+           | API Gateway |
+           | (GraphQL/   |
+           |  REST)      |
+           +-------------+
+</pre>
+</div>
+
+<h3>20.11 Data Masking &amp; Test Data Management</h3>
+
+<h4>PII Handling Principles</h4>
+<ul>
+<li>Never use production PII in dev/QA without masking or anonymization.</li>
+<li>Apply role-based access; audit who queries sensitive columns.</li>
+<li>Use synthetic data generators (Faker, Mockaroo) for greenfield tests.</li>
+<li>Validate masking rules preserve referential integrity (same customer masked consistently across tables).</li>
+</ul>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Technique</th><th>Method</th><th>Reversible?</th><th>QA Suitability</th></tr>
+</thead>
+<tbody>
+<tr><td>Substitution</td><td>Replace names/emails with fake values</td><td>No</td><td>Excellent for functional testing</td></tr>
+<tr><td>Shuffling</td><td>Swap values within column</td><td>No</td><td>Preserves distribution; breaks real correlations</td></tr>
+<tr><td>Nulling</td><td>SET sensitive_col = NULL</td><td>No</td><td>Good when field optional; test null handling</td></tr>
+<tr><td>Encryption</td><td>Encrypt with test key</td><td>Yes (with key)</td><td>Format-preserving tests possible</td></tr>
+<tr><td>Tokenization</td><td>Map real value to token</td><td>Yes (vault)</td><td>PCI scenarios; token lookup in secure vault</td></tr>
+<tr><td>Date shifting</td><td>Offset dates by random delta</td><td>No</td><td>Preserves age relationships approximately</td></tr>
+<tr><td>Generalization</td><td>ZIP → region, DOB → age band</td><td>No</td><td>Analytics testing with reduced precision</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- Example: mask customer PII for QA refresh
+UPDATE customers SET
+  email = CONCAT('user', customer_id, '@qa-test.local'),
+  phone = CONCAT('+1555000', LPAD(customer_id, 4, '0')),
+  ssn_last4 = '0000'
+WHERE environment = 'QA_CLONE';</code></pre>
+
+<h3>20.12 GraphQL + Database</h3>
+
+<h4>How GraphQL Queries Translate to SQL</h4>
+<p>GraphQL resolvers map fields to database queries. A query requesting <code>user { orders { items { product } } }</code> may generate nested SELECTs or JOINs. DataLoader patterns batch N+1 queries into single IN-clause lookups.</p>
+
+<pre><code># GraphQL query
+query {
+  customer(id: "501") {
+    name
+    orders(status: PENDING) {
+      orderId
+      total
+      items { sku quantity }
+    }
+  }
+}
+
+# Equivalent SQL (simplified)
+SELECT c.name, o.order_id, o.total, oi.sku, oi.quantity
+FROM customers c
+JOIN orders o ON o.customer_id = c.customer_id AND o.status = 'PENDING'
+JOIN order_items oi ON oi.order_id = o.order_id
+WHERE c.customer_id = 501;</code></pre>
+
+<h4>The N+1 Problem</h4>
+<p>Naive resolvers fetch orders for each customer in a list query—1 query for customers plus N queries for orders. QA detects this via query logging: assert query count does not scale linearly with list size.</p>
+
+<h4>GraphQL to DB Flow Diagram</h4>
+<div class="ascii-diagram">
+<pre>
+  CLIENT                    API LAYER                    DATABASE
+  +------+                  +-----------+                +----------+
+  | UI / |  GraphQL Query   | GraphQL   |   Resolver   | ORM /    |
+  | App  +----------------->| Server    +------------->| Raw SQL  |
+  +------+                  | (Apollo/  |              | Driver   |
+       ^                    |  Yoga)    |              +----+-----+
+       |                    +----+------+                   |
+       |  JSON Response          |                          |
+       +-------------------------+                          v
+                                 |                    +----------+
+                                 |  DataLoader batch  | PostgreSQL|
+                                 +------------------->| / MongoDB |
+                                                      +----------+
+
+  N+1 Risk Path (BAD):
+  Customer[1..N] --each--> SELECT * FROM orders WHERE customer_id = ?
+
+  Batched Path (GOOD):
+  Customer[1..N] ------> SELECT * FROM orders WHERE customer_id IN (...)
+</pre>
+</div>
+
+<h3>20.13 Interview Questions &amp; Answers</h3>
+
+<h4>Q1. What are the four main types of NoSQL databases?</h4>
+<p><strong>A:</strong> Document, Key-Value, Column-Family, and Graph—each optimized for different access patterns and data shapes.</p>
+
+<h4>Q2. When choose MongoDB over PostgreSQL?</h4>
+<p><strong>A:</strong> When schema flexibility, nested documents, or horizontal sharding matter more than complex multi-table ACID joins. Many teams use both.</p>
+
+<h4>Q3. How do you validate MongoDB aggregation pipelines?</h4>
+<p><strong>A:</strong> Seed known documents, run pipeline, compare output to manually computed expected results. Test edge cases: empty arrays, missing fields, null coalescing.</p>
+
+<h4>Q4. What is Redis used for in modern apps?</h4>
+<p><strong>A:</strong> Caching, session storage, rate limiting, pub/sub, leaderboards—ephemeral or fast-access data where milliseconds matter.</p>
+
+<h4>Q5. How test cache invalidation?</h4>
+<p><strong>A:</strong> Update source data via API, assert Redis key deleted or updated, verify next read reflects new data and repopulates cache.</p>
+
+<h4>Q6. Difference between TTL and EXPIRE in Redis?</h4>
+<p><strong>A:</strong> TTL reads remaining seconds; EXPIRE sets expiration on an existing key. SET with EX combines set + TTL atomically.</p>
+
+<h4>Q7. Why avoid KEYS * in production Redis?</h4>
+<p><strong>A:</strong> KEYS blocks the server scanning all keys—O(N). Use SCAN for iterative non-blocking iteration in tests and prod.</p>
+
+<h4>Q8. What is database-per-service?</h4>
+<p><strong>A:</strong> Microservices pattern where each service owns its datastore; cross-service data accessed only via APIs or events, not shared SQL.</p>
+
+<h4>Q9. Explain event sourcing for QA.</h4>
+<p><strong>A:</strong> Testers verify every state change produces an event, events are immutable, replay produces correct current state, and idempotent consumers handle duplicates.</p>
+
+<h4>Q10. What is CQRS?</h4>
+<p><strong>A:</strong> Separates command (write) and query (read) models. QA validates writes persist correctly and read projections update within acceptable lag.</p>
+
+<h4>Q11. Flyway vs Liquibase for QA pipelines?</h4>
+<p><strong>A:</strong> Both run migrations in CI before tests. Flyway uses versioned SQL files; Liquibase uses changelogs with richer rollback. Choose based on team preference and rollback needs.</p>
+
+<h4>Q12. How validate AWS RDS read replica lag?</h4>
+<p><strong>A:</strong> Write to primary, query replica, measure delay until record appears. Assert lag stays below SLA (e.g., &lt; 1 second).</p>
+
+<h4>Q13. What is the N+1 problem in GraphQL?</h4>
+<p><strong>A:</strong> Resolver executes one query per parent row (N children queries + 1 parent). Detect via query count logging; fix with DataLoader batching or JOIN queries.</p>
+
+<h4>Q14. How mask email addresses for QA?</h4>
+<p><strong>A:</strong> Replace with deterministic fake emails (user{id}@qa-test.local) preserving uniqueness and format for login tests without real PII.</p>
+
+<h4>Q15. MongoDB $lookup vs SQL JOIN?</h4>
+<p><strong>A:</strong> $lookup performs a left outer join in aggregation pipeline—similar semantics but syntax differs; QA validates unmatched documents produce empty arrays.</p>
+
+<h4>Q16. What consistency levels exist in Cosmos DB?</h4>
+<p><strong>A:</strong> Strong, Bounded Staleness, Session, Consistent Prefix, Eventual. QA tests read-your-writes under Session, global consistency under Strong.</p>
+
+<h4>Q17. How test Redis TTL expiration?</h4>
+<p><strong>A:</strong> SET with short EX, poll TTL until -2 (key gone), or use mocked time in unit tests. Integration tests may use sleep with timeout guards.</p>
+
+<h4>Q18. CAP theorem—what does it mean for QA?</h4>
+<p><strong>A:</strong> Distributed systems trade Consistency, Availability, Partition tolerance. QA validates behavior during network partitions matches chosen guarantees (e.g., Cassandra tunable consistency).</p>
+
+<h4>Q19. What is negative caching?</h4>
+<p><strong>A:</strong> Caching "not found" responses to prevent repeated DB hits for invalid keys. QA ensures TTL prevents indefinite false negatives after data is created.</p>
+
+<h4>Q20. How automate MongoDB tests in CI?</h4>
+<p><strong>A:</strong> Spin up MongoDB via Docker service container, run pymongo/Java tests, tear down. Use unique test prefixes to avoid collisions in shared instances.</p>
+
+<h4>Q21. GraphQL vs REST for database testing?</h4>
+<p><strong>A:</strong> GraphQL returns exactly requested fields—test field selection does not over-fetch. REST endpoints may map 1:1 to tables; GraphQL may trigger multiple resolver queries.</p>
+
+<h4>Q22. What is tombstone in Cassandra?</h4>
+<p><strong>A:</strong> Deletion marker persisting until compaction. QA may see "deleted" rows briefly during consistency window—understand eventual deletion semantics.</p>
+
+<div class="callout">
+<strong>Section 20 Summary:</strong> Modern QA spans relational, document, cache, and cloud-native stores. Validate not only data correctness but consistency models, cache behavior, migration integrity, PII masking, and API-to-database query patterns—including GraphQL N+1 risks.
+</div>
+
+</section>

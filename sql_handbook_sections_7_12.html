@@ -1,0 +1,1799 @@
+<!-- ==================== SECTION 7: GROUP BY & HAVING ==================== -->
+<section id="section-7" class="section-card">
+<h2>Section 7: GROUP BY &amp; HAVING</h2>
+<p><code>GROUP BY</code> and <code>HAVING</code> are foundational for reporting, data quality audits, and backend validation in e-commerce QA. Every SDET validating order totals, duplicate registrations, or error trends across environments relies on these clauses. This section uses a realistic schema: <code>customers</code>, <code>orders</code>, <code>order_items</code>, <code>products</code>, <code>payments</code>, and <code>application_errors</code>.</p>
+
+<h3>Sample E-Commerce Schema Reference</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Table</th><th>Key Columns</th><th>QA Use Case</th></tr></thead>
+<tbody>
+<tr><td><code>customers</code></td><td>customer_id, email, created_at, status</td><td>Duplicate email detection, registration trends</td></tr>
+<tr><td><code>orders</code></td><td>order_id, customer_id, order_date, total_amount, status</td><td>Monthly sales, orphan order checks</td></tr>
+<tr><td><code>order_items</code></td><td>order_item_id, order_id, product_id, quantity, unit_price</td><td>Line-item sum vs order total reconciliation</td></tr>
+<tr><td><code>products</code></td><td>product_id, category_id, name, price</td><td>Category-level aggregation</td></tr>
+<tr><td><code>application_errors</code></td><td>error_id, error_type, occurred_at, user_id</td><td>Error count by type for release validation</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>GROUP BY Fundamentals</h3>
+<p><code>GROUP BY</code> collapses rows that share the same value(s) in the specified column(s) into a single group. Aggregate functions (<code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code>) then operate on each group independently.</p>
+
+<div class="callout">
+<strong>Golden Rule for QA:</strong> Every column in the <code>SELECT</code> list must either appear in <code>GROUP BY</code> or be wrapped in an aggregate function. Violating this causes SQL errors in strict databases (PostgreSQL, SQL Server) or unpredictable results in lenient ones (MySQL with <code>ONLY_FULL_GROUP_BY</code> disabled).
+</div>
+
+<pre><code>-- Count orders per customer
+SELECT customer_id, COUNT(*) AS order_count
+FROM orders
+WHERE status NOT IN ('CANCELLED', 'FAILED')
+GROUP BY customer_id
+ORDER BY order_count DESC;</code></pre>
+
+<pre><code>-- Total revenue per product category (join required)
+SELECT p.category_id,
+       COUNT(DISTINCT oi.order_id) AS orders_with_category,
+       SUM(oi.quantity * oi.unit_price) AS category_revenue
+FROM order_items oi
+JOIN products p ON oi.product_id = p.product_id
+JOIN orders o ON oi.order_id = o.order_id
+WHERE o.status = 'COMPLETED'
+GROUP BY p.category_id
+ORDER BY category_revenue DESC;</code></pre>
+
+<h3>Aggregation with GROUP BY</h3>
+<h4>COUNT — Per Group Row Counts</h4>
+<pre><code>-- How many orders each customer placed in 2025
+SELECT customer_id,
+       COUNT(*) AS total_orders,
+       COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) AS completed_orders,
+       COUNT(CASE WHEN status = 'REFUNDED' THEN 1 END) AS refunded_orders
+FROM orders
+WHERE order_date >= '2025-01-01'
+GROUP BY customer_id;</code></pre>
+
+<h4>SUM — Per Group Totals</h4>
+<pre><code>-- Monthly gross merchandise value (GMV)
+SELECT DATE_TRUNC('month', order_date) AS sales_month,
+       SUM(total_amount) AS monthly_gmv,
+       COUNT(*) AS order_count
+FROM orders
+WHERE status IN ('COMPLETED', 'SHIPPED', 'DELIVERED')
+GROUP BY DATE_TRUNC('month', order_date)
+ORDER BY sales_month;</code></pre>
+
+<h4>AVG, MIN, MAX — Statistical Summaries</h4>
+<pre><code>-- Average order value (AOV) by payment method
+SELECT payment_method,
+       ROUND(AVG(o.total_amount), 2) AS avg_order_value,
+       MIN(o.total_amount) AS min_order,
+       MAX(o.total_amount) AS max_order,
+       COUNT(*) AS transaction_count
+FROM orders o
+JOIN payments pay ON o.order_id = pay.order_id
+WHERE pay.status = 'SUCCESS'
+GROUP BY payment_method;</code></pre>
+
+<h3>HAVING vs WHERE — Critical Distinction</h3>
+<p><code>WHERE</code> filters individual rows <strong>before</strong> grouping. <code>HAVING</code> filters groups <strong>after</strong> aggregation. You cannot use aggregate functions in <code>WHERE</code> (with rare exceptions like subqueries).</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>WHERE</th><th>HAVING</th></tr></thead>
+<tbody>
+<tr><td>When applied</td><td>Before GROUP BY</td><td>After GROUP BY</td></tr>
+<tr><td>Filters</td><td>Individual rows</td><td>Grouped results</td></tr>
+<tr><td>Aggregate functions</td><td>Not allowed (directly)</td><td>Allowed</td></tr>
+<tr><td>Can use non-aggregated columns not in GROUP BY</td><td>Yes</td><td>Only if in GROUP BY</td></tr>
+<tr><td>Example use</td><td><code>WHERE status = 'COMPLETED'</code></td><td><code>HAVING COUNT(*) > 5</code></td></tr>
+<tr><td>Performance</td><td>Reduces rows early — preferred for row filters</td><td>Processes all groups first — use only when needed</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- WRONG: aggregate in WHERE
+SELECT customer_id, COUNT(*) AS cnt
+FROM orders
+WHERE COUNT(*) > 10          -- ERROR in all major DBs
+GROUP BY customer_id;
+
+-- CORRECT: filter rows with WHERE, filter groups with HAVING
+SELECT customer_id, COUNT(*) AS order_count
+FROM orders
+WHERE order_date >= '2025-01-01'    -- row filter first
+GROUP BY customer_id
+HAVING COUNT(*) > 10;               -- group filter after aggregation</code></pre>
+
+<pre><code>-- Customers who spent more than $5000 total in Q1 2025
+SELECT o.customer_id,
+       c.email,
+       SUM(o.total_amount) AS total_spent
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+WHERE o.order_date BETWEEN '2025-01-01' AND '2025-03-31'
+  AND o.status = 'COMPLETED'
+GROUP BY o.customer_id, c.email
+HAVING SUM(o.total_amount) > 5000
+ORDER BY total_spent DESC;</code></pre>
+
+<h3>Reporting Queries — Production Patterns</h3>
+<h4>Monthly Sales Report</h4>
+<pre><code>SELECT DATE_TRUNC('month', order_date) AS month,
+       COUNT(DISTINCT customer_id) AS unique_customers,
+       COUNT(*) AS total_orders,
+       SUM(total_amount) AS revenue,
+       ROUND(AVG(total_amount), 2) AS aov
+FROM orders
+WHERE status NOT IN ('CANCELLED', 'FAILED')
+  AND order_date >= DATE_TRUNC('year', CURRENT_DATE)
+GROUP BY DATE_TRUNC('month', order_date)
+ORDER BY month;</code></pre>
+
+<h4>User Registration Trends</h4>
+<pre><code>SELECT DATE_TRUNC('week', created_at) AS registration_week,
+       COUNT(*) AS new_registrations,
+       COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) AS active_accounts,
+       COUNT(CASE WHEN status = 'PENDING_VERIFICATION' THEN 1 END) AS pending_verification
+FROM customers
+WHERE created_at >= CURRENT_DATE - INTERVAL '90 days'
+GROUP BY DATE_TRUNC('week', created_at)
+ORDER BY registration_week;</code></pre>
+
+<h4>Error Count by Type (Release Health Dashboard)</h4>
+<pre><code>SELECT error_type,
+       COUNT(*) AS error_count,
+       COUNT(DISTINCT user_id) AS affected_users,
+       MIN(occurred_at) AS first_occurrence,
+       MAX(occurred_at) AS last_occurrence
+FROM application_errors
+WHERE occurred_at >= CURRENT_DATE - INTERVAL '7 days'
+GROUP BY error_type
+HAVING COUNT(*) > 10
+ORDER BY error_count DESC;</code></pre>
+
+<h3>Duplicate Detection Queries</h3>
+<p>Duplicate detection is one of the highest-value QA queries. Run these after data imports, API bulk operations, or migration cutovers.</p>
+
+<h4>Finding Duplicate Emails</h4>
+<pre><code>-- Step 1: Find emails appearing more than once
+SELECT LOWER(TRIM(email)) AS normalized_email,
+       COUNT(*) AS duplicate_count
+FROM customers
+GROUP BY LOWER(TRIM(email))
+HAVING COUNT(*) > 1
+ORDER BY duplicate_count DESC;
+
+-- Step 2: Drill into full records for remediation
+SELECT customer_id, email, created_at, status
+FROM customers
+WHERE LOWER(TRIM(email)) IN (
+    SELECT LOWER(TRIM(email))
+    FROM customers
+    GROUP BY LOWER(TRIM(email))
+    HAVING COUNT(*) > 1
+)
+ORDER BY email, created_at;</code></pre>
+
+<h4>Finding Duplicate Orders (Same Customer, Same Amount, Same Day)</h4>
+<pre><code>SELECT customer_id,
+       total_amount,
+       DATE(order_date) AS order_day,
+       COUNT(*) AS duplicate_order_count,
+       STRING_AGG(CAST(order_id AS VARCHAR), ', ') AS order_ids
+FROM orders
+WHERE status NOT IN ('CANCELLED')
+GROUP BY customer_id, total_amount, DATE(order_date)
+HAVING COUNT(*) > 1;</code></pre>
+
+<div class="callout">
+<strong>QA Scenario — Checkout Double-Submit Bug:</strong> After fixing a race condition in the checkout API, run the duplicate order query above filtered to the test window. If <code>duplicate_order_count > 1</code> for test customers, the fix may not be deployed or idempotency keys are missing.
+</div>
+
+<h3>Complex GROUP BY with Multiple Columns</h3>
+<pre><code>-- Sales by category and region per month
+SELECT DATE_TRUNC('month', o.order_date) AS sales_month,
+       p.category_id,
+       c.region,
+       SUM(oi.quantity) AS units_sold,
+       SUM(oi.quantity * oi.unit_price) AS revenue
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+JOIN products p ON oi.product_id = p.product_id
+JOIN customers c ON o.customer_id = c.customer_id
+WHERE o.status = 'COMPLETED'
+GROUP BY DATE_TRUNC('month', o.order_date), p.category_id, c.region
+ORDER BY sales_month, category_id, region;</code></pre>
+
+<pre><code>-- GROUP BY with ROLLUP for subtotals (see next section)
+SELECT category_id, region, SUM(revenue) AS total_revenue
+FROM (
+    SELECT p.category_id, c.region, oi.quantity * oi.unit_price AS revenue
+    FROM order_items oi
+    JOIN products p ON oi.product_id = p.product_id
+    JOIN orders o ON oi.order_id = o.order_id
+    JOIN customers c ON o.customer_id = c.customer_id
+    WHERE o.status = 'COMPLETED'
+) sales
+GROUP BY ROLLUP (category_id, region);</code></pre>
+
+<h3>ROLLUP and CUBE — Brief Overview</h3>
+<p><code>ROLLUP</code> generates subtotal and grand total rows. <code>CUBE</code> generates all possible grouping combinations — powerful for ad-hoc QA dashboards but expensive on large datasets.</p>
+
+<pre><code>-- ROLLUP: subtotals per category, then grand total
+SELECT category_id,
+       SUM(quantity * unit_price) AS revenue
+FROM order_items oi
+JOIN products p ON oi.product_id = p.product_id
+GROUP BY ROLLUP (category_id);
+-- Result includes: per-category rows + one row with category_id = NULL (grand total)
+
+-- CUBE: all combinations of category and payment method
+SELECT p.category_id, pay.payment_method, SUM(o.total_amount) AS revenue
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+JOIN products p ON oi.product_id = p.product_id
+JOIN payments pay ON o.order_id = pay.order_id
+WHERE o.status = 'COMPLETED'
+GROUP BY CUBE (p.category_id, pay.payment_method);</code></pre>
+
+<h3>QA Scenarios — Data Quality, Duplicates, Orphans</h3>
+<h4>Data Quality: Order Total vs Line Items Mismatch</h4>
+<pre><code>SELECT o.order_id,
+       o.total_amount AS header_total,
+       SUM(oi.quantity * oi.unit_price) AS calculated_total,
+       o.total_amount - SUM(oi.quantity * oi.unit_price) AS discrepancy
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+GROUP BY o.order_id, o.total_amount
+HAVING ABS(o.total_amount - SUM(oi.quantity * oi.unit_price)) > 0.01;</code></pre>
+
+<h4>Orphan Data: Orders Without Valid Customer</h4>
+<pre><code>SELECT o.order_id, o.customer_id, o.order_date
+FROM orders o
+LEFT JOIN customers c ON o.customer_id = c.customer_id
+WHERE c.customer_id IS NULL;</code></pre>
+
+<h4>Orphan Data: Order Items Without Parent Order</h4>
+<pre><code>SELECT oi.order_item_id, oi.order_id, oi.product_id
+FROM order_items oi
+LEFT JOIN orders o ON oi.order_id = o.order_id
+WHERE o.order_id IS NULL;</code></pre>
+
+<h4>Products Never Ordered (Stale Catalog Data)</h4>
+<pre><code>SELECT p.product_id, p.name, p.created_at
+FROM products p
+LEFT JOIN order_items oi ON p.product_id = oi.product_id
+GROUP BY p.product_id, p.name, p.created_at
+HAVING COUNT(oi.order_item_id) = 0;</code></pre>
+
+<h3>Interview Questions &amp; Answers (12 Questions)</h3>
+<ol>
+<li><strong>What is the difference between GROUP BY and DISTINCT?</strong><br>
+<code>DISTINCT</code> removes duplicate row combinations. <code>GROUP BY</code> groups rows for aggregate calculations. <code>SELECT DISTINCT customer_id FROM orders</code> lists unique customers; <code>SELECT customer_id, COUNT(*) FROM orders GROUP BY customer_id</code> counts orders per customer.</li>
+
+<li><strong>Can you use WHERE and HAVING together?</strong><br>
+Yes. <code>WHERE</code> filters rows before grouping; <code>HAVING</code> filters groups after. Example: find customers with more than 5 completed orders in 2025 — filter completed orders in <code>WHERE</code>, then <code>HAVING COUNT(*) > 5</code>.</li>
+
+<li><strong>Why can't you write HAVING without GROUP BY?</strong><br>
+In standard SQL, <code>HAVING</code> without <code>GROUP BY</code> treats the entire result as one group (valid but rare). Most real queries pair <code>HAVING</code> with <code>GROUP BY</code>. Some databases allow <code>HAVING COUNT(*) > 0</code> without explicit GROUP BY.</li>
+
+<li><strong>What happens if you GROUP BY a nullable column?</strong><br>
+All NULL values form a single group. QA implication: if <code>region</code> is NULL for many customers, you get one group with NULL — verify whether NULL means "unknown" or a data defect.</li>
+
+<li><strong>COUNT(*) vs COUNT(column) vs COUNT(DISTINCT column)?</strong><br>
+<code>COUNT(*)</code> counts all rows in the group including NULLs. <code>COUNT(column)</code> counts non-NULL values only. <code>COUNT(DISTINCT column)</code> counts unique non-NULL values — use for unique customer counts per day.</li>
+
+<li><strong>How do you find duplicate records in SQL?</strong><br>
+<code>GROUP BY</code> the business key, <code>HAVING COUNT(*) > 1</code>. For emails: normalize with <code>LOWER(TRIM(email))</code> first. Always drill into full rows for remediation.</li>
+
+<li><strong>Write a query to find customers who placed orders in every month of 2025.</strong><br>
+<pre><code>SELECT customer_id
+FROM orders
+WHERE order_date >= '2025-01-01' AND order_date < '2026-01-01'
+GROUP BY customer_id
+HAVING COUNT(DISTINCT DATE_TRUNC('month', order_date)) = 12;</code></pre></li>
+
+<li><strong>What is the execution order of SQL clauses?</strong><br>
+FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT. This explains why <code>WHERE</code> cannot reference SELECT aliases or aggregates.</li>
+
+<li><strong>How would you validate monthly sales report accuracy as QA?</strong><br>
+Reconcile report totals against raw <code>SUM(total_amount)</code> with same filters. Cross-check order count. Spot-check random months manually. Compare staging vs production reports for same date range after deployment.</li>
+
+<li><strong>GROUP BY with JOINs — common pitfall?</strong><br>
+Joining before GROUP BY can inflate counts if the join is one-to-many. Example: joining orders to order_items then <code>COUNT(*)</code> counts line items, not orders. Use <code>COUNT(DISTINCT o.order_id)</code> instead.</li>
+
+<li><strong>What is ROLLUP used for in testing?</strong><br>
+Quick subtotal validation — verify category subtotals sum to grand total in financial reports. If subtotals don't reconcile, aggregation logic or data duplication in joins is suspect.</li>
+
+<li><strong>How do you test for orphan records after a migration?</strong><br>
+Run LEFT JOIN queries from child to parent; assert zero rows where parent key IS NULL. Automate as post-migration smoke tests. Example: <code>order_items</code> LEFT JOIN <code>orders</code> WHERE orders.order_id IS NULL.</li>
+</ol>
+</section>
+
+<!-- ==================== SECTION 8: CTEs & WINDOW FUNCTIONS ==================== -->
+<section id="section-8" class="section-card">
+<h2>Section 8: CTEs &amp; Window Functions</h2>
+<p>Common Table Expressions (CTEs) and window functions are among the most frequently tested SQL topics in SDET interviews. They enable readable complex queries, pagination, deduplication, running totals, and trend analysis — all critical for API-DB validation and data quality automation.</p>
+
+<h3>CTE (Common Table Expression) — Syntax and Advantages</h3>
+<p>A CTE is a temporary named result set defined with the <code>WITH</code> clause, referenced in the main query. It improves readability and allows query reuse within a single statement.</p>
+
+<pre><code>-- Basic CTE syntax
+WITH completed_orders AS (
+    SELECT order_id, customer_id, total_amount, order_date
+    FROM orders
+    WHERE status = 'COMPLETED'
+)
+SELECT customer_id,
+       COUNT(*) AS order_count,
+       SUM(total_amount) AS lifetime_value
+FROM completed_orders
+GROUP BY customer_id
+HAVING SUM(total_amount) > 1000;</code></pre>
+
+<h4>CTEs vs Subqueries — Comparison</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>CTE</th><th>Subquery</th></tr></thead>
+<tbody>
+<tr><td>Readability</td><td>Top-down, named, easy to debug</td><td>Nested, harder to read when deep</td></tr>
+<tr><td>Reusability</td><td>Reference same CTE multiple times in one query</td><td>Must duplicate or use temp table</td></tr>
+<tr><td>Recursion</td><td>Supports <code>WITH RECURSIVE</code></td><td>Not directly recursive</td></tr>
+<tr><td>Performance</td><td>May be materialized (PostgreSQL 12+) or inlined</td><td>Often inlined; varies by optimizer</td></tr>
+<tr><td>QA benefit</td><td>Break complex validation into testable steps</td><td>Good for single-use filters</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- Multiple CTEs chained
+WITH active_customers AS (
+    SELECT customer_id, email FROM customers WHERE status = 'ACTIVE'
+),
+recent_orders AS (
+    SELECT customer_id, SUM(total_amount) AS spend_30d
+    FROM orders
+    WHERE order_date >= CURRENT_DATE - INTERVAL '30 days'
+      AND status = 'COMPLETED'
+    GROUP BY customer_id
+)
+SELECT ac.customer_id, ac.email, COALESCE(ro.spend_30d, 0) AS spend_30d
+FROM active_customers ac
+LEFT JOIN recent_orders ro ON ac.customer_id = ro.customer_id
+WHERE COALESCE(ro.spend_30d, 0) = 0;  -- active but no recent purchase</code></pre>
+
+<h3>Recursive CTE — Hierarchical Data</h3>
+<p>Recursive CTEs traverse tree structures: org charts, category trees, bill-of-materials. Essential for validating nested product categories or manager hierarchies.</p>
+
+<pre><code>-- Category tree: find all subcategories under 'Electronics' (category_id = 1)
+WITH RECURSIVE category_tree AS (
+    -- Anchor: root category
+    SELECT category_id, name, parent_category_id, 0 AS depth
+    FROM product_categories
+    WHERE category_id = 1
+
+    UNION ALL
+
+    -- Recursive: children
+    SELECT pc.category_id, pc.name, pc.parent_category_id, ct.depth + 1
+    FROM product_categories pc
+    JOIN category_tree ct ON pc.parent_category_id = ct.category_id
+)
+SELECT category_id, name, depth
+FROM category_tree
+ORDER BY depth, name;</code></pre>
+
+<pre><code>-- Org chart: all reports under manager_id = 100
+WITH RECURSIVE org_hierarchy AS (
+    SELECT employee_id, name, manager_id, 1 AS level
+    FROM employees
+    WHERE manager_id = 100
+
+    UNION ALL
+
+    SELECT e.employee_id, e.name, e.manager_id, oh.level + 1
+    FROM employees e
+    JOIN org_hierarchy oh ON e.manager_id = oh.employee_id
+)
+SELECT * FROM org_hierarchy ORDER BY level, name;</code></pre>
+
+<div class="callout">
+<strong>QA Scenario — Circular Reference Detection:</strong> After importing category data, run recursive CTE with a depth limit. If any row exceeds expected max depth (e.g., 10), investigate circular parent-child references that would break the UI navigation tree.
+</div>
+
+<h3>ROW_NUMBER() — Pagination, Deduplication, Ranking</h3>
+<pre><code>-- Pagination: page 3, 20 rows per page (rows 41-60)
+SELECT order_id, customer_id, total_amount, order_date
+FROM (
+    SELECT order_id, customer_id, total_amount, order_date,
+           ROW_NUMBER() OVER (ORDER BY order_date DESC) AS rn
+    FROM orders
+    WHERE status = 'COMPLETED'
+) paginated
+WHERE rn BETWEEN 41 AND 60;</code></pre>
+
+<pre><code>-- Deduplication: keep most recent record per email
+WITH ranked AS (
+    SELECT customer_id, email, created_at,
+           ROW_NUMBER() OVER (
+               PARTITION BY LOWER(TRIM(email))
+               ORDER BY created_at DESC
+           ) AS rn
+    FROM customers
+)
+SELECT customer_id, email, created_at
+FROM ranked
+WHERE rn = 1;</code></pre>
+
+<pre><code>-- Ranking within groups: top 3 products by revenue per category
+WITH product_revenue AS (
+    SELECT p.category_id, p.product_id, p.name,
+           SUM(oi.quantity * oi.unit_price) AS revenue,
+           ROW_NUMBER() OVER (
+               PARTITION BY p.category_id
+               ORDER BY SUM(oi.quantity * oi.unit_price) DESC
+           ) AS rank_in_category
+    FROM order_items oi
+    JOIN products p ON oi.product_id = p.product_id
+    GROUP BY p.category_id, p.product_id, p.name
+)
+SELECT * FROM product_revenue WHERE rank_in_category <= 3;</code></pre>
+
+<h3>RANK() vs DENSE_RANK() — Gaps in Ranking</h3>
+<p>When two employees share the same salary, <code>RANK()</code> skips the next rank (1, 2, 2, 4). <code>DENSE_RANK()</code> does not skip (1, 2, 2, 3).</p>
+
+<pre><code>SELECT employee_id, name, salary,
+       RANK()       OVER (ORDER BY salary DESC) AS rank_with_gaps,
+       DENSE_RANK() OVER (ORDER BY salary DESC) AS dense_rank_no_gaps,
+       ROW_NUMBER() OVER (ORDER BY salary DESC, employee_id) AS unique_rank
+FROM employees;</code></pre>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>salary</th><th>RANK()</th><th>DENSE_RANK()</th><th>ROW_NUMBER()</th></tr></thead>
+<tbody>
+<tr><td>95000</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>90000</td><td>2</td><td>2</td><td>2</td></tr>
+<tr><td>90000</td><td>2</td><td>2</td><td>3</td></tr>
+<tr><td>85000</td><td>4</td><td>3</td><td>4</td></tr>
+<tr><td>80000</td><td>5</td><td>4</td><td>5</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>NTILE() — Dividing Data into Buckets</h3>
+<pre><code>-- Split customers into 4 spending quartiles for A/B test segmentation
+WITH customer_spend AS (
+    SELECT customer_id, SUM(total_amount) AS total_spend
+    FROM orders WHERE status = 'COMPLETED'
+    GROUP BY customer_id
+)
+SELECT customer_id, total_spend,
+       NTILE(4) OVER (ORDER BY total_spend DESC) AS spend_quartile
+FROM customer_spend;</code></pre>
+
+<h3>LEAD() and LAG() — Comparing Adjacent Rows</h3>
+<pre><code>-- Compare each day's order count with previous and next day
+WITH daily_orders AS (
+    SELECT DATE(order_date) AS order_day, COUNT(*) AS order_count
+    FROM orders
+    GROUP BY DATE(order_date)
+)
+SELECT order_day,
+       order_count,
+       LAG(order_count)  OVER (ORDER BY order_day) AS prev_day_count,
+       LEAD(order_count) OVER (ORDER BY order_day) AS next_day_count,
+       order_count - LAG(order_count) OVER (ORDER BY order_day) AS day_over_day_change
+FROM daily_orders
+ORDER BY order_day;</code></pre>
+
+<pre><code>-- Detect price changes between consecutive order line items for same product
+SELECT product_id, order_id, unit_price, order_date,
+       LAG(unit_price) OVER (PARTITION BY product_id ORDER BY order_date) AS prev_price,
+       unit_price - LAG(unit_price) OVER (PARTITION BY product_id ORDER BY order_date) AS price_change
+FROM order_items oi
+JOIN orders o ON oi.order_id = o.order_id;</code></pre>
+
+<h3>Running Totals and Moving Averages — SUM/AVG/COUNT OVER</h3>
+<pre><code>-- Running total of daily revenue
+SELECT DATE(order_date) AS order_day,
+       SUM(total_amount) AS daily_revenue,
+       SUM(SUM(total_amount)) OVER (ORDER BY DATE(order_date)) AS running_total
+FROM orders
+WHERE status = 'COMPLETED'
+GROUP BY DATE(order_date)
+ORDER BY order_day;</code></pre>
+
+<pre><code>-- 7-day moving average of daily orders
+WITH daily AS (
+    SELECT DATE(order_date) AS order_day, COUNT(*) AS order_count
+    FROM orders GROUP BY DATE(order_date)
+)
+SELECT order_day, order_count,
+       ROUND(AVG(order_count) OVER (
+           ORDER BY order_day
+           ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+       ), 2) AS moving_avg_7d
+FROM daily
+ORDER BY order_day;</code></pre>
+
+<h3>PARTITION BY — Detailed Explanation</h3>
+<p><code>PARTITION BY</code> divides rows into independent groups for window function calculation — like <code>GROUP BY</code> but without collapsing rows. Each row retains its identity while getting a computed value within its partition.</p>
+
+<div class="ascii-diagram">
+<pre>
+Without PARTITION BY:     one window for ALL rows
+  ROW_NUMBER() → 1, 2, 3, 4, 5, 6, 7, 8 ...
+
+With PARTITION BY category_id:
+  Category A: 1, 2, 3        (resets per category)
+  Category B: 1, 2, 3, 4
+  Category C: 1, 2
+</pre>
+</div>
+
+<pre><code>-- Running balance per customer (cumulative spend)
+SELECT order_id, customer_id, order_date, total_amount,
+       SUM(total_amount) OVER (
+           PARTITION BY customer_id
+           ORDER BY order_date
+           ROWS UNBOUNDED PRECEDING
+       ) AS running_balance
+FROM orders
+WHERE status = 'COMPLETED'
+ORDER BY customer_id, order_date;</code></pre>
+
+<h3>Production Examples</h3>
+<h4>Nth Highest Salary (2nd Highest)</h4>
+<pre><code>-- Method 1: DENSE_RANK
+WITH ranked AS (
+    SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS dr
+    FROM employees
+)
+SELECT DISTINCT salary FROM ranked WHERE dr = 2;
+
+-- Method 2: OFFSET (PostgreSQL/MySQL 8+)
+SELECT DISTINCT salary
+FROM employees
+ORDER BY salary DESC
+OFFSET 1 LIMIT 1;</code></pre>
+
+<h4>Year-over-Year (YoY) Revenue Comparison</h4>
+<pre><code>WITH monthly_revenue AS (
+    SELECT DATE_TRUNC('month', order_date) AS month,
+           SUM(total_amount) AS revenue
+    FROM orders WHERE status = 'COMPLETED'
+    GROUP BY DATE_TRUNC('month', order_date)
+)
+SELECT month,
+       revenue,
+       LAG(revenue, 12) OVER (ORDER BY month) AS revenue_same_month_last_year,
+       ROUND(
+           (revenue - LAG(revenue, 12) OVER (ORDER BY month))
+           / NULLIF(LAG(revenue, 12) OVER (ORDER BY month), 0) * 100, 2
+       ) AS yoy_growth_pct
+FROM monthly_revenue
+ORDER BY month;</code></pre>
+
+<h3>QA Testing Scenarios</h3>
+<h4>Data Trending — Detect Anomalous Drops</h4>
+<pre><code>WITH daily AS (
+    SELECT DATE(created_at) AS reg_day, COUNT(*) AS registrations
+    FROM customers GROUP BY DATE(created_at)
+)
+SELECT reg_day, registrations,
+       AVG(registrations) OVER (
+           ORDER BY reg_day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+       ) AS avg_7d,
+       CASE WHEN registrations < AVG(registrations) OVER (
+           ORDER BY reg_day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+       ) * 0.5 THEN 'ANOMALY' END AS flag
+FROM daily;</code></pre>
+
+<h4>Finding Gaps in Sequences (Missing Order IDs)</h4>
+<pre><code>WITH order_sequence AS (
+    SELECT order_id,
+           LEAD(order_id) OVER (ORDER BY order_id) AS next_order_id
+    FROM orders
+)
+SELECT order_id AS gap_start,
+       next_order_id AS gap_end,
+       next_order_id - order_id - 1 AS missing_count
+FROM order_sequence
+WHERE next_order_id - order_id > 1;</code></pre>
+
+<div class="callout">
+<strong>QA Note:</strong> Gaps in auto-increment IDs are normal after rollbacks or failed transactions. Flag only unexpectedly large gaps or business-critical sequences (invoice numbers must be contiguous by regulation).
+</div>
+
+<h3>Interview Questions &amp; Answers (16 Questions)</h3>
+<ol>
+<li><strong>What is a CTE and why use it over a subquery?</strong><br>
+A named temporary result set via <code>WITH</code>. Improves readability, allows multiple references, supports recursion. Subqueries work for simple cases; CTEs scale better for complex QA validation pipelines.</li>
+
+<li><strong>Can a CTE be referenced multiple times?</strong><br>
+Yes — one major advantage. Example: compare current month revenue CTE against prior month CTE without duplicating logic.</li>
+
+<li><strong>What is the difference between ROW_NUMBER, RANK, and DENSE_RANK?</strong><br>
+All assign ranks; ROW_NUMBER is always unique (needs tiebreaker). RANK skips ranks after ties. DENSE_RANK does not skip. Use ROW_NUMBER for deduplication; RANK/DENSE_RANK for leaderboard reporting.</li>
+
+<li><strong>Write a query to find the 3rd highest order value.</strong><br>
+<pre><code>SELECT total_amount FROM (
+    SELECT total_amount, DENSE_RANK() OVER (ORDER BY total_amount DESC) AS dr
+    FROM orders
+) t WHERE dr = 3;</code></pre></li>
+
+<li><strong>What does PARTITION BY do?</strong><br>
+Creates independent windows per group value. Resets window calculations for each partition. Like GROUP BY but keeps all rows.</li>
+
+<li><strong>LEAD vs LAG — which looks forward?</strong><br>
+<code>LEAD</code> accesses the next row; <code>LAG</code> accesses the previous row. Both require <code>ORDER BY</code> in the OVER clause.</li>
+
+<li><strong>How do you implement pagination with ROW_NUMBER?</strong><br>
+Wrap query in subquery with ROW_NUMBER, filter <code>WHERE rn BETWEEN start AND end</code>. Page N with size S: start = (N-1)*S+1, end = N*S.</li>
+
+<li><strong>What is a running total query pattern?</strong><br>
+<code>SUM(amount) OVER (ORDER BY date ROWS UNBOUNDED PRECEDING)</code>. Add PARTITION BY for per-customer running totals.</li>
+
+<li><strong>How do you remove duplicates keeping the latest record?</strong><br>
+ROW_NUMBER partitioned by business key, ordered by timestamp DESC, filter rn = 1.</li>
+
+<li><strong>What is NTILE used for in testing?</strong><br>
+Split data into equal buckets for load testing (simulate 10% traffic), stratified sampling, or quartile-based test case selection.</li>
+
+<li><strong>Recursive CTE — what are anchor and recursive members?</strong><br>
+Anchor is the base case (non-recursive SELECT). Recursive member references the CTE itself via UNION ALL. Terminates when recursive member returns no rows.</li>
+
+<li><strong>Window function vs GROUP BY aggregate?</strong><br>
+GROUP BY collapses rows into one per group. Window functions compute aggregates while preserving each row — essential for running totals and row-level comparisons.</li>
+
+<li><strong>How to find employees earning more than their department average?</strong><br>
+<pre><code>SELECT employee_id, salary, department_id,
+       AVG(salary) OVER (PARTITION BY department_id) AS dept_avg
+FROM employees
+-- filter in outer query: WHERE salary > dept_avg</code></pre></li>
+
+<li><strong>What is ROWS vs RANGE in window frame?</strong><br>
+ROWS counts physical rows (6 PRECEDING = 6 prior rows). RANGE uses logical value range (same date values). Use ROWS for moving averages by row count.</li>
+
+<li><strong>How would you validate YoY dashboard data as SDET?</strong><br>
+Run independent queries for each year-month, compare against dashboard API response. Use LAG(12) query as source of truth. Assert growth percentage calculation handles division by zero.</li>
+
+<li><strong>Performance concern with window functions?</strong><br>
+Full table scans without indexes on PARTITION BY / ORDER BY columns. For large tables, filter with WHERE first, then apply window function in subquery.</li>
+</ol>
+</section>
+
+<!-- ==================== SECTION 9: DATABASE TESTING ==================== -->
+<section id="section-9" class="section-card">
+<h2>Section 9: Database Testing</h2>
+<p>Database testing validates that data stored, transformed, and retrieved by application layers is accurate, consistent, secure, and performant. For a 4-year SDET, this is not optional — UI tests prove the screen works; database tests prove the system of record is correct.</p>
+
+<h3>Database Testing Fundamentals</h3>
+<h4>What Is Database Testing?</h4>
+<p>Verifying the data layer directly using SQL queries, schema comparison tools, and stored procedure execution — independent of or in complement to UI/API tests. It confirms CRUD operations persist correctly, constraints hold, and reports match source data.</p>
+
+<h4>Why Database Testing Matters</h4>
+<ul>
+<li>UI can display cached or computed values that mask DB corruption</li>
+<li>API responses may be assembled from multiple tables — partial failures go undetected in UI-only tests</li>
+<li>Financial/regulatory systems require audit trail validation at the DB level</li>
+<li>ETL and migration defects surface only when comparing source vs target data</li>
+</ul>
+
+<h4>When to Perform Database Testing</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Trigger</th><th>DB Testing Focus</th></tr></thead>
+<tbody>
+<tr><td>New feature with CRUD</td><td>Insert/update/delete verification after each action</td></tr>
+<tr><td>Schema migration</td><td>Column types, constraints, data preservation</td></tr>
+<tr><td>ETL pipeline deployment</td><td>Row counts, checksums, transformation rules</td></tr>
+<tr><td>Performance release</td><td>Query execution plans, index usage</td></tr>
+<tr><td>Bug fix in business logic</td><td>Regression queries for affected data sets</td></tr>
+<tr><td>Production incident</td><td>Data reconciliation, orphan detection</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>SDET Principle:</strong> Every critical API test should have a corresponding DB assertion for at least one "source of truth" field — not the entire payload, but the fields that matter (order status, payment amount, inventory count).
+</div>
+
+<h3>Types of Database Testing</h3>
+<h4>Structural Testing (Schema Testing)</h4>
+<ul>
+<li>Verify tables, columns, data types, nullability, defaults exist as designed</li>
+<li>Validate primary keys, foreign keys, unique constraints, check constraints</li>
+<li>Compare staging schema vs production after migration scripts run</li>
+<li>Verify indexes exist on expected columns</li>
+</ul>
+
+<pre><code>-- PostgreSQL: list foreign keys on orders table
+SELECT tc.constraint_name, kcu.column_name,
+       ccu.table_name AS foreign_table, ccu.column_name AS foreign_column
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+  ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.constraint_column_usage ccu
+  ON ccu.constraint_name = tc.constraint_name
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND tc.table_name = 'orders';</code></pre>
+
+<h4>Functional Testing</h4>
+<ul>
+<li>CRUD operations persist expected values</li>
+<li>Stored procedures return correct results for valid/invalid inputs</li>
+<li>Triggers fire on INSERT/UPDATE/DELETE and modify related tables</li>
+<li>Business rules enforced via constraints (e.g., order total &gt; 0)</li>
+</ul>
+
+<h4>Non-Functional Testing</h4>
+<ul>
+<li><strong>Performance:</strong> Query response time under load; identify missing indexes</li>
+<li><strong>Security:</strong> Role-based access; no plaintext passwords; SQL injection resistance</li>
+<li><strong>Scalability:</strong> Table growth, partition strategy, archive policies</li>
+<li><strong>Recovery:</strong> Backup restore validation; point-in-time recovery</li>
+</ul>
+
+<h3>Backend Validation — Verifying Data After UI Actions</h3>
+<p>Pattern: perform UI action → capture entity ID from UI/API → query DB → assert.</p>
+
+<pre><code>-- After UI checkout: verify order header
+SELECT order_id, customer_id, status, total_amount, order_date
+FROM orders
+WHERE order_id = :captured_order_id;
+
+-- Verify line items match cart
+SELECT product_id, quantity, unit_price
+FROM order_items
+WHERE order_id = :captured_order_id
+ORDER BY product_id;
+
+-- Verify inventory decremented
+SELECT product_id, stock_quantity
+FROM inventory
+WHERE product_id IN (:product_ids);</code></pre>
+
+<h3>Data Integrity Testing</h3>
+<h4>Entity Integrity</h4>
+<p>Primary keys are unique and not NULL. No duplicate primary keys exist.</p>
+<pre><code>SELECT order_id, COUNT(*) FROM orders GROUP BY order_id HAVING COUNT(*) > 1;</code></pre>
+
+<h4>Referential Integrity</h4>
+<p>Every foreign key value references an existing parent row.</p>
+<pre><code>-- Orphan order_items (no parent order)
+SELECT oi.* FROM order_items oi
+LEFT JOIN orders o ON oi.order_id = o.order_id
+WHERE o.order_id IS NULL;</code></pre>
+
+<h4>Domain Integrity</h4>
+<p>Values fall within allowed ranges and types. Status fields contain only valid enum values.</p>
+<pre><code>SELECT order_id, status FROM orders
+WHERE status NOT IN ('PENDING','PAID','SHIPPED','DELIVERED','CANCELLED','REFUNDED');</code></pre>
+
+<h3>CRUD Validation Strategy</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operation</th><th>Pre-Condition Query</th><th>Action</th><th>Post-Condition Query</th></tr></thead>
+<tbody>
+<tr><td>CREATE</td><td>Confirm record absent</td><td>POST API / UI create</td><td>SELECT confirms row exists with expected values</td></tr>
+<tr><td>READ</td><td>Seed known data</td><td>GET API / UI view</td><td>API response matches DB SELECT</td></tr>
+<tr><td>UPDATE</td><td>Capture original values</td><td>PUT/PATCH API</td><td>SELECT shows updated fields; unchanged fields intact</td></tr>
+<tr><td>DELETE</td><td>Confirm record exists</td><td>DELETE API</td><td>Hard delete: row gone. Soft delete: status/is_deleted flag set</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- Soft delete validation
+SELECT customer_id, email, is_deleted, deleted_at
+FROM customers
+WHERE customer_id = :id;
+-- Expect: is_deleted = true, deleted_at IS NOT NULL</code></pre>
+
+<h3>ETL Testing — Extract, Transform, Load</h3>
+<h4>ETL Process Overview</h4>
+<div class="ascii-diagram">
+<pre>
+SOURCE (OLTP DB / Files)  →  STAGING  →  TRANSFORM  →  TARGET (Data Warehouse)
+     Extract                  Load         Rules           Load
+</pre>
+</div>
+
+<h4>ETL Validation Approach</h4>
+<ol>
+<li><strong>Row count reconciliation:</strong> source count = target count (± expected filters)</li>
+<li><strong>Column mapping:</strong> every target column has a defined source and transformation</li>
+<li><strong>Null handling:</strong> source NULLs map correctly (default value or remain NULL)</li>
+<li><strong>Duplicate handling:</strong> dedup logic verified with known duplicate source rows</li>
+<li><strong>Incremental load:</strong> only new/changed rows loaded after initial full load</li>
+<li><strong>Reject/quarantine:</strong> invalid rows logged in error table, not silently dropped</li>
+</ol>
+
+<pre><code>-- Source vs target row count
+SELECT 'source' AS layer, COUNT(*) FROM source_db.orders WHERE order_date = '2025-06-01'
+UNION ALL
+SELECT 'target', COUNT(*) FROM dw.fact_orders WHERE order_date_key = 20250601;
+
+-- Checksum comparison on aggregated amounts
+SELECT SUM(total_amount) FROM source_db.orders WHERE order_date = '2025-06-01';
+SELECT SUM(order_amount) FROM dw.fact_orders WHERE order_date_key = 20250601;</code></pre>
+
+<h4>Common ETL Issues</h4>
+<ul>
+<li>Timezone conversion errors (order_date off by one day)</li>
+<li>Truncation (VARCHAR(50) cuts product names)</li>
+<li>Character encoding (UTF-8 special characters corrupted)</li>
+<li>Duplicate key violations on re-run without idempotent logic</li>
+<li>Orphan dimension keys (fact references missing dimension row)</li>
+</ul>
+
+<h3>Data Migration Testing</h3>
+<h4>Pre-Migration</h4>
+<ul>
+<li>Baseline row counts and checksums per table</li>
+<li>Document known data quality issues in source</li>
+<li>Validate migration scripts in lower environment with production-like volume</li>
+</ul>
+
+<h4>During Migration</h4>
+<ul>
+<li>Monitor error logs and rejected record counts</li>
+<li>Verify application read-only mode if applicable</li>
+<li>Check migration job checkpoints and resume capability</li>
+</ul>
+
+<h4>Post-Migration</h4>
+<pre><code>-- Row count match
+SELECT 'orders' AS tbl,
+       (SELECT COUNT(*) FROM legacy.orders) AS legacy_cnt,
+       (SELECT COUNT(*) FROM new_schema.orders) AS new_cnt;
+
+-- Sample record comparison (hash or field-by-field)
+SELECT l.order_id, l.total_amount AS legacy_amount, n.total_amount AS new_amount
+FROM legacy.orders l
+JOIN new_schema.orders n ON l.order_id = n.order_id
+WHERE l.total_amount <> n.total_amount
+   OR l.status <> n.status
+LIMIT 100;</code></pre>
+
+<h3>Data Reconciliation — Source vs Target</h3>
+<pre><code>-- Records in source but missing in target
+SELECT s.order_id FROM source.orders s
+LEFT JOIN target.orders t ON s.order_id = t.order_id
+WHERE t.order_id IS NULL;
+
+-- Records in target but not in source (unexpected inserts)
+SELECT t.order_id FROM target.orders t
+LEFT JOIN source.orders s ON t.order_id = s.order_id
+WHERE s.order_id IS NULL;
+
+-- Field-level mismatch report
+SELECT s.order_id,
+       s.total_amount AS src_amount, t.total_amount AS tgt_amount,
+       s.status AS src_status, t.status AS tgt_status
+FROM source.orders s
+JOIN target.orders t ON s.order_id = t.order_id
+WHERE s.total_amount <> t.total_amount OR s.status <> t.status;</code></pre>
+
+<h3>Stored Procedure Testing</h3>
+<ol>
+<li>Identify input parameters and expected output (result set or OUT params)</li>
+<li>Test happy path with valid inputs</li>
+<li>Test boundary values (zero quantity, max discount)</li>
+<li>Test invalid inputs (negative amount, non-existent customer_id)</li>
+<li>Verify side effects (related tables updated, audit log written)</li>
+<li>Compare procedure output with equivalent manual SQL for same inputs</li>
+</ol>
+
+<pre><code>-- Example: test sp_create_order
+CALL sp_create_order(
+    p_customer_id => 1001,
+    p_product_ids => ARRAY[101, 102],
+    p_quantities  => ARRAY[1, 2],
+    p_order_id    => NULL  -- OUT parameter
+);
+-- Then verify:
+SELECT * FROM orders WHERE order_id = :returned_order_id;
+SELECT * FROM order_items WHERE order_id = :returned_order_id;
+SELECT stock_quantity FROM inventory WHERE product_id IN (101, 102);</code></pre>
+
+<h3>Trigger Testing</h3>
+<pre><code>-- Trigger: after INSERT on orders, write to order_audit_log
+-- Test: insert order, verify audit row
+INSERT INTO orders (customer_id, total_amount, status)
+VALUES (1001, 299.99, 'PENDING');
+
+SELECT * FROM order_audit_log
+WHERE order_id = (SELECT MAX(order_id) FROM orders)
+  AND action = 'INSERT'
+  AND changed_at >= CURRENT_TIMESTAMP - INTERVAL '1 minute';</code></pre>
+
+<h3>Schema Validation</h3>
+<pre><code>-- Compare column definitions (PostgreSQL)
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_name = 'orders'
+ORDER BY ordinal_position;</code></pre>
+
+<h3>Testing Tools</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tool</th><th>Strengths</th><th>QA Use Case</th></tr></thead>
+<tbody>
+<tr><td>SQL Developer (Oracle)</td><td>Oracle-native, procedure debugging</td><td>Oracle backend validation</td></tr>
+<tr><td>DBeaver</td><td>Multi-DB, ER diagrams, data export</td><td>Cross-environment comparison</td></tr>
+<tr><td>TOAD</td><td>Advanced Oracle/SQL Server features</td><td>Performance tuning, schema compare</td></tr>
+<tr><td>pgAdmin</td><td>PostgreSQL administration</td><td>Constraint inspection, query tool</td></tr>
+<tr><td>Azure Data Studio</td><td>SQL Server, notebooks</td><td>CI-integrated SQL scripts</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Test Data Management Strategies</h3>
+<ul>
+<li><strong>Dedicated test schema:</strong> Isolated from production; refreshed nightly from masked snapshot</li>
+<li><strong>Factory pattern:</strong> Programmatic test data creation with unique identifiers (timestamp suffix)</li>
+<li><strong>Cleanup hooks:</strong> @AfterEach / @AfterClass deletes test-created rows by tag column or ID prefix</li>
+<li><strong>Idempotent seeds:</strong> SQL scripts use MERGE/UPSERT so re-runs don't fail</li>
+<li><strong>PII masking:</strong> Never use real customer data in lower environments</li>
+<li><strong>Referential order:</strong> Delete child rows before parent rows in cleanup scripts</li>
+</ul>
+
+<h3>Interview Questions &amp; Answers (16 Questions)</h3>
+<ol>
+<li><strong>What is the difference between frontend and database testing?</strong><br>
+Frontend validates presentation and user flows. Database testing validates persisted state, constraints, and data transformations directly — catches bugs UI may hide due to caching or computed views.</li>
+
+<li><strong>How do you test referential integrity?</strong><br>
+Attempt to insert child row with invalid FK (expect failure). Query for orphan child rows via LEFT JOIN. Verify ON DELETE CASCADE behavior if applicable.</li>
+
+<li><strong>What checks do you run after a data migration?</strong><br>
+Row counts, checksums on numeric columns, sample field-by-field comparison, FK constraint validation, application smoke tests, orphan detection queries.</li>
+
+<li><strong>How do you test a stored procedure?</strong><br>
+Execute with known inputs, assert output parameters/result sets, verify side effects on related tables, test invalid inputs for expected error handling.</li>
+
+<li><strong>What is ETL testing?</strong><br>
+Validating data movement from source to target through transformation rules — row counts, data types, business rule application, incremental load correctness, error handling for bad records.</li>
+
+<li><strong>How do you validate CRUD at the database level?</strong><br>
+Pre-query confirms state, perform operation via API/UI, post-query asserts expected changes. Include negative cases (duplicate insert, update non-existent row).</li>
+
+<li><strong>What is data reconciliation?</strong><br>
+Comparing source and target datasets to find missing, extra, or mismatched records — essential after ETL runs and migrations.</li>
+
+<li><strong>How do you test triggers?</strong><br>
+Perform triggering action (INSERT/UPDATE/DELETE), query affected/audit tables, verify trigger logic including edge cases (bulk operations, NULL values).</li>
+
+<li><strong>What tools do you use for database testing?</strong><br>
+DBeaver/pgAdmin for ad-hoc queries; JDBC in automation frameworks; schema compare tools (Liquibase, Flyway) for migration validation; CI pipelines running SQL assertion scripts.</li>
+
+<li><strong>How do you manage test data in automation?</strong><br>
+Create data via API/factory before test, tag with unique identifier, assert, cleanup in teardown. Use transactions with rollback where supported for isolation.</li>
+
+<li><strong>Structural vs functional database testing?</strong><br>
+Structural = schema, constraints, indexes. Functional = CRUD correctness, business rules, procedure/trigger behavior.</li>
+
+<li><strong>How do you test soft delete?</strong><br>
+After DELETE API call, verify row still exists with <code>is_deleted = true</code> and <code>deleted_at</code> populated. Confirm row excluded from normal SELECT queries but present in admin/audit queries.</li>
+
+<li><strong>What is domain integrity?</strong><br>
+Column values conform to defined domain — data type, range, allowed enum values. Test by querying for out-of-domain values.</li>
+
+<li><strong>How do you automate database assertions in CI?</strong><br>
+JDBC/Node pg client runs SQL after API tests; assert row counts and field values; fail build on mismatch. Store expected values in test data files or compute dynamically.</li>
+
+<li><strong>Common data quality issues you check for?</strong><br>
+Duplicates, NULLs in required fields, orphan FKs, amount mismatches between header and line items, future-dated records, inactive users with recent orders.</li>
+
+<li><strong>How do you test without affecting production data?</strong><br>
+Dedicated test environment, test schema isolation, transaction rollback pattern, never run destructive queries against shared/staging without approval.</li>
+</ol>
+</section>
+
+<!-- ==================== SECTION 10: API + DATABASE VALIDATION ==================== -->
+<section id="section-10" class="section-card">
+<h2>Section 10: API + Database Validation</h2>
+<p>Modern SDET workflows require end-to-end validation: the API response tells you what the service <em>claims</em> happened; the database tells you what <em>actually</em> happened. This section covers the complete workflow, SQL validation queries, and automation patterns with REST Assured, JDBC, Postman, and UI frameworks.</p>
+
+<h3>End-to-End API-DB Testing Workflow</h3>
+<div class="ascii-diagram">
+<pre>
+1. Setup test data (API or direct SQL seed)
+2. Capture baseline DB state (optional SELECT)
+3. Execute API call (POST/PUT/DELETE/GET)
+4. Assert API response (status, body, headers)
+5. Query database with entity ID from response
+6. Assert DB values match API response fields
+7. Cleanup test data (API delete or SQL teardown)
+</pre>
+</div>
+
+<div class="callout">
+<strong>Best Practice:</strong> Map each API response field to a specific DB column in your test design document. Unmapped fields are untested persistence — a common gap in API test suites.
+</div>
+
+<h3>Scenario 1: POST API Creates Order → Verify in Database</h3>
+<p><strong>API:</strong> <code>POST /api/v1/orders</code> with cart items → returns <code>201</code> with <code>orderId</code>, <code>status</code>, <code>totalAmount</code>.</p>
+
+<pre><code>-- Step 1: Verify order header persisted
+SELECT order_id, customer_id, status, total_amount, created_at
+FROM orders
+WHERE order_id = :orderIdFromResponse;
+
+-- Expected: status = 'PENDING', total_amount matches API response
+
+-- Step 2: Verify order line items
+SELECT product_id, quantity, unit_price, quantity * unit_price AS line_total
+FROM order_items
+WHERE order_id = :orderIdFromResponse
+ORDER BY product_id;
+
+-- Step 3: Verify line items sum equals header total
+SELECT o.order_id, o.total_amount,
+       SUM(oi.quantity * oi.unit_price) AS calculated_total
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+WHERE o.order_id = :orderIdFromResponse
+GROUP BY o.order_id, o.total_amount;
+
+-- Step 4: Verify payment record created
+SELECT payment_id, order_id, amount, status, payment_method
+FROM payments
+WHERE order_id = :orderIdFromResponse;
+
+-- Step 5: Verify inventory decremented
+SELECT i.product_id, i.stock_quantity
+FROM inventory i
+WHERE i.product_id IN (:productIdsFromRequest);</code></pre>
+
+<h3>Scenario 2: PUT API Updates User → Verify Update in DB</h3>
+<p><strong>API:</strong> <code>PUT /api/v1/customers/{id}</code> updates email and phone.</p>
+
+<pre><code>-- Pre-update baseline
+SELECT customer_id, email, phone, updated_at
+FROM customers WHERE customer_id = :customerId;
+
+-- Post-update verification
+SELECT customer_id, email, phone, updated_at
+FROM customers WHERE customer_id = :customerId;
+-- Assert: email and phone match request body
+-- Assert: updated_at > pre-update timestamp
+
+-- Verify audit trail if applicable
+SELECT customer_id, field_name, old_value, new_value, changed_at
+FROM customer_audit_log
+WHERE customer_id = :customerId
+ORDER BY changed_at DESC
+LIMIT 5;</code></pre>
+
+<h3>Scenario 3: DELETE API → Verify Soft Delete vs Hard Delete</h3>
+<h4>Soft Delete Pattern</h4>
+<pre><code>-- After DELETE /api/v1/customers/{id}
+SELECT customer_id, email, is_deleted, deleted_at
+FROM customers
+WHERE customer_id = :customerId;
+-- Expect: is_deleted = true, deleted_at IS NOT NULL, row still exists
+
+-- Verify customer excluded from active listing query (same as app uses)
+SELECT COUNT(*) FROM customers
+WHERE customer_id = :customerId AND is_deleted = false;
+-- Expect: 0</code></pre>
+
+<h4>Hard Delete Pattern</h4>
+<pre><code>-- After DELETE /api/v1/cart/items/{itemId}
+SELECT COUNT(*) FROM cart_items WHERE cart_item_id = :itemId;
+-- Expect: 0
+
+-- Verify cascade: related records also removed if designed
+SELECT COUNT(*) FROM cart_item_options WHERE cart_item_id = :itemId;
+-- Expect: 0</code></pre>
+
+<h3>Automation Strategy — REST Assured + JDBC</h3>
+<h4>JDBC Connection Setup (Java)</h4>
+<pre><code>import java.sql.*;
+
+public class DatabaseHelper {
+    private static final String URL =
+        "jdbc:postgresql://localhost:5432/ecommerce_test";
+    private static final String USER = "test_user";
+    private static final String PASS = "test_pass";
+
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL, USER, PASS);
+    }
+
+    public static void closeQuietly(AutoCloseable resource) {
+        if (resource != null) {
+            try { resource.close(); }
+            catch (Exception e) { /* log */ }
+        }
+    }
+}</code></pre>
+
+<h4>Execute Query After API Call (Java)</h4>
+<pre><code>public Map&lt;String, Object&gt; getOrderById(long orderId) throws SQLException {
+    String sql = "SELECT order_id, customer_id, status, total_amount " +
+                 "FROM orders WHERE order_id = ?";
+    try (Connection conn = DatabaseHelper.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setLong(1, orderId);
+        try (ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) return null;
+            Map&lt;String, Object&gt; row = new HashMap&lt;&gt;();
+            row.put("order_id", rs.getLong("order_id"));
+            row.put("customer_id", rs.getLong("customer_id"));
+            row.put("status", rs.getString("status"));
+            row.put("total_amount", rs.getBigDecimal("total_amount"));
+            return row;
+        }
+    }
+}</code></pre>
+
+<h4>Assert DB Values Match API Response (Java + REST Assured + TestNG)</h4>
+<pre><code>@Test
+public void createOrder_shouldPersistToDatabase() throws SQLException {
+    OrderRequest payload = OrderRequest.builder()
+        .customerId(1001L)
+        .items(List.of(new Item(101, 2), new Item(205, 1)))
+        .build();
+
+    Response response = given()
+        .contentType(ContentType.JSON)
+        .body(payload)
+        .when()
+        .post("/api/v1/orders")
+        .then()
+        .statusCode(201)
+        .extract().response();
+
+    long orderId = response.jsonPath().getLong("orderId");
+    String apiStatus = response.jsonPath().getString("status");
+    double apiTotal = response.jsonPath().getDouble("totalAmount");
+
+    Map&lt;String, Object&gt; dbOrder = getOrderById(orderId);
+    assertNotNull(dbOrder, "Order not found in database");
+    assertEquals(dbOrder.get("status"), apiStatus);
+    assertEquals(((BigDecimal) dbOrder.get("total_amount")).doubleValue(),
+                 apiTotal, 0.01);
+
+    // Verify line item count
+    int dbItemCount = getOrderItemCount(orderId);
+    assertEquals(dbItemCount, payload.getItems().size());
+}</code></pre>
+
+<h3>Automation with Postman + Database (Newman Approach)</h3>
+<ol>
+<li>Create Postman collection with API requests and test scripts asserting response fields</li>
+<li>Use Postman's built-in SQL request type (Postman v10+) or pre-request script calling external DB helper</li>
+<li>Alternative: Newman runs collection in CI; separate Node.js script queries DB and compares JSON output</li>
+<li>Store <code>orderId</code> in Postman environment variable from test script: <code>pm.environment.set("orderId", json.orderId)</code></li>
+</ol>
+
+<pre><code>// Postman test script — capture ID for downstream DB validation
+pm.test("Order created", function () {
+    pm.response.to.have.status(201);
+    var json = pm.response.json();
+    pm.expect(json.orderId).to.be.a('number');
+    pm.environment.set("orderId", json.orderId);
+    pm.environment.set("expectedTotal", json.totalAmount);
+});</code></pre>
+
+<h3>Playwright / Selenium + DB Validation Patterns</h3>
+<ul>
+<li><strong>UI triggers action, API ID captured from network:</strong> Intercept POST response in Playwright, extract orderId, query DB via JDBC helper</li>
+<li><strong>UI shows value, DB confirms source:</strong> Read displayed order total from DOM, compare with SQL query result</li>
+<li><strong>Async persistence:</strong> Poll DB with retry (order may be written asynchronously via message queue)</li>
+</ul>
+
+<pre><code>// Playwright: intercept API response, then validate DB
+const [response] = await Promise.all([
+    page.waitForResponse(r =&gt; r.url().includes('/api/v1/orders') &amp;&amp; r.status() === 201),
+    page.click('[data-testid="place-order-btn"]')
+]);
+const { orderId, totalAmount } = await response.json();
+const dbRow = await dbHelper.query(
+    'SELECT total_amount FROM orders WHERE order_id = $1', [orderId]
+);
+expect(Number(dbRow.total_amount)).toBeCloseTo(totalAmount, 2);</code></pre>
+
+<h3>API Response Field → DB Column Mapping</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>API Response Field</th><th>DB Table.Column</th><th>Validation Notes</th></tr></thead>
+<tbody>
+<tr><td><code>orderId</code></td><td><code>orders.order_id</code></td><td>Primary key match</td></tr>
+<tr><td><code>customerId</code></td><td><code>orders.customer_id</code></td><td>FK must exist in customers</td></tr>
+<tr><td><code>status</code></td><td><code>orders.status</code></td><td>Enum values must align</td></tr>
+<tr><td><code>totalAmount</code></td><td><code>orders.total_amount</code></td><td>Compare with decimal tolerance</td></tr>
+<tr><td><code>items[].productId</code></td><td><code>order_items.product_id</code></td><td>Array length = row count</td></tr>
+<tr><td><code>items[].quantity</code></td><td><code>order_items.quantity</code></td><td>Per-line match</td></tr>
+<tr><td><code>createdAt</code></td><td><code>orders.created_at</code></td><td>Allow timezone/format conversion</td></tr>
+<tr><td><code>payment.method</code></td><td><code>payments.payment_method</code></td><td>Nested JSON → flat column</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Data Cleanup Strategies for Test Automation</h3>
+<ul>
+<li><strong>API cleanup:</strong> Call DELETE endpoint in @AfterMethod — mirrors production delete path</li>
+<li><strong>SQL cleanup:</strong> Delete child rows first, then parent (respect FK order)</li>
+<li><strong>Tagged data:</strong> Insert with <code>source = 'AUTOMATION'</code> column; bulk delete by tag</li>
+<li><strong>Transaction rollback:</strong> Wrap test in transaction, rollback after assertions (not viable if API uses separate connection pool)</li>
+<li><strong>Dedicated test customer:</strong> Reuse customer_id = 999999; reset state before each test</li>
+<li><strong>Idempotent teardown:</strong> <code>DELETE FROM order_items WHERE order_id IN (SELECT order_id FROM orders WHERE customer_id = 999999)</code></li>
+</ul>
+
+<pre><code>-- Cleanup script (run in @AfterClass)
+DELETE FROM payments WHERE order_id IN (
+    SELECT order_id FROM orders WHERE customer_id = 999999
+);
+DELETE FROM order_items WHERE order_id IN (
+    SELECT order_id FROM orders WHERE customer_id = 999999
+);
+DELETE FROM orders WHERE customer_id = 999999;</code></pre>
+
+<h3>Interview Questions &amp; Answers (12 Questions)</h3>
+<ol>
+<li><strong>Why validate API response AND database?</strong><br>
+API may return success while async persistence fails, or response may be computed/cached without matching stored state. DB is the system of record.</li>
+
+<li><strong>How do you get the entity ID for DB validation after POST?</strong><br>
+Extract from API response body (<code>orderId</code>, <code>id</code> field). Never hardcode IDs — they are auto-generated.</li>
+
+<li><strong>How do you handle async DB writes in tests?</strong><br>
+Poll DB with retry (e.g., Awaitility: wait up to 10s, poll every 500ms) until expected row appears or timeout fails test.</li>
+
+<li><strong>REST Assured + JDBC integration approach?</strong><br>
+Separate DB helper class with PreparedStatement queries. Test method: API call → extract ID → JDBC query → assert fields match response.</li>
+
+<li><strong>How do you compare decimal amounts (API vs DB)?</strong><br>
+Use delta comparison: <code>assertEquals(apiAmount, dbAmount, 0.01)</code>. Never compare doubles with <code>==</code>.</li>
+
+<li><strong>Soft delete vs hard delete — how to verify each?</strong><br>
+Soft: row exists, <code>is_deleted = true</code>. Hard: <code>SELECT COUNT(*) = 0</code>. Also verify related records per cascade rules.</li>
+
+<li><strong>What if API returns 201 but DB has no row?</strong><br>
+Bug in persistence layer, transaction rolled back after response sent, or writing to wrong schema/environment. Log API timestamp and check DB connection config in test.</li>
+
+<li><strong>How do you avoid test data pollution?</strong><br>
+Unique identifiers per run, cleanup in teardown, dedicated test accounts, never use production DB for automation.</li>
+
+<li><strong>Can Postman directly query a database?</strong><br>
+Native SQL requests in newer Postman versions; otherwise use Newman + external script or pre-request hooks calling a DB microservice.</li>
+
+<li><strong>How do you validate nested API arrays against DB?</strong><br>
+Count rows in child table = array length. Sort both by key, compare field-by-field. Example: <code>order_items</code> rows vs <code>items[]</code> in response.</li>
+
+<li><strong>UI + DB validation — when to use?</strong><br>
+When UI displays computed/formatted values — verify display matches DB source. Intercept network call for entity ID rather than parsing DOM for IDs.</li>
+
+<li><strong>How do you test PUT partial update?</strong><br>
+Capture pre-update DB snapshot. Send PATCH with one field changed. Assert changed field updated, all other fields unchanged, <code>updated_at</code> incremented.</li>
+</ol>
+</section>
+
+<!-- ==================== SECTION 11: INDEXING & PERFORMANCE ==================== -->
+<section id="section-11" class="section-card">
+<h2>Section 11: Indexing &amp; Performance</h2>
+<p>QA engineers don't just verify functional correctness — they identify slow queries that degrade user experience and catch missing indexes that cause production incidents. Understanding indexing and execution plans helps you file actionable performance bugs with evidence.</p>
+
+<h3>What Is an Index?</h3>
+<p>An index is a separate data structure that speeds up row lookup — like a book's index pointing to page numbers instead of reading every page sequentially.</p>
+
+<div class="ascii-diagram">
+<pre>
+Without Index (Full Table Scan):     With Index (Seek):
+  Row 1  ─┐                            Index: customer_id → row location
+  Row 2   │ Scan ALL rows              Lookup: customer_id = 1001 → Row 847
+  Row 3   │ O(n) time                  Read ONLY Row 847
+  ...     │
+  Row 1M ─┘                            O(log n) time with B-Tree
+</pre>
+</div>
+
+<div class="callout">
+<strong>QA Analogy:</strong> Testing a search feature without an index is like verifying the search box works while the backend reads every product row — functionally correct but unusable at scale. Performance is a test requirement.
+</div>
+
+<h3>Clustered Index</h3>
+<ul>
+<li>Determines the <strong>physical order</strong> of data rows on disk</li>
+<li>Only <strong>one clustered index per table</strong> (usually the primary key)</li>
+<li>Data rows are stored in the index leaf pages — no separate heap lookup needed</li>
+<li>Range queries on clustered key are fast (e.g., orders by order_date if clustered on date)</li>
+</ul>
+
+<pre><code>-- SQL Server: view clustered index
+SELECT i.name AS index_name, i.type_desc
+FROM sys.indexes i
+WHERE i.object_id = OBJECT_ID('orders') AND i.type = 1;
+
+-- PostgreSQL: tables are heap-organized by default;
+-- CLUSTER command temporarily reorders by index (not maintained automatically)</code></pre>
+
+<h3>Non-Clustered Index</h3>
+<ul>
+<li>Separate structure from data rows — contains key columns + pointer to row</li>
+<li><strong>Multiple non-clustered indexes</strong> allowed per table</li>
+<li>Extra lookup step (key lookup / bookmark lookup) to fetch non-indexed columns</li>
+<li>Ideal for frequently filtered/joined columns not in clustered key</li>
+</ul>
+
+<pre><code>-- Create non-clustered index on frequently searched column
+CREATE INDEX idx_orders_customer_id ON orders (customer_id);
+CREATE INDEX idx_orders_status ON orders (status);
+CREATE INDEX idx_orders_order_date ON orders (order_date);</code></pre>
+
+<h3>Composite Index — Column Order Matters</h3>
+<p>A composite index on <code>(customer_id, order_date)</code> supports queries filtering by <code>customer_id</code> alone or by both columns. It does <strong>not</strong> efficiently support queries filtering only by <code>order_date</code> (leftmost prefix rule).</p>
+
+<pre><code>CREATE INDEX idx_orders_customer_date ON orders (customer_id, order_date);
+
+-- USES index efficiently:
+SELECT * FROM orders WHERE customer_id = 1001;
+SELECT * FROM orders WHERE customer_id = 1001 AND order_date > '2025-01-01';
+
+-- May NOT use index efficiently (order_date alone):
+SELECT * FROM orders WHERE order_date > '2025-01-01';</code></pre>
+
+<h3>Covering Index</h3>
+<p>Includes all columns needed by a query in the index itself — avoids key lookup to the table (index-only scan).</p>
+
+<pre><code>-- Query always needs customer_id, status, total_amount
+CREATE INDEX idx_orders_covering
+ON orders (customer_id)
+INCLUDE (status, total_amount);  -- SQL Server syntax
+
+-- PostgreSQL equivalent: include columns in index definition
+CREATE INDEX idx_orders_covering_pg
+ON orders (customer_id) INCLUDE (status, total_amount);</code></pre>
+
+<h3>Unique Index</h3>
+<p>Enforces uniqueness while providing lookup speed. Automatically created for PRIMARY KEY and UNIQUE constraints.</p>
+
+<pre><code>CREATE UNIQUE INDEX idx_customers_email ON customers (LOWER(email));
+
+-- QA validation: attempt duplicate insert should fail
+INSERT INTO customers (email, name) VALUES ('test@example.com', 'Test');
+-- Second insert with same email → unique violation error</code></pre>
+
+<h3>When to Create Indexes</h3>
+<ul>
+<li>Columns in WHERE, JOIN, ORDER BY clauses with high selectivity</li>
+<li>Foreign key columns (speeds up joins and cascade operations)</li>
+<li>Tables with high SELECT-to-INSERT ratio (product catalog, order history reads)</li>
+<li>Columns used in reporting queries run frequently</li>
+</ul>
+
+<h3>When NOT to Create Indexes</h3>
+<ul>
+<li>Small tables (full scan is faster than index seek overhead)</li>
+<li>Columns with low selectivity (e.g., boolean <code>is_active</code> with 50/50 split)</li>
+<li>Tables with heavy INSERT/UPDATE/DELETE and few reads (write-heavy audit logs)</li>
+<li>Columns rarely used in queries</li>
+<li>Over-indexing: each index slows writes and consumes storage</li>
+</ul>
+
+<h3>Index Impact — SELECT vs INSERT/UPDATE/DELETE</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operation</th><th>Without Index</th><th>With Index</th></tr></thead>
+<tbody>
+<tr><td>SELECT (filtered)</td><td>Full table scan — slow on large tables</td><td>Index seek — fast lookup</td></tr>
+<tr><td>SELECT (full scan needed)</td><td>Same</td><td>Index may be ignored by optimizer</td></tr>
+<tr><td>INSERT</td><td>Write row only</td><td>Write row + update every index on table</td></tr>
+<tr><td>UPDATE (indexed column)</td><td>Find row (scan) + write</td><td>Find row (seek) + update index entries</td></tr>
+<tr><td>DELETE</td><td>Find row + delete</td><td>Find row + remove from all indexes</td></tr>
+<tr><td>Storage</td><td>Data only</td><td>Data + index structures (10-30% overhead typical)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>EXPLAIN / Execution Plan — How to Read</h3>
+<pre><code>-- PostgreSQL
+EXPLAIN ANALYZE
+SELECT o.order_id, o.total_amount, c.email
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+WHERE o.status = 'COMPLETED'
+  AND o.order_date >= '2025-01-01';
+
+-- MySQL
+EXPLAIN SELECT * FROM orders WHERE customer_id = 1001;
+
+-- SQL Server
+SET SHOWPLAN_TEXT ON;
+GO
+SELECT * FROM orders WHERE customer_id = 1001;</code></pre>
+
+<h4>Key Plan Operations to Recognize</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operation</th><th>Meaning</th><th>QA Action</th></tr></thead>
+<tbody>
+<tr><td>Seq Scan / Table Scan</td><td>Reads every row</td><td>Flag if table has millions of rows and query runs frequently</td></tr>
+<tr><td>Index Scan</td><td>Reads entire index</td><td>Acceptable for range queries; check row estimate</td></tr>
+<tr><td>Index Seek</td><td>Direct lookup</td><td>Ideal for point queries</td></tr>
+<tr><td>Nested Loop</td><td>For each outer row, scan inner</td><td>OK for small sets; bad if inner is large unindexed table</td></tr>
+<tr><td>Hash Join</td><td>Builds hash table for join</td><td>Good for large equal-joins</td></tr>
+<tr><td>Sort</td><td>Explicit sort step</td><td>Expensive; check if index could provide order</td></tr>
+<tr><td>Cost / Actual Time</td><td>Optimizer estimate vs reality</td><td>Large gap = stale statistics</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Query Optimization Basics for Testers</h3>
+<ul>
+<li>Run EXPLAIN on every slow query reported in bug ticket — attach plan to Jira</li>
+<li>Check for missing index on WHERE/JOIN columns showing Seq Scan</li>
+<li>Avoid <code>SELECT *</code> in validation queries — fetch only needed columns</li>
+<li>Use LIMIT during exploratory queries on production-like data volumes</li>
+<li>Verify statistics are up to date after large data imports</li>
+<li>Look for implicit conversions (comparing VARCHAR column to INT) that prevent index use</li>
+</ul>
+
+<pre><code>-- BAD: function on indexed column prevents index use
+SELECT * FROM orders WHERE YEAR(order_date) = 2025;
+
+-- GOOD: sargable predicate
+SELECT * FROM orders
+WHERE order_date >= '2025-01-01' AND order_date < '2026-01-01';</code></pre>
+
+<h3>N+1 Query Problem</h3>
+<p>Application loads a list of N orders, then executes 1 query per order to fetch items — total N+1 queries instead of 1 JOIN or 2 batch queries.</p>
+
+<div class="ascii-diagram">
+<pre>
+N+1 Pattern (Bad):                    Optimized (Good):
+  SELECT * FROM orders; -- 1 query       SELECT o.*, oi.*
+  foreach order:                          FROM orders o
+    SELECT * FROM order_items             JOIN order_items oi ON ...
+    WHERE order_id = ?;  -- N queries     WHERE o.customer_id = 1001;
+  Total: N+1 queries                     Total: 1 query
+</pre>
+</div>
+
+<p><strong>QA Detection:</strong> Enable SQL query logging during UI test. Navigate to order history page. If log shows 1 query for orders + 20 identical item queries, file N+1 performance bug.</p>
+
+<h3>QA Scenarios — Performance Verification</h3>
+<h4>Verify Query Meets SLA</h4>
+<pre><code>-- Run with timing (PostgreSQL)
+\timing on
+SELECT COUNT(*) FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+WHERE o.order_date >= CURRENT_DATE - INTERVAL '30 days';
+-- Assert execution time &lt; 500ms in test report</code></pre>
+
+<h4>Identify Missing Index After Deployment</h4>
+<pre><code>-- PostgreSQL: find sequential scans on large tables
+SELECT schemaname, relname, seq_scan, seq_tup_read, idx_scan
+FROM pg_stat_user_tables
+WHERE seq_scan > 1000 AND seq_tup_read > 100000
+ORDER BY seq_tup_read DESC;</code></pre>
+
+<h4>Regression: Compare Plan Before and After Release</h4>
+<p>Save EXPLAIN output from baseline environment. After release, run same query. If plan changed from Index Seek to Seq Scan, escalate as performance regression even if functional tests pass.</p>
+
+<h4>Load Test SQL Monitoring Checklist</h4>
+<ul>
+<li>Capture top 10 slowest queries from pg_stat_statements or APM tool during JMeter/Gatling run</li>
+<li>Flag any query exceeding 1s p95 latency on order search or product catalog endpoints</li>
+<li>Verify connection pool not exhausted (HikariCP pending threads &gt; 0 indicates DB bottleneck)</li>
+<li>Compare index hit ratio before and after load: <code>idx_scan / (seq_scan + idx_scan)</code> should stay above 0.95 for hot tables</li>
+<li>Document query frequency × latency = total DB time; prioritize fixes by impact</li>
+</ul>
+
+<pre><code>-- MySQL: find queries not using indexes
+SELECT * FROM sys.schema_unused_indexes
+WHERE object_schema = 'ecommerce';
+
+-- PostgreSQL: cache hit ratio (should be &gt; 99%)
+SELECT sum(heap_blks_hit) / (sum(heap_blks_hit) + sum(heap_blks_read)) AS cache_hit_ratio
+FROM pg_statio_user_tables;</code></pre>
+
+<h3>Interview Questions &amp; Answers (12 Questions)</h3>
+<ol>
+<li><strong>What is a database index?</strong><br>
+A data structure (usually B-Tree) that speeds up row retrieval by key — trades storage and write speed for read speed.</li>
+
+<li><strong>Clustered vs non-clustered index?</strong><br>
+Clustered defines physical row order; one per table. Non-clustered is separate structure with pointer to row; multiple allowed.</li>
+
+<li><strong>Why does composite index column order matter?</strong><br>
+Leftmost prefix rule: index on (A, B) supports WHERE A and WHERE A,B but not efficiently WHERE B alone.</li>
+
+<li><strong>What is a covering index?</strong><br>
+Index containing all columns a query needs — enables index-only scan without table lookup.</li>
+
+<li><strong>When should you NOT add an index?</strong><br>
+Small tables, low-selectivity columns, write-heavy tables with rare reads, or when too many indexes degrade INSERT/UPDATE performance.</li>
+
+<li><strong>What is EXPLAIN used for?</strong><br>
+Shows how the database executes a query — scan types, join methods, estimated cost. Essential for diagnosing slow queries.</li>
+
+<li><strong>Seq Scan vs Index Scan vs Index Seek?</strong><br>
+Seq Scan reads all rows. Index Scan reads all index entries. Index Seek directly locates specific entries — fastest for point lookups.</li>
+
+<li><strong>What is the N+1 query problem?</strong><br>
+Loading a collection then querying related data one row at a time. Fix with JOINs or batch IN queries. Detect via SQL logging during UI tests.</li>
+
+<li><strong>What is a sargable query?</strong><br>
+Search ARGument ABLE — predicate written so index can be used. Avoid functions on indexed columns in WHERE clause.</li>
+
+<li><strong>How does indexing affect INSERT performance?</strong><br>
+Each index must be updated on insert. More indexes = slower writes. Balance read vs write patterns.</li>
+
+<li><strong>How would you test query performance as SDET?</strong><br>
+Define SLA thresholds, run EXPLAIN ANALYZE in CI for critical queries, compare plans across releases, monitor query logs during load tests.</li>
+
+<li><strong>Unique index vs unique constraint?</strong><br>
+Unique constraint is a logical rule; unique index is the physical implementation enforcing it. Both prevent duplicates.</li>
+</ol>
+</section>
+
+<!-- ==================== SECTION 12: TRANSACTIONS & ACID ==================== -->
+<section id="section-12" class="section-card">
+<h2>Section 12: Transactions &amp; ACID</h2>
+<p>Transactions guarantee that multi-step database operations (checkout, payment, inventory update) either complete fully or leave no partial state. Every SDET testing e-commerce order flows, financial transfers, or concurrent user actions must understand ACID properties and isolation levels.</p>
+
+<h3>What Is a Transaction?</h3>
+<p>A transaction is a logical unit of work comprising one or more SQL statements that execute as a single indivisible operation. It begins with <code>BEGIN</code> (or implicit start), ends with <code>COMMIT</code> (persist changes) or <code>ROLLBACK</code> (undo all changes).</p>
+
+<pre><code>BEGIN;
+    INSERT INTO orders (customer_id, total_amount, status)
+    VALUES (1001, 599.98, 'PENDING');
+
+    INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+    VALUES (currval('orders_order_id_seq'), 101, 2, 299.99);
+
+    UPDATE inventory SET stock_quantity = stock_quantity - 2
+    WHERE product_id = 101;
+
+COMMIT;  -- all three statements persist together</code></pre>
+
+<h3>ACID Properties — Detailed Explanation</h3>
+
+<h4>A — Atomicity</h4>
+<p>All statements in a transaction succeed together or none persist. Partial completion is impossible from the caller's perspective.</p>
+<p><strong>Banking Transfer Example:</strong> Debit $100 from Account A, credit $100 to Account B. If credit fails after debit, atomicity requires both operations roll back — no lost money.</p>
+
+<pre><code>BEGIN;
+    UPDATE accounts SET balance = balance - 100 WHERE account_id = 'A';
+    UPDATE accounts SET balance = balance + 100 WHERE account_id = 'B';
+    -- If any statement fails:
+ROLLBACK;  -- both updates undone</code></pre>
+
+<h4>C — Consistency</h4>
+<p>Transaction moves database from one valid state to another, enforcing all constraints (PK, FK, CHECK, UNIQUE). Invalid data never commits.</p>
+<pre><code>BEGIN;
+    INSERT INTO orders (customer_id, total_amount) VALUES (99999, -50);
+    -- CHECK constraint total_amount > 0 fails → entire transaction rolls back
+ROLLBACK;</code></pre>
+
+<h4>I — Isolation</h4>
+<p>Concurrent transactions don't interfere with each other's intermediate state. Each transaction appears to run in isolation — though physical execution may be interleaved.</p>
+<p><strong>Scenario:</strong> User A reads inventory = 5. User B purchases 3 (inventory = 2). User A still sees 5 unless isolation level permits dirty reads.</p>
+
+<h4>D — Durability</h4>
+<p>Once COMMIT succeeds, changes survive system crash, power failure, or restart. Database writes to persistent storage (WAL/redo log) before acknowledging commit.</p>
+
+<div class="callout">
+<strong>QA Scenario — Checkout Failure:</strong> Simulate payment gateway timeout after order insert. Verify: either order + payment + inventory update all exist, or none exist. Query for orders with status PENDING and no payment record — indicates atomicity violation.
+</div>
+
+<pre><code>-- Detect partial checkout state (atomicity bug)
+SELECT o.order_id, o.status, p.payment_id
+FROM orders o
+LEFT JOIN payments p ON o.order_id = p.order_id
+WHERE o.status = 'PENDING'
+  AND o.created_at >= CURRENT_DATE - INTERVAL '1 day'
+  AND p.payment_id IS NULL
+  AND o.total_amount > 0;</code></pre>
+
+<h3>Transaction Control — BEGIN, COMMIT, ROLLBACK</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Action</th><th>QA Use</th></tr></thead>
+<tbody>
+<tr><td><code>BEGIN</code> / <code>START TRANSACTION</code></td><td>Start transaction block</td><td>Wrap test setup for rollback isolation</td></tr>
+<tr><td><code>COMMIT</code></td><td>Permanently save changes</td><td>Verify data persists after commit</td></tr>
+<tr><td><code>ROLLBACK</code></td><td>Undo all changes since BEGIN</td><td>Verify no data persisted after rollback</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>SAVEPOINT — Partial Rollback</h3>
+<pre><code>BEGIN;
+    INSERT INTO orders (customer_id, total_amount, status)
+    VALUES (1001, 199.99, 'PENDING');
+    SAVEPOINT after_order;
+
+    INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+    VALUES (currval('orders_order_id_seq'), 101, 1, 199.99);
+    SAVEPOINT after_items;
+
+    UPDATE inventory SET stock_quantity = stock_quantity - 1
+    WHERE product_id = 101;
+    -- Inventory update fails (insufficient stock):
+    ROLLBACK TO SAVEPOINT after_items;
+    -- Order and items remain; only inventory update undone
+
+COMMIT;</code></pre>
+
+<h3>Isolation Levels — Comparison Table</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Isolation Level</th><th>Dirty Read</th><th>Non-Repeatable Read</th><th>Phantom Read</th><th>Performance</th></tr></thead>
+<tbody>
+<tr><td>READ UNCOMMITTED</td><td>Possible</td><td>Possible</td><td>Possible</td><td>Fastest</td></tr>
+<tr><td>READ COMMITTED</td><td>Prevented</td><td>Possible</td><td>Possible</td><td>Default in PostgreSQL, Oracle, SQL Server</td></tr>
+<tr><td>REPEATABLE READ</td><td>Prevented</td><td>Prevented</td><td>Possible*</td><td>Default in MySQL InnoDB</td></tr>
+<tr><td>SERIALIZABLE</td><td>Prevented</td><td>Prevented</td><td>Prevented</td><td>Slowest; may cause deadlocks</td></tr>
+</tbody>
+</table>
+</div>
+<p>*PostgreSQL REPEATABLE READ also prevents phantom reads via snapshot isolation.</p>
+
+<h4>Phenomena Explained</h4>
+<ul>
+<li><strong>Dirty Read:</strong> Reading uncommitted data from another transaction that may rollback</li>
+<li><strong>Non-Repeatable Read:</strong> Same query in one transaction returns different rows because another transaction committed an update</li>
+<li><strong>Phantom Read:</strong> Same query returns different number of rows because another transaction inserted/deleted matching rows</li>
+</ul>
+
+<pre><code>-- Set isolation level (PostgreSQL)
+BEGIN ISOLATION LEVEL REPEATABLE READ;
+    SELECT stock_quantity FROM inventory WHERE product_id = 101;  -- returns 10
+    -- Another session updates stock to 7 and commits
+    SELECT stock_quantity FROM inventory WHERE product_id = 101;
+    -- READ COMMITTED: returns 7 (non-repeatable read)
+    -- REPEATABLE READ: returns 10 (snapshot)
+COMMIT;</code></pre>
+
+<h3>Deadlocks — Detection and Prevention</h3>
+<p>A deadlock occurs when Transaction A holds lock on Row 1 waiting for Row 2, while Transaction B holds lock on Row 2 waiting for Row 1. Database detects and aborts one transaction.</p>
+
+<div class="ascii-diagram">
+<pre>
+Transaction A:  LOCK orders(1001)  →  WAIT order_items(5001)
+Transaction B:  LOCK order_items(5001)  →  WAIT orders(1001)
+                     ↓
+              DEADLOCK detected → one transaction ROLLBACK
+</pre>
+</div>
+
+<pre><code>-- PostgreSQL: view recent deadlocks in log
+-- Enable: log_lock_waits = on, deadlock_timeout = 1s
+
+-- SQL Server: system health session extended events
+-- MySQL: SHOW ENGINE INNODB STATUS; (look for LATEST DETECTED DEADLOCK)</code></pre>
+
+<h4>Prevention Strategies</h4>
+<ul>
+<li>Access tables/rows in consistent order across all transactions</li>
+<li>Keep transactions short — minimize lock hold time</li>
+<li>Use appropriate isolation level (don't use SERIALIZABLE unless required)</li>
+<li>Implement retry logic in application for deadlock victims</li>
+<li>Use row-level locking hints only when necessary</li>
+</ul>
+
+<h3>Testing Scenarios</h3>
+<h4>Verify Transaction Rollback</h4>
+<pre><code>-- Test: force failure mid-transaction
+BEGIN;
+    INSERT INTO orders (customer_id, total_amount, status) VALUES (1001, 50, 'PENDING');
+    -- Simulate failure before commit
+ROLLBACK;
+
+SELECT COUNT(*) FROM orders
+WHERE customer_id = 1001 AND total_amount = 50 AND status = 'PENDING';
+-- Expect: 0</code></pre>
+
+<h4>Concurrent Access Testing — Overselling Inventory</h4>
+<p>Two users simultaneously purchase last item in stock. Only one should succeed; other should get "out of stock" error. Test with parallel threads/API calls, then verify inventory never goes negative.</p>
+
+<pre><code>SELECT product_id, stock_quantity FROM inventory
+WHERE product_id = 101 AND stock_quantity < 0;
+-- Expect: no rows (negative stock = concurrency bug)</code></pre>
+
+<h4>Verify Idempotency with Transactions</h4>
+<pre><code>-- Payment webhook processed twice with same idempotency key
+SELECT idempotency_key, COUNT(*) AS process_count
+FROM payment_events
+GROUP BY idempotency_key
+HAVING COUNT(*) > 1;
+-- Expect: 0 if idempotency enforced correctly</code></pre>
+
+<h4>Durability Test (Conceptual)</h4>
+<p>After successful checkout COMMIT, simulate application crash before response sent to client. Verify order exists in DB when system restarts — customer shouldn't be charged without order record.</p>
+
+<h4>Test Automation Pattern — JDBC Transaction Rollback for Isolation</h4>
+<pre><code>Connection conn = dataSource.getConnection();
+conn.setAutoCommit(false);
+try {
+    // Seed test data
+    insertTestCustomer(conn, 999999L);
+    insertTestOrder(conn, 999999L);
+    // Run assertions against API that reads this data
+    verifyOrderApiReturns201();
+    // Rollback — no cleanup SQL needed
+    conn.rollback();
+} finally {
+    conn.setAutoCommit(true);
+    conn.close();
+}</code></pre>
+
+<p><strong>Note:</strong> This pattern only works when the API under test shares the same DB connection/transaction scope, or uses the same uncommitted data visible within the connection. For microservices with separate connection pools, use explicit SQL cleanup instead.</p>
+
+<h3>Real E-Commerce Transaction Flow</h3>
+<div class="ascii-diagram">
+<pre>
+BEGIN TRANSACTION
+  1. INSERT orders           (status = PENDING)
+  2. INSERT order_items      (line items from cart)
+  3. INSERT payments         (status = PROCESSING)
+  4. Call payment gateway    (external)
+  5. UPDATE payments         (status = SUCCESS/FAILED)
+  6. UPDATE orders           (status = PAID or CANCELLED)
+  7. UPDATE inventory        (decrement stock)
+  8. DELETE cart_items       (clear cart)
+COMMIT (or ROLLBACK on any failure)
+</pre>
+</div>
+
+<pre><code>-- QA validation query after successful checkout
+SELECT o.order_id, o.status AS order_status,
+       p.status AS payment_status,
+       i.stock_quantity,
+       (SELECT COUNT(*) FROM cart_items ci
+        JOIN carts c ON ci.cart_id = c.cart_id
+        WHERE c.customer_id = o.customer_id) AS remaining_cart_items
+FROM orders o
+JOIN payments p ON o.order_id = p.order_id
+JOIN order_items oi ON o.order_id = oi.order_id
+JOIN inventory i ON oi.product_id = i.product_id
+WHERE o.order_id = :test_order_id;
+-- Expect: order_status = PAID, payment_status = SUCCESS,
+--         stock decremented, remaining_cart_items = 0</code></pre>
+
+<h3>Interview Questions &amp; Answers (12 Questions)</h3>
+<ol>
+<li><strong>What is a database transaction?</strong><br>
+A group of SQL operations treated as a single unit — all succeed (COMMIT) or all fail (ROLLBACK).</li>
+
+<li><strong>Explain ACID properties.</strong><br>
+Atomicity (all or nothing), Consistency (valid state to valid state), Isolation (concurrent transactions don't interfere), Durability (committed data survives crashes).</li>
+
+<li><strong>What is the difference between COMMIT and ROLLBACK?</strong><br>
+COMMIT permanently saves changes. ROLLBACK undoes all changes since BEGIN.</li>
+
+<li><strong>What is a SAVEPOINT?</strong><br>
+Marker within a transaction allowing partial rollback to that point without undoing earlier statements in the same transaction.</li>
+
+<li><strong>Explain isolation levels.</strong><br>
+READ UNCOMMITTED (least strict) through SERIALIZABLE (strictest). Higher isolation prevents more concurrency anomalies but reduces performance and increases deadlock risk.</li>
+
+<li><strong>What is a dirty read?</strong><br>
+Reading uncommitted data from another transaction that may still rollback — possible only at READ UNCOMMITTED level.</li>
+
+<li><strong>Non-repeatable read vs phantom read?</strong><br>
+Non-repeatable read: same row returns different values (updated by another txn). Phantom read: same query returns different number of rows (inserts/deletes by another txn).</li>
+
+<li><strong>What is a deadlock?</strong><br>
+Circular wait — two transactions each hold a lock the other needs. DB kills one transaction; application should retry.</li>
+
+<li><strong>How do you test transaction rollback?</strong><br>
+Begin transaction, insert/update data, force failure, rollback, verify data absent or unchanged. Automate with JDBC connection.setAutoCommit(false).</li>
+
+<li><strong>How do you test concurrent inventory updates?</strong><br>
+Parallel API calls purchasing same product with stock = 1. Assert exactly one succeeds, inventory = 0, no negative stock.</li>
+
+<li><strong>Default isolation level in PostgreSQL vs MySQL?</strong><br>
+PostgreSQL: READ COMMITTED. MySQL InnoDB: REPEATABLE READ.</li>
+
+<li><strong>How would you detect a partial transaction bug in production?</strong><br>
+Query for orphaned/inconsistent states: orders without payments, payments without orders, inventory not decremented after completed orders. Monitor counts after deployment.</li>
+</ol>
+</section>

@@ -1,0 +1,2186 @@
+﻿<!-- ==================== SECTION 13: NORMALIZATION ==================== -->
+<section id="section-13" class="section-card">
+<h2>Section 13: Normalization</h2>
+<p>Normalization is the process of organizing relational database tables to reduce redundancy and improve data integrity. For QA/SDET engineers, understanding normalization helps you design better test data, write accurate validation queries, and spot schema defects during migration or API testing.</p>
+
+<h3>What Is Normalization? Why Is It Needed?</h3>
+<p>Normalization applies a series of rules (normal forms) to split data across tables so each fact is stored in exactly one place. Without it, the same data appears in multiple rows, causing update anomalies (change in one place, stale data elsewhere), insert anomalies (cannot add data without unrelated data), and delete anomalies (deleting one record removes unrelated data).</p>
+
+<div class="callout">
+<strong>QA Insight:</strong> When you see the same column (e.g., <code>customer_email</code>) duplicated across <code>orders</code>, <code>shipments</code>, and <code>invoices</code>, expect update bugs &mdash; fix an email in one table and UI shows old email elsewhere. Your test plan should include cross-table consistency checks.
+</div>
+
+<h3>First Normal Form (1NF) &mdash; Atomic Values, No Repeating Groups</h3>
+<p><strong>Rule:</strong> Each column holds a single atomic value; no repeating groups or multi-valued attributes in one cell.</p>
+
+<h4>Before 1NF (Violates &mdash; repeating phone numbers in one row)</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>student_id</th><th>name</th><th>phone1</th><th>phone2</th><th>phone3</th></tr></thead>
+<tbody>
+<tr><td>101</td><td>Alice</td><td>555-1111</td><td>555-2222</td><td>NULL</td></tr>
+<tr><td>102</td><td>Bob</td><td>555-3333</td><td>NULL</td><td>NULL</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>After 1NF (Separate child table for phones)</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>student_id</th><th>name</th></tr></thead>
+<tbody>
+<tr><td>101</td><td>Alice</td></tr>
+<tr><td>102</td><td>Bob</td></tr>
+</tbody>
+</table>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>student_id</th><th>phone</th><th>phone_type</th></tr></thead>
+<tbody>
+<tr><td>101</td><td>555-1111</td><td>mobile</td></tr>
+<tr><td>101</td><td>555-2222</td><td>home</td></tr>
+<tr><td>102</td><td>555-3333</td><td>mobile</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- QA validation: no student should have duplicate phone numbers
+SELECT student_id, phone, COUNT(*) AS cnt
+FROM student_phones
+GROUP BY student_id, phone
+HAVING COUNT(*) > 1;</code></pre>
+
+<h3>Second Normal Form (2NF) &mdash; Remove Partial Dependencies</h3>
+<p><strong>Rule:</strong> Must be in 1NF; every non-key column must depend on the <em>entire</em> primary key (applies when PK is composite).</p>
+
+<h4>Before 2NF (order_items with partial dependency on product_name via product_id only)</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>order_id</th><th>product_id</th><th>product_name</th><th>quantity</th><th>unit_price</th></tr></thead>
+<tbody>
+<tr><td>1001</td><td>P01</td><td>Laptop</td><td>2</td><td>999.00</td></tr>
+<tr><td>1001</td><td>P02</td><td>Mouse</td><td>1</td><td>25.00</td></tr>
+</tbody>
+</table>
+</div>
+<p>PK = (order_id, product_id). <code>product_name</code> depends only on <code>product_id</code> &mdash; partial dependency.</p>
+
+<h4>After 2NF</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>order_id</th><th>product_id</th><th>quantity</th><th>unit_price</th></tr></thead>
+<tbody>
+<tr><td>1001</td><td>P01</td><td>2</td><td>999.00</td></tr>
+<tr><td>1001</td><td>P02</td><td>1</td><td>25.00</td></tr>
+</tbody>
+</table>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>product_id</th><th>product_name</th><th>category</th></tr></thead>
+<tbody>
+<tr><td>P01</td><td>Laptop</td><td>Electronics</td></tr>
+<tr><td>P02</td><td>Mouse</td><td>Accessories</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Third Normal Form (3NF) &mdash; Remove Transitive Dependencies</h3>
+<p><strong>Rule:</strong> Must be in 2NF; no non-key column depends on another non-key column.</p>
+
+<h4>Before 3NF (employee &rarr; dept_id &rarr; dept_name transitive dependency)</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>emp_id</th><th>emp_name</th><th>dept_id</th><th>dept_name</th><th>dept_location</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>John</td><td>10</td><td>Engineering</td><td>Building A</td></tr>
+<tr><td>2</td><td>Jane</td><td>10</td><td>Engineering</td><td>Building A</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>After 3NF</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>emp_id</th><th>emp_name</th><th>dept_id</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>John</td><td>10</td></tr>
+<tr><td>2</td><td>Jane</td><td>10</td></tr>
+</tbody>
+</table>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>dept_id</th><th>dept_name</th><th>dept_location</th></tr></thead>
+<tbody>
+<tr><td>10</td><td>Engineering</td><td>Building A</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>BCNF (Boyce-Codd Normal Form)</h3>
+<p>BCNF is a stricter version of 3NF. Every determinant (column that determines another) must be a candidate key. Example violation: a table with columns (student_id, course_id, instructor) where each instructor teaches only one course &mdash; instructor &rarr; course_id, but instructor is not a key. Fix by splitting into separate tables. In practice, most OLTP systems target 3NF; BCNF matters in academic design and complex dependency scenarios.</p>
+
+<h3>Denormalization &mdash; When and Why</h3>
+<p>Denormalization intentionally introduces redundancy for performance. Common in data warehouses, reporting dashboards, and read-heavy systems where JOIN cost is too high.</p>
+<ul>
+<li><strong>Data warehouses:</strong> Star/snowflake schemas with pre-aggregated fact tables</li>
+<li><strong>Reporting:</strong> Flattened tables for BI tools (Power BI, Tableau)</li>
+<li><strong>Caching layers:</strong> Materialized views, read replicas with denormalized snapshots</li>
+<li><strong>Event logs:</strong> Store user_name alongside user_id to avoid JOIN on billions of rows</li>
+</ul>
+
+<h3>Normalization vs Denormalization</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Normalization</th><th>Denormalization</th></tr></thead>
+<tbody>
+<tr><td>Redundancy</td><td>Minimized</td><td>Intentionally increased</td></tr>
+<tr><td>Write performance</td><td>Better (single source of truth)</td><td>Slower (multiple copies to update)</td></tr>
+<tr><td>Read performance</td><td>More JOINs required</td><td>Fewer JOINs, faster reads</td></tr>
+<tr><td>Data integrity</td><td>High (FK constraints)</td><td>Risk of inconsistency</td></tr>
+<tr><td>Use case</td><td>OLTP (CRUD apps)</td><td>OLAP (analytics, DWH)</td></tr>
+<tr><td>QA focus</td><td>Referential integrity, FK orphans</td><td>Sync validation, ETL reconciliation</td></tr>
+<tr><td>Schema changes</td><td>More tables to migrate</td><td>Fewer tables but wider columns</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>QA Perspective &mdash; How Normalization Affects Testing</h3>
+<ul>
+<li><strong>Test data setup:</strong> Normalized schemas require INSERT order (parent before child). Test fixtures must respect FK dependencies.</li>
+<li><strong>API validation:</strong> A single POST may INSERT into 3&ndash;4 tables &mdash; validate all, not just the primary response table.</li>
+<li><strong>UI vs DB:</strong> UI may show denormalized/cached data; DB is normalized &mdash; compare via JOIN queries, not single-table SELECT.</li>
+<li><strong>Migration testing:</strong> Normalization changes during migration mean row counts per table change (1 table &rarr; 3 tables). Compare logical record counts, not raw table counts.</li>
+<li><strong>Regression:</strong> Update to <code>products.product_name</code> should reflect everywhere if denormalized copies exist &mdash; test propagation.</li>
+</ul>
+
+<h3>Interview Questions &amp; Answers (Normalization)</h3>
+
+<h4>Q1. What is database normalization?</h4>
+<p><strong>Answer:</strong> A design technique to organize tables, eliminate redundancy, and ensure data dependencies make sense &mdash; achieved through normal forms (1NF through BCNF).</p>
+<p><strong>Interviewer expects:</strong> Clear definition plus mention of anomalies (insert, update, delete).</p>
+
+<h4>Q2. Explain 1NF with an example.</h4>
+<p><strong>Answer:</strong> 1NF requires atomic values and no repeating groups. Instead of columns phone1/phone2/phone3, create a separate phone table with one phone per row.</p>
+<p><strong>Interviewer expects:</strong> Before/after table example and understanding of atomicity.</p>
+
+<h4>Q3. What is a partial dependency?</h4>
+<p><strong>Answer:</strong> When a non-key column depends on part of a composite primary key, not the whole key. Example: in (order_id, product_id, product_name), product_name depends only on product_id.</p>
+<p><strong>Interviewer expects:</strong> Composite key context and 2NF connection.</p>
+
+<h4>Q4. What is a transitive dependency?</h4>
+<p><strong>Answer:</strong> Column A &rarr; Column B &rarr; Column C, where B and C are non-key. Example: emp_id &rarr; dept_id &rarr; dept_name. dept_name transitively depends on emp_id via dept_id.</p>
+<p><strong>Interviewer expects:</strong> Link to 3NF and ability to decompose tables.</p>
+
+<h4>Q5. Difference between 3NF and BCNF?</h4>
+<p><strong>Answer:</strong> 3NF allows non-key determinants in edge cases; BCNF requires every determinant to be a candidate key. BCNF is stricter.</p>
+<p><strong>Interviewer expects:</strong> Awareness that most production schemas target 3NF.</p>
+
+<h4>Q6. When would you denormalize a database?</h4>
+<p><strong>Answer:</strong> When read performance is critical and JOINs are expensive &mdash; reporting, data warehouses, caching. Accept redundancy with sync/ETL validation.</p>
+<p><strong>Interviewer expects:</strong> Trade-off awareness, not "always normalize."</p>
+
+<h4>Q7. How does normalization affect your test strategy?</h4>
+<p><strong>Answer:</strong> More tables = more INSERT/UPDATE/DELETE validation points. Need multi-table test data setup, FK orphan checks, and cross-table consistency queries after API calls.</p>
+<p><strong>Interviewer expects:</strong> Practical QA perspective, not just theory.</p>
+
+<h4>Q8. What anomalies does normalization prevent?</h4>
+<p><strong>Answer:</strong> Update anomaly (inconsistent copies), insert anomaly (cannot insert without unrelated data), delete anomaly (deleting one fact removes another).</p>
+<p><strong>Interviewer expects:</strong> All three named with a brief example each.</p>
+
+<h4>Q9. Is a fully normalized database always better?</h4>
+<p><strong>Answer:</strong> No. Over-normalization causes excessive JOINs and hurts read performance. Balance based on workload &mdash; OLTP favors normalization, OLAP favors denormalization.</p>
+<p><strong>Interviewer expects:</strong> Pragmatic engineering judgment.</p>
+
+<h4>Q10. How do you test after a normalization migration?</h4>
+<p><strong>Answer:</strong> Compare logical entity counts pre/post, validate no data loss via checksums, verify FK relationships, run application regression, and compare aggregated totals (sum of orders, revenue).</p>
+<p><strong>Interviewer expects:</strong> Concrete validation approach beyond "run tests."</p>
+</section>
+
+<!-- ==================== SECTION 14: REAL-TIME QA PROJECT SCENARIOS ==================== -->
+<section id="section-14" class="section-card">
+<h2>Section 14: Real-Time QA Project Scenarios</h2>
+<p>End-to-end database validation scenarios for 4-year QA/SDET engineers. Each scenario includes requirements, schema, SQL validation queries, test cases, and validation approach &mdash; mirroring real sprint work in e-commerce, fintech, and data platforms.</p>
+
+<div class="callout">
+<strong>How to use this section:</strong> Run SQL queries in your test DB after each API/UI action. Automate critical validations in your framework (JDBC, TestNG @AfterMethod hooks, REST-assured + DBUtils). Always capture baseline counts before destructive tests.
+</div>
+
+<!-- ===== SCENARIO 1 ===== -->
+<h3>Scenario 1: User Registration Validation</h3>
+
+<h4>Requirement</h4>
+<p>When a user registers via POST <code>/api/v1/users/register</code>, the system must:</p>
+<ul>
+<li>Insert a row into <code>users</code> with hashed password (never plain text)</li>
+<li>Enforce unique email (case-insensitive)</li>
+<li>Set default values: <code>status='ACTIVE'</code>, <code>created_at=NOW()</code>, <code>role='CUSTOMER'</code></li>
+<li>Reject missing required fields: email, password, first_name</li>
+<li>Optionally create a row in <code>user_profiles</code> if extended fields provided</li>
+</ul>
+
+<h4>Database Schema</h4>
+<pre><code>CREATE TABLE users (
+    user_id       BIGINT PRIMARY KEY AUTO_INCREMENT,
+    email         VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name    VARCHAR(100) NOT NULL,
+    last_name     VARCHAR(100),
+    status        VARCHAR(20)  DEFAULT 'ACTIVE',
+    role          VARCHAR(30)  DEFAULT 'CUSTOMER',
+    created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT uq_users_email UNIQUE (email)
+);
+
+CREATE TABLE user_profiles (
+    profile_id    BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id       BIGINT NOT NULL UNIQUE,
+    phone         VARCHAR(20),
+    date_of_birth DATE,
+    country_code  CHAR(2) DEFAULT 'US',
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);</code></pre>
+
+<h4>SQL Queries for Validation</h4>
+<pre><code>-- 1. Verify user inserted after registration API call
+SELECT user_id, email, first_name, last_name, status, role, created_at
+FROM users
+WHERE email = 'test.user@example.com';
+
+-- 2. Verify password is hashed (not plain text)
+SELECT user_id, email,
+       CASE WHEN password_hash LIKE '$2a$%' OR LENGTH(password_hash) >= 60
+            THEN 'HASHED' ELSE 'PLAIN_TEXT_BUG' END AS pwd_check
+FROM users WHERE email = 'test.user@example.com';
+
+-- 3. Verify default values applied
+SELECT user_id, status, role, created_at
+FROM users
+WHERE email = 'test.user@example.com'
+  AND status = 'ACTIVE'
+  AND role = 'CUSTOMER'
+  AND created_at >= NOW() - INTERVAL 5 MINUTE;
+
+-- 4. Verify unique email constraint (should return 0 after duplicate attempt)
+SELECT email, COUNT(*) AS cnt
+FROM users
+WHERE LOWER(email) = LOWER('Test.User@Example.com')
+GROUP BY email
+HAVING COUNT(*) > 1;
+
+-- 5. Verify profile created when extended fields sent
+SELECT u.user_id, u.email, p.phone, p.country_code
+FROM users u
+JOIN user_profiles p ON u.user_id = p.user_id
+WHERE u.email = 'test.user@example.com';
+
+-- 6. Verify NO orphan profile without user
+SELECT p.* FROM user_profiles p
+LEFT JOIN users u ON p.user_id = u.user_id
+WHERE u.user_id IS NULL;</code></pre>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TC ID</th><th>Test Case</th><th>Input</th><th>Expected DB Result</th></tr></thead>
+<tbody>
+<tr><td>REG-01</td><td>Valid registration</td><td>All required fields</td><td>1 row in users; defaults set</td></tr>
+<tr><td>REG-02</td><td>Duplicate email</td><td>Same email twice</td><td>2nd API returns 409; still 1 row</td></tr>
+<tr><td>REG-03</td><td>Missing email</td><td>No email field</td><td>0 new rows; API 400</td></tr>
+<tr><td>REG-04</td><td>Missing password</td><td>No password</td><td>0 new rows; API 400</td></tr>
+<tr><td>REG-05</td><td>Case-insensitive duplicate</td><td>Test@Mail.com then test@mail.com</td><td>409 on 2nd; 1 row total</td></tr>
+<tr><td>REG-06</td><td>Registration with profile</td><td>phone, DOB included</td><td>1 user + 1 profile row</td></tr>
+<tr><td>REG-07</td><td>SQL injection in email</td><td><code>' OR '1'='1</code></td><td>Rejected; 0 malicious rows</td></tr>
+<tr><td>REG-08</td><td>Max length email</td><td>256-char email</td><td>400 or truncation per spec</td></tr>
+<tr><td>REG-09</td><td>Special chars in name</td><td>O'Brien, Jos&eacute;</td><td>Stored correctly, no corruption</td></tr>
+<tr><td>REG-10</td><td>Concurrent duplicate register</td><td>Same email, 2 threads</td><td>Exactly 1 row (race condition)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Validation Approach</h4>
+<ol>
+<li>Capture baseline: <code>SELECT COUNT(*) FROM users;</code></li>
+<li>Execute API registration with unique email</li>
+<li>Assert count increased by 1</li>
+<li>Run SELECT by email &mdash; verify all columns match request + defaults</li>
+<li>Verify password_hash &ne; request password</li>
+<li>For negative tests, assert count unchanged</li>
+<li>Automate in TestNG: API call &rarr; JDBC query &rarr; Assert.assertEquals</li>
+</ol>
+
+<!-- ===== SCENARIO 2 ===== -->
+<h3>Scenario 2: Order Placement Validation (E-Commerce)</h3>
+
+<h4>Requirement</h4>
+<p>When customer places order via POST <code>/api/v1/orders</code>:</p>
+<ul>
+<li>Create row in <code>orders</code> with calculated total</li>
+<li>Create rows in <code>order_items</code> for each line item</li>
+<li>Reduce <code>inventory.quantity</code> by ordered qty (no negative stock)</li>
+<li>Link order to <code>user_id</code> and shipping address</li>
+<li>Order status starts as <code>PENDING</code></li>
+</ul>
+
+<h4>Database Schema</h4>
+<pre><code>CREATE TABLE products (
+    product_id   INT PRIMARY KEY,
+    product_name VARCHAR(200),
+    unit_price   DECIMAL(10,2) NOT NULL
+);
+
+CREATE TABLE inventory (
+    product_id INT PRIMARY KEY,
+    quantity   INT NOT NULL CHECK (quantity >= 0),
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+CREATE TABLE orders (
+    order_id     BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id      BIGINT NOT NULL,
+    order_status VARCHAR(20) DEFAULT 'PENDING',
+    subtotal     DECIMAL(12,2),
+    tax_amount   DECIMAL(12,2),
+    total_amount DECIMAL(12,2),
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE order_items (
+    item_id    BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id   BIGINT NOT NULL,
+    product_id INT NOT NULL,
+    quantity   INT NOT NULL CHECK (quantity > 0),
+    unit_price DECIMAL(10,2) NOT NULL,
+    line_total DECIMAL(12,2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id),
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);</code></pre>
+
+<h4>SQL Queries for Validation</h4>
+<pre><code>-- 1. Verify order header created
+SELECT order_id, user_id, order_status, subtotal, tax_amount, total_amount
+FROM orders WHERE order_id = @order_id;
+
+-- 2. Verify line items match request
+SELECT oi.product_id, oi.quantity, oi.unit_price, oi.line_total,
+       p.product_name
+FROM order_items oi
+JOIN products p ON oi.product_id = p.product_id
+WHERE oi.order_id = @order_id;
+
+-- 3. Verify total calculation: subtotal = SUM(line_total)
+SELECT o.order_id, o.subtotal,
+       (SELECT SUM(line_total) FROM order_items WHERE order_id = o.order_id) AS calc_subtotal,
+       CASE WHEN o.subtotal = (SELECT SUM(line_total) FROM order_items WHERE order_id = o.order_id)
+            THEN 'PASS' ELSE 'FAIL' END AS total_check
+FROM orders o WHERE o.order_id = @order_id;
+
+-- 4. Verify inventory reduced correctly
+-- Run BEFORE order: SELECT quantity FROM inventory WHERE product_id = 101;
+-- Run AFTER order:
+SELECT i.product_id, i.quantity AS current_qty
+FROM inventory i WHERE i.product_id = 101;
+-- Expected: before_qty - ordered_qty = after_qty
+
+-- 5. Verify no negative inventory
+SELECT product_id, quantity FROM inventory WHERE quantity < 0;
+
+-- 6. Verify item count matches request
+SELECT order_id, COUNT(*) AS item_count, SUM(quantity) AS total_units
+FROM order_items WHERE order_id = @order_id
+GROUP BY order_id;
+
+-- 7. Multi-table integrity: every order has at least one item
+SELECT o.order_id FROM orders o
+LEFT JOIN order_items oi ON o.order_id = oi.order_id
+WHERE oi.item_id IS NULL;</code></pre>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TC ID</th><th>Test Case</th><th>Expected DB Result</th></tr></thead>
+<tbody>
+<tr><td>ORD-01</td><td>Single item order</td><td>1 order, 1 item, inventory -1</td></tr>
+<tr><td>ORD-02</td><td>Multi-item order</td><td>1 order, N items, each inventory updated</td></tr>
+<tr><td>ORD-03</td><td>Total calculation</td><td>subtotal = SUM(qty &times; price); total = subtotal + tax</td></tr>
+<tr><td>ORD-04</td><td>Insufficient stock</td><td>Order rejected; inventory unchanged</td></tr>
+<tr><td>ORD-05</td><td>Zero quantity item</td><td>400 error; no DB changes</td></tr>
+<tr><td>ORD-06</td><td>Invalid product_id</td><td>FK error / 404; rollback</td></tr>
+<tr><td>ORD-07</td><td>Price snapshot</td><td>order_items.unit_price = price at order time</td></tr>
+<tr><td>ORD-08</td><td>Concurrent orders same product</td><td>No overselling; CHECK constraint holds</td></tr>
+<tr><td>ORD-09</td><td>Order rollback on payment fail</td><td>No order rows if payment fails (transaction)</td></tr>
+<tr><td>ORD-10</td><td>Duplicate order idempotency</td><td>Same idempotency key &rarr; 1 order only</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Validation Approach</h4>
+<ol>
+<li>Snapshot inventory before: store in test variable or temp table</li>
+<li>Place order via API</li>
+<li>Validate orders + order_items + inventory in single transaction read</li>
+<li>Assert: <code>total_amount = subtotal + tax_amount</code></li>
+<li>Assert: inventory delta matches sum of quantities per product</li>
+<li>For rollback tests: wrap in transaction check &mdash; no partial inserts</li>
+</ol>
+
+<!-- ===== SCENARIO 3 ===== -->
+<h3>Scenario 3: Payment Processing Validation</h3>
+
+<h4>Requirement</h4>
+<ul>
+<li>Payment status flow: PENDING &rarr; PROCESSING &rarr; COMPLETED or FAILED</li>
+<li>Payment amount must equal order total_amount</li>
+<li>On COMPLETED: order_status &rarr; PAID</li>
+<li>On FAILED: order_status remains PENDING; user can retry</li>
+<li>Refunds: COMPLETED &rarr; REFUNDED; partial refunds supported</li>
+</ul>
+
+<h4>Database Schema</h4>
+<pre><code>CREATE TABLE payments (
+    payment_id     BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id       BIGINT NOT NULL,
+    amount         DECIMAL(12,2) NOT NULL,
+    currency       CHAR(3) DEFAULT 'USD',
+    payment_status VARCHAR(20) DEFAULT 'PENDING',
+    gateway_ref    VARCHAR(100),
+    failure_reason VARCHAR(500),
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id)
+);
+
+CREATE TABLE refunds (
+    refund_id   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    payment_id  BIGINT NOT NULL,
+    amount      DECIMAL(12,2) NOT NULL,
+    reason      VARCHAR(200),
+    status      VARCHAR(20) DEFAULT 'PENDING',
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (payment_id) REFERENCES payments(payment_id)
+);</code></pre>
+
+<h4>SQL Queries for Validation</h4>
+<pre><code>-- 1. Verify payment amount matches order total
+SELECT p.payment_id, p.amount AS payment_amt, o.total_amount AS order_total,
+       CASE WHEN p.amount = o.total_amount THEN 'PASS' ELSE 'FAIL' END AS amt_check
+FROM payments p
+JOIN orders o ON p.order_id = o.order_id
+WHERE p.payment_id = @payment_id;
+
+-- 2. Verify status transition sequence (audit log or updated_at)
+SELECT payment_id, payment_status, updated_at
+FROM payments WHERE order_id = @order_id
+ORDER BY updated_at;
+
+-- 3. Verify order status after successful payment
+SELECT o.order_id, o.order_status, p.payment_status
+FROM orders o
+JOIN payments p ON o.order_id = p.order_id
+WHERE p.payment_status = 'COMPLETED' AND o.order_id = @order_id;
+-- Expected: order_status = 'PAID'
+
+-- 4. Verify failed payment does NOT mark order PAID
+SELECT COUNT(*) AS false_paid_count
+FROM orders o
+JOIN payments p ON o.order_id = p.order_id
+WHERE p.payment_status = 'FAILED' AND o.order_status = 'PAID';
+-- Expected: 0
+
+-- 5. Verify no duplicate successful payments for same order
+SELECT order_id, COUNT(*) AS completed_count
+FROM payments
+WHERE payment_status = 'COMPLETED'
+GROUP BY order_id
+HAVING COUNT(*) > 1;
+
+-- 6. Refund validation: total refunds <= payment amount
+SELECT p.payment_id, p.amount AS paid,
+       COALESCE(SUM(r.amount), 0) AS total_refunded
+FROM payments p
+LEFT JOIN refunds r ON p.payment_id = r.payment_id AND r.status = 'COMPLETED'
+WHERE p.payment_id = @payment_id
+GROUP BY p.payment_id, p.amount;
+
+-- 7. Invalid state: REFUNDED without COMPLETED payment
+SELECT r.refund_id FROM refunds r
+JOIN payments p ON r.payment_id = p.payment_id
+WHERE p.payment_status NOT IN ('COMPLETED', 'REFUNDED');</code></pre>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TC ID</th><th>Test Case</th><th>Expected</th></tr></thead>
+<tbody>
+<tr><td>PAY-01</td><td>Successful payment</td><td>payment COMPLETED; order PAID</td></tr>
+<tr><td>PAY-02</td><td>Failed payment</td><td>payment FAILED; order PENDING</td></tr>
+<tr><td>PAY-03</td><td>Amount mismatch</td><td>Rejected; no COMPLETED status</td></tr>
+<tr><td>PAY-04</td><td>Full refund</td><td>payment REFUNDED; refund row created</td></tr>
+<tr><td>PAY-05</td><td>Partial refund</td><td>Sum refunds &lt; payment amount</td></tr>
+<tr><td>PAY-06</td><td>Double payment attempt</td><td>Only 1 COMPLETED per order</td></tr>
+<tr><td>PAY-07</td><td>Retry after failure</td><td>New payment row or status reset</td></tr>
+<tr><td>PAY-08</td><td>Timeout &rarr; FAILED</td><td>Status FAILED after gateway timeout</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Validation Approach</h4>
+<p>Poll payment status with retry (gateway is async). Validate state machine &mdash; illegal transitions should never exist in DB. Cross-check amounts with penny-precision (DECIMAL, not FLOAT).</p>
+
+<!-- ===== SCENARIO 4 ===== -->
+<h3>Scenario 4: Database Migration Testing</h3>
+
+<h4>Requirement</h4>
+<p>Migrate legacy monolithic <code>customer_orders</code> table to normalized <code>customers</code>, <code>orders</code>, <code>order_items</code>. Zero data loss, schema mapping validated, rollback plan tested.</p>
+
+<h4>Pre-Migration Baseline Queries</h4>
+<pre><code>-- Record counts
+SELECT 'customer_orders' AS tbl, COUNT(*) AS cnt FROM customer_orders;
+SELECT 'distinct_customers' AS metric, COUNT(DISTINCT customer_email) FROM customer_orders;
+SELECT 'total_revenue' AS metric, SUM(order_total) FROM customer_orders;
+
+-- Data quality baseline
+SELECT COUNT(*) AS null_emails FROM customer_orders WHERE customer_email IS NULL;
+SELECT COUNT(*) AS dup_emails FROM (
+    SELECT customer_email FROM customer_orders GROUP BY customer_email HAVING COUNT(*) > 1
+) d;
+
+-- Store checksums
+SELECT MD5(GROUP_CONCAT(customer_email ORDER BY customer_email)) AS email_checksum
+FROM customer_orders;</code></pre>
+
+<h4>Post-Migration Comparison Queries</h4>
+<pre><code>-- Row count reconciliation
+SELECT (SELECT COUNT(*) FROM customers) AS new_customers,
+       (SELECT COUNT(DISTINCT customer_email) FROM customer_orders_legacy) AS old_distinct;
+
+-- Revenue reconciliation
+SELECT
+  (SELECT SUM(order_total) FROM customer_orders_legacy) AS old_revenue,
+  (SELECT SUM(total_amount) FROM orders) AS new_revenue;
+
+-- Orphan check
+SELECT o.order_id FROM orders o
+LEFT JOIN customers c ON o.customer_id = c.customer_id
+WHERE c.customer_id IS NULL;
+
+-- Missing orders
+SELECT l.legacy_order_id FROM customer_orders_legacy l
+LEFT JOIN orders o ON l.legacy_order_id = o.legacy_order_id
+WHERE o.order_id IS NULL;
+
+-- Schema comparison (information_schema)
+SELECT column_name, data_type, character_maximum_length
+FROM information_schema.columns
+WHERE table_name = 'orders' AND table_schema = 'prod_new'
+ORDER BY ordinal_position;</code></pre>
+
+<h4>Data Type Mapping Validation</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Legacy Column</th><th>Legacy Type</th><th>New Column</th><th>New Type</th><th>Validation Query</th></tr></thead>
+<tbody>
+<tr><td>order_total</td><td>FLOAT</td><td>total_amount</td><td>DECIMAL(12,2)</td><td>Compare rounded values</td></tr>
+<tr><td>order_date</td><td>VARCHAR(10)</td><td>created_at</td><td>TIMESTAMP</td><td>STR_TO_DATE conversion</td></tr>
+<tr><td>customer_id</td><td>INT</td><td>customer_id</td><td>BIGINT</td><td>Range check, no truncation</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TC ID</th><th>Test Case</th><th>Pass Criteria</th></tr></thead>
+<tbody>
+<tr><td>MIG-01</td><td>Record count match</td><td>Logical entity counts equal</td></tr>
+<tr><td>MIG-02</td><td>Revenue total match</td><td>Diff &lt; $0.01</td></tr>
+<tr><td>MIG-03</td><td>No orphan FKs</td><td>0 orphan rows</td></tr>
+<tr><td>MIG-04</td><td>Null handling</td><td>Same null count or defaulted</td></tr>
+<tr><td>MIG-05</td><td>Unique constraints preserved</td><td>No new duplicates</td></tr>
+<tr><td>MIG-06</td><td>Rollback test</td><td>Restore from backup; app works</td></tr>
+<tr><td>MIG-07</td><td>Sample row spot check</td><td>100 random rows field-by-field</td></tr>
+<tr><td>MIG-08</td><td>Index existence</td><td>All required indexes created</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Validation Approach</h4>
+<ol>
+<li>Run baseline scripts &rarr; save results to CSV/report</li>
+<li>Execute migration in staging</li>
+<li>Run post-migration scripts &rarr; diff against baseline</li>
+<li>Automated row-by-row compare for sample set using EXCEPT/MINUS</li>
+<li>Run full application smoke + regression</li>
+<li>Performance test critical queries on new schema</li>
+</ol>
+
+<!-- ===== SCENARIO 5 ===== -->
+<h3>Scenario 5: ETL Testing</h3>
+
+<h4>Requirement</h4>
+<p>Nightly ETL loads sales data from OLTP (<code>orders</code>, <code>order_items</code>) into DWH (<code>fact_sales</code>, <code>dim_customer</code>, <code>dim_product</code>). Validate completeness, transformation rules, and aggregation accuracy.</p>
+
+<h4>Source vs Target Schema</h4>
+<pre><code>-- SOURCE (OLTP)
+orders(order_id, customer_id, total_amount, created_at)
+order_items(order_id, product_id, quantity, unit_price)
+
+-- TARGET (DWH)
+fact_sales(sale_key, order_id, customer_key, product_key, quantity, revenue, sale_date_key)
+dim_customer(customer_key, customer_id, email, effective_from, effective_to, is_current)
+dim_product(product_key, product_id, product_name, category)</code></pre>
+
+<h4>ETL Validation SQL Queries</h4>
+<pre><code>-- 1. Source-to-target record count (line items)
+SELECT
+  (SELECT COUNT(*) FROM order_items WHERE created_at >= @batch_date) AS source_cnt,
+  (SELECT COUNT(*) FROM fact_sales WHERE sale_date_key = @date_key) AS target_cnt;
+
+-- 2. Revenue reconciliation
+SELECT
+  (SELECT SUM(quantity * unit_price) FROM order_items oi
+   JOIN orders o ON oi.order_id = o.order_id
+   WHERE DATE(o.created_at) = @batch_date) AS source_revenue,
+  (SELECT SUM(revenue) FROM fact_sales WHERE sale_date_key = @date_key) AS target_revenue;
+
+-- 3. Null handling &mdash; no nulls in required target columns
+SELECT COUNT(*) AS null_customer_key
+FROM fact_sales WHERE customer_key IS NULL AND sale_date_key = @date_key;
+
+-- 4. Duplicate detection in target
+SELECT order_id, product_id, COUNT(*) AS dup_cnt
+FROM fact_sales
+GROUP BY order_id, product_id
+HAVING COUNT(*) > 1;
+
+-- 5. Transformation: category mapping
+SELECT fp.product_key, dp.category
+FROM fact_sales fp
+JOIN dim_product dp ON fp.product_key = dp.product_key
+WHERE dp.category IS NULL;
+
+-- 6. Aggregation validation (daily summary)
+SELECT sale_date_key, SUM(revenue) AS daily_total, COUNT(*) AS line_count
+FROM fact_sales
+GROUP BY sale_date_key
+ORDER BY sale_date_key;
+
+-- 7. Rejected records (staging error table)
+SELECT * FROM etl_reject_log WHERE batch_id = @batch_id;</code></pre>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TC ID</th><th>Test Case</th><th>Validation</th></tr></thead>
+<tbody>
+<tr><td>ETL-01</td><td>Full load count match</td><td>source_cnt = target_cnt</td></tr>
+<tr><td>ETL-02</td><td>Incremental load</td><td>Only new/changed rows loaded</td></tr>
+<tr><td>ETL-03</td><td>Null customer_id in source</td><td>Rejected or default dim row</td></tr>
+<tr><td>ETL-04</td><td>Duplicate source rows</td><td>Deduped or flagged in reject log</td></tr>
+<tr><td>ETL-05</td><td>Currency conversion</td><td>Converted amount within tolerance</td></tr>
+<tr><td>ETL-06</td><td>Date dimension join</td><td>sale_date_key maps correctly</td></tr>
+<tr><td>ETL-07</td><td>Empty source batch</td><td>0 target inserts; no errors</td></tr>
+<tr><td>ETL-08</td><td>Large volume</td><td>Completes within SLA; counts match</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Validation Approach</h4>
+<p>Run ETL in test environment with known seed data. Compare source SQL aggregates to target aggregates. Use tolerance thresholds for floating-point conversions (&plusmn;0.01). Monitor <code>etl_reject_log</code> and assert expected reject count for negative tests.</p>
+
+<!-- ===== SCENARIO 6 ===== -->
+<h3>Scenario 6: API Database Validation (CRUD)</h3>
+
+<h4>Requirement</h4>
+<p>Every REST API operation must reflect correctly in the database. Map HTTP verbs to DML operations and validate accordingly.</p>
+
+<h4>API &rarr; DB Mapping</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>HTTP Method</th><th>Endpoint</th><th>Expected DB Operation</th></tr></thead>
+<tbody>
+<tr><td>POST</td><td>/api/products</td><td>INSERT into products</td></tr>
+<tr><td>GET</td><td>/api/products/{id}</td><td>SELECT (no DB change)</td></tr>
+<tr><td>PUT</td><td>/api/products/{id}</td><td>UPDATE products SET ...</td></tr>
+<tr><td>PATCH</td><td>/api/products/{id}</td><td>Partial UPDATE</td></tr>
+<tr><td>DELETE</td><td>/api/products/{id}</td><td>DELETE or soft delete (is_deleted=1)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>SQL Queries per Operation</h4>
+<pre><code>-- POST: Verify INSERT
+SELECT product_id, product_name, unit_price, created_at
+FROM products
+WHERE product_id = @response_id;
+-- Assert: row exists; fields match request body
+
+-- PUT: Verify UPDATE
+SELECT product_name, unit_price, updated_at
+FROM products WHERE product_id = @id;
+-- Assert: changed fields updated; unchanged fields preserved
+
+-- DELETE (hard): Verify row gone
+SELECT COUNT(*) FROM products WHERE product_id = @id;
+-- Expected: 0
+
+-- DELETE (soft): Verify flag set
+SELECT product_id, is_deleted, deleted_at
+FROM products WHERE product_id = @id;
+-- Expected: is_deleted = 1; row still exists
+
+-- Verify updated_at changed on PUT but not on GET
+SELECT updated_at FROM products WHERE product_id = @id;</code></pre>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TC ID</th><th>Operation</th><th>Validation</th></tr></thead>
+<tbody>
+<tr><td>API-01</td><td>POST create</td><td>Row inserted; PK returned matches DB</td></tr>
+<tr><td>API-02</td><td>PUT full update</td><td>All sent fields updated in DB</td></tr>
+<tr><td>API-03</td><td>PATCH partial</td><td>Only sent fields changed</td></tr>
+<tr><td>API-04</td><td>DELETE hard</td><td>Row removed; GET returns 404</td></tr>
+<tr><td>API-05</td><td>DELETE soft</td><td>is_deleted=1; hidden from default SELECT</td></tr>
+<tr><td>API-06</td><td>POST duplicate</td><td>409; no duplicate row</td></tr>
+<tr><td>API-07</td><td>PUT non-existent ID</td><td>404; no DB change</td></tr>
+<tr><td>API-08</td><td>POST with FK reference</td><td>FK validated; orphan prevented</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Validation Approach</h4>
+<p>Pattern: Baseline query &rarr; API call &rarr; Post-action query &rarr; Assert delta. Store API response JSON and DB row as test artifacts. For soft delete, verify both <code>SELECT WHERE is_deleted=0</code> (hidden) and raw query (exists).</p>
+
+<!-- ===== SCENARIO 7 ===== -->
+<h3>Scenario 7: Duplicate Record Detection</h3>
+
+<h4>Requirement</h4>
+<p>Identify and resolve duplicate records in production-like data &mdash; same email, same phone, or composite business keys (customer_id + product_id + order_date).</p>
+
+<h4>Duplicate Detection SQL</h4>
+<pre><code>-- Exact duplicate on single column
+SELECT email, COUNT(*) AS cnt
+FROM users
+GROUP BY email
+HAVING COUNT(*) > 1;
+
+-- Duplicate on composite key
+SELECT customer_id, product_id, order_date, COUNT(*) AS cnt
+FROM subscriptions
+GROUP BY customer_id, product_id, order_date
+HAVING COUNT(*) > 1;
+
+-- Fuzzy duplicate (similar names)
+SELECT a.user_id, a.first_name, b.user_id, b.first_name
+FROM users a
+JOIN users b ON a.first_name = b.first_name AND a.user_id < b.user_id;
+
+-- Duplicate across columns (same person, different emails)
+SELECT u1.user_id, u1.email, u2.user_id, u2.email
+FROM users u1
+JOIN users u2 ON u1.phone = u2.phone AND u1.user_id < u2.user_id
+WHERE u1.phone IS NOT NULL;
+
+-- Find duplicates keeping latest record
+SELECT user_id, email, created_at,
+       ROW_NUMBER() OVER (PARTITION BY email ORDER BY created_at DESC) AS rn
+FROM users;
+
+-- Duplicates to delete (keep rn=1)
+SELECT user_id, email FROM (
+  SELECT user_id, email,
+         ROW_NUMBER() OVER (PARTITION BY email ORDER BY created_at DESC) AS rn
+  FROM users
+) t WHERE rn > 1;</code></pre>
+
+<h4>Cleanup Strategies</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Strategy</th><th>When to Use</th><th>SQL Approach</th></tr></thead>
+<tbody>
+<tr><td>Keep latest</td><td>Registration duplicates</td><td>DELETE WHERE rn > 1</td></tr>
+<tr><td>Merge records</td><td>Same customer, 2 IDs</td><td>UPDATE FKs &rarr; canonical ID; DELETE duplicate</td></tr>
+<tr><td>Flag for review</td><td>Uncertain duplicates</td><td>UPDATE SET duplicate_flag=1</td></tr>
+<tr><td>Prevent future</td><td>Root cause fix</td><td>ADD UNIQUE INDEX on email</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TC ID</th><th>Test Case</th><th>Expected</th></tr></thead>
+<tbody>
+<tr><td>DUP-01</td><td>Detection query finds seeded dupes</td><td>Count matches seed data</td></tr>
+<tr><td>DUP-02</td><td>Cleanup keeps newest</td><td>1 row per email remains</td></tr>
+<tr><td>DUP-03</td><td>FK integrity after merge</td><td>Orders point to canonical user_id</td></tr>
+<tr><td>DUP-04</td><td>Unique index prevents re-insert</td><td>409/DB error on duplicate</td></tr>
+<tr><td>DUP-05</td><td>Null-safe duplicate check</td><td>NULL emails not grouped as dupes</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Validation Approach</h4>
+<p>Seed known duplicates in test DB. Run detection query &mdash; assert expected count. Execute cleanup in transaction; verify FK references updated; ROLLBACK in test unless cleanup is the test subject.</p>
+
+<!-- ===== SCENARIO 8 ===== -->
+<h3>Scenario 8: Data Warehouse Validation</h3>
+
+<h4>Requirement</h4>
+<p>Validate star schema integrity: fact tables reference valid dimension keys; SCD Type 2 history tracked correctly; aggregates match source.</p>
+
+<h4>Schema Overview</h4>
+<div class="ascii-diagram">
+<pre>
+                    dim_date
+                       |
+    dim_customer ---- fact_sales ---- dim_product
+                       |
+                    dim_store
+</pre>
+</div>
+
+<h4>Fact vs Dimension Validation SQL</h4>
+<pre><code>-- 1. Orphan fact rows (invalid dimension keys)
+SELECT f.sale_key, f.customer_key
+FROM fact_sales f
+LEFT JOIN dim_customer dc ON f.customer_key = dc.customer_key AND dc.is_current = 1
+WHERE dc.customer_key IS NULL;
+
+-- 2. Fact grain validation (one row per order line)
+SELECT order_id, product_key, COUNT(*) AS cnt
+FROM fact_sales
+GROUP BY order_id, product_key
+HAVING COUNT(*) > 1;
+
+-- 3. Dimension completeness
+SELECT COUNT(*) AS total_customers FROM dim_customer WHERE is_current = 1;
+SELECT COUNT(DISTINCT customer_id) FROM dim_customer;
+
+-- 4. SCD Type 2 &mdash; customer address change
+SELECT customer_id, customer_key, address, effective_from, effective_to, is_current
+FROM dim_customer
+WHERE customer_id = 1001
+ORDER BY effective_from;
+-- Expected: old row is_current=0, effective_to set; new row is_current=1
+
+-- 5. No overlapping SCD dates
+SELECT a.customer_id, a.customer_key, b.customer_key
+FROM dim_customer a
+JOIN dim_customer b ON a.customer_id = b.customer_id AND a.customer_key != b.customer_key
+WHERE a.effective_from <= b.effective_to AND b.effective_from <= a.effective_to;
+
+-- 6. Fact aggregate vs OLTP source
+SELECT SUM(revenue) FROM fact_sales WHERE sale_date_key BETWEEN 20240101 AND 20240131;
+-- Compare to OLTP SUM for same date range
+
+-- 7. Unknown/default dimension rows exist
+SELECT * FROM dim_customer WHERE customer_id = -1;  -- 'Unknown' bucket</code></pre>
+
+<h4>Slowly Changing Dimensions (SCD) Test Cases</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>TC ID</th><th>SCD Type</th><th>Scenario</th><th>Expected</th></tr></thead>
+<tbody>
+<tr><td>DWH-01</td><td>Type 1</td><td>Fix typo in product name</td><td>Overwrite; no history row</td></tr>
+<tr><td>DWH-02</td><td>Type 2</td><td>Customer moves city</td><td>New dim row; old closed</td></tr>
+<tr><td>DWH-03</td><td>Type 2</td><td>Historical fact unchanged</td><td>Old sales still link old dim key</td></tr>
+<tr><td>DWH-04</td><td>Type 3</td><td>Track prev + current address</td><td>previous_address column updated</td></tr>
+<tr><td>DWH-05</td><td>Fact</td><td>Orphan keys</td><td>0 orphan fact rows</td></tr>
+<tr><td>DWH-06</td><td>Fact</td><td>Revenue roll-up</td><td>Matches OLTP within tolerance</td></tr>
+<tr><td>DWH-07</td><td>Dim</td><td>is_current uniqueness</td><td>1 current row per business key</td></tr>
+<tr><td>DWH-08</td><td>ETL</td><td>Late-arriving dimension</td><td>Default key used until dim loaded</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Validation Approach</h4>
+<ol>
+<li>Validate dimension tables first (referential integrity, SCD rules)</li>
+<li>Validate fact tables (grain, orphan keys, measures)</li>
+<li>Reconcile aggregates top-down (OLTP &rarr; staging &rarr; DWH)</li>
+<li>Test SCD by updating source record and re-running ETL</li>
+<li>Verify historical facts still join to correct dimension version</li>
+</ol>
+
+<div class="callout">
+<strong>Interview Tip:</strong> When describing any scenario, use the pattern: <em>"I capture baseline counts, execute the action, run validation SQL, and assert expected delta."</em> This shows systematic DB testing &mdash; not ad-hoc querying.
+</div>
+</section>
+
+<!-- SECTION 15 PART 1: Beginner + Intermediate SQL Questions -->
+<section id="section-15" class="section-card">
+<h2>Section 15: Automation Interview Preparation</h2>
+<p>Complete interview bank for 4-year QA/SDET engineers &mdash; 100 SQL questions, 50 database testing questions, 30 SDET SQL questions, and 20 scenario-based questions. Every entry includes the answer and what the interviewer expects.</p>
+
+<h3>Top 100 SQL Interview Questions by Difficulty</h3>
+
+<h4>Beginner Level (30 Questions)</h4>
+
+<h4>BQ1. What is SQL and what is it used for?</h4>
+<p><strong>Answer:</strong> SQL (Structured Query Language) is the standard language for managing relational databases &mdash; querying, inserting, updating, deleting data, and defining schema.</p>
+<p><strong>Interviewer expects:</strong> Basic definition; mention RDBMS (MySQL, PostgreSQL, Oracle, SQL Server).</p>
+
+<h4>BQ2. Difference between DDL, DML, DCL, and TCL?</h4>
+<p><strong>Answer:</strong> DDL defines structure (CREATE, ALTER, DROP). DML manipulates data (INSERT, UPDATE, DELETE, SELECT). DCL controls access (GRANT, REVOKE). TCL manages transactions (COMMIT, ROLLBACK, SAVEPOINT).</p>
+<p><strong>Interviewer expects:</strong> Correct categorization with at least 2 commands per type.</p>
+
+<h4>BQ3. Write a query to select all columns from the employees table.</h4>
+<p><strong>Answer:</strong> <code>SELECT * FROM employees;</code></p>
+<p><strong>Interviewer expects:</strong> Correct syntax; bonus if they mention avoiding * in production.</p>
+
+<h4>BQ4. How do you select specific columns?</h4>
+<p><strong>Answer:</strong> <code>SELECT first_name, last_name, salary FROM employees;</code></p>
+<p><strong>Interviewer expects:</strong> Column list comma-separated from table.</p>
+
+<h4>BQ5. What does the WHERE clause do?</h4>
+<p><strong>Answer:</strong> Filters rows based on a condition before returning results. Example: <code>SELECT * FROM employees WHERE dept_id = 10;</code></p>
+<p><strong>Interviewer expects:</strong> Filtering concept with example.</p>
+
+<h4>BQ6. Difference between WHERE and HAVING?</h4>
+<p><strong>Answer:</strong> WHERE filters rows before grouping. HAVING filters groups after GROUP BY. Example: <code>SELECT dept_id, AVG(salary) FROM employees GROUP BY dept_id HAVING AVG(salary) > 50000;</code></p>
+<p><strong>Interviewer expects:</strong> Pre-aggregation vs post-aggregation filter distinction.</p>
+
+<h4>BQ7. How do you sort results in ascending and descending order?</h4>
+<p><strong>Answer:</strong> <code>ORDER BY salary ASC</code> (default, lowest first); <code>ORDER BY salary DESC</code> (highest first). Multi-column: <code>ORDER BY dept_id ASC, salary DESC;</code></p>
+<p><strong>Interviewer expects:</strong> ASC/DESC keywords and multi-column sort.</p>
+
+<h4>BQ8. What is the DISTINCT keyword?</h4>
+<p><strong>Answer:</strong> Removes duplicate rows from result set. <code>SELECT DISTINCT dept_id FROM employees;</code> returns unique department IDs.</p>
+<p><strong>Interviewer expects:</strong> Uniqueness concept; not same as UNIQUE constraint.</p>
+
+<h4>BQ9. How does LIKE work with wildcards?</h4>
+<p><strong>Answer:</strong> <code>%</code> matches zero or more chars; <code>_</code> matches exactly one. Examples: <code>WHERE name LIKE 'J%'</code> (starts with J), <code>WHERE name LIKE '_ohn'</code> (4-char names ending in ohn).</p>
+<p><strong>Interviewer expects:</strong> Both wildcards with examples.</p>
+
+<h4>BQ10. What is the difference between COUNT(*), COUNT(column), and COUNT(DISTINCT column)?</h4>
+<p><strong>Answer:</strong> COUNT(*) counts all rows including NULLs. COUNT(column) counts non-NULL values only. COUNT(DISTINCT column) counts unique non-NULL values.</p>
+<p><strong>Interviewer expects:</strong> NULL handling difference &mdash; critical for QA count validation.</p>
+
+<h4>BQ11. How do you handle NULL values in WHERE clause?</h4>
+<p><strong>Answer:</strong> Use <code>IS NULL</code> or <code>IS NOT NULL</code>. Never use <code>= NULL</code> (always unknown). Example: <code>WHERE email IS NULL;</code></p>
+<p><strong>Interviewer expects:</strong> IS NULL syntax; knows = NULL fails.</p>
+
+<h4>BQ12. What does COALESCE do?</h4>
+<p><strong>Answer:</strong> Returns first non-NULL value from arguments. <code>SELECT COALESCE(phone, 'N/A') FROM users;</code> replaces NULL phone with 'N/A'.</p>
+<p><strong>Interviewer expects:</strong> NULL replacement; mention ISNULL (SQL Server) / NVL (Oracle) equivalents.</p>
+
+<h4>BQ13. Write an INSERT statement with specific columns.</h4>
+<p><strong>Answer:</strong> <code>INSERT INTO employees (emp_id, first_name, salary) VALUES (101, 'John', 50000);</code></p>
+<p><strong>Interviewer expects:</strong> Column list + VALUES; knows order matters if columns specified.</p>
+
+<h4>BQ14. How do you update multiple columns?</h4>
+<p><strong>Answer:</strong> <code>UPDATE employees SET salary = 55000, dept_id = 20 WHERE emp_id = 101;</code></p>
+<p><strong>Interviewer expects:</strong> SET with comma-separated columns; always mention WHERE to avoid updating all rows.</p>
+
+<h4>BQ15. Difference between DELETE and TRUNCATE?</h4>
+<p><strong>Answer:</strong> DELETE removes specific rows (can use WHERE), is DML, can rollback, fires triggers. TRUNCATE removes all rows, is DDL, faster, resets identity, cannot rollback in some DBs.</p>
+<p><strong>Interviewer expects:</strong> DML vs DDL, rollback, WHERE clause difference.</p>
+
+<h4>BQ16. What is a PRIMARY KEY?</h4>
+<p><strong>Answer:</strong> Column(s) that uniquely identify each row. NOT NULL + UNIQUE. One per table. Automatically indexed.</p>
+<p><strong>Interviewer expects:</strong> Uniqueness + NOT NULL; one PK per table.</p>
+
+<h4>BQ17. What is a FOREIGN KEY?</h4>
+<p><strong>Answer:</strong> Column that references PRIMARY KEY of another table. Enforces referential integrity &mdash; prevents orphan records.</p>
+<p><strong>Interviewer expects:</strong> Parent-child relationship; orphan prevention.</p>
+
+<h4>BQ18. What is the IN operator?</h4>
+<p><strong>Answer:</strong> Shorthand for multiple OR conditions. <code>WHERE dept_id IN (10, 20, 30);</code> equivalent to <code>dept_id = 10 OR dept_id = 20 OR dept_id = 30</code>.</p>
+<p><strong>Interviewer expects:</strong> Syntax and equivalence to OR.</p>
+
+<h4>BQ19. What is BETWEEN used for?</h4>
+<p><strong>Answer:</strong> Range filter inclusive of boundaries. <code>WHERE salary BETWEEN 40000 AND 60000;</code> same as <code>salary >= 40000 AND salary <= 60000</code>.</p>
+<p><strong>Interviewer expects:</strong> Inclusive range; date ranges too.</p>
+
+<h4>BQ20. How do you limit rows returned (TOP/LIMIT)?</h4>
+<p><strong>Answer:</strong> SQL Server: <code>SELECT TOP 10 * FROM employees ORDER BY salary DESC;</code> MySQL/PostgreSQL: <code>SELECT * FROM employees ORDER BY salary DESC LIMIT 10;</code></p>
+<p><strong>Interviewer expects:</strong> Dialect awareness; ORDER BY with LIMIT for meaningful top-N.</p>
+
+<h4>BQ21. What are aggregate functions?</h4>
+<p><strong>Answer:</strong> Functions that compute a single value from multiple rows: COUNT, SUM, AVG, MIN, MAX.</p>
+<p><strong>Interviewer expects:</strong> Name all five with brief purpose.</p>
+
+<h4>BQ22. What is GROUP BY?</h4>
+<p><strong>Answer:</strong> Groups rows with same values in specified columns; used with aggregates. <code>SELECT dept_id, COUNT(*) FROM employees GROUP BY dept_id;</code></p>
+<p><strong>Interviewer expects:</strong> Every non-aggregated SELECT column must be in GROUP BY.</p>
+
+<h4>BQ23. Can you use column alias in WHERE clause?</h4>
+<p><strong>Answer:</strong> No. WHERE is evaluated before SELECT, so aliases aren't available. Use HAVING for aggregate aliases, or repeat the expression.</p>
+<p><strong>Interviewer expects:</strong> SQL execution order awareness.</p>
+
+<h4>BQ24. What is an alias and why use it?</h4>
+<p><strong>Answer:</strong> Temporary name for column or table. <code>SELECT first_name AS fname FROM employees e;</code> Improves readability and shortens queries.</p>
+<p><strong>Interviewer expects:</strong> AS keyword (optional) for columns and tables.</p>
+
+<h4>BQ25. Difference between CHAR and VARCHAR?</h4>
+<p><strong>Answer:</strong> CHAR is fixed-length (padded with spaces). VARCHAR is variable-length (stores only actual chars + length). Use CHAR for fixed codes (state abbreviations); VARCHAR for names, emails.</p>
+<p><strong>Interviewer expects:</strong> Storage difference; padding behavior of CHAR.</p>
+
+<h4>BQ26. What is a VIEW?</h4>
+<p><strong>Answer:</strong> Virtual table based on a SELECT query. No stored data (usually). Simplifies complex queries; provides security by hiding columns.</p>
+<p><strong>Interviewer expects:</strong> Virtual table concept; not same as physical table.</p>
+
+<h4>BQ27. What happens if you omit WHERE in UPDATE or DELETE?</h4>
+<p><strong>Answer:</strong> All rows in the table are updated or deleted. Dangerous in production &mdash; always verify with SELECT first.</p>
+<p><strong>Interviewer expects:</strong> Safety awareness; QA habit of SELECT before UPDATE.</p>
+
+<h4>BQ28. What is a UNIQUE constraint?</h4>
+<p><strong>Answer:</strong> Ensures all values in column(s) are distinct. Allows one NULL (in most DBs). Unlike PK, multiple UNIQUE constraints per table allowed.</p>
+<p><strong>Interviewer expects:</strong> Difference from PRIMARY KEY.</p>
+
+<h4>BQ29. Write a query to find employees with NULL manager_id.</h4>
+<p><strong>Answer:</strong> <code>SELECT * FROM employees WHERE manager_id IS NULL;</code></p>
+<p><strong>Interviewer expects:</strong> IS NULL, not = NULL.</p>
+
+<h4>BQ30. What is the default JOIN type if you write just JOIN?</h4>
+<p><strong>Answer:</strong> INNER JOIN. Returns only matching rows from both tables.</p>
+<p><strong>Interviewer expects:</strong> INNER JOIN as default; knows other types exist.</p>
+
+<h4>Intermediate Level (35 Questions)</h4>
+
+<h4>IQ1. Explain INNER JOIN with example.</h4>
+<p><strong>Answer:</strong> Returns rows where join condition matches in both tables. <code>SELECT e.name, d.dept_name FROM employees e INNER JOIN departments d ON e.dept_id = d.dept_id;</code></p>
+<p><strong>Interviewer expects:</strong> Matching rows only; employees without dept excluded.</p>
+
+<h4>IQ2. Explain LEFT JOIN and when to use it.</h4>
+<p><strong>Answer:</strong> Returns all rows from left table + matching from right; NULLs where no match. Use for orphan detection: <code>SELECT e.* FROM employees e LEFT JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_id IS NULL;</code></p>
+<p><strong>Interviewer expects:</strong> All left rows preserved; QA orphan check pattern.</p>
+
+<h4>IQ3. Difference between LEFT JOIN and RIGHT JOIN?</h4>
+<p><strong>Answer:</strong> LEFT keeps all left table rows; RIGHT keeps all right table rows. <code>A RIGHT JOIN B</code> = <code>B LEFT JOIN A</code>.</p>
+<p><strong>Interviewer expects:</strong> Symmetry understanding; prefer LEFT for readability.</p>
+
+<h4>IQ4. What is a FULL OUTER JOIN?</h4>
+<p><strong>Answer:</strong> Returns all rows from both tables; NULLs where no match. MySQL doesn't support natively; use UNION of LEFT and RIGHT.</p>
+<p><strong>Interviewer expects:</strong> All rows both sides; dialect limitation awareness.</p>
+
+<h4>IQ5. What is a self join?</h4>
+<p><strong>Answer:</strong> Joining a table to itself. Example: employee-manager hierarchy: <code>SELECT e.name, m.name AS manager FROM employees e JOIN employees m ON e.manager_id = m.emp_id;</code></p>
+<p><strong>Interviewer expects:</strong> Aliases required; hierarchy use case.</p>
+
+<h4>IQ6. What is a subquery?</h4>
+<p><strong>Answer:</strong> Query nested inside another query. Can be in WHERE, FROM, SELECT. Example: <code>SELECT * FROM employees WHERE salary > (SELECT AVG(salary) FROM employees);</code></p>
+<p><strong>Interviewer expects:</strong> Nested SELECT; scalar vs table subquery.</p>
+
+<h4>IQ7. Difference between subquery and JOIN?</h4>
+<p><strong>Answer:</strong> Both can achieve similar results. JOINs often perform better for large datasets. Subqueries are readable for filtering by aggregate. Optimizer may rewrite subqueries to joins.</p>
+<p><strong>Interviewer expects:</strong> Practical trade-offs, not dogmatic preference.</p>
+
+<h4>IQ8. What is a correlated subquery?</h4>
+<p><strong>Answer:</strong> Inner query references outer query columns. Runs once per outer row. Example: employees earning above their department average.</p>
+<p><strong>Interviewer expects:</strong> Row-by-row execution concept; performance caution.</p>
+
+<h4>IQ9. Write query to find second highest salary.</h4>
+<p><strong>Answer:</strong> <code>SELECT MAX(salary) FROM employees WHERE salary < (SELECT MAX(salary) FROM employees);</code> Or: <code>SELECT DISTINCT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 1;</code></p>
+<p><strong>Interviewer expects:</strong> Multiple approaches; OFFSET or subquery.</p>
+
+<h4>IQ10. What is EXISTS and how differs from IN?</h4>
+<p><strong>Answer:</strong> EXISTS returns true if subquery returns any row &mdash; stops at first match. Often faster than IN for large subqueries. <code>WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.user_id)</code></p>
+<p><strong>Interviewer expects:</strong> Semi-join concept; SELECT 1 convention.</p>
+
+<h4>IQ11. Find duplicate emails in users table.</h4>
+<p><strong>Answer:</strong> <code>SELECT email, COUNT(*) FROM users GROUP BY email HAVING COUNT(*) > 1;</code></p>
+<p><strong>Interviewer expects:</strong> GROUP BY + HAVING pattern &mdash; daily QA query.</p>
+
+<h4>IQ12. What is UNION vs UNION ALL?</h4>
+<p><strong>Answer:</strong> UNION combines results and removes duplicates (sorts). UNION ALL combines without dedup &mdash; faster. Column count and types must match.</p>
+<p><strong>Interviewer expects:</strong> Dedup difference; performance implication.</p>
+
+<h4>IQ13. Explain CASE expression with example.</h4>
+<p><strong>Answer:</strong> Conditional logic in SQL. <code>SELECT name, CASE WHEN salary > 80000 THEN 'Senior' WHEN salary > 50000 THEN 'Mid' ELSE 'Junior' END AS level FROM employees;</code></p>
+<p><strong>Interviewer expects:</strong> Searched CASE; useful for test data categorization.</p>
+
+<h4>IQ14. What are indexes and why use them?</h4>
+<p><strong>Answer:</strong> Data structures (B-tree) speeding up SELECT/WHERE/JOIN. Trade-off: slower INSERT/UPDATE. Create on frequently filtered/joined columns.</p>
+<p><strong>Interviewer expects:</strong> Read vs write trade-off; not index everything.</p>
+
+<h4>IQ15. Difference between clustered and non-clustered index?</h4>
+<p><strong>Answer:</strong> Clustered index defines physical row order (one per table, usually PK). Non-clustered is separate structure pointing to rows. Multiple non-clustered allowed.</p>
+<p><strong>Interviewer expects:</strong> One clustered per table; SQL Server specific but commonly asked.</p>
+
+<h4>IQ16. What is a composite key?</h4>
+<p><strong>Answer:</strong> Primary key made of multiple columns together. Example: (order_id, product_id) in order_items &mdash; neither alone is unique, together they are.</p>
+<p><strong>Interviewer expects:</strong> Multi-column uniqueness example.</p>
+
+<h4>IQ17. What is referential integrity?</h4>
+<p><strong>Answer:</strong> FK ensures child records reference valid parent records. Prevents orphan rows. ON DELETE CASCADE/SET NULL/RESTRICT controls parent deletion behavior.</p>
+<p><strong>Interviewer expects:</strong> FK + cascade options.</p>
+
+<h4>IQ18. Write query to find orphan order_items (no matching order).</h4>
+<p><strong>Answer:</strong> <code>SELECT oi.* FROM order_items oi LEFT JOIN orders o ON oi.order_id = o.order_id WHERE o.order_id IS NULL;</code></p>
+<p><strong>Interviewer expects:</strong> LEFT JOIN + IS NULL &mdash; core QA pattern.</p>
+
+<h4>IQ19. What is normalization in one sentence?</h4>
+<p><strong>Answer:</strong> Organizing tables to minimize redundancy by splitting data and linking via keys through normal forms (1NF&ndash;3NF).</p>
+<p><strong>Interviewer expects:</strong> Redundancy reduction; link to Section 13 depth if probed.</p>
+
+<h4>IQ20. How do you find employees without any orders?</h4>
+<p><strong>Answer:</strong> <code>SELECT e.* FROM employees e LEFT JOIN orders o ON e.emp_id = o.emp_id WHERE o.order_id IS NULL;</code> Or: <code>WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.emp_id = e.emp_id);</code></p>
+<p><strong>Interviewer expects:</strong> Anti-join pattern; two valid approaches.</p>
+
+<h4>IQ21. What is a CTE (Common Table Expression)?</h4>
+<p><strong>Answer:</strong> Named temporary result set with WITH clause. <code>WITH dept_avg AS (SELECT dept_id, AVG(salary) AS avg_sal FROM employees GROUP BY dept_id) SELECT e.name, e.salary, d.avg_sal FROM employees e JOIN dept_avg d ON e.dept_id = d.dept_id WHERE e.salary > d.avg_sal;</code></p>
+<p><strong>Interviewer expects:</strong> WITH syntax; readability over nested subqueries.</p>
+
+<h4>IQ22. Difference between DELETE with FK and TRUNCATE parent table?</h4>
+<p><strong>Answer:</strong> DELETE respects FK constraints &mdash; fails if children exist (unless CASCADE). TRUNCATE fails on referenced parent table. Must delete/truncate children first or use CASCADE.</p>
+<p><strong>Interviewer expects:</strong> FK blocks both; order of deletion matters.</p>
+
+<h4>IQ23. What is a CHECK constraint?</h4>
+<p><strong>Answer:</strong> Validates column values against a condition. <code>CHECK (salary > 0)</code> or <code>CHECK (status IN ('ACTIVE','INACTIVE'))</code>. Test by attempting invalid INSERT.</p>
+<p><strong>Interviewer expects:</strong> QA tests boundary values against CHECK.</p>
+
+<h4>IQ24. How do you concatenate strings in SQL?</h4>
+<p><strong>Answer:</strong> MySQL: <code>CONCAT(first_name, ' ', last_name)</code>. SQL Server: <code>first_name + ' ' + last_name</code> or CONCAT (2012+). PostgreSQL: <code>||</code> operator.</p>
+<p><strong>Interviewer expects:</strong> Dialect differences; CONCAT handles NULL in MySQL.</p>
+
+<h4>IQ25. Find departments with more than 5 employees.</h4>
+<p><strong>Answer:</strong> <code>SELECT dept_id, COUNT(*) AS emp_count FROM employees GROUP BY dept_id HAVING COUNT(*) > 5;</code></p>
+<p><strong>Interviewer expects:</strong> HAVING not WHERE for aggregate filter.</p>
+
+<h4>IQ26. What is a cross join?</h4>
+<p><strong>Answer:</strong> Cartesian product &mdash; every row of A paired with every row of B. <code>SELECT * FROM colors CROSS JOIN sizes;</code> Rare in QA; useful for generating test combinations.</p>
+<p><strong>Interviewer expects:</strong> M &times; N rows; test data generation use case.</p>
+
+<h4>IQ27. How to get current date/time in SQL?</h4>
+<p><strong>Answer:</strong> MySQL: <code>NOW(), CURDATE()</code>. SQL Server: <code>GETDATE()</code>. PostgreSQL: <code>CURRENT_TIMESTAMP, CURRENT_DATE</code>. Oracle: <code>SYSDATE</code>.</p>
+<p><strong>Interviewer expects:</strong> Know their target DB function names.</p>
+
+<h4>IQ28. Write query comparing today's registrations vs yesterday.</h4>
+<p><strong>Answer:</strong> <code>SELECT COUNT(*) FROM users WHERE DATE(created_at) = CURDATE();</code> and same with <code>DATE(created_at) = CURDATE() - INTERVAL 1 DAY;</code></p>
+<p><strong>Interviewer expects:</strong> Date filtering for daily validation reports.</p>
+
+<h4>IQ29. What is an AUTO_INCREMENT / IDENTITY column?</h4>
+<p><strong>Answer:</strong> Database-generated sequential PK. MySQL: AUTO_INCREMENT. SQL Server: IDENTITY(1,1). PostgreSQL: SERIAL or GENERATED ALWAYS AS IDENTITY.</p>
+<p><strong>Interviewer expects:</strong> Don't INSERT explicit value unless needed; verify returned ID after API POST.</p>
+
+<h4>IQ30. How do you find mismatched data between two tables?</h4>
+<p><strong>Answer:</strong> Use EXCEPT/MINUS or FULL OUTER JOIN with NULL check. <code>SELECT id FROM table_a EXCEPT SELECT id FROM table_b;</code> finds IDs in A not in B.</p>
+<p><strong>Interviewer expects:</strong> Migration/ETL reconciliation pattern.</p>
+
+<h4>IQ31. What is the difference between CHAR length and byte storage?</h4>
+<p><strong>Answer:</strong> UTF-8 multibyte chars may use more bytes than character count. VARCHAR(255) is 255 characters in modern MySQL (utf8mb4), not bytes.</p>
+<p><strong>Interviewer expects:</strong> Encoding awareness for international test data.</p>
+
+<h4>IQ32. Explain ON DELETE CASCADE with example.</h4>
+<p><strong>Answer:</strong> Deleting parent auto-deletes children. Delete user &rarr; all their orders deleted. Test: verify child count goes to 0 after parent DELETE.</p>
+<p><strong>Interviewer expects:</strong> Cascade testing in QA; data cleanup implications.</p>
+
+<h4>IQ33. Write a query to pivot department headcount (if supported).</h4>
+<p><strong>Answer:</strong> SQL Server: <code>SELECT * FROM (SELECT dept_id, dept_name FROM employees) t PIVOT (COUNT(dept_id) FOR dept_name IN ([Sales],[Engineering])) p;</code> Or use CASE: <code>SUM(CASE WHEN dept_name='Sales' THEN 1 ELSE 0 END)</code></p>
+<p><strong>Interviewer expects:</strong> CASE alternative if PIVOT unavailable.</p>
+
+<h4>IQ34. What is a stored procedure and how is it tested?</h4>
+<p><strong>Answer:</strong> Precompiled SQL block stored in DB. Test by calling with known inputs, verifying output tables/return values, testing edge cases and error paths.</p>
+<p><strong>Interviewer expects:</strong> QA validates SP output same as API backend logic.</p>
+
+<h4>IQ35. Find employees earning more than department average using JOIN.</h4>
+<p><strong>Answer:</strong> <code>SELECT e.name, e.salary, d.avg_sal FROM employees e JOIN (SELECT dept_id, AVG(salary) AS avg_sal FROM employees GROUP BY dept_id) d ON e.dept_id = d.dept_id WHERE e.salary > d.avg_sal;</code></p>
+<p><strong>Interviewer expects:</strong> Subquery/CTE + JOIN; classic intermediate question.</p>
+<h4>Advanced Level (35 Questions)</h4>
+
+<h4>AQ1. Explain ROW_NUMBER, RANK, and DENSE_RANK.</h4>
+<p><strong>Answer:</strong> ROW_NUMBER: unique sequential number per partition. RANK: same rank for ties, skips next (1,2,2,4). DENSE_RANK: same rank for ties, no skip (1,2,2,3). <code>ROW_NUMBER() OVER (PARTITION BY dept_id ORDER BY salary DESC)</code></p>
+<p><strong>Interviewer expects:</strong> Tie behavior difference; PARTITION BY + ORDER BY.</p>
+
+<h4>AQ2. What are window functions?</h4>
+<p><strong>Answer:</strong> Perform calculations across related rows without collapsing like GROUP BY. Use OVER clause. Examples: ROW_NUMBER, SUM() OVER, LAG, LEAD.</p>
+<p><strong>Interviewer expects:</strong> Difference from aggregates &mdash; rows preserved.</p>
+
+<h4>AQ3. Explain LAG and LEAD with use case.</h4>
+<p><strong>Answer:</strong> LAG accesses previous row; LEAD accesses next row. <code>LAG(salary, 1) OVER (ORDER BY hire_date)</code> compares current salary to previous employee's. Use for period-over-period analysis.</p>
+<p><strong>Interviewer expects:</strong> Offset parameter; QA use for audit trail comparison.</p>
+
+<h4>AQ4. What is a recursive CTE?</h4>
+<p><strong>Answer:</strong> CTE that references itself. Anchor member + recursive member united by UNION ALL. Use for org hierarchies, bill of materials. Must have termination condition.</p>
+<p><strong>Interviewer expects:</strong> Anchor/recursive parts; avoid infinite loops.</p>
+
+<h4>AQ5. Explain transaction ACID properties.</h4>
+<p><strong>Answer:</strong> Atomicity (all or nothing), Consistency (valid state to valid state), Isolation (concurrent transactions don't interfere), Durability (committed data survives crash).</p>
+<p><strong>Interviewer expects:</strong> All four defined; link to COMMIT/ROLLBACK.</p>
+
+<h4>AQ6. What are isolation levels?</h4>
+<p><strong>Answer:</strong> READ UNCOMMITTED, READ COMMITTED (default most DBs), REPEATABLE READ, SERIALIZABLE. Higher isolation = less concurrency, fewer anomalies (dirty read, non-repeatable read, phantom read).</p>
+<p><strong>Interviewer expects:</strong> Name levels; dirty read vs phantom read.</p>
+
+<h4>AQ7. What is a deadlock and how do you detect it?</h4>
+<p><strong>Answer:</strong> Two transactions waiting for each other's locks. DB kills one victim. Detect via error message or monitoring. Prevent by consistent lock ordering.</p>
+<p><strong>Interviewer expects:</strong> Practical awareness; QA may hit deadlocks in parallel tests.</p>
+
+<h4>AQ8. Write a query using SUM() OVER for running total.</h4>
+<p><strong>Answer:</strong> <code>SELECT order_date, amount, SUM(amount) OVER (ORDER BY order_date) AS running_total FROM orders;</code></p>
+<p><strong>Interviewer expects:</strong> OVER ORDER BY for cumulative sum.</p>
+
+<h4>AQ9. How do you optimize a slow query?</h4>
+<p><strong>Answer:</strong> EXPLAIN/EXPLAIN ANALYZE, add indexes on WHERE/JOIN columns, avoid SELECT *, rewrite subqueries as JOINs, update statistics, avoid functions on indexed columns in WHERE.</p>
+<p><strong>Interviewer expects:</strong> EXPLAIN plan mention; index strategy.</p>
+
+<h4>AQ10. What is EXPLAIN PLAN used for?</h4>
+<p><strong>Answer:</strong> Shows how optimizer executes query &mdash; scan type (index vs full table), join method, estimated rows. Essential for performance testing and index validation.</p>
+<p><strong>Interviewer expects:</strong> Has used EXPLAIN in real debugging.</p>
+
+<h4>AQ11. Difference between WHERE and ON in JOIN?</h4>
+<p><strong>Answer:</strong> ON defines join condition (before outer join fill). WHERE filters after join. For LEFT JOIN, condition in ON preserves unmatched left rows; in WHERE converts to INNER behavior.</p>
+<p><strong>Interviewer expects:</strong> LEFT JOIN filter placement &mdash; common trick question.</p>
+
+<h4>AQ12. What is a materialized view?</h4>
+<p><strong>Answer:</strong> View that stores physical results. Must refresh (FULL/INCREMENTAL). Faster reads; stale until refresh. Test refresh job and data accuracy.</p>
+<p><strong>Interviewer expects:</strong> Staleness testing for QA.</p>
+
+<h4>AQ13. Explain MERGE/UPSERT statement.</h4>
+<p><strong>Answer:</strong> INSERT if not exists, UPDATE if exists. MySQL: <code>INSERT ... ON DUPLICATE KEY UPDATE</code>. PostgreSQL: <code>INSERT ... ON CONFLICT DO UPDATE</code>. SQL Server: MERGE.</p>
+<p><strong>Interviewer expects:</strong> Idempotent data load pattern.</p>
+
+<h4>AQ14. How do you find gaps in sequential IDs?</h4>
+<p><strong>Answer:</strong> <code>SELECT a.id + 1 AS gap_start FROM table a WHERE NOT EXISTS (SELECT 1 FROM table b WHERE b.id = a.id + 1) AND a.id < (SELECT MAX(id) FROM table);</code></p>
+<p><strong>Interviewer expects:</strong> Sequence integrity check for QA.</p>
+
+<h4>AQ15. What is query execution order?</h4>
+<p><strong>Answer:</strong> FROM &rarr; JOIN &rarr; WHERE &rarr; GROUP BY &rarr; HAVING &rarr; SELECT &rarr; DISTINCT &rarr; ORDER BY &rarr; LIMIT. Explains why alias fails in WHERE.</p>
+<p><strong>Interviewer expects:</strong> Logical order; not necessarily physical execution.</p>
+
+<h4>AQ16. Write query to delete duplicate rows keeping one.</h4>
+<p><strong>Answer:</strong> <code>DELETE FROM users WHERE user_id NOT IN (SELECT MIN(user_id) FROM users GROUP BY email);</code> Or use ROW_NUMBER in CTE (safer).</p>
+<p><strong>Interviewer expects:</strong> Safe delete with backup/transaction mention.</p>
+
+<h4>AQ17. What is a covering index?</h4>
+<p><strong>Answer:</strong> Index containing all columns needed by query &mdash; no table lookup required. INCLUDE columns (SQL Server) or composite index covering SELECT/WHERE.</p>
+<p><strong>Interviewer expects:</strong> Index-only scan in EXPLAIN.</p>
+
+<h4>AQ18. Explain CAP theorem briefly.</h4>
+<p><strong>Answer:</strong> Distributed systems choose 2 of 3: Consistency, Availability, Partition tolerance. SQL RDBMS traditionally CP; NoSQL often AP. Relevant for microservices DB testing.</p>
+<p><strong>Interviewer expects:</strong> High-level; not deep distributed systems proof.</p>
+
+<h4>AQ19. What is sharding vs partitioning?</h4>
+<p><strong>Answer:</strong> Partitioning splits one DB table into segments (same server). Sharding distributes across multiple servers. Both affect how QA validates data completeness.</p>
+<p><strong>Interviewer expects:</strong> Scale-out concept awareness.</p>
+
+<h4>AQ20. How do you test concurrent updates (lost update problem)?</h4>
+<p><strong>Answer:</strong> Two sessions UPDATE same row without locking &mdash; last write wins. Test with optimistic locking (version column) or SELECT FOR UPDATE. Verify version increment and conflict error.</p>
+<p><strong>Interviewer expects:</strong> Race condition testing methodology.</p>
+
+<h4>AQ21. What is SELECT FOR UPDATE?</h4>
+<p><strong>Answer:</strong> Locks selected rows for update until transaction commits. Prevents concurrent modification. <code>SELECT * FROM accounts WHERE id = 1 FOR UPDATE;</code></p>
+<p><strong>Interviewer expects:</strong> Pessimistic locking for financial apps.</p>
+
+<h4>AQ22. Explain NTILE window function.</h4>
+<p><strong>Answer:</strong> Divides rows into N roughly equal buckets. <code>NTILE(4) OVER (ORDER BY salary)</code> splits employees into 4 quartiles. Useful for sampling test data.</p>
+<p><strong>Interviewer expects:</strong> Practical use beyond definition.</p>
+
+<h4>AQ23. What is a hash join vs nested loop join?</h4>
+<p><strong>Answer:</strong> Nested loop: for each outer row, scan inner (good for small tables). Hash join: builds hash table on smaller table (good for large equi-joins). Optimizer picks based on stats.</p>
+<p><strong>Interviewer expects:</strong> Read EXPLAIN join types.</p>
+
+<h4>AQ24. How do you compare two tables for data differences?</h4>
+<p><strong>Answer:</strong> <code>(SELECT * FROM source EXCEPT SELECT * FROM target) UNION ALL (SELECT * FROM target EXCEPT SELECT * FROM source);</code> Or checksum: <code>SELECT MD5(GROUP_CONCAT(row ORDER BY pk))</code> per table.</p>
+<p><strong>Interviewer expects:</strong> ETL/migration validation expertise.</p>
+
+<h4>AQ25. What is temporal table / system-versioned table?</h4>
+<p><strong>Answer:</strong> SQL Server/PostgreSQL feature storing row history automatically. Current + history table. Query <code>FOR SYSTEM_TIME AS OF '2024-01-01'</code> for point-in-time.</p>
+<p><strong>Interviewer expects:</strong> Audit/history testing without app-level logging.</p>
+
+<h4>AQ26. Write a query to find customers who placed orders in 3 consecutive months.</h4>
+<p><strong>Answer:</strong> Use LAG on distinct order months per customer; check month diff = 1 for two consecutive LAG values. Or self-join on month+1, month+2.</p>
+<p><strong>Interviewer expects:</strong> Complex analytical thinking; window functions preferred.</p>
+
+<h4>AQ27. What is the N+1 query problem?</h4>
+<p><strong>Answer:</strong> App runs 1 query for list + N queries for each item's details. Fix with JOIN or batch IN query. Detect in testing via query log count.</p>
+<p><strong>Interviewer expects:</strong> API/DB integration performance awareness.</p>
+
+<h4>AQ28. Explain database connection pooling.</h4>
+<p><strong>Answer:</strong> Reuses open connections instead of creating new ones per request. Test under load &mdash; pool exhaustion causes timeouts. Config: max pool size, idle timeout.</p>
+<p><strong>Interviewer expects:</strong> Performance/load test connection to DB.</p>
+
+<h4>AQ29. What is READ ONLY replica and how to test?</h4>
+<p><strong>Answer:</strong> Copy of primary for read queries. Replication lag means stale reads. Test: write on primary, immediately read replica &mdash; may not see new data for seconds.</p>
+<p><strong>Interviewer expects:</strong> eventual consistency testing.</p>
+
+<h4>AQ30. How do you use SAVEPOINT?</h4>
+<p><strong>Answer:</strong> <code>BEGIN; INSERT ...; SAVEPOINT sp1; UPDATE ...; ROLLBACK TO sp1; COMMIT;</code> Partial rollback within transaction. Test nested transaction behavior.</p>
+<p><strong>Interviewer expects:</strong> Granular rollback for complex test cleanup.</p>
+
+<h4>AQ31. What is an execution plan red flag?</h4>
+<p><strong>Answer:</strong> Full table scan on large table, key lookups in millions, high cost percentage on sort/hash, estimated vs actual rows mismatch, missing index suggestions.</p>
+<p><strong>Interviewer expects:</strong> Practical EXPLAIN reading skills.</p>
+
+<h4>AQ32. Explain FIRST_VALUE and LAST_VALUE.</h4>
+<p><strong>Answer:</strong> Return first/last value in window frame. <code>FIRST_VALUE(salary) OVER (PARTITION BY dept_id ORDER BY hire_date)</code> gets first hire's salary per dept.</p>
+<p><strong>Interviewer expects:</strong> Frame clause awareness (ROWS BETWEEN).</p>
+
+<h4>AQ33. How to generate a numbers/tally table?</h4>
+<p><strong>Answer:</strong> Recursive CTE: <code>WITH RECURSIVE nums(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM nums WHERE n < 1000) SELECT n FROM nums;</code> Used for date series and test data generation.</p>
+<p><strong>Interviewer expects:</strong> Test data generation creativity.</p>
+
+<h4>AQ34. What is optimistic vs pessimistic locking?</h4>
+<p><strong>Answer:</strong> Optimistic: check version at UPDATE (no lock during read). Pessimistic: lock row on read (SELECT FOR UPDATE). Optimistic better for low contention; pessimistic for banking.</p>
+<p><strong>Interviewer expects:</strong> Test both conflict scenarios.</p>
+
+<h4>AQ35. Write query finding top 3 products per category by revenue.</h4>
+<p><strong>Answer:</strong> <code>SELECT * FROM (SELECT product_name, category, revenue, ROW_NUMBER() OVER (PARTITION BY category ORDER BY revenue DESC) AS rn FROM products) t WHERE rn <= 3;</code></p>
+<p><strong>Interviewer expects:</strong> Top-N per group &mdash; very common advanced question.</p>
+
+<h3>Top 50 Database Testing Questions with Answers</h3>
+
+<h4>DTQ1. What is database testing?</h4>
+<p><strong>Answer:</strong> Validating data integrity, schema, CRUD operations, constraints, triggers, stored procedures, and performance of the database layer.</p>
+<p><strong>Interviewer expects:</strong> Beyond UI &mdash; backend data validation.</p>
+
+<h4>DTQ2. Why is DB testing important for QA automation?</h4>
+<p><strong>Answer:</strong> UI can show success while DB insert failed. API may return 200 with wrong data. DB is source of truth for validation.</p>
+<p><strong>Interviewer expects:</strong> Source of truth concept.</p>
+
+<h4>DTQ3. How do you validate data after API POST?</h4>
+<p><strong>Answer:</strong> Capture API response ID &rarr; JDBC query by PK &rarr; assert all fields match request &rarr; verify timestamps/defaults.</p>
+<p><strong>Interviewer expects:</strong> Concrete step sequence.</p>
+
+<h4>DTQ4. What is backend testing vs frontend testing?</h4>
+<p><strong>Answer:</strong> Backend validates DB, API responses, business logic in SP. Frontend validates UI display, UX. Both needed; DB catches data bugs UI misses.</p>
+<p><strong>Interviewer expects:</strong> Complementary, not either/or.</p>
+
+<h4>DTQ5. How do you test PRIMARY KEY constraint?</h4>
+<p><strong>Answer:</strong> INSERT duplicate PK &mdash; expect DB error or API 409. Verify only one row exists.</p>
+<p><strong>Interviewer expects:</strong> Negative test approach.</p>
+
+<h4>DTQ6. How do you test FOREIGN KEY constraint?</h4>
+<p><strong>Answer:</strong> INSERT child with invalid parent ID &mdash; expect FK violation. DELETE parent with children &mdash; expect block or cascade per design.</p>
+<p><strong>Interviewer expects:</strong> Both insert and delete FK tests.</p>
+
+<h4>DTQ7. How do you test UNIQUE constraint?</h4>
+<p><strong>Answer:</strong> INSERT two rows with same unique column value. Second should fail. Verify with COUNT query.</p>
+<p><strong>Interviewer expects:</strong> Duplicate detection query follow-up.</p>
+
+<h4>DTQ8. How do you test NOT NULL constraint?</h4>
+<p><strong>Answer:</strong> INSERT/UPDATE with NULL in NOT NULL column &mdash; expect error. Verify no NULL exists: <code>SELECT COUNT(*) FROM t WHERE col IS NULL</code> should be 0.</p>
+<p><strong>Interviewer expects:</strong> Both API and direct SQL negative test.</p>
+
+<h4>DTQ9. How do you test DEFAULT values?</h4>
+<p><strong>Answer:</strong> INSERT omitting column with DEFAULT. Query DB &mdash; verify default applied. Example: status='ACTIVE', created_at populated.</p>
+<p><strong>Interviewer expects:</strong> Omit column intentionally in INSERT test.</p>
+
+<h4>DTQ10. How do you test CHECK constraint?</h4>
+<p><strong>Answer:</strong> INSERT value outside allowed range/list. Expect rejection. Boundary test: exactly at limit should pass.</p>
+<p><strong>Interviewer expects:</strong> Boundary value analysis.</p>
+
+<h4>DTQ11. What is orphan record testing?</h4>
+<p><strong>Answer:</strong> Find child rows without valid parent via LEFT JOIN IS NULL. Should return 0 in healthy system.</p>
+<p><strong>Interviewer expects:</strong> LEFT JOIN orphan query memorized.</p>
+
+<h4>DTQ12. How do you validate stored procedures?</h4>
+<p><strong>Answer:</strong> Setup test data, call SP with known inputs, verify output parameters/result sets/affected rows, test error paths and edge cases.</p>
+<p><strong>Interviewer expects:</strong> Same rigor as API testing.</p>
+
+<h4>DTQ13. How do you test database triggers?</h4>
+<p><strong>Answer:</strong> Perform triggering action (INSERT/UPDATE/DELETE), verify trigger side effect (audit log row, calculated field update). Test trigger doesn't fire when condition not met.</p>
+<p><strong>Interviewer expects:</strong> Before/after state comparison.</p>
+
+<h4>DTQ14. What is schema validation?</h4>
+<p><strong>Answer:</strong> Verify tables, columns, data types, constraints, indexes match specification using information_schema queries.</p>
+<p><strong>Interviewer expects:</strong> information_schema or DESCRIBE usage.</p>
+
+<h4>DTQ15. How do you test database migration?</h4>
+<p><strong>Answer:</strong> Pre/post record counts, checksums, sample row comparison, FK integrity, app regression, rollback test.</p>
+<p><strong>Interviewer expects:</strong> Section 14 Scenario 4 depth.</p>
+
+<h4>DTQ16. What tools do you use for DB testing in automation?</h4>
+<p><strong>Answer:</strong> JDBC (Java), pyodbc/psycopg2 (Python), DBUtils, Testcontainers for Docker DB, DBeaver for manual, Flyway/Liquibase for migration.</p>
+<p><strong>Interviewer expects:</strong> Named real tools from their stack.</p>
+
+<h4>DTQ17. How do you connect Java automation to database?</h4>
+<p><strong>Answer:</strong> JDBC: load driver, DriverManager.getConnection(url, user, pass), Statement/PreparedStatement, ResultSet, close in finally block.</p>
+<p><strong>Interviewer expects:</strong> PreparedStatement for SQL injection safety.</p>
+
+<h4>DTQ18. What is test data management in DB testing?</h4>
+<p><strong>Answer:</strong> Create isolated test data per test, use transactions with rollback, @Before/@After cleanup, avoid shared mutable state, use factories for unique emails/IDs.</p>
+<p><strong>Interviewer expects:</strong> Test isolation principles.</p>
+
+<h4>DTQ19. How do you avoid test data pollution?</h4>
+<p><strong>Answer:</strong> Unique identifiers per run (UUID suffix), delete in @AfterMethod, use dedicated test schema, transaction rollback pattern.</p>
+<p><strong>Interviewer expects:</strong> Parallel test safety.</p>
+
+<h4>DTQ20. How do you validate soft delete?</h4>
+<p><strong>Answer:</strong> After DELETE API: row exists with is_deleted=1/deleted_at set. Default app queries exclude it. Hard count via raw SQL includes soft-deleted.</p>
+<p><strong>Interviewer expects:</strong> Two query perspectives.</p>
+
+<h4>DTQ21. What is data-driven testing with SQL?</h4>
+<p><strong>Answer:</strong> TestNG @DataProvider or CSV feeds test inputs; same test logic runs against multiple DB states. SQL seeds data per data set.</p>
+<p><strong>Interviewer expects:</strong> Framework integration example.</p>
+
+<h4>DTQ22. How do you test audit columns (created_at, updated_at)?</h4>
+<p><strong>Answer:</strong> On INSERT: created_at &asymp; NOW(), updated_at = created_at. On UPDATE: updated_at changes, created_at unchanged.</p>
+<p><strong>Interviewer expects:</strong> Time tolerance (within 1-2 seconds).</p>
+
+<h4>DTQ23. How do you test cascading deletes?</h4>
+<p><strong>Answer:</strong> Insert parent + children, delete parent, verify children also deleted. Count queries before/after.</p>
+<p><strong>Interviewer expects:</strong> ON DELETE CASCADE verification.</p>
+
+<h4>DTQ24. What is boundary testing for numeric columns?</h4>
+<p><strong>Answer:</strong> Test min, max, min-1, max+1, zero, negative (if allowed), decimal precision (123.456 with DECIMAL(10,2)).</p>
+<p><strong>Interviewer expects:</strong> Overflow/truncation awareness.</p>
+
+<h4>DTQ25. How do you test encrypted columns?</h4>
+<p><strong>Answer:</strong> Verify ciphertext in DB &ne; plaintext. Verify app decrypts correctly. Hash columns (password): verify bcrypt/argon2 format, never reversible.</p>
+<p><strong>Interviewer expects:</strong> Security-aware DB testing.</p>
+
+<h4>DTQ26. How do you validate ETL pipeline?</h4>
+<p><strong>Answer:</strong> Source vs target counts, sums, null checks, duplicate checks, transformation rules, reject log review.</p>
+<p><strong>Interviewer expects:</strong> Section 14 Scenario 5 patterns.</p>
+
+<h4>DTQ27. What is regression testing for database?</h4>
+<p><strong>Answer:</strong> Re-run validation queries after schema/code changes. Compare query results to baseline. Automated SQL scripts in CI.</p>
+<p><strong>Interviewer expects:</strong> Automated SQL in CI/CD.</p>
+
+<h4>DTQ28. How do you test with production-like data volume?</h4>
+<p><strong>Answer:</strong> Generate bulk test data (scripts, tools like Mockaroo), test query performance, index effectiveness, pagination at scale.</p>
+<p><strong>Interviewer expects:</strong> Performance not just functional.</p>
+
+<h4>DTQ29. What queries do you run after every deployment?</h4>
+<p><strong>Answer:</strong> Smoke: connection test, critical table counts, orphan check, recent record insert test, health check SP.</p>
+<p><strong>Interviewer expects:</strong> Deployment verification checklist.</p>
+
+<h4>DTQ30. How do you test database rollback on API failure?</h4>
+<p><strong>Answer:</strong> Simulate mid-transaction failure (mock payment fail). Verify no partial records &mdash; order without payment, payment without order should not exist.</p>
+<p><strong>Interviewer expects:</strong> Atomicity validation.</p>
+
+<h4>DTQ31. What is SQL injection testing from QA perspective?</h4>
+<p><strong>Answer:</strong> Input <code>' OR '1'='1</code>, <code>'; DROP TABLE--</code> in API fields. Verify parameterized queries prevent execution. DB row count unchanged.</p>
+<p><strong>Interviewer expects:</strong> Security test payloads.</p>
+
+<h4>DTQ32. How do you compare UI displayed data with DB?</h4>
+<p><strong>Answer:</strong> Get value from UI element, query DB with same filter, assert match. Or compare API JSON response with DB query result.</p>
+<p><strong>Interviewer expects:</strong> End-to-end data consistency.</p>
+
+<h4>DTQ33. What is white box vs black box DB testing?</h4>
+<p><strong>Answer:</strong> White box: knows schema, SP code, triggers &mdash; tests internals. Black box: validates via API/UI without knowing implementation.</p>
+<p><strong>Interviewer expects:</strong> Both approaches used in practice.</p>
+
+<h4>DTQ34. How do you test database views?</h4>
+<p><strong>Answer:</strong> Compare view output to equivalent base table query. Verify view reflects INSERT/UPDATE on base tables. Test view permissions.</p>
+<p><strong>Interviewer expects:</strong> View = saved query validation.</p>
+
+<h4>DTQ35. How do you test index effectiveness?</h4>
+<p><strong>Answer:</strong> EXPLAIN before/after index creation. Verify index scan replaces full table scan. Measure query time difference.</p>
+<p><strong>Interviewer expects:</strong> EXPLAIN-driven validation.</p>
+
+<h4>DTQ36. What is chopstick testing (CRUD cycle)?</h4>
+<p><strong>Answer:</strong> Create &rarr; Read &rarr; Update &rarr; Delete in sequence, validating DB at each step. Classic DB testing pattern.</p>
+<p><strong>Interviewer expects:</strong> CRUD lifecycle validation.</p>
+
+<h4>DTQ37. How do you handle multiple database environments?</h4>
+<p><strong>Answer:</strong> Config-driven connection strings (dev/staging/prod). Never run destructive tests on prod. Environment-specific test data sets.</p>
+<p><strong>Interviewer expects:</strong> Environment safety discipline.</p>
+
+<h4>DTQ38. How do you test batch/bulk INSERT?</h4>
+<p><strong>Answer:</strong> Verify row count matches batch size, all rows inserted, no partial batch on failure, performance within SLA.</p>
+<p><strong>Interviewer expects:</strong> All-or-nothing batch behavior.</p>
+
+<h4>DTQ39. What is referential integrity testing?</h4>
+<p><strong>Answer:</strong> Verify all FK relationships hold. No orphans. Cascade rules work. Cannot insert invalid references.</p>
+<p><strong>Interviewer expects:</strong> Comprehensive FK test suite.</p>
+
+<h4>DTQ40. How do you test NULL vs empty string?</h4>
+<p><strong>Answer:</strong> INSERT '' vs NULL &mdash; verify different storage. App may treat differently. Query: <code>WHERE col IS NULL</code> vs <code>WHERE col = ''</code>.</p>
+<p><strong>Interviewer expects:</strong> Common data quality bug finder.</p>
+
+<h4>DTQ41. How do you validate computed/generated columns?</h4>
+<p><strong>Answer:</strong> INSERT base columns only; verify generated column auto-calculated. UPDATE base column; verify generated updates.</p>
+<p><strong>Interviewer expects:</strong> Don't INSERT into generated column.</p>
+
+<h4>DTQ42. What is database benchmarking in testing?</h4>
+<p><strong>Answer:</strong> Measure query response time under load. Set SLA thresholds (e.g., search < 200ms). Fail test if exceeded.</p>
+<p><strong>Interviewer expects:</strong> Non-functional DB testing.</p>
+
+<h4>DTQ43. How do you test timezone handling in DB?</h4>
+<p><strong>Answer:</strong> Store UTC in DB, verify app converts to local. Test DST boundaries. Compare UNIX_TIMESTAMP consistency.</p>
+<p><strong>Interviewer expects:</strong> UTC storage best practice.</p>
+
+<h4>DTQ44. How do you test database backup and restore?</h4>
+<p><strong>Answer:</strong> Backup test DB, insert new data, restore to point-in-time, verify restored state matches backup moment.</p>
+<p><strong>Interviewer expects:</strong> DR testing awareness.</p>
+
+<h4>DTQ45. What is data masking and why test it?</h4>
+<p><strong>Answer:</strong> PII replaced in non-prod environments. Verify prod data not exposed in staging. Mask format preserved for testing.</p>
+<p><strong>Interviewer expects:</strong> Compliance (GDPR) awareness.</p>
+
+<h4>DTQ46. How do you test pagination at DB level?</h4>
+<p><strong>Answer:</strong> Verify LIMIT/OFFSET returns correct slices. Total count matches full query. No duplicate/missing rows across pages.</p>
+<p><strong>Interviewer expects:</strong> OFFSET boundary tests.</p>
+
+<h4>DTQ47. What is contract testing for database?</h4>
+<p><strong>Answer:</strong> Verify schema contract between services &mdash; column names, types, constraints match expected API/consumer contract. Schema diff in CI.</p>
+<p><strong>Interviewer expects:</strong> Microservices schema evolution.</p>
+
+<h4>DTQ48. How do you log SQL queries in automation framework?</h4>
+<p><strong>Answer:</strong> Log query + params + result count in test report. Helps debug failures. Use PreparedStatement with bound param logging.</p>
+<p><strong>Interviewer expects:</strong> Debuggability in test reports.</p>
+
+<h4>DTQ49. What is the difference between TRUNCATE and DELETE in test cleanup?</h4>
+<p><strong>Answer:</strong> DELETE for selective cleanup with WHERE. TRUNCATE for full table reset (faster, resets identity). FK may block TRUNCATE.</p>
+<p><strong>Interviewer expects:</strong> Test teardown strategy.</p>
+
+<h4>DTQ50. How do you report DB test results to stakeholders?</h4>
+<p><strong>Answer:</strong> Summary: tables validated, queries run, pass/fail counts, data discrepancies with SQL evidence, reconciliation diffs for ETL/migration.</p>
+<p><strong>Interviewer expects:</strong> Communication skills with technical evidence.</p>
+<h3>Top 30 SDET SQL Questions with Answers</h3>
+
+<h4>SDETQ1. How do you integrate SQL validation in TestNG framework?</h4>
+<p><strong>Answer:</strong> DB utility class with getConnection(), executeQuery(), getColumnValue(). Call after API step in test method. Assert in same test or @AfterMethod hook.</p>
+<p><strong>Interviewer expects:</strong> Framework architecture, not just raw JDBC.</p>
+
+<h4>SDETQ2. Design a DatabaseHelper class for automation.</h4>
+<p><strong>Answer:</strong> Methods: getSingleValue(sql, params), getRowCount(sql), executeUpdate(sql), verifyRecordExists(table, pkCol, pkVal), compareMaps(apiResponse, dbRow). Config from properties file. Connection pooling optional.</p>
+<p><strong>Interviewer expects:</strong> Reusable abstraction; parameterized queries.</p>
+
+<h4>SDETQ3. How do you parameterize SQL queries to prevent injection in tests?</h4>
+<p><strong>Answer:</strong> PreparedStatement with ? placeholders. setString(1, email). Never concatenate user input into SQL strings.</p>
+<p><strong>Interviewer expects:</strong> Security best practice in test code too.</p>
+
+<h4>SDETQ4. How do you run SQL assertions in parallel tests safely?</h4>
+<p><strong>Answer:</strong> Unique test data per thread (UUID emails), separate schemas, or serial DB tests with @Test(singleThreaded=true) for shared resources.</p>
+<p><strong>Interviewer expects:</strong> Parallel execution awareness.</p>
+
+<h4>SDETQ5. How do you use Testcontainers for DB testing?</h4>
+<p><strong>Answer:</strong> Docker container spins MySQL/PostgreSQL per test suite. @BeforeAll start container, get JDBC URL dynamically. Real DB, isolated, disposable.</p>
+<p><strong>Interviewer expects:</strong> Modern CI-friendly approach.</p>
+
+<h4>SDETQ6. How do you validate API response vs DB in one test?</h4>
+<p><strong>Answer:</strong> REST call &rarr; parse JSON &rarr; JDBC query by ID &rarr; field-by-field Assert.assertEquals(api.get("name"), db.get("name")).</p>
+<p><strong>Interviewer expects:</strong> End-to-end single test flow.</p>
+
+<h4>SDETQ7. How do you handle DB connection failures in tests?</h4>
+<p><strong>Answer:</strong> Retry with exponential backoff, clear error message with connection details (not password), fail fast if DB unreachable in @BeforeSuite.</p>
+<p><strong>Interviewer expects:</strong> Resilient but not silent failure.</p>
+
+<h4>SDETQ8. How do you store expected DB state for comparison?</h4>
+<p><strong>Answer:</strong> JSON/XML fixtures, HashMap builders, or snapshot files. Load expected, query actual, deep compare with AssertJ.</p>
+<p><strong>Interviewer expects:</strong> Maintainable expected data strategy.</p>
+
+<h4>SDETQ9. How do you test idempotent API with DB check?</h4>
+<p><strong>Answer:</strong> Call same POST twice with idempotency-key header. Assert row count = 1, not 2. Query by business key.</p>
+<p><strong>Interviewer expects:</strong> Count-based validation.</p>
+
+<h4>SDETQ10. How do you automate ETL validation?</h4>
+<p><strong>Answer:</strong> Python/Java script: run source query, run target query, compare counts and sums, fail CI if diff > threshold. Schedule post-ETL job.</p>
+<p><strong>Interviewer expects:</strong> Pipeline integration.</p>
+
+<h4>SDETQ11. How do you version control SQL test scripts?</h4>
+<p><strong>Answer:</strong> Git repo: /sql/validation/, /sql/seed/, /sql/cleanup/. Tagged with app version. Code review for test SQL like app code.</p>
+<p><strong>Interviewer expects:</strong> SQL as code discipline.</p>
+
+<h4>SDETQ12. How do you use Flyway/Liquibase in test environment?</h4>
+<p><strong>Answer:</strong> Migrations run before test suite. Verify schema_version table. Tests always run against latest schema.</p>
+<p><strong>Interviewer expects:</strong> Schema sync with app migrations.</p>
+
+<h4>SDETQ13. How do you mock database in unit tests vs integration tests?</h4>
+<p><strong>Answer:</strong> Unit: mock DAO/repository. Integration: real test DB (H2 in-memory or Testcontainers). SDET focus is integration level.</p>
+<p><strong>Interviewer expects:</strong> Appropriate test pyramid level.</p>
+
+<h4>SDETQ14. How do you validate multi-step workflow in DB?</h4>
+<p><strong>Answer:</strong> Checkpoint queries after each step. State machine validation &mdash; status transitions in order table. No skip states.</p>
+<p><strong>Interviewer expects:</strong> Workflow/state machine testing.</p>
+
+<h4>SDETQ15. How do you build dynamic SQL for flexible validation?</h4>
+<p><strong>Answer:</strong> StringBuilder for optional WHERE clauses, but use PreparedStatement params. Map column&rarr;value for WHERE pk=:id AND status=:status.</p>
+<p><strong>Interviewer expects:</strong> Dynamic but safe SQL building.</p>
+
+<h4>SDETQ16. How do you test REST API pagination with DB?</h4>
+<p><strong>Answer:</strong> Seed 25 records, API page size 10 &rarr; verify 3 pages, totalElements=25 matches DB COUNT.</p>
+<p><strong>Interviewer expects:</strong> Cross-layer count validation.</p>
+
+<h4>SDETQ17. How do you use Allure/Extent report for DB steps?</h4>
+<p><strong>Answer:</strong> @Step("Verify user in DB: {email}") on DB helper methods. Attach SQL query and result to report.</p>
+<p><strong>Interviewer expects:</strong> Reporting visibility for DB assertions.</p>
+
+<h4>SDETQ18. How do you test event-driven architecture DB updates?</h4>
+<p><strong>Answer:</strong> Publish event, poll DB with Awaitility until row appears/updates (async). Timeout and interval configurable.</p>
+<p><strong>Interviewer expects:</strong> Async validation pattern.</p>
+
+<h4>SDETQ19. How do you compare DECIMAL values in assertions?</h4>
+<p><strong>Answer:</strong> Never compare floats directly. Use BigDecimal with compareTo or Assert.assertEquals with delta for DECIMAL(10,2).</p>
+<p><strong>Interviewer expects:</strong> Financial precision awareness.</p>
+
+<h4>SDETQ20. How do you seed test data via SQL in CI?</h4>
+<p><strong>Answer:</strong> @BeforeClass runs seed SQL script. Or API setup calls. Idempotent seeds (INSERT IGNORE or MERGE).</p>
+<p><strong>Interviewer expects:</strong> Repeatable CI pipeline setup.</p>
+
+<h4>SDETQ21. How do you test database permissions/RBAC?</h4>
+<p><strong>Answer:</strong> Connect as read-only user &mdash; verify SELECT works, INSERT fails. App service account should have minimal required grants.</p>
+<p><strong>Interviewer expects:</strong> Least privilege validation.</p>
+
+<h4>SDETQ22. How do you validate Kafka/event outbox pattern in DB?</h4>
+<p><strong>Answer:</strong> After API action, query outbox table for event row with correct payload and status=PENDING. After consumer, status=PROCESSED.</p>
+<p><strong>Interviewer expects:</strong> Modern microservices pattern knowledge.</p>
+
+<h4>SDETQ23. How do you write CI gate for data quality?</h4>
+<p><strong>Answer:</strong> SQL checks in Jenkins stage: orphan count=0, duplicates=0, null required fields=0. Fail build if any check fails.</p>
+<p><strong>Interviewer expects:</strong> Shift-left data quality.</p>
+
+<h4>SDETQ24. How do you test GraphQL with DB validation?</h4>
+<p><strong>Answer:</strong> GraphQL mutation &rarr; extract returned ID &rarr; SQL verify. Nested GraphQL response matches JOIN query result.</p>
+<p><strong>Interviewer expects:</strong> GraphQL + SQL combo.</p>
+
+<h4>SDETQ25. How do you handle flaky DB tests?</h4>
+<p><strong>Answer:</strong> Identify root cause: async lag (add wait), shared data (isolate), connection leak (close resources), clock skew (time tolerance).</p>
+<p><strong>Interviewer expects:</strong> Systematic flakiness debug.</p>
+
+<h4>SDETQ26. How do you test feature flags with DB state?</h4>
+<p><strong>Answer:</strong> Toggle flag, verify different code paths write different DB columns/values. Query confirms flag-conditional behavior.</p>
+<p><strong>Interviewer expects:</strong> Flag matrix testing.</p>
+
+<h4>SDETQ27. How do you use SQL in Postman/Newman tests?</h4>
+<p><strong>Answer:</strong> Newman runs API tests; separate script or pm.test hooks can't query DB directly &mdash; use JDBC in Java runner or Postman sandbox with limited options. Prefer framework integration.</p>
+<p><strong>Interviewer expects:</strong> Know Postman limits; propose better approach.</p>
+
+<h4>SDETQ28. How do you test database replication lag?</h4>
+<p><strong>Answer:</strong> Write to primary, poll read replica until data appears or timeout. Measure lag time. Assert lag < SLA (e.g., 5 seconds).</p>
+<p><strong>Interviewer expects:</strong> Distributed system testing.</p>
+
+<h4>SDETQ29. How do you architect DB layer in Page Object Model?</h4>
+<p><strong>Answer:</strong> UI Page Objects for frontend; DB Repository/DAO objects for data validation. Tests orchestrate both. Separation of concerns.</p>
+<p><strong>Interviewer expects:</strong> Clean architecture applied to SDET.</p>
+
+<h4>SDETQ30. What SQL skills separate SDET II from Senior SDET?</h4>
+<p><strong>Answer:</strong> SDET II: CRUD validation, JOINs, constraints. Senior: window functions, ETL reconciliation, performance EXPLAIN, migration testing, CI data quality gates, Testcontainers.</p>
+<p><strong>Interviewer expects:</strong> Self-awareness of skill progression.</p>
+
+<h3>20 Scenario-Based Questions with Detailed Answers</h3>
+
+<h4>SCQ1. User registers, UI shows welcome message, but email not received. How do you investigate using SQL?</h4>
+<p><strong>Answer:</strong> Check users table for row inserted. Check email_queue/notifications table for pending email. Check status, error_message, retry_count. If user exists but no queue row &rarr; app bug in event trigger. If queue row FAILED &rarr; SMTP issue.</p>
+<p><strong>Interviewer expects:</strong> Multi-table investigative approach, not just "check users table."</p>
+
+<h4>SCQ2. Order total on UI is $105 but customer charged $110. How do you debug?</h4>
+<p><strong>Answer:</strong> Query orders.total_amount, order_items line totals, tax_amount, payments.amount. Compare: subtotal + tax vs payment.amount. Check if tip/fee in separate column. Check rounding: DECIMAL vs FLOAT bug.</p>
+<p><strong>Interviewer expects:</strong> Penny-level reconciliation across tables.</p>
+
+<h4>SCQ3. After deployment, users report seeing other users' data. What DB queries help?</h4>
+<p><strong>Answer:</strong> Check if query missing WHERE user_id filter (app bug). Audit API logs for user context. Verify row-level security policies. Test: user A's token should not return user B's records via SQL with user_id filter.</p>
+<p><strong>Interviewer expects:</strong> Security/data isolation mindset.</p>
+
+<h4>SCQ4. ETL job completed but dashboard shows wrong revenue. Your approach?</h4>
+<p><strong>Answer:</strong> Compare OLTP SUM(revenue) vs fact_sales SUM(revenue) for same date range. Check ETL reject log. Verify currency conversion. Check if incremental load missed records (created_at filter). Validate dim_date join key.</p>
+<p><strong>Interviewer expects:</strong> Systematic source-target reconciliation.</p>
+
+<h4>SCQ5. Test fails intermittently: "expected 1 row, got 0" after user creation API.</h4>
+<p><strong>Answer:</strong> Likely async write or read replica lag. Add polling with Awaitility (500ms interval, 10s timeout). Check if test queries replica while write goes to primary. Verify transaction committed before assert.</p>
+<p><strong>Interviewer expects:</strong> Async/replication flakiness diagnosis.</p>
+
+<h4>SCQ6. Migration from Oracle to PostgreSQL &mdash; how do you plan DB testing?</h4>
+<p><strong>Answer:</strong> Map data types (NUMBER&rarr;NUMERIC, VARCHAR2&rarr;VARCHAR). Pre/post counts and checksums. Test sequences vs IDENTITY. Validate date functions differ. Run app regression. Performance benchmark top 20 queries.</p>
+<p><strong>Interviewer expects:</strong> Cross-platform migration checklist.</p>
+
+<h4>SCQ7. Product shows "In Stock" but order fails. Debug with SQL.</h4>
+<p><strong>Answer:</strong> Check inventory.quantity vs order quantity. Check reserved_quantity (soft lock). Check warehouse-specific inventory if multi-warehouse. Race condition: two orders depleted stock between check and purchase.</p>
+<p><strong>Interviewer expects:</strong> Inventory reservation pattern knowledge.</p>
+
+<h4>SCQ8. How do you validate 1 million row bulk import?</h4>
+<p><strong>Answer:</strong> Source file row count vs DB COUNT(*). Sample 1000 random rows field compare. SUM/AVG on numeric columns. Check for duplicates on business key. Verify import_batch_id groups correctly. Performance: import time SLA.</p>
+<p><strong>Interviewer expects:</strong> Sampling strategy for large volume.</p>
+
+<h4>SCQ9. Customer deleted account but data still in marketing emails.</h4>
+<p><strong>Answer:</strong> Verify soft delete vs hard delete design. Check GDPR: user row anonymized/deleted, related tables (orders may retain for legal). Query marketing_list for email &mdash; should be removed by cascade or trigger. Test deletion workflow end-to-end.</p>
+<p><strong>Interviewer expects:</strong> Compliance and cascade testing.</p>
+
+<h4>SCQ10. Two microservices share data &mdash; how do you test consistency?</h4>
+<p><strong>Answer:</strong> Eventual consistency: poll both DBs until match or timeout. Compare key fields by correlation_id. Use contract tests for schema. Chaos: kill consumer, verify retry/DLQ, eventual sync.</p>
+<p><strong>Interviewer expects:</strong> Distributed data consistency patterns.</p>
+
+<h4>SCQ11. Sprint adds new column with DEFAULT. How do you test existing rows?</h4>
+<p><strong>Answer:</strong> Migration script should backfill existing rows. Query: SELECT COUNT(*) WHERE new_col IS NULL &mdash; should be 0 if NOT NULL with DEFAULT. New inserts get default. Old rows have backfilled value.</p>
+<p><strong>Interviewer expects:</strong> Migration backfill validation.</p>
+
+<h4>SCQ12. Report shows 500 orders but admin panel shows 480.</h4>
+<p><strong>Answer:</strong> Different filters: report may include CANCELLED, panel excludes. Different date timezone. Report uses DWH (stale ETL). Write both SQL queries, diff the 20 missing order_ids, analyze common attribute.</p>
+<p><strong>Interviewer expects:</strong> Diff-first debugging methodology.</p>
+
+<h4>SCQ13. How do you test database during zero-downtime deployment?</h4>
+<p><strong>Answer:</strong> Blue-green: both schemas coexist. Verify backward-compatible migrations (add column nullable first). Run validation on both environments. Canary: compare results between old/new app version querying same DB.</p>
+<p><strong>Interviewer expects:</strong> Deployment-aware testing strategy.</p>
+
+<h4>SCQ14. Loyalty points not credited after purchase.</h4>
+<p><strong>Answer:</strong> Trace: orders (status=PAID?) &rarr; loyalty_transactions (insert?) &rarr; points_balance update. Check trigger/SP execution. Check idempotency &mdash; duplicate prevention blocking legitimate credit.</p>
+<p><strong>Interviewer expects:</strong> Multi-table workflow trace.</p>
+
+<h4>SCQ15. How do you test audit trail for compliance?</h4>
+<p><strong>Answer:</strong> UPDATE sensitive field &rarr; verify audit_log has old_value, new_value, changed_by, changed_at. DELETE &rarr; verify soft delete logged. Query audit_log by entity_id for complete history.</p>
+<p><strong>Interviewer expects:</strong> Regulatory audit requirements.</p>
+
+<h4>SCQ16. Search returns duplicate results &mdash; DB or app issue?</h4>
+<p><strong>Answer:</strong> Run search SQL directly &mdash; if duplicates in SQL, data issue (duplicate products). If SQL clean but API duplicates, app join bug or missing DISTINCT. Check JOIN causing row multiplication.</p>
+<p><strong>Interviewer expects:</strong> Isolate DB vs application layer.</p>
+
+<h4>SCQ17. Monthly subscription renewed twice same day.</h4>
+<p><strong>Answer:</strong> Query payments/subscriptions for duplicate billing same date. Check idempotency key on billing job. UNIQUE constraint on (subscription_id, billing_date) should prevent &mdash; if missing, file bug.</p>
+<p><strong>Interviewer expects:</strong> Duplicate charge prevention validation.</p>
+
+<h4>SCQ18. How do you test database charset/emoji support?</h4>
+<p><strong>Answer:</strong> INSERT name with emoji &#127881; and Chinese chars. Verify retrieved unchanged. Check column charset utf8mb4 (not utf8 3-byte). API round-trip test.</p>
+<p><strong>Interviewer expects:</strong> utf8mb4 awareness.</p>
+
+<h4>SCQ19. Performance test shows DB CPU 100%. How do you investigate?</h4>
+<p><strong>Answer:</strong> Check slow query log. EXPLAIN top queries. Look for missing indexes, full scans, lock waits. Compare query count per request (N+1). Correlate with JMeter timeline.</p>
+<p><strong>Interviewer expects:</strong> DB-performance correlation in perf testing.</p>
+
+<h4>SCQ20. You're given 30 minutes to validate a hotfix DB migration. Priority tests?</h4>
+<p><strong>Answer:</strong> (1) Schema change applied &mdash; information_schema. (2) Record counts match. (3) App smoke: login, create order, payment. (4) Critical SQL validation scripts from regression suite. (5) Rollback script verified available.</p>
+<p><strong>Interviewer expects:</strong> Prioritized risk-based testing under time pressure.</p>
+</section>
+<!-- ==================== SECTION 16: SQL CHEAT SHEET ==================== -->
+<section id="section-16" class="section-card">
+<h2>Section 16: SQL Cheat Sheet</h2>
+<p>Quick-reference syntax, examples, and expected output for interview and daily QA validation work.</p>
+
+<h3>Basic Queries</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operation</th><th>Syntax</th><th>Example</th><th>Expected Output</th></tr></thead>
+<tbody>
+<tr><td>SELECT</td><td><code>SELECT cols FROM table [WHERE]</code></td><td><code>SELECT name, salary FROM employees WHERE dept_id=10;</code></td><td>Rows: name, salary for dept 10</td></tr>
+<tr><td>INSERT</td><td><code>INSERT INTO t (cols) VALUES (vals)</code></td><td><code>INSERT INTO users (email) VALUES ('a@b.com');</code></td><td>1 row inserted; auto PK generated</td></tr>
+<tr><td>UPDATE</td><td><code>UPDATE t SET col=val WHERE cond</code></td><td><code>UPDATE users SET status='INACTIVE' WHERE id=5;</code></td><td>Matching rows updated</td></tr>
+<tr><td>DELETE</td><td><code>DELETE FROM t WHERE cond</code></td><td><code>DELETE FROM users WHERE id=5;</code></td><td>Row removed; 0 rows if not found</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Filtering</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Clause</th><th>Syntax</th><th>Example</th><th>Expected Output</th></tr></thead>
+<tbody>
+<tr><td>WHERE</td><td><code>WHERE condition</code></td><td><code>WHERE salary > 50000</code></td><td>Filtered rows</td></tr>
+<tr><td>IN</td><td><code>WHERE col IN (v1,v2)</code></td><td><code>WHERE dept_id IN (10,20)</code></td><td>Rows in dept 10 or 20</td></tr>
+<tr><td>BETWEEN</td><td><code>WHERE col BETWEEN a AND b</code></td><td><code>WHERE salary BETWEEN 40K AND 60K</code></td><td>Inclusive range</td></tr>
+<tr><td>LIKE</td><td><code>WHERE col LIKE 'pattern'</code></td><td><code>WHERE email LIKE '%@gmail.com'</code></td><td>Pattern matches</td></tr>
+<tr><td>IS NULL</td><td><code>WHERE col IS NULL</code></td><td><code>WHERE phone IS NULL</code></td><td>Rows with NULL phone</td></tr>
+<tr><td>AND/OR</td><td><code>WHERE c1 AND c2</code></td><td><code>WHERE dept=10 AND salary>50K</code></td><td>Both conditions true</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Joins (One-Liner Syntax)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Join Type</th><th>Syntax</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>INNER</td><td><code>SELECT * FROM a INNER JOIN b ON a.id=b.a_id</code></td><td>Matching rows only</td></tr>
+<tr><td>LEFT</td><td><code>SELECT * FROM a LEFT JOIN b ON a.id=b.a_id</code></td><td>All from a + matches from b</td></tr>
+<tr><td>RIGHT</td><td><code>SELECT * FROM a RIGHT JOIN b ON a.id=b.a_id</code></td><td>All from b + matches from a</td></tr>
+<tr><td>FULL</td><td><code>SELECT * FROM a FULL OUTER JOIN b ON a.id=b.a_id</code></td><td>All from both; NULLs for non-match</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Aggregates</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Function</th><th>Syntax</th><th>Example Output</th></tr></thead>
+<tbody>
+<tr><td>COUNT</td><td><code>SELECT COUNT(*) FROM employees;</code></td><td>150 (total rows)</td></tr>
+<tr><td>SUM</td><td><code>SELECT SUM(salary) FROM employees;</code></td><td>7500000.00</td></tr>
+<tr><td>AVG</td><td><code>SELECT AVG(salary) FROM employees;</code></td><td>50000.00</td></tr>
+<tr><td>MIN</td><td><code>SELECT MIN(salary) FROM employees;</code></td><td>30000.00</td></tr>
+<tr><td>MAX</td><td><code>SELECT MAX(salary) FROM employees;</code></td><td>120000.00</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Grouping</h3>
+<pre><code>-- GROUP BY
+SELECT dept_id, COUNT(*) AS cnt FROM employees GROUP BY dept_id;
+-- Output: dept_id | cnt &rarr; 10|45, 20|30, 30|75
+
+-- HAVING (filter groups)
+SELECT dept_id, AVG(salary) AS avg_sal FROM employees GROUP BY dept_id HAVING AVG(salary) > 50000;
+-- Output: only depts with avg salary > 50000</code></pre>
+
+<h3>Subqueries</h3>
+<pre><code>-- Nested (scalar)
+SELECT * FROM employees WHERE salary > (SELECT AVG(salary) FROM employees);
+
+-- Correlated
+SELECT e.name FROM employees e WHERE e.salary > (
+  SELECT AVG(salary) FROM employees WHERE dept_id = e.dept_id);
+
+-- IN subquery
+SELECT * FROM employees WHERE dept_id IN (SELECT dept_id FROM departments WHERE location='NY');</code></pre>
+
+<h3>Window Functions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Function</th><th>Syntax</th><th>Example Output</th></tr></thead>
+<tbody>
+<tr><td>ROW_NUMBER</td><td><code>ROW_NUMBER() OVER (PARTITION BY dept ORDER BY sal DESC)</code></td><td>1,2,3,4 unique per dept</td></tr>
+<tr><td>RANK</td><td><code>RANK() OVER (ORDER BY sal DESC)</code></td><td>1,2,2,4 (ties skip)</td></tr>
+<tr><td>DENSE_RANK</td><td><code>DENSE_RANK() OVER (ORDER BY sal DESC)</code></td><td>1,2,2,3 (no skip)</td></tr>
+<tr><td>LEAD</td><td><code>LEAD(salary, 1) OVER (ORDER BY hire_date)</code></td><td>Next row's salary</td></tr>
+<tr><td>LAG</td><td><code>LAG(salary, 1) OVER (ORDER BY hire_date)</code></td><td>Previous row's salary</td></tr>
+<tr><td>Running SUM</td><td><code>SUM(amount) OVER (ORDER BY dt)</code></td><td>Cumulative total</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Date Functions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Function</th><th>Syntax (MySQL)</th><th>Example Output</th></tr></thead>
+<tbody>
+<tr><td>Current date</td><td><code>CURRENT_DATE / CURDATE()</code></td><td>2026-07-11</td></tr>
+<tr><td>Current timestamp</td><td><code>NOW() / CURRENT_TIMESTAMP</code></td><td>2026-07-11 18:30:00</td></tr>
+<tr><td>Add interval</td><td><code>DATE_ADD(dt, INTERVAL 7 DAY)</code></td><td>Date + 7 days</td></tr>
+<tr><td>Date diff</td><td><code>DATEDIFF(date1, date2)</code></td><td>Integer days between</td></tr>
+<tr><td>Extract</td><td><code>EXTRACT(YEAR FROM dt)</code></td><td>2026</td></tr>
+<tr><td>Format</td><td><code>DATE_FORMAT(dt, '%Y-%m-%d')</code></td><td>2026-07-11</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>String Functions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Function</th><th>Syntax</th><th>Example Output</th></tr></thead>
+<tbody>
+<tr><td>UPPER</td><td><code>UPPER('hello')</code></td><td>HELLO</td></tr>
+<tr><td>LOWER</td><td><code>LOWER('HELLO')</code></td><td>hello</td></tr>
+<tr><td>TRIM</td><td><code>TRIM('  hi  ')</code></td><td>hi</td></tr>
+<tr><td>SUBSTRING</td><td><code>SUBSTRING('hello', 1, 3)</code></td><td>hel</td></tr>
+<tr><td>REPLACE</td><td><code>REPLACE('a-b-c','-','')</code></td><td>abc</td></tr>
+<tr><td>CONCAT</td><td><code>CONCAT('Hi',' ','Bob')</code></td><td>Hi Bob</td></tr>
+<tr><td>LENGTH</td><td><code>LENGTH('hello')</code></td><td>5</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>NULL Functions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Function</th><th>Syntax</th><th>Example Output</th></tr></thead>
+<tbody>
+<tr><td>COALESCE</td><td><code>COALESCE(NULL, NULL, 'x')</code></td><td>x (first non-NULL)</td></tr>
+<tr><td>ISNULL (SQL Server)</td><td><code>ISNULL(col, 'default')</code></td><td>default if NULL</td></tr>
+<tr><td>NVL (Oracle)</td><td><code>NVL(col, 0)</code></td><td>0 if NULL</td></tr>
+<tr><td>NULLIF</td><td><code>NULLIF(a, b)</code></td><td>NULL if a=b, else a</td></tr>
+<tr><td>IFNULL (MySQL)</td><td><code>IFNULL(col, 'N/A')</code></td><td>N/A if NULL</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Constraints</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Constraint</th><th>Syntax</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>PRIMARY KEY</td><td><code>id INT PRIMARY KEY</code></td><td>Unique identifier, NOT NULL</td></tr>
+<tr><td>FOREIGN KEY</td><td><code>FOREIGN KEY (dept_id) REFERENCES departments(id)</code></td><td>Referential integrity</td></tr>
+<tr><td>UNIQUE</td><td><code>email VARCHAR(255) UNIQUE</code></td><td>No duplicate values</td></tr>
+<tr><td>NOT NULL</td><td><code>name VARCHAR(100) NOT NULL</code></td><td>Must have value</td></tr>
+<tr><td>CHECK</td><td><code>CHECK (salary > 0)</code></td><td>Custom validation rule</td></tr>
+<tr><td>DEFAULT</td><td><code>status VARCHAR(20) DEFAULT 'ACTIVE'</code></td><td>Auto-fill if omitted</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Transactions</h3>
+<pre><code>BEGIN;                          -- Start transaction
+INSERT INTO orders VALUES (...);
+INSERT INTO order_items VALUES (...);
+SAVEPOINT sp1;                  -- Partial savepoint
+UPDATE inventory SET qty = qty - 1;
+-- ROLLBACK TO sp1;            -- Undo since savepoint
+COMMIT;                         -- Persist all changes
+-- ROLLBACK;                    -- Undo entire transaction</code></pre>
+
+<h3>Database Testing Queries</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Purpose</th><th>Query</th><th>Pass Criteria</th></tr></thead>
+<tbody>
+<tr><td>Count validation</td><td><code>SELECT COUNT(*) FROM users;</code></td><td>Matches expected count</td></tr>
+<tr><td>Duplicate check</td><td><code>SELECT email, COUNT(*) FROM users GROUP BY email HAVING COUNT(*)>1;</code></td><td>0 rows returned</td></tr>
+<tr><td>Orphan records</td><td><code>SELECT c.* FROM child c LEFT JOIN parent p ON c.p_id=p.id WHERE p.id IS NULL;</code></td><td>0 rows returned</td></tr>
+<tr><td>NULL check</td><td><code>SELECT COUNT(*) FROM users WHERE email IS NULL;</code></td><td>0 for required fields</td></tr>
+<tr><td>Data comparison</td><td><code>SELECT * FROM source EXCEPT SELECT * FROM target;</code></td><td>0 diff rows</td></tr>
+<tr><td>Revenue reconcile</td><td><code>SELECT SUM(total) FROM orders WHERE status='PAID';</code></td><td>Matches payment SUM</td></tr>
+<tr><td>Recent records</td><td><code>SELECT * FROM users WHERE created_at >= NOW()-INTERVAL 1 HOUR;</code></td><td>Contains test record</td></tr>
+<tr><td>Schema check</td><td><code>SELECT column_name, data_type FROM information_schema.columns WHERE table_name='users';</code></td><td>Matches spec</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- ==================== SECTION 17: 1-DAY INTERVIEW REVISION NOTES ==================== -->
+<section id="section-17" class="section-card">
+<h2>Section 17: 1-Day Interview Revision Notes</h2>
+<p>Condensed revision for last-day prep before SQL/DB interviews at the 4-year QA/SDET level.</p>
+
+<h3>Top 25 Most Asked SQL Queries (One-Line Answers)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Query / Question</th><th>One-Line Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Second highest salary</td><td><code>SELECT MAX(salary) FROM emp WHERE salary < (SELECT MAX(salary) FROM emp);</code></td></tr>
+<tr><td>2</td><td>Nth highest salary</td><td>Use DENSE_RANK or LIMIT 1 OFFSET N-1</td></tr>
+<tr><td>3</td><td>Duplicate emails</td><td><code>GROUP BY email HAVING COUNT(*)>1</code></td></tr>
+<tr><td>4</td><td>Orphan records</td><td><code>LEFT JOIN parent ... WHERE parent.id IS NULL</code></td></tr>
+<tr><td>5</td><td>Employees without orders</td><td>LEFT JOIN orders WHERE order_id IS NULL</td></tr>
+<tr><td>6</td><td>Dept with max employees</td><td>GROUP BY dept_id ORDER BY COUNT DESC LIMIT 1</td></tr>
+<tr><td>7</td><td>Running total</td><td><code>SUM(amount) OVER (ORDER BY dt)</code></td></tr>
+<tr><td>8</td><td>Top 3 per category</td><td>ROW_NUMBER() PARTITION BY category, filter rn<=3</td></tr>
+<tr><td>9</td><td>Delete dupes keep 1</td><td>ROW_NUMBER() OVER (PARTITION BY key ORDER BY id), delete rn>1</td></tr>
+<tr><td>10</td><td>Self join manager</td><td>JOIN employees m ON e.manager_id = m.id</td></tr>
+<tr><td>11</td><td>Count vs Count(*)</td><td>COUNT(*)=all rows; COUNT(col)=non-NULL only</td></tr>
+<tr><td>12</td><td>WHERE vs HAVING</td><td>WHERE=row filter; HAVING=group filter</td></tr>
+<tr><td>13</td><td>INNER vs LEFT JOIN</td><td>INNER=matches only; LEFT=all left rows kept</td></tr>
+<tr><td>14</td><td>UNION vs UNION ALL</td><td>UNION removes dupes; ALL keeps all rows</td></tr>
+<tr><td>15</td><td>NULL comparison</td><td>Always IS NULL / IS NOT NULL, never = NULL</td></tr>
+<tr><td>16</td><td>COALESCE purpose</td><td>Return first non-NULL argument</td></tr>
+<tr><td>17</td><td>DELETE vs TRUNCATE</td><td>DELETE=DML, WHERE ok; TRUNCATE=all rows, DDL</td></tr>
+<tr><td>18</td><td>ACID</td><td>Atomicity, Consistency, Isolation, Durability</td></tr>
+<tr><td>19</td><td>EXISTS vs IN</td><td>EXISTS stops at first match; often faster</td></tr>
+<tr><td>20</td><td>CTE purpose</td><td>WITH clause &mdash; readable named subquery</td></tr>
+<tr><td>21</td><td>RANK vs DENSE_RANK</td><td>RANK skips after tie; DENSE_RANK doesn't</td></tr>
+<tr><td>22</td><td>Index purpose</td><td>Speed up SELECT/WHERE/JOIN; slows writes</td></tr>
+<tr><td>23</td><td>FK ON DELETE CASCADE</td><td>Delete parent auto-deletes children</td></tr>
+<tr><td>24</td><td>Validate API POST in DB</td><td>Query by returned ID; assert fields match</td></tr>
+<tr><td>25</td><td>ETL count check</td><td>Source COUNT/SUM must equal target</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Top 10 JOIN Questions (Quick Revision)</h3>
+<ol>
+<li><strong>INNER JOIN</strong> &mdash; only matching rows from both tables.</li>
+<li><strong>LEFT JOIN</strong> &mdash; all left rows + matches; use for orphan detection.</li>
+<li><strong>RIGHT JOIN</strong> &mdash; mirror of LEFT; rarely used (swap tables instead).</li>
+<li><strong>FULL OUTER JOIN</strong> &mdash; all rows both sides; NULL for gaps.</li>
+<li><strong>Self join</strong> &mdash; same table twice with aliases (employee-manager).</li>
+<li><strong>Cross join</strong> &mdash; Cartesian product; M &times; N rows.</li>
+<li><strong>ON vs WHERE in LEFT JOIN</strong> &mdash; filter in ON preserves unmatched left rows.</li>
+<li><strong>Multiple JOINs</strong> &mdash; chain: users &rarr; orders &rarr; order_items &rarr; products.</li>
+<li><strong>JOIN vs subquery</strong> &mdash; JOIN usually faster; subquery more readable.</li>
+<li><strong>Anti-join</strong> &mdash; LEFT JOIN IS NULL or NOT EXISTS for "rows without match."</li>
+</ol>
+
+<h3>Top 10 Window Function Questions</h3>
+<ol>
+<li><strong>ROW_NUMBER</strong> &mdash; unique sequential number; use for dedup and top-N per group.</li>
+<li><strong>RANK</strong> &mdash; ties get same rank, gaps after (1,2,2,4).</li>
+<li><strong>DENSE_RANK</strong> &mdash; ties same rank, no gaps (1,2,2,3).</li>
+<li><strong>LEAD/LAG</strong> &mdash; access next/previous row for period comparison.</li>
+<li><strong>SUM() OVER</strong> &mdash; running total without GROUP BY collapse.</li>
+<li><strong>PARTITION BY</strong> &mdash; resets window per group (per dept, per customer).</li>
+<li><strong>Window vs GROUP BY</strong> &mdash; window keeps all rows; GROUP BY collapses.</li>
+<li><strong>NTILE</strong> &mdash; divide into N buckets for sampling/quartiles.</li>
+<li><strong>FIRST_VALUE</strong> &mdash; first value in window frame.</li>
+<li><strong>Top-N per group pattern</strong> &mdash; ROW_NUMBER + WHERE rn <= N in subquery/CTE.</li>
+</ol>
+
+<h3>Top 15 Database Testing Questions</h3>
+<ol>
+<li>How do you validate data after API POST? &rarr; Query DB by PK, compare fields.</li>
+<li>How do you test FK constraint? &rarr; Insert invalid parent ID, expect error.</li>
+<li>What is orphan record testing? &rarr; LEFT JOIN, expect 0 orphans.</li>
+<li>How do you test soft delete? &rarr; Row exists with is_deleted=1.</li>
+<li>How do you test DEFAULT values? &rarr; Omit column in INSERT, verify default.</li>
+<li>How do you test migration? &rarr; Pre/post counts, checksums, sample compare.</li>
+<li>How do you test ETL? &rarr; Source vs target count and sum reconciliation.</li>
+<li>How do you prevent test data pollution? &rarr; UUID suffix, @After cleanup.</li>
+<li>How do you test transaction rollback? &rarr; Verify no partial records on failure.</li>
+<li>How do you test audit columns? &rarr; created_at on INSERT, updated_at changes on UPDATE.</li>
+<li>How do you integrate SQL in TestNG? &rarr; DBHelper utility + JDBC + assertions.</li>
+<li>How do you find duplicates? &rarr; GROUP BY + HAVING COUNT > 1.</li>
+<li>How do you compare two tables? &rarr; EXCEPT/MINUS or FULL OUTER JOIN diff.</li>
+<li>How do you test SQL injection? &rarr; Malicious input, verify no DB change.</li>
+<li>Why is DB testing needed if UI tests pass? &rarr; DB is source of truth; UI can lie.</li>
+</ol>
+
+<h3>Top 50 Quick Revision Points</h3>
+<ol>
+<li>SQL = Structured Query Language for RDBMS.</li>
+<li>DDL: CREATE, ALTER, DROP, TRUNCATE.</li>
+<li>DML: INSERT, UPDATE, DELETE, SELECT.</li>
+<li>TCL: COMMIT, ROLLBACK, SAVEPOINT.</li>
+<li>PRIMARY KEY = unique + NOT NULL; one per table.</li>
+<li>FOREIGN KEY enforces referential integrity.</li>
+<li>UNIQUE allows one NULL (most DBs); multiple per table.</li>
+<li>CHECK validates column values against condition.</li>
+<li>DEFAULT auto-fills omitted columns on INSERT.</li>
+<li>Never use = NULL; use IS NULL.</li>
+<li>COUNT(*) counts all rows including NULLs.</li>
+<li>WHERE filters before grouping; HAVING after.</li>
+<li>Every non-aggregated SELECT column must be in GROUP BY.</li>
+<li>INNER JOIN returns only matching rows.</li>
+<li>LEFT JOIN preserves all left table rows.</li>
+<li>Orphan check = LEFT JOIN + WHERE parent.key IS NULL.</li>
+<li>Self join requires table aliases.</li>
+<li>Subquery in WHERE must return scalar for comparison operators.</li>
+<li>Correlated subquery runs once per outer row.</li>
+<li>EXISTS returns TRUE if subquery has any row.</li>
+<li>UNION removes duplicates; UNION ALL does not.</li>
+<li>CTE: WITH name AS (SELECT ...) SELECT ... FROM name.</li>
+<li>ROW_NUMBER always unique; RANK/DENSE_RANK handle ties differently.</li>
+<li>Window functions use OVER (PARTITION BY ... ORDER BY ...).</li>
+<li>DELETE can use WHERE; TRUNCATE removes all rows.</li>
+<li>TRUNCATE is DDL; may not rollback; resets identity.</li>
+<li>Index speeds reads, slows writes; don't over-index.</li>
+<li>EXPLAIN shows query execution plan.</li>
+<li>ACID: Atomicity, Consistency, Isolation, Durability.</li>
+<li>PreparedStatement prevents SQL injection.</li>
+<li>Normalization reduces redundancy (1NF&rarr;3NF).</li>
+<li>Denormalization improves read performance in DWH.</li>
+<li>1NF: atomic values, no repeating groups.</li>
+<li>2NF: no partial dependency on composite key.</li>
+<li>3NF: no transitive dependency.</li>
+<li>Soft delete: is_deleted flag; row still in DB.</li>
+<li>Hard delete: row physically removed.</li>
+<li>API POST &rarr; verify INSERT in DB.</li>
+<li>API PUT &rarr; verify UPDATE in DB.</li>
+<li>API DELETE &rarr; verify DELETE or soft delete flag.</li>
+<li>ETL: validate source count = target count.</li>
+<li>Migration: compare checksums pre and post.</li>
+<li>DECIMAL for money; never FLOAT.</li>
+<li>utf8mb4 for emoji and international chars.</li>
+<li>Test isolation: unique data per test run.</li>
+<li>Async: poll DB with retry, don't assert immediately.</li>
+<li>Read replica may lag behind primary.</li>
+<li>ON DELETE CASCADE: deleting parent deletes children.</li>
+<li>Chopstick testing: Create &rarr; Read &rarr; Update &rarr; Delete.</li>
+<li>Always SELECT before UPDATE/DELETE in manual testing.</li>
+</ol>
+
+<h3>Common Mistakes to Avoid in SQL Interviews</h3>
+<ul>
+<li><strong>Using = NULL</strong> instead of IS NULL &mdash; always wrong.</li>
+<li><strong>Forgetting WHERE in UPDATE/DELETE</strong> &mdash; updates/deletes all rows.</li>
+<li><strong>Using WHERE instead of HAVING</strong> for aggregate filters.</li>
+<li><strong>Not knowing LEFT JOIN for orphan detection</strong> &mdash; most common QA pattern.</li>
+<li><strong>Confusing RANK with ROW_NUMBER</strong> &mdash; ties behave differently.</li>
+<li><strong>Putting filter on LEFT JOIN in WHERE</strong> &mdash; accidentally converts to INNER JOIN.</li>
+<li><strong>Using SELECT * in production/testing</strong> &mdash; specify columns explicitly.</li>
+<li><strong>Comparing FLOAT/DECIMAL without tolerance</strong> &mdash; rounding failures.</li>
+<li><strong>Ignoring NULL in COUNT/GROUP BY</strong> &mdash; wrong counts.</li>
+<li><strong>Not mentioning PreparedStatement</strong> when discussing SQL in automation.</li>
+<li><strong>Saying "DELETE removes table"</strong> &mdash; that's DROP TABLE.</li>
+<li><strong>Unable to write second highest salary</strong> &mdash; prepare 2-3 approaches.</li>
+<li><strong>No QA context</strong> &mdash; always tie SQL to validation, not just syntax.</li>
+<li><strong>Ignoring transaction/testing rollback</strong> &mdash; show atomicity awareness.</li>
+<li><strong>Not asking which database dialect</strong> &mdash; TOP vs LIMIT vs ROWNUM matters.</li>
+</ul>
+</section>
+
+<!-- ==================== SECTION 18: CAREER ROADMAP ==================== -->
+<section id="section-18" class="section-card">
+<h2>Section 18: Career Roadmap</h2>
+<p>Career progression paths, skills matrix, and learning resources for QA Automation Engineers with 4 years of experience targeting Senior/SDET/Architect roles.</p>
+
+<h3>Current Position: Automation Engineer (4 Years)</h3>
+<p>At 4 years, you typically own test automation for 1&ndash;2 product areas, write framework utilities, perform API + DB validation, participate in CI/CD, mentor juniors, and contribute to test strategy. SQL proficiency at JOIN + aggregate level is expected; window functions and ETL validation differentiate you.</p>
+
+<h3>Path 1: Senior Automation Engineer &rarr; Lead &rarr; Test Architect</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>Timeline</th><th>Focus</th><th>SQL Expectation</th></tr></thead>
+<tbody>
+<tr><td>Senior Automation Engineer</td><td>4&ndash;6 yrs</td><td>Framework design, cross-team testing, performance basics</td><td>Complex JOINs, CTEs, DB validation in CI</td></tr>
+<tr><td>QA Lead</td><td>6&ndash;8 yrs</td><td>Team management, test planning, stakeholder communication</td><td>Review test data strategy, migration test plans</td></tr>
+<tr><td>Test Architect</td><td>8+ yrs</td><td>Org-wide quality strategy, tool selection, shift-left</td><td>Data architecture review, quality gates design</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Path 2: SDET II &rarr; SDET III &rarr; Staff SDET</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>Timeline</th><th>Focus</th><th>SQL Expectation</th></tr></thead>
+<tbody>
+<tr><td>SDET II</td><td>4&ndash;5 yrs</td><td>Deep automation, test infra, DB/API integration</td><td>Window functions, ETL testing, Testcontainers</td></tr>
+<tr><td>SDET III</td><td>5&ndash;8 yrs</td><td>Platform engineering for testing, developer productivity</td><td>Query optimization, data pipeline validation</td></tr>
+<tr><td>Staff SDET</td><td>8+ yrs</td><td>Cross-org impact, technical direction, hiring bar</td><td>Data quality architecture, DWH test strategy</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Path 3: Backend Test Engineer &rarr; Data Engineer</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>Timeline</th><th>Focus</th><th>SQL Expectation</th></tr></thead>
+<tbody>
+<tr><td>Backend Test Engineer</td><td>4&ndash;6 yrs</td><td>Microservices, messaging, deep DB testing</td><td>Advanced SQL, SP/trigger testing, replication</td></tr>
+<tr><td>Data QA Engineer</td><td>6&ndash;8 yrs</td><td>ETL/DWH validation, data quality</td><td>Complex analytics SQL, SCD validation</td></tr>
+<tr><td>Data Engineer</td><td>8+ yrs</td><td>Pipeline building, modeling, orchestration</td><td>Expert SQL, Spark SQL, dbt, dimensional modeling</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Skills Matrix</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Skill</th><th>Junior (0&ndash;2)</th><th>Mid (2&ndash;4)</th><th>Senior (4&ndash;7)</th><th>Lead/Staff (7+)</th></tr></thead>
+<tbody>
+<tr><td>SQL</td><td>SELECT, WHERE, INSERT</td><td>JOINs, GROUP BY, constraints</td><td>Window fn, ETL, migration</td><td>Architecture, data quality strategy</td></tr>
+<tr><td>API Testing</td><td>Postman basics</td><td>REST-assured, auth, schema</td><td>Contract testing, GraphQL</td><td>API test platform design</td></tr>
+<tr><td>Cloud</td><td>Basic AWS/GCP</td><td>S3, RDS, Lambda tests</td><td>Multi-region, IAM testing</td><td>Cloud test infra architecture</td></tr>
+<tr><td>AI/ML Testing</td><td>&mdash;</td><td>Basic model output validation</td><td>Bias, data drift detection</td><td>AI quality framework</td></tr>
+<tr><td>Performance</td><td>&mdash;</td><td>JMeter basics</td><td>DB query perf, load testing</td><td>Perf test strategy, APM</td></tr>
+<tr><td>DevOps</td><td>Git basics</td><td>Jenkins, CI pipelines</td><td>Docker, K8s test deployment</td><td>Platform engineering</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>SQL Skills Required at Each Level</h3>
+<ul>
+<li><strong>Years 0&ndash;2:</strong> SELECT, WHERE, ORDER BY, INSERT, UPDATE, DELETE, basic JOINs, COUNT/SUM.</li>
+<li><strong>Years 2&ndash;4:</strong> All JOIN types, GROUP BY/HAVING, subqueries, constraints testing, API&rarr;DB validation, duplicate/orphan queries.</li>
+<li><strong>Years 4&ndash;6:</strong> Window functions, CTEs, EXPLAIN plans, ETL reconciliation, migration testing, Testcontainers, CI data quality gates.</li>
+<li><strong>Years 6+:</strong> Query optimization, DWH/star schema validation, SCD testing, cross-database migration, data pipeline architecture review.</li>
+</ul>
+
+<h3>Salary Benchmarks (General Ranges, 2025&ndash;2026)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Role</th><th>India (LPA)</th><th>US ($ Total Comp)</th><th>Remote Global</th></tr></thead>
+<tbody>
+<tr><td>QA Automation (4 yr)</td><td>12&ndash;22</td><td>90K&ndash;130K</td><td>$40K&ndash;70K</td></tr>
+<tr><td>Senior SDET</td><td>22&ndash;35</td><td>130K&ndash;180K</td><td>$70K&ndash;110K</td></tr>
+<tr><td>QA Lead / Manager</td><td>25&ndash;40</td><td>140K&ndash;190K</td><td>$80K&ndash;120K</td></tr>
+<tr><td>Test Architect / Staff SDET</td><td>35&ndash;55+</td><td>180K&ndash;250K+</td><td>$110K&ndash;160K+</td></tr>
+<tr><td>Data Engineer (transition)</td><td>18&ndash;40</td><td>120K&ndash;200K</td><td>$70K&ndash;130K</td></tr>
+</tbody>
+</table>
+</div>
+<p><em>Ranges vary by company tier, location, and specialization. Product companies and FAANG pay upper ranges.</em></p>
+
+<h3>Certifications Worth Getting</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Certification</th><th>Provider</th><th>Relevance</th></tr></thead>
+<tbody>
+<tr><td>ISTQB Advanced Test Analyst</td><td>ISTQB</td><td>QA credibility, global recognition</td></tr>
+<tr><td>AWS Certified Developer / Solutions Architect</td><td>Amazon</td><td>Cloud testing roles</td></tr>
+<tr><td>Oracle Database SQL Certified Associate</td><td>Oracle</td><td>Deep SQL credential</td></tr>
+<tr><td>Microsoft Azure Database Administrator</td><td>Microsoft</td><td>Azure SQL/DB testing</td></tr>
+<tr><td>Google Professional Data Engineer</td><td>Google</td><td>Data engineer transition path</td></tr>
+<tr><td>dbt Analytics Engineering Certification</td><td>dbt Labs</td><td>Modern data pipeline testing</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Resources for Continued Learning</h3>
+<ul>
+<li><strong>SQL Practice:</strong> LeetCode Database, HackerRank SQL, SQLZoo, StrataScratch</li>
+<li><strong>Books:</strong> "SQL Performance Explained" (Markus Winand), "The Data Warehouse Toolkit" (Kimball)</li>
+<li><strong>Courses:</strong> Coursera &mdash; Databases and SQL for Data Science (IBM), Udemy &mdash; Advanced SQL + Database Testing</li>
+<li><strong>Documentation:</strong> PostgreSQL docs, MySQL ref manual, SQL Server docs (know one deeply)</li>
+<li><strong>Tools to master:</strong> DBeaver, Testcontainers, Flyway, dbt, Great Expectations (data quality)</li>
+<li><strong>Communities:</strong> Ministry of Testing, Test Automation University (Applitools), LinkedIn SQL groups</li>
+<li><strong>Interview prep:</strong> This handbook Sections 15 &amp; 17, Glassdoor company-specific SQL questions</li>
+</ul>
+
+<div class="callout">
+<strong>Final advice for 4-year engineers:</strong> Your differentiator is not knowing 100 SQL syntax rules &mdash; it is connecting SQL to real validation scenarios (API&rarr;DB, ETL, migration, concurrency). In interviews, always answer with: "I would query X, compare Y, and assert Z" &mdash; not just recite syntax.
+</div>
+</section>

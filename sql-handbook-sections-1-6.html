@@ -1,0 +1,2092 @@
+<section id="section-1" class="section-card">
+<h2>Section 1: Database Fundamentals</h2>
+
+<h3>What is Data?</h3>
+<p>Data is raw, unorganized facts that represent real-world entities — a user's email address, an order total, a product SKU, a payment timestamp. In QA automation, data is the foundation of every test assertion. When you verify that "Order #1042 shows status <strong>SHIPPED</strong> on the UI," you are ultimately validating that a specific row in the <code>orders</code> table contains the expected value.</p>
+<p>Data exists in many forms:</p>
+<ul>
+<li><strong>Structured data</strong> — rows and columns in relational tables (e-commerce orders, user profiles)</li>
+<li><strong>Semi-structured data</strong> — JSON payloads in API responses, XML config files</li>
+<li><strong>Unstructured data</strong> — product images, PDF invoices, log files</li>
+</ul>
+
+<h3>What is a Database?</h3>
+<p>A <strong>database</strong> is an organized collection of structured data stored electronically, designed for efficient retrieval, insertion, update, and deletion. Think of it as the persistent memory of your application — unlike in-memory variables, database data survives server restarts, deployments, and crashes.</p>
+<p>In a typical e-commerce QA project, the database might contain:</p>
+<ul>
+<li><strong>users</strong> — 50,000 registered customers</li>
+<li><strong>orders</strong> — 200,000 order records spanning 3 years</li>
+<li><strong>products</strong> — 5,000 SKUs across categories</li>
+<li><strong>payments</strong> — transaction records linked to orders</li>
+<li><strong>addresses</strong> — shipping and billing addresses per user</li>
+</ul>
+
+<h3>DBMS vs RDBMS</h3>
+<p>A <strong>Database Management System (DBMS)</strong> is software that creates, manages, and controls access to databases. An <strong>RDBMS (Relational DBMS)</strong> is a DBMS that stores data in related tables using rows and columns, enforcing relationships through keys and constraints.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>DBMS</th>
+<th>RDBMS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Data Model</strong></td>
+<td>File-based or hierarchical; data may be stored in files</td>
+<td>Relational model — data in tables with defined relationships</td>
+</tr>
+<tr>
+<td><strong>Relationships</strong></td>
+<td>No enforced relationships between data entities</td>
+<td>Foreign keys enforce referential integrity between tables</td>
+</tr>
+<tr>
+<td><strong>ACID Compliance</strong></td>
+<td>Not guaranteed</td>
+<td>Full ACID support (Atomicity, Consistency, Isolation, Durability)</td>
+</tr>
+<tr>
+<td><strong>Normalization</strong></td>
+<td>Not required</td>
+<td>Supports 1NF, 2NF, 3NF to reduce redundancy</td>
+</tr>
+<tr>
+<td><strong>Query Language</strong></td>
+<td>Proprietary or limited APIs</td>
+<td>Standard SQL (SELECT, INSERT, UPDATE, DELETE)</td>
+</tr>
+<tr>
+<td><strong>Examples</strong></td>
+<td>File systems, XML databases, early FoxPro</td>
+<td>MySQL, PostgreSQL, Oracle, SQL Server, MariaDB</td>
+</tr>
+<tr>
+<td><strong>Multi-user Access</strong></td>
+<td>Limited concurrency control</td>
+<td>Row-level locking, transaction isolation levels</td>
+</tr>
+<tr>
+<td><strong>QA Relevance</strong></td>
+<td>Rare in modern web apps</td>
+<td>Primary target for SQL-based test validation</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>Database Architecture</h3>
+
+<h4>Client-Server Architecture</h4>
+<p>In the client-server model, the <strong>client</strong> (your application or test script) sends SQL requests over a network connection to the <strong>database server</strong>, which processes the query and returns results.</p>
+<div class="ascii-diagram">
+<pre>
+┌─────────────────┐         SQL Query          ┌──────────────────┐
+│  Client Layer   │  ────────────────────────► │  Database Server │
+│  (App / QA Tool)│  ◄──────────────────────── │  (MySQL/PG/etc.) │
+└─────────────────┘         Result Set         └──────────────────┘
+        │                                              │
+   Selenium UI Test                              Persistent Storage
+   REST Assured API Test                          (Tables, Indexes)
+   JDBC / Python DB Connection
+</pre>
+</div>
+<p><strong>QA Example:</strong> After your Selenium test clicks "Place Order," you connect via JDBC to verify the <code>orders</code> table has a new row with <code>status = 'PENDING'</code> and the <code>payments</code> table has a matching charge record.</p>
+
+<h4>Three-Tier Architecture</h4>
+<p>Most enterprise applications use a three-tier architecture that separates concerns:</p>
+<div class="ascii-diagram">
+<pre>
+┌─────────────────────────────────────────────────────────────────┐
+│  PRESENTATION TIER (Tier 1)                                     │
+│  Web UI (React/Angular), Mobile App                             │
+│  ── QA tests here with Selenium, Cypress, Playwright            │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ HTTP/HTTPS
+┌───────────────────────────▼─────────────────────────────────────┐
+│  APPLICATION TIER (Tier 2)                                      │
+│  Business Logic (Java Spring, Node.js, Python Django)           │
+│  ── QA tests here with REST Assured, Postman, API automation     │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ JDBC / ORM (Hibernate, Sequelize)
+┌───────────────────────────▼─────────────────────────────────────┐
+│  DATA TIER (Tier 3)                                             │
+│  Database Server (PostgreSQL, MySQL, Oracle)                    │
+│  ── QA validates here with SQL queries, DBUnit, Flyway checks   │
+└─────────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+<p><strong>Why this matters for QA:</strong> A bug can exist at any tier. The UI might show "Payment Failed" while the API returned 200 OK and the database actually recorded a successful payment. Testing all three tiers — especially the database — catches data integrity bugs that UI-only tests miss.</p>
+
+<h3>Relational vs NoSQL Databases</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Relational (SQL)</th>
+<th>NoSQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Data Structure</strong></td>
+<td>Fixed schema — tables with columns and data types</td>
+<td>Flexible schema — documents, key-value pairs, graphs, wide columns</td>
+</tr>
+<tr>
+<td><strong>Scaling</strong></td>
+<td>Vertical scaling (bigger server); read replicas for horizontal reads</td>
+<td>Horizontal scaling (sharding) built-in</td>
+</tr>
+<tr>
+<td><strong>ACID Transactions</strong></td>
+<td>Full ACID support</td>
+<td>Varies — MongoDB has multi-doc transactions; Redis is eventually consistent</td>
+</tr>
+<tr>
+<td><strong>Query Language</strong></td>
+<td>Standard SQL</td>
+<td>Proprietary — MongoDB Query Language, CQL (Cassandra), Redis commands</td>
+</tr>
+<tr>
+<td><strong>Relationships</strong></td>
+<td>JOINs across tables</td>
+<td>Embedded documents or application-level joins</td>
+</tr>
+<tr>
+<td><strong>Examples</strong></td>
+<td>PostgreSQL, MySQL, Oracle, SQL Server</td>
+<td>MongoDB, Redis, Cassandra, DynamoDB, Elasticsearch</td>
+</tr>
+<tr>
+<td><strong>When to Use SQL</strong></td>
+<td>Financial transactions, e-commerce orders, reporting, complex queries with JOINs</td>
+<td>Real-time analytics, session caching, IoT sensor data, content management, rapid prototyping</td>
+</tr>
+<tr>
+<td><strong>QA Testing Approach</strong></td>
+<td>SQL queries for validation, DBUnit for fixtures, schema migration tests</td>
+<td>Driver-specific queries, API-level validation, eventual consistency testing</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Real-world hybrid example:</strong> An e-commerce platform might use PostgreSQL for orders, payments, and user accounts (needs ACID), Redis for shopping cart sessions (needs speed), and Elasticsearch for product search (needs full-text search). As a QA engineer, you need database knowledge for the PostgreSQL layer at minimum, and understanding of when data lives where.</p>
+
+<h3>Database Objects</h3>
+
+<h4>Tables</h4>
+<p>The fundamental storage unit. Each table represents an entity (users, orders, products) with rows (records) and columns (attributes).</p>
+<pre><code>CREATE TABLE users (
+    user_id       INT PRIMARY KEY,
+    email         VARCHAR(255) NOT NULL UNIQUE,
+    first_name    VARCHAR(100),
+    last_name     VARCHAR(100),
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active     BOOLEAN DEFAULT TRUE
+);</code></pre>
+
+<h4>Views</h4>
+<p>Virtual tables defined by a SQL query. They do not store data themselves — they present a filtered or joined perspective of underlying tables.</p>
+<pre><code>CREATE VIEW active_user_orders AS
+SELECT u.user_id, u.email, o.order_id, o.total_amount, o.status
+FROM users u
+INNER JOIN orders o ON u.user_id = o.user_id
+WHERE u.is_active = TRUE;</code></pre>
+<p><strong>QA use case:</strong> If the UI reads from a view, your test query should also query the view — not the base tables — to match what the application sees.</p>
+
+<h4>Indexes</h4>
+<p>Data structures that speed up data retrieval at the cost of slower writes and additional storage. Like a book's index — you find pages faster without scanning every page.</p>
+<pre><code>CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE UNIQUE INDEX idx_users_email ON users(email);</code></pre>
+<p><strong>QA use case:</strong> After a performance test, verify that slow queries on <code>orders.status</code> are resolved by checking the query execution plan uses <code>idx_orders_status</code>.</p>
+
+<h4>Stored Procedures</h4>
+<p>Precompiled SQL code stored in the database, called with parameters. Encapsulate business logic at the database level.</p>
+<pre><code>CREATE PROCEDURE sp_cancel_order(IN p_order_id INT)
+BEGIN
+    UPDATE orders SET status = 'CANCELLED', updated_at = NOW()
+    WHERE order_id = p_order_id AND status = 'PENDING';
+    
+    UPDATE payments SET status = 'REFUND_PENDING'
+    WHERE order_id = p_order_id AND status = 'AUTHORIZED';
+END;</code></pre>
+<p><strong>QA use case:</strong> Test the stored procedure directly with boundary values — cancel a PENDING order (should succeed), cancel a SHIPPED order (should fail/no-op), cancel a non-existent order.</p>
+
+<h4>Triggers</h4>
+<p>Automatic actions fired when INSERT, UPDATE, or DELETE occurs on a table. Used for audit logging, data validation, cascading updates.</p>
+<pre><code>CREATE TRIGGER trg_audit_order_status
+AFTER UPDATE ON orders
+FOR EACH ROW
+BEGIN
+    IF OLD.status != NEW.status THEN
+        INSERT INTO order_audit_log (order_id, old_status, new_status, changed_at)
+        VALUES (NEW.order_id, OLD.status, NEW.status, NOW());
+    END IF;
+END;</code></pre>
+<p><strong>QA use case:</strong> After updating an order status via the API, verify the trigger created an audit log entry with correct old/new status values.</p>
+
+<h4>Sequences</h4>
+<p>Database objects that generate unique sequential numbers, commonly used for auto-incrementing primary keys.</p>
+<pre><code>CREATE SEQUENCE seq_order_id START WITH 10001 INCREMENT BY 1;
+
+INSERT INTO orders (order_id, user_id, total_amount, status)
+VALUES (NEXTVAL('seq_order_id'), 42, 149.99, 'PENDING');</code></pre>
+<p><strong>QA use case:</strong> Verify that concurrent order creation (load test with 100 simultaneous requests) produces unique, gap-free order IDs without duplicates.</p>
+
+<h3>Why QA Engineers Need Database Knowledge</h3>
+
+<div class="callout">
+<strong>Bottom line:</strong> UI tests verify what the user sees. API tests verify what the service returns. Database tests verify what actually happened. All three together provide complete test coverage.
+</div>
+
+<ol>
+<li><strong>Backend validation without UI dependency</strong> — When the checkout UI is broken but the API works, SQL queries confirm whether the order was actually created.</li>
+<li><strong>Test data setup and teardown</strong> — Insert specific user/order states directly instead of clicking through 15 UI screens to reach an edge case.</li>
+<li><strong>Data integrity verification</strong> — After a refund API call, verify both <code>payments.status = 'REFUNDED'</code> AND <code>orders.status = 'REFUNDED'</code> AND inventory was restored.</li>
+<li><strong>Bug investigation</strong> — "User says they were charged twice" → query <code>SELECT * FROM payments WHERE user_id = 789 AND order_id = 1042</code> to find duplicate charge records.</li>
+<li><strong>Performance testing analysis</strong> — Identify slow queries, missing indexes, and table scan issues from execution plans.</li>
+<li><strong>Environment parity checks</strong> — Compare staging vs production schema: <code>SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'orders'</code></li>
+<li><strong>Reporting and reconciliation</strong> — Validate that dashboard revenue figures match raw SQL: <code>SELECT SUM(total_amount) FROM orders WHERE status = 'COMPLETED'</code></li>
+</ol>
+
+<p><strong>Real QA scenario — Order lifecycle validation:</strong></p>
+<pre><code>-- Step 1: Verify order created after checkout API call
+SELECT order_id, user_id, total_amount, status, created_at
+FROM orders
+WHERE user_id = 101 AND created_at >= '2026-07-11 00:00:00'
+ORDER BY created_at DESC LIMIT 1;
+-- Expected: 1 row, status = 'PENDING', total_amount = 249.97
+
+-- Step 2: Verify payment record exists
+SELECT payment_id, order_id, amount, status, payment_method
+FROM payments
+WHERE order_id = (SELECT order_id FROM orders WHERE user_id = 101 ORDER BY created_at DESC LIMIT 1);
+-- Expected: 1 row, status = 'AUTHORIZED', amount = 249.97
+
+-- Step 3: Verify order items match cart
+SELECT oi.product_id, oi.quantity, oi.unit_price, p.product_name
+FROM order_items oi
+JOIN products p ON oi.product_id = p.product_id
+WHERE oi.order_id = 5001;
+-- Expected: 3 rows matching the products added to cart</code></pre>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What is the difference between a database and a DBMS?</h4>
+<p><strong>Answer:</strong> A database is the organized collection of data itself (the files, tables, records). A DBMS is the software system that manages that data — providing tools to create, read, update, delete, and secure it. Analogy: the database is the library's book collection; the DBMS is the librarian and catalog system that helps you find and manage books.</p>
+
+<h4>Q2: What is ACID? Why does it matter for testing?</h4>
+<p><strong>Answer:</strong> ACID stands for Atomicity (all-or-nothing transactions), Consistency (data meets all rules/constraints), Isolation (concurrent transactions don't interfere), Durability (committed data survives crashes). For QA: test that a failed payment doesn't leave a half-created order (Atomicity), that negative quantities are rejected (Consistency), that two users buying the last item don't both succeed (Isolation).</p>
+
+<h4>Q3: Explain the difference between DBMS and RDBMS with an example.</h4>
+<p><strong>Answer:</strong> DBMS stores data without enforced relationships — like storing user info in one file and orders in another with no link validation. RDBMS stores data in related tables with foreign keys — the <code>orders.user_id</code> must reference a valid <code>users.user_id</code>. MySQL and PostgreSQL are RDBMS; they enforce referential integrity, support JOINs, and provide ACID transactions.</p>
+
+<h4>Q4: What is a primary key vs a foreign key?</h4>
+<p><strong>Answer:</strong> A primary key uniquely identifies each row in a table (e.g., <code>users.user_id</code>). A foreign key is a column in one table that references the primary key of another table (e.g., <code>orders.user_id</code> references <code>users.user_id</code>). Foreign keys enforce referential integrity — you cannot insert an order with <code>user_id = 999</code> if user 999 doesn't exist.</p>
+
+<h4>Q5: When would you choose NoSQL over a relational database?</h4>
+<p><strong>Answer:</strong> Choose NoSQL when you need horizontal scaling (millions of IoT events/sec), flexible/evolving schema (user profiles with varying attributes), or specific data models (graph for social networks, document for CMS). Choose SQL when you need complex transactions (banking, e-commerce checkout), strict data integrity, or ad-hoc reporting with JOINs across entities.</p>
+
+<h4>Q6: What is normalization? Why is it important?</h4>
+<p><strong>Answer:</strong> Normalization is organizing data to reduce redundancy. 1NF: atomic values (no comma-separated lists in a column). 2NF: no partial dependencies on composite keys. 3NF: no transitive dependencies. Instead of storing user name/email in every order row, you store <code>user_id</code> and JOIN to the users table. This prevents update anomalies — changing a user's email only requires one UPDATE.</p>
+
+<h4>Q7: What is denormalization and when is it used?</h4>
+<p><strong>Answer:</strong> Denormalization intentionally adds redundancy to improve read performance. Example: storing <code>product_name</code> in the <code>order_items</code> table even though it exists in <code>products</code> — so order history shows the name at time of purchase even if the product is later renamed. QA must verify denormalized copies stay in sync or are intentionally snapshot values.</p>
+
+<h4>Q8: Explain client-server vs file-based database.</h4>
+<p><strong>Answer:</strong> File-based (like SQLite) stores the entire database in a single file on disk — good for mobile apps and local testing. Client-server (like PostgreSQL) runs a dedicated server process handling multiple concurrent clients over TCP/IP — required for production web applications with hundreds of simultaneous users.</p>
+
+<h4>Q9: What database objects would you verify after a schema migration?</h4>
+<p><strong>Answer:</strong> Verify tables exist with correct columns and data types, primary keys and foreign keys are intact, indexes are recreated, views compile without errors, stored procedures and triggers are present, sequences have correct current values, and grants/permissions are applied. Run: <code>SELECT * FROM information_schema.tables WHERE table_schema = 'public'</code> and compare against expected schema.</p>
+
+<h4>Q10: How would you test a database trigger?</h4>
+<p><strong>Answer:</strong> (1) Identify the trigger's table and firing event (BEFORE/AFTER INSERT/UPDATE/DELETE). (2) Perform the triggering action. (3) Query the affected/audit table to verify the trigger's side effect. (4) Test edge cases: NULL values, bulk updates, rollback scenarios. (5) Verify the trigger does NOT fire when it shouldn't (e.g., updating a non-status column shouldn't create an audit log).</p>
+
+<h4>Q11: What is a schema in a database?</h4>
+<p><strong>Answer:</strong> A schema is a logical container/grouping of database objects (tables, views, procedures). In PostgreSQL, schemas namespace objects — <code>public.users</code> vs <code>audit.users</code>. In MySQL, schema is synonymous with database. QA uses schema comparison tools to ensure staging matches production structure before release.</p>
+
+<h4>Q12: How do you connect to a database in an automation framework?</h4>
+<p><strong>Answer:</strong> Common approaches: Java — JDBC with connection strings and PreparedStatement; Python — psycopg2/sqlalchemy for PostgreSQL, pymysql for MySQL; Test frameworks — DBUnit (Java) for test fixtures, Flyway/Liquibase for migration testing. Always use connection pooling, parameterized queries (never string concatenation), and close connections in finally blocks/teardown methods.</p>
+
+</section>
+
+<section id="section-2" class="section-card">
+<h2>Section 2: SQL Basics (DDL, DML, DCL, TCL)</h2>
+
+<p>SQL commands are categorized into four groups. As a QA engineer, you'll primarily use <strong>DML</strong> (querying and modifying test data) and <strong>DDL</strong> (setting up test schemas). Know <strong>DCL</strong> and <strong>TCL</strong> for understanding permissions and transaction behavior.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Full Name</th>
+<th>Commands</th>
+<th>QA Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>DDL</strong></td>
+<td>Data Definition Language</td>
+<td>CREATE, ALTER, DROP, TRUNCATE, RENAME</td>
+<td>Setting up test schemas, modifying table structure</td>
+</tr>
+<tr>
+<td><strong>DML</strong></td>
+<td>Data Manipulation Language</td>
+<td>SELECT, INSERT, UPDATE, DELETE</td>
+<td>Primary tool — querying and modifying test data</td>
+</tr>
+<tr>
+<td><strong>DCL</strong></td>
+<td>Data Control Language</td>
+<td>GRANT, REVOKE</td>
+<td>Verifying app user has correct permissions (not admin)</td>
+</tr>
+<tr>
+<td><strong>TCL</strong></td>
+<td>Transaction Control Language</td>
+<td>COMMIT, ROLLBACK, SAVEPOINT</td>
+<td>Test data cleanup, verifying transaction rollback on failure</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>SELECT Statement</h3>
+<p>The most frequently used SQL command. Retrieves data from one or more tables.</p>
+
+<h4>Syntax</h4>
+<pre><code>SELECT [DISTINCT] column1, column2, ...
+FROM table_name
+[WHERE condition]
+[ORDER BY column [ASC|DESC]];</code></pre>
+
+<h4>Example 1: Select all columns</h4>
+<pre><code>SELECT * FROM users;</code></pre>
+<div class="table-wrap">
+<table>
+<thead><tr><th>user_id</th><th>email</th><th>first_name</th><th>last_name</th><th>created_at</th><th>is_active</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>alice@email.com</td><td>Alice</td><td>Johnson</td><td>2025-01-15</td><td>TRUE</td></tr>
+<tr><td>2</td><td>bob@email.com</td><td>Bob</td><td>Smith</td><td>2025-02-20</td><td>TRUE</td></tr>
+<tr><td>3</td><td>carol@email.com</td><td>Carol</td><td>Williams</td><td>2025-03-10</td><td>FALSE</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Example 2: Select specific columns with alias</h4>
+<pre><code>SELECT
+    user_id AS id,
+    first_name || ' ' || last_name AS full_name,
+    email,
+    created_at AS registration_date
+FROM users
+WHERE is_active = TRUE;</code></pre>
+
+<h4>Example 3: Expressions and computed columns</h4>
+<pre><code>SELECT
+    order_id,
+    total_amount,
+    total_amount * 0.10 AS tax_amount,
+    total_amount * 1.10 AS total_with_tax,
+    EXTRACT(YEAR FROM created_at) AS order_year
+FROM orders
+WHERE status = 'COMPLETED';</code></pre>
+
+<p><strong>QA Testing Scenario:</strong> After user registration via API, verify the user record: <code>SELECT user_id, email, is_active FROM users WHERE email = 'newuser@test.com'</code> — expect exactly 1 row with <code>is_active = TRUE</code>.</p>
+
+<h4>SELECT Interview Questions</h4>
+<p><strong>Q: What is the difference between SELECT * and selecting specific columns?</strong><br>
+<strong>A:</strong> SELECT * returns all columns, which is convenient for exploration but bad for production — it breaks if columns are added/removed, transfers unnecessary data over the network, and prevents index-only scans. Always select only needed columns in automation scripts.</p>
+
+<h3>INSERT Statement</h3>
+
+<h4>Syntax</h4>
+<pre><code>INSERT INTO table_name (column1, column2, ...)
+VALUES (value1, value2, ...);</code></pre>
+
+<h4>Example 1: Single row insert</h4>
+<pre><code>INSERT INTO users (email, first_name, last_name, is_active)
+VALUES ('qa_tester@company.com', 'QA', 'Tester', TRUE);</code></pre>
+
+<h4>Example 2: Multiple rows insert</h4>
+<pre><code>INSERT INTO products (product_name, sku, price, stock_quantity, category)
+VALUES
+    ('Wireless Mouse', 'WM-001', 29.99, 500, 'Electronics'),
+    ('USB-C Hub', 'UH-002', 49.99, 200, 'Electronics'),
+    ('Desk Lamp', 'DL-003', 34.99, 150, 'Home Office');</code></pre>
+
+<h4>Example 3: INSERT INTO SELECT (copy data)</h4>
+<pre><code>-- Copy completed orders to an archive table
+INSERT INTO orders_archive (order_id, user_id, total_amount, status, created_at)
+SELECT order_id, user_id, total_amount, status, created_at
+FROM orders
+WHERE status = 'COMPLETED'
+  AND created_at &lt; '2025-01-01';</code></pre>
+
+<p><strong>QA Testing Scenario:</strong> Set up test data for "user with 5 completed orders" before testing the loyalty rewards feature:</p>
+<pre><code>INSERT INTO orders (user_id, total_amount, status, created_at)
+VALUES
+    (101, 50.00, 'COMPLETED', '2026-01-15'),
+    (101, 75.00, 'COMPLETED', '2026-02-20'),
+    (101, 120.00, 'COMPLETED', '2026-03-10'),
+    (101, 45.00, 'COMPLETED', '2026-04-05'),
+    (101, 200.00, 'COMPLETED', '2026-05-18');</code></pre>
+
+<h4>INSERT Interview Questions</h4>
+<p><strong>Q: What happens if you INSERT without specifying column names?</strong><br>
+<strong>A:</strong> Values must be provided for ALL columns in table definition order. If the table has an auto-increment ID and 6 other columns, you must provide all 7 values in exact order. Always specify column names to avoid breakage when schema changes.</p>
+
+<p><strong>Q: Can INSERT cause a transaction rollback?</strong><br>
+<strong>A:</strong> Yes. If an INSERT violates a constraint (UNIQUE, NOT NULL, FOREIGN KEY, CHECK), the database raises an error. In a transaction block, this typically aborts the entire transaction unless error handling catches it. Test by inserting duplicate emails, invalid foreign keys, and NULL into NOT NULL columns.</p>
+
+<h3>UPDATE Statement</h3>
+
+<h4>Syntax</h4>
+<pre><code>UPDATE table_name
+SET column1 = value1, column2 = value2, ...
+[WHERE condition];</code></pre>
+
+<h4>Example 1: Update single column</h4>
+<pre><code>UPDATE products
+SET stock_quantity = stock_quantity - 1
+WHERE product_id = 15 AND stock_quantity > 0;</code></pre>
+
+<h4>Example 2: Update multiple columns</h4>
+<pre><code>UPDATE orders
+SET status = 'SHIPPED',
+    shipped_at = CURRENT_TIMESTAMP,
+    tracking_number = 'TRK-789456123'
+WHERE order_id = 5001;</code></pre>
+
+<h4>Example 3: UPDATE with subquery</h4>
+<pre><code>UPDATE payments
+SET status = 'REFUNDED', refunded_at = CURRENT_TIMESTAMP
+WHERE order_id IN (
+    SELECT order_id FROM orders WHERE status = 'CANCELLED' AND updated_at >= '2026-07-01'
+);</code></pre>
+
+<div class="callout">
+<strong>CRITICAL QA WARNING:</strong> An UPDATE without a WHERE clause modifies EVERY row in the table. In 2016, a developer at a UK company ran <code>UPDATE users SET status = 'inactive'</code> without WHERE on production — wiping 870GB of data. Always include WHERE, and in test environments, wrap updates in transactions: <code>BEGIN; UPDATE ...; SELECT * FROM ...; ROLLBACK;</code>
+</div>
+
+<p><strong>QA Testing Scenario:</strong> Verify that cancelling an order via API updates all related records:</p>
+<pre><code>-- Before API call
+SELECT status FROM orders WHERE order_id = 5002;        -- PENDING
+SELECT status FROM payments WHERE order_id = 5002;      -- AUTHORIZED
+
+-- After API call: POST /orders/5002/cancel
+
+-- Verification
+SELECT status FROM orders WHERE order_id = 5002;        -- Expected: CANCELLED
+SELECT status FROM payments WHERE order_id = 5002;      -- Expected: REFUND_PENDING
+SELECT stock_quantity FROM products WHERE product_id = 8; -- Expected: restored by +1</code></pre>
+
+<h3>DELETE vs TRUNCATE vs DROP</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>DELETE</th>
+<th>TRUNCATE</th>
+<th>DROP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>What it removes</strong></td>
+<td>Specific rows (with WHERE) or all rows</td>
+<td>All rows in a table</td>
+<td>Entire table structure + data</td>
+</tr>
+<tr>
+<td><strong>WHERE clause</strong></td>
+<td>Yes</td>
+<td>No</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td><strong>Rollback possible</strong></td>
+<td>Yes (within transaction)</td>
+<td>Yes in some DBs (PostgreSQL), No in MySQL</td>
+<td>No (DDL — auto-commits)</td>
+</tr>
+<tr>
+<td><strong>Triggers fire</strong></td>
+<td>Yes</td>
+<td>No (usually)</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td><strong>Speed</strong></td>
+<td>Slow (row-by-row, logs each row)</td>
+<td>Fast (deallocates data pages)</td>
+<td>Fast</td>
+</tr>
+<tr>
+<td><strong>Auto-increment reset</strong></td>
+<td>No</td>
+<td>Yes (resets to start value)</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td><strong>SQL Type</strong></td>
+<td>DML</td>
+<td>DDL</td>
+<td>DDL</td>
+</tr>
+<tr>
+<td><strong>QA Use Case</strong></td>
+<td>Clean specific test data</td>
+<td>Reset table between test suites</td>
+<td>Tear down test schema</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- DELETE: Remove specific test orders
+DELETE FROM order_items WHERE order_id IN (9001, 9002, 9003);
+DELETE FROM orders WHERE order_id IN (9001, 9002, 9003);
+
+-- TRUNCATE: Reset all test data in a table
+TRUNCATE TABLE test_orders RESTART IDENTITY CASCADE;
+
+-- DROP: Remove test table entirely
+DROP TABLE IF EXISTS test_orders CASCADE;</code></pre>
+
+<h3>ALTER TABLE</h3>
+
+<h4>ADD Column</h4>
+<pre><code>ALTER TABLE users ADD COLUMN phone_number VARCHAR(20);
+ALTER TABLE orders ADD COLUMN coupon_code VARCHAR(50) DEFAULT NULL;</code></pre>
+
+<h4>MODIFY Column</h4>
+<pre><code>ALTER TABLE products MODIFY COLUMN price DECIMAL(10,2);
+ALTER TABLE users ALTER COLUMN phone_number SET NOT NULL;</code></pre>
+
+<h4>DROP Column</h4>
+<pre><code>ALTER TABLE users DROP COLUMN middle_name;</code></pre>
+
+<h4>RENAME</h4>
+<pre><code>ALTER TABLE users RENAME COLUMN fname TO first_name;
+ALTER TABLE old_orders RENAME TO orders_archive;</code></pre>
+
+<p><strong>QA Testing Scenario:</strong> After a migration adds <code>coupon_code</code> to orders, verify: (1) column exists with correct type, (2) existing rows have NULL (not error), (3) new orders accept coupon codes, (4) application handles NULL gracefully in reports.</p>
+
+<h3>CREATE TABLE with Constraints</h3>
+
+<pre><code>CREATE TABLE orders (
+    order_id        INT PRIMARY KEY,
+    user_id         INT NOT NULL,
+    total_amount    DECIMAL(10,2) NOT NULL CHECK (total_amount >= 0),
+    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+                    CHECK (status IN ('PENDING','CONFIRMED','SHIPPED','COMPLETED','CANCELLED')),
+    coupon_code     VARCHAR(50),
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(user_id),
+    CONSTRAINT uq_order_coupon UNIQUE (order_id, coupon_code)
+);
+
+CREATE TABLE payments (
+    payment_id      INT PRIMARY KEY,
+    order_id        INT NOT NULL,
+    amount          DECIMAL(10,2) NOT NULL,
+    payment_method  VARCHAR(20) NOT NULL CHECK (payment_method IN ('CREDIT_CARD','DEBIT_CARD','PAYPAL','UPI')),
+    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    transaction_ref VARCHAR(100) UNIQUE,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(order_id)
+);</code></pre>
+
+<h3>Common Mistakes Testers Make</h3>
+<ol>
+<li><strong>Forgetting WHERE in UPDATE/DELETE</strong> — Always double-check before executing. Use <code>SELECT</code> with the same WHERE first to preview affected rows.</li>
+<li><strong>Not using transactions for test data changes</strong> — Wrap in BEGIN/ROLLBACK during exploration to avoid polluting shared test environments.</li>
+<li><strong>Hardcoding IDs that change between environments</strong> — Use dynamic lookups: <code>WHERE email = 'test@qa.com'</code> instead of <code>WHERE user_id = 42</code>.</li>
+<li><strong>Ignoring soft deletes</strong> — Many apps use <code>is_deleted = TRUE</code> instead of DELETE. Querying without this filter returns "deleted" records.</li>
+<li><strong>Not accounting for timezone differences</strong> — <code>created_at</code> stored in UTC but compared against local time causes off-by-one-day failures.</li>
+<li><strong>Running DDL in shared environments</strong> — CREATE/ALTER/DROP auto-commit and affect all teams. Never run DDL in staging without coordination.</li>
+<li><strong>String concatenation in queries</strong> — <code>"SELECT * FROM users WHERE email = '" + email + "'"</code> is a SQL injection vulnerability. Always use parameterized queries.</li>
+</ol>
+
+<h3>Section 2 Interview Questions</h3>
+
+<h4>Q1: What is the difference between DELETE and TRUNCATE?</h4>
+<p><strong>Answer:</strong> DELETE is DML — removes rows one by one, can use WHERE, fires triggers, can be rolled back, and does not reset auto-increment. TRUNCATE is DDL — removes all rows by deallocating pages, cannot use WHERE, typically doesn't fire triggers, is faster, and resets auto-increment counters.</p>
+
+<h4>Q2: What happens if you run UPDATE without WHERE?</h4>
+<p><strong>Answer:</strong> Every row in the table is updated. This is one of the most dangerous SQL mistakes. In testing, always preview with SELECT first. In automation, never construct UPDATE statements without a WHERE clause programmatically.</p>
+
+<h4>Q3: Explain PRIMARY KEY vs UNIQUE constraint.</h4>
+<p><strong>Answer:</strong> Both enforce uniqueness. PRIMARY KEY additionally: cannot be NULL, only one per table, automatically creates a clustered index (in SQL Server). UNIQUE allows one NULL (or multiple NULLs depending on DB), multiple UNIQUE constraints per table.</p>
+
+<h4>Q4: What is a CHECK constraint? Give a QA test example.</h4>
+<p><strong>Answer:</strong> CHECK validates data against a condition before insert/update. Example: <code>CHECK (total_amount >= 0)</code>. QA test: attempt to insert an order with <code>total_amount = -50</code> via API — expect 400 error and no database row created.</p>
+
+<h4>Q5: How do you safely test an UPDATE in a shared environment?</h4>
+<p><strong>Answer:</strong> Use a transaction: <code>BEGIN; UPDATE orders SET status = 'CANCELLED' WHERE order_id = 9999; SELECT status FROM orders WHERE order_id = 9999; ROLLBACK;</code> This verifies the update logic without persisting changes.</p>
+
+<h4>Q6: What is the difference between DDL and DML?</h4>
+<p><strong>Answer:</strong> DDL (CREATE, ALTER, DROP) defines/modifies structure and auto-commits. DML (SELECT, INSERT, UPDATE, DELETE) manipulates data and can be rolled back within transactions. QA primarily uses DML but needs DDL awareness for schema validation.</p>
+
+<h4>Q7: Can you INSERT into a table with an auto-increment primary key without specifying the ID?</h4>
+<p><strong>Answer:</strong> Yes. Omit the auto-increment column and the database generates the next value automatically. Verify with: <code>INSERT INTO users (email, first_name) VALUES ('test@test.com', 'Test'); SELECT LAST_INSERT_ID();</code> (MySQL) or <code>RETURNING user_id</code> (PostgreSQL).</p>
+
+<h4>Q8: What is a foreign key constraint and how do you test it?</h4>
+<p><strong>Answer:</strong> Ensures referential integrity — <code>orders.user_id</code> must exist in <code>users.user_id</code>. Test by attempting to insert an order with a non-existent user_id — expect constraint violation error. Also test ON DELETE CASCADE: deleting a user should cascade-delete their orders if configured.</p>
+
+</section>
+
+<section id="section-3" class="section-card">
+<h2>Section 3: Filtering &amp; Sorting Data</h2>
+
+<h3>WHERE Clause — Comparison Operators</h3>
+<p>The WHERE clause filters rows before they are returned or modified. Master every operator — they appear in nearly every QA validation query.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Operator</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><code>=</code></td><td>Equal to</td><td><code>WHERE status = 'COMPLETED'</code></td></tr>
+<tr><td><code>!=</code> or <code>&lt;&gt;</code></td><td>Not equal to</td><td><code>WHERE status != 'CANCELLED'</code></td></tr>
+<tr><td><code>&lt;</code></td><td>Less than</td><td><code>WHERE total_amount &lt; 100</code></td></tr>
+<tr><td><code>&gt;</code></td><td>Greater than</td><td><code>WHERE stock_quantity &gt; 0</code></td></tr>
+<tr><td><code>&lt;=</code></td><td>Less than or equal</td><td><code>WHERE price &lt;= 49.99</code></td></tr>
+<tr><td><code>&gt;=</code></td><td>Greater than or equal</td><td><code>WHERE created_at &gt;= '2026-01-01'</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- Find all completed orders over $100
+SELECT order_id, user_id, total_amount, status
+FROM orders
+WHERE status = 'COMPLETED' AND total_amount > 100;
+
+-- Expected output:
+-- order_id | user_id | total_amount | status
+-- 5001     | 101     | 249.97       | COMPLETED
+-- 5004     | 103     | 189.50       | COMPLETED</code></pre>
+
+<h3>AND, OR, NOT — Complex Combinations</h3>
+<p>Operator precedence: NOT → AND → OR. Always use parentheses for clarity.</p>
+
+<pre><code>-- Find active users who registered in 2026 OR have completed orders
+SELECT DISTINCT u.user_id, u.email, u.first_name
+FROM users u
+LEFT JOIN orders o ON u.user_id = o.user_id
+WHERE u.is_active = TRUE
+  AND (
+    u.created_at >= '2026-01-01'
+    OR o.status = 'COMPLETED'
+  );
+
+-- Find products that are either out of stock OR priced above $500
+SELECT product_id, product_name, price, stock_quantity
+FROM products
+WHERE stock_quantity = 0 OR price > 500;
+
+-- Find orders NOT in completed or shipped status
+SELECT order_id, status
+FROM orders
+WHERE NOT (status IN ('COMPLETED', 'SHIPPED'));</code></pre>
+
+<p><strong>QA Testing Scenario:</strong> Validate the admin dashboard "Pending Actions" widget shows orders that are PENDING or CONFIRMED but NOT older than 7 days:</p>
+<pre><code>SELECT order_id, status, created_at
+FROM orders
+WHERE status IN ('PENDING', 'CONFIRMED')
+  AND created_at >= CURRENT_DATE - INTERVAL '7 days'
+  AND NOT status = 'CANCELLED'
+ORDER BY created_at ASC;</code></pre>
+
+<h3>BETWEEN — Range Filtering</h3>
+
+<h4>Numeric ranges</h4>
+<pre><code>SELECT product_id, product_name, price
+FROM products
+WHERE price BETWEEN 20.00 AND 50.00
+ORDER BY price;</code></pre>
+
+<h4>Date ranges</h4>
+<pre><code>-- Orders placed in Q1 2026
+SELECT order_id, user_id, total_amount, created_at
+FROM orders
+WHERE created_at BETWEEN '2026-01-01' AND '2026-03-31 23:59:59';
+
+-- Payments processed in the last 30 days
+SELECT payment_id, order_id, amount, status, created_at
+FROM payments
+WHERE created_at BETWEEN CURRENT_DATE - INTERVAL '30 days' AND CURRENT_TIMESTAMP;</code></pre>
+
+<div class="callout">
+<strong>Important:</strong> BETWEEN is inclusive on both ends. <code>BETWEEN 1 AND 10</code> includes both 1 and 10. For date ranges, always specify time component to avoid missing records on boundary dates.
+</div>
+
+<h3>IN and NOT IN</h3>
+<pre><code>-- Find orders with specific statuses
+SELECT order_id, status, total_amount
+FROM orders
+WHERE status IN ('PENDING', 'CONFIRMED', 'SHIPPED');
+
+-- Find users who are NOT in a specific list
+SELECT user_id, email
+FROM users
+WHERE user_id NOT IN (1, 5, 10, 15);
+
+-- IN with subquery: users who have placed orders
+SELECT user_id, email, first_name
+FROM users
+WHERE user_id IN (SELECT DISTINCT user_id FROM orders);</code></pre>
+
+<p><strong>QA Trap with NOT IN and NULLs:</strong> If the subquery returns any NULL, NOT IN returns no rows at all. Use NOT EXISTS instead for safety.</p>
+
+<h3>LIKE — Pattern Matching</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Wildcard</th><th>Matches</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><code>%</code></td><td>Zero or more characters</td><td><code>'%mouse%'</code> matches "Wireless Mouse", "mouse pad"</td></tr>
+<tr><td><code>_</code></td><td>Exactly one character</td><td><code>'WM-00_'</code> matches "WM-001", "WM-002" but not "WM-0001"</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- Emails from gmail domain
+SELECT user_id, email FROM users WHERE email LIKE '%@gmail.com';
+
+-- Products with SKU starting with 'WM-'
+SELECT product_id, product_name, sku FROM products WHERE sku LIKE 'WM-%';
+
+-- Users whose first name is exactly 4 characters
+SELECT user_id, first_name FROM users WHERE first_name LIKE '____';
+
+-- Case-insensitive search (PostgreSQL)
+SELECT product_id, product_name FROM products WHERE product_name ILIKE '%wireless%';</code></pre>
+
+<p><strong>QA Testing Scenario:</strong> Validate search functionality — when user searches "wireless", verify SQL returns same results as UI:</p>
+<pre><code>SELECT product_id, product_name, price
+FROM products
+WHERE product_name LIKE '%wireless%' OR description LIKE '%wireless%'
+ORDER BY product_name;</code></pre>
+
+<h3>ORDER BY — Sorting Results</h3>
+<pre><code>-- Single column ascending (default)
+SELECT product_id, product_name, price
+FROM products
+ORDER BY price ASC;
+
+-- Single column descending
+SELECT order_id, total_amount, created_at
+FROM orders
+ORDER BY total_amount DESC;
+
+-- Multiple columns: sort by status, then by date within each status
+SELECT order_id, status, total_amount, created_at
+FROM orders
+ORDER BY status ASC, created_at DESC;
+
+-- Sort by computed expression
+SELECT user_id, email,
+       (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.user_id) AS order_count
+FROM users u
+ORDER BY order_count DESC;</code></pre>
+
+<h3>DISTINCT — Remove Duplicates</h3>
+<pre><code>-- Unique order statuses in the system
+SELECT DISTINCT status FROM orders;
+-- Result: PENDING, CONFIRMED, SHIPPED, COMPLETED, CANCELLED
+
+-- Unique users who have placed orders
+SELECT DISTINCT user_id FROM orders;
+
+-- DISTINCT on multiple columns: unique status+payment_method combinations
+SELECT DISTINCT o.status, p.payment_method
+FROM orders o
+JOIN payments p ON o.order_id = p.order_id;</code></pre>
+
+<h3>TOP / LIMIT / FETCH FIRST — Restricting Row Count</h3>
+<pre><code>-- MySQL / PostgreSQL
+SELECT * FROM orders ORDER BY created_at DESC LIMIT 10;
+
+-- SQL Server
+SELECT TOP 10 * FROM orders ORDER BY created_at DESC;
+
+-- Oracle / PostgreSQL (SQL Standard)
+SELECT * FROM orders ORDER BY created_at DESC FETCH FIRST 10 ROWS ONLY;
+
+-- With OFFSET (pagination)
+SELECT * FROM orders ORDER BY created_at DESC LIMIT 10 OFFSET 20;
+-- Returns rows 21-30 (page 3 with page size 10)</code></pre>
+
+<p><strong>QA Testing Scenario — Pagination validation:</strong></p>
+<pre><code>-- Page 1 (page_size=5)
+SELECT order_id, total_amount FROM orders ORDER BY order_id LIMIT 5 OFFSET 0;
+-- Page 2
+SELECT order_id, total_amount FROM orders ORDER BY order_id LIMIT 5 OFFSET 5;
+-- Verify: total count matches UI pagination label
+SELECT COUNT(*) AS total_orders FROM orders;</code></pre>
+
+<h3>NULL Handling</h3>
+<div class="callout">
+<strong>Critical concept:</strong> NULL is not zero, not empty string, not FALSE. NULL means "unknown/absent." Any comparison with NULL using = or != returns NULL (treated as FALSE). Always use IS NULL or IS NOT NULL.
+</div>
+
+<pre><code>-- WRONG: Returns no rows even if coupon_code is NULL
+SELECT * FROM orders WHERE coupon_code = NULL;
+
+-- CORRECT
+SELECT * FROM orders WHERE coupon_code IS NULL;
+SELECT * FROM orders WHERE coupon_code IS NOT NULL;
+
+-- Count orders with and without coupons
+SELECT
+    COUNT(*) AS total_orders,
+    COUNT(coupon_code) AS orders_with_coupon,
+    COUNT(*) - COUNT(coupon_code) AS orders_without_coupon
+FROM orders;
+
+-- COALESCE: replace NULL with default value
+SELECT order_id, COALESCE(coupon_code, 'NO COUPON') AS coupon
+FROM orders;</code></pre>
+
+<h3>Data Validation Scenarios for QA Testers</h3>
+
+<ol>
+<li><strong>Boundary value testing with BETWEEN:</strong> Test date filter with orders exactly on start date, end date, one day before, one day after.</li>
+<li><strong>Empty result vs error:</strong> A search returning 0 rows is valid; verify UI shows "No results found" not an error page.</li>
+<li><strong>Special characters in LIKE:</strong> Search for product names containing <code>%</code>, <code>_</code>, or <code>'</code> — verify escaping works correctly.</li>
+<li><strong>Sorting stability:</strong> When multiple rows have the same sort value, verify secondary sort column provides deterministic order.</li>
+<li><strong>NULL in sorting:</strong> In PostgreSQL, NULL sorts last in ASC by default. Verify UI behavior matches.</li>
+<li><strong>Case sensitivity:</strong> <code>WHERE email = 'Alice@Email.com'</code> may not match <code>'alice@email.com'</code> depending on collation. Test both cases.</li>
+</ol>
+
+<h3>Section 3 Interview Questions</h3>
+
+<h4>Q1: What is the difference between WHERE and HAVING?</h4>
+<p><strong>Answer:</strong> WHERE filters rows before grouping. HAVING filters groups after GROUP BY. Example: <code>WHERE status = 'COMPLETED'</code> filters individual orders; <code>HAVING COUNT(*) > 5</code> filters users with more than 5 orders.</p>
+
+<h4>Q2: Why does <code>WHERE column = NULL</code> not work?</h4>
+<p><strong>Answer:</strong> NULL represents unknown, so comparing anything to NULL yields NULL (unknown), not TRUE. Use <code>IS NULL</code> or <code>IS NOT NULL</code> instead.</p>
+
+<h4>Q3: What is the difference between IN and EXISTS?</h4>
+<p><strong>Answer:</strong> IN checks if a value matches any value in a list/subquery result. EXISTS checks if a subquery returns at least one row. EXISTS often performs better with large datasets because it short-circuits on first match. Use EXISTS when checking for related records: <code>WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.user_id)</code>.</p>
+
+<h4>Q4: How does LIKE differ from exact match (=)?</h4>
+<p><strong>Answer:</strong> = requires exact match of the entire string. LIKE performs pattern matching with wildcards (% for any sequence, _ for single character). LIKE 'Mouse%' matches "Mouse", "Mouse Pad", "Mousepad Pro". = 'Mouse' matches only "Mouse". LIKE cannot use indexes efficiently (leading wildcard prevents index use).</p>
+
+<h4>Q5: Write a query to find duplicate emails in the users table.</h4>
+<p><strong>Answer:</strong> <code>SELECT email, COUNT(*) AS cnt FROM users GROUP BY email HAVING COUNT(*) > 1;</code></p>
+
+<h4>Q6: What happens with NOT IN when the subquery returns NULL?</h4>
+<p><strong>Answer:</strong> NOT IN returns zero rows if any value in the subquery result is NULL. This is because <code>x NOT IN (1, 2, NULL)</code> evaluates to <code>x != 1 AND x != 2 AND x != NULL</code>, and <code>x != NULL</code> is always NULL/false. Use NOT EXISTS to avoid this trap.</p>
+
+<h4>Q7: How do you paginate results in SQL?</h4>
+<p><strong>Answer:</strong> Use LIMIT/OFFSET (MySQL/PostgreSQL) or FETCH FIRST/OFFSET (SQL standard). Page N with size S: <code>LIMIT S OFFSET (N-1)*S</code>. Always include ORDER BY for deterministic pagination.</p>
+
+<h4>Q8: What is the default sort order of ORDER BY?</h4>
+<p><strong>Answer:</strong> ASC (ascending). Numbers: 1, 2, 3. Strings: A, B, C. Dates: oldest first. NULL placement varies by database — PostgreSQL: NULLS LAST in ASC, NULLS FIRST in DESC.</p>
+
+<h4>Q9: How would you test a date range filter on a reporting page?</h4>
+<p><strong>Answer:</strong> Create test data with orders on: start date, end date, day before start, day after end, and NULL dates. Apply the filter and verify only in-range orders appear. Cross-check count with: <code>SELECT COUNT(*) FROM orders WHERE created_at BETWEEN 'start' AND 'end'</code>.</p>
+
+<h4>Q10: Difference between DISTINCT and GROUP BY?</h4>
+<p><strong>Answer:</strong> Both eliminate duplicates. DISTINCT is simpler — removes duplicate row combinations. GROUP BY groups rows and allows aggregate functions (COUNT, SUM). Use DISTINCT for unique values; GROUP BY when you need aggregations per group.</p>
+
+<h4>Q11: How do you filter for records updated in the last hour?</h4>
+<p><strong>Answer:</strong> <code>SELECT * FROM orders WHERE updated_at >= CURRENT_TIMESTAMP - INTERVAL '1 hour';</code> (PostgreSQL). MySQL: <code>WHERE updated_at >= NOW() - INTERVAL 1 HOUR</code>. Always verify timezone handling.</p>
+
+<h4>Q12: Write a query to find products that have never been ordered.</h4>
+<p><strong>Answer:</strong> <code>SELECT p.product_id, p.product_name FROM products p LEFT JOIN order_items oi ON p.product_id = oi.product_id WHERE oi.product_id IS NULL;</code></p>
+
+<h3>Advanced Filtering Patterns for QA</h3>
+
+<h4>Combining multiple filters for API test validation</h4>
+<pre><code>-- Validate GET /orders?status=COMPLETED&amp;min_amount=100&amp;from=2026-01-01
+SELECT order_id, user_id, total_amount, status, created_at
+FROM orders
+WHERE status = 'COMPLETED'
+  AND total_amount >= 100
+  AND created_at >= '2026-01-01'
+  AND created_at &lt; '2026-07-12'
+ORDER BY created_at DESC;
+
+-- Cross-check API response count
+SELECT COUNT(*) AS expected_api_count
+FROM orders
+WHERE status = 'COMPLETED'
+  AND total_amount >= 100
+  AND created_at >= '2026-01-01';</code></pre>
+
+<h4>Dynamic search filter replication</h4>
+<pre><code>-- User searches: "alice" in name OR "gmail" in email, active only
+SELECT user_id, email, first_name, last_name, is_active
+FROM users
+WHERE is_active = TRUE
+  AND (
+    first_name LIKE '%alice%'
+    OR last_name LIKE '%alice%'
+    OR email LIKE '%alice%'
+    OR email LIKE '%gmail%'
+  )
+ORDER BY last_name, first_name;</code></pre>
+
+<h4>Date boundary testing matrix</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Test Case</th><th>created_at Value</th><th>BETWEEN '2026-03-01' AND '2026-03-31'</th><th>Expected in Report</th></tr></thead>
+<tbody>
+<tr><td>On start boundary</td><td>2026-03-01 00:00:00</td><td>TRUE (included)</td><td>Yes</td></tr>
+<tr><td>On end boundary</td><td>2026-03-31 23:59:59</td><td>TRUE (included)</td><td>Yes</td></tr>
+<tr><td>Before range</td><td>2026-02-28 23:59:59</td><td>FALSE</td><td>No</td></tr>
+<tr><td>After range</td><td>2026-04-01 00:00:00</td><td>FALSE</td><td>No</td></tr>
+<tr><td>NULL date</td><td>NULL</td><td>NULL (excluded)</td><td>No</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Escaping special characters in LIKE</h4>
+<pre><code>-- Product name contains literal underscore: "USB_C Hub"
+SELECT product_id, product_name FROM products
+WHERE product_name LIKE '%USB\_C%' ESCAPE '\';
+
+-- Product SKU with wildcard character
+SELECT product_id, sku FROM products
+WHERE sku LIKE '%\%%' ESCAPE '\';</code></pre>
+
+<h4>QA checklist: Filter &amp; Sort testing</h4>
+<ol>
+<li>Verify empty filter returns all records (or expected default subset)</li>
+<li>Verify each filter individually reduces result set correctly</li>
+<li>Verify combined filters use correct AND/OR logic matching UI</li>
+<li>Verify sort order matches UI (ASC/DESC, multi-column tie-breaking)</li>
+<li>Verify pagination total count matches un-paginated COUNT query</li>
+<li>Verify NULL records appear/disappear correctly based on filter</li>
+<li>Verify special characters in search don't cause SQL errors or injection</li>
+<li>Verify date filters respect timezone (UTC stored vs local displayed)</li>
+</ol>
+
+</section>
+<section id="section-4" class="section-card">
+<h2>Section 4: Aggregate Functions</h2>
+
+<p>Aggregate functions perform calculations on a set of rows and return a single value. They are essential for QA data validation, reconciliation, and reporting verification.</p>
+
+<h3>Sample Data for This Section</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>order_id</th><th>user_id</th><th>total_amount</th><th>status</th><th>created_at</th></tr></thead>
+<tbody>
+<tr><td>5001</td><td>101</td><td>249.97</td><td>COMPLETED</td><td>2026-01-15</td></tr>
+<tr><td>5002</td><td>101</td><td>89.99</td><td>COMPLETED</td><td>2026-02-20</td></tr>
+<tr><td>5003</td><td>102</td><td>150.00</td><td>CANCELLED</td><td>2026-03-01</td></tr>
+<tr><td>5004</td><td>103</td><td>320.50</td><td>COMPLETED</td><td>2026-03-10</td></tr>
+<tr><td>5005</td><td>101</td><td>NULL</td><td>PENDING</td><td>2026-04-05</td></tr>
+<tr><td>5006</td><td>104</td><td>75.00</td><td>COMPLETED</td><td>2026-05-18</td></tr>
+<tr><td>5007</td><td>102</td><td>199.99</td><td>SHIPPED</td><td>2026-06-01</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>COUNT — Counting Rows</h3>
+
+<h4>COUNT(*) — Counts all rows including NULLs</h4>
+<pre><code>SELECT COUNT(*) AS total_orders FROM orders;
+-- Expected output: 7</code></pre>
+
+<h4>COUNT(column) — Counts non-NULL values only</h4>
+<pre><code>SELECT COUNT(total_amount) AS orders_with_amount FROM orders;
+-- Expected output: 6 (order 5005 has NULL total_amount)
+
+SELECT COUNT(coupon_code) AS orders_with_coupon FROM orders;
+-- Counts only rows where coupon_code IS NOT NULL</code></pre>
+
+<h4>COUNT(DISTINCT column) — Counts unique non-NULL values</h4>
+<pre><code>SELECT COUNT(DISTINCT user_id) AS unique_customers FROM orders;
+-- Expected output: 4 (users 101, 102, 103, 104)
+
+SELECT COUNT(DISTINCT status) AS distinct_statuses FROM orders;
+-- Expected output: 4 (COMPLETED, CANCELLED, PENDING, SHIPPED)</code></pre>
+
+<p><strong>QA Testing Scenario — Dashboard count validation:</strong></p>
+<pre><code>-- UI shows "Total Orders: 7" and "Completed: 4"
+SELECT
+    COUNT(*) AS total_orders,
+    COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) AS completed_orders,
+    COUNT(CASE WHEN status = 'PENDING' THEN 1 END) AS pending_orders,
+    COUNT(CASE WHEN status = 'CANCELLED' THEN 1 END) AS cancelled_orders
+FROM orders;
+
+-- Expected:
+-- total_orders: 7 | completed_orders: 4 | pending_orders: 1 | cancelled_orders: 1</code></pre>
+
+<h3>SUM — Total of Numeric Values</h3>
+<pre><code>-- Total revenue from completed orders
+SELECT SUM(total_amount) AS total_revenue
+FROM orders
+WHERE status = 'COMPLETED';
+-- Expected: 249.97 + 89.99 + 320.50 + 75.00 = 735.46
+
+-- Revenue per user
+SELECT user_id, SUM(total_amount) AS user_total_spent
+FROM orders
+WHERE status = 'COMPLETED'
+GROUP BY user_id
+ORDER BY user_total_spent DESC;
+
+-- Expected output:
+-- user_id | user_total_spent
+-- 103     | 320.50
+-- 101     | 339.96
+-- 104     | 75.00</code></pre>
+
+<div class="callout">
+<strong>NULL behavior:</strong> SUM ignores NULL values. SUM of (100, NULL, 200) = 300, not NULL. If ALL values are NULL, SUM returns NULL.
+</div>
+
+<h3>AVG — Average Value</h3>
+<pre><code>-- Average order value (completed orders only)
+SELECT AVG(total_amount) AS avg_order_value
+FROM orders
+WHERE status = 'COMPLETED';
+-- Expected: 735.46 / 4 = 183.865
+
+-- Average including NULLs behavior
+SELECT AVG(total_amount) FROM orders;
+-- Expected: (249.97 + 89.99 + 150.00 + 320.50 + 75.00 + 199.99) / 6 = 1142.45 / 6 = 190.408
+-- Note: NULL (order 5005) is excluded from both numerator and denominator</code></pre>
+
+<h3>MIN and MAX</h3>
+<pre><code>-- Smallest and largest completed order
+SELECT
+    MIN(total_amount) AS smallest_order,
+    MAX(total_amount) AS largest_order
+FROM orders
+WHERE status = 'COMPLETED';
+-- Expected: smallest_order = 75.00, largest_order = 320.50
+
+-- Earliest and latest order dates
+SELECT
+    MIN(created_at) AS first_order_date,
+    MAX(created_at) AS latest_order_date
+FROM orders;
+
+-- Cheapest and most expensive products
+SELECT
+    MIN(price) AS cheapest_product,
+    MAX(price) AS most_expensive_product
+FROM products;</code></pre>
+
+<h3>Business Scenarios</h3>
+
+<h4>Revenue Calculation &amp; Reconciliation</h4>
+<pre><code>-- Monthly revenue report validation
+SELECT
+    DATE_TRUNC('month', o.created_at) AS month,
+    COUNT(*) AS order_count,
+    SUM(o.total_amount) AS gross_revenue,
+    SUM(p.amount) AS payment_total,
+    SUM(o.total_amount) - SUM(p.amount) AS discrepancy
+FROM orders o
+JOIN payments p ON o.order_id = p.order_id
+WHERE o.status = 'COMPLETED'
+  AND p.status = 'CAPTURED'
+GROUP BY DATE_TRUNC('month', o.created_at)
+HAVING SUM(o.total_amount) != SUM(p.amount);
+-- Any rows returned = revenue reconciliation bug</code></pre>
+
+<h4>User Statistics</h4>
+<pre><code>-- Customer segmentation for QA test data verification
+SELECT
+    u.user_id,
+    u.email,
+    COUNT(o.order_id) AS total_orders,
+    SUM(CASE WHEN o.status = 'COMPLETED' THEN o.total_amount ELSE 0 END) AS lifetime_value,
+    MAX(o.created_at) AS last_order_date,
+    CASE
+        WHEN COUNT(o.order_id) >= 5 THEN 'VIP'
+        WHEN COUNT(o.order_id) >= 2 THEN 'Regular'
+        ELSE 'New'
+    END AS customer_segment
+FROM users u
+LEFT JOIN orders o ON u.user_id = o.user_id
+GROUP BY u.user_id, u.email
+ORDER BY lifetime_value DESC NULLS LAST;</code></pre>
+
+<h4>Product Performance</h4>
+<pre><code>-- Top selling products by quantity
+SELECT
+    p.product_id,
+    p.product_name,
+    SUM(oi.quantity) AS total_units_sold,
+    SUM(oi.quantity * oi.unit_price) AS total_revenue,
+    COUNT(DISTINCT oi.order_id) AS num_orders
+FROM products p
+JOIN order_items oi ON p.product_id = oi.product_id
+JOIN orders o ON oi.order_id = o.order_id
+WHERE o.status = 'COMPLETED'
+GROUP BY p.product_id, p.product_name
+ORDER BY total_units_sold DESC
+LIMIT 10;</code></pre>
+
+<h3>Testing Scenarios — Count Validation &amp; Data Reconciliation</h3>
+
+<ol>
+<li><strong>UI badge count vs database count:</strong> Shopping cart icon shows "3" — verify <code>SELECT COUNT(*) FROM cart_items WHERE user_id = 101 AND session_id = 'abc123'</code> returns 3.</li>
+<li><strong>Report total reconciliation:</strong> Admin dashboard shows "$735.46 revenue" — verify with SUM query. Mismatch indicates a bug in report logic or missing filter.</li>
+<li><strong>Before/after operation counts:</strong> After bulk import of 500 products, <code>SELECT COUNT(*) FROM products</code> should increase by exactly 500.</li>
+<li><strong>Aggregate across environments:</strong> Compare staging vs production: <code>SELECT status, COUNT(*) FROM orders GROUP BY status</code> — staging should have similar distribution patterns.</li>
+<li><strong>NULL impact testing:</strong> Verify AVG and SUM handle NULL columns correctly — a new order without total_amount should not break revenue calculations.</li>
+</ol>
+
+<pre><code>-- QA Reconciliation Script: Verify order totals match sum of line items
+SELECT
+    o.order_id,
+    o.total_amount AS order_total,
+    SUM(oi.quantity * oi.unit_price) AS calculated_total,
+    o.total_amount - SUM(oi.quantity * oi.unit_price) AS difference
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+GROUP BY o.order_id, o.total_amount
+HAVING o.total_amount != SUM(oi.quantity * oi.unit_price);
+-- Expected: 0 rows (no discrepancies)</code></pre>
+
+<h3>Combining Aggregate Functions</h3>
+<pre><code>SELECT
+    COUNT(*) AS total_orders,
+    COUNT(DISTINCT user_id) AS unique_customers,
+    SUM(total_amount) AS total_revenue,
+    AVG(total_amount) AS avg_order_value,
+    MIN(total_amount) AS min_order,
+    MAX(total_amount) AS max_order,
+    COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) AS completed,
+    ROUND(100.0 * COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) / COUNT(*), 2) AS completion_rate_pct
+FROM orders;</code></pre>
+
+<h3>Section 4 Interview Questions</h3>
+
+<h4>Q1: What is the difference between COUNT(*) and COUNT(column)?</h4>
+<p><strong>Answer:</strong> COUNT(*) counts all rows including those with NULL values in any column. COUNT(column) counts only rows where the specified column is NOT NULL. If 7 orders exist but 1 has NULL total_amount, COUNT(*) = 7 and COUNT(total_amount) = 6.</p>
+
+<h4>Q2: How does SUM handle NULL values?</h4>
+<p><strong>Answer:</strong> SUM ignores NULLs entirely. SUM(100, NULL, 200) = 300. If all values are NULL, SUM returns NULL (not 0). Use COALESCE(SUM column), 0) when you need zero instead of NULL.</p>
+
+<h4>Q3: Can you use aggregate functions in WHERE clause?</h4>
+<p><strong>Answer:</strong> No. WHERE filters individual rows before aggregation. Use HAVING to filter after GROUP BY. Example: <code>HAVING COUNT(*) > 5</code> not <code>WHERE COUNT(*) > 5</code>.</p>
+
+<h4>Q4: What does COUNT(DISTINCT column) do?</h4>
+<p><strong>Answer:</strong> Counts the number of unique non-NULL values. COUNT(DISTINCT user_id) from 7 orders where 4 unique users exist returns 4. Useful for "how many unique customers ordered" metrics.</p>
+
+<h4>Q5: Write a query to find users who spent more than $500 total.</h4>
+<p><strong>Answer:</strong> <code>SELECT user_id, SUM(total_amount) AS total FROM orders WHERE status = 'COMPLETED' GROUP BY user_id HAVING SUM(total_amount) > 500;</code></p>
+
+<h4>Q6: Why might SUM(order_total) differ from the admin dashboard revenue figure?</h4>
+<p><strong>Answer:</strong> Possible causes: dashboard excludes cancelled/refunded orders, uses a different date range, applies currency conversion, includes/excludes tax, caches stale data, or reads from a materialized view not yet refreshed. QA should replicate the exact dashboard query logic.</p>
+
+<h4>Q7: What is the difference between AVG and calculating SUM/COUNT manually?</h4>
+<p><strong>Answer:</strong> They are equivalent when no NULLs exist: AVG(x) = SUM(x)/COUNT(x). With NULLs, AVG excludes them from both numerator and denominator. Manual SUM/COUNT(*) would divide by total rows including NULL rows, giving a different result.</p>
+
+<h4>Q8: How do you validate that a "Top 10 Products" widget is correct?</h4>
+<p><strong>Answer:</strong> Run the same query the widget uses: <code>SELECT product_id, SUM(quantity) AS sold FROM order_items GROUP BY product_id ORDER BY sold DESC LIMIT 10</code>. Compare each product and count with the UI. Also verify the time filter matches (last 30 days vs all time).</p>
+
+<h4>Q9: Can MIN/MAX work on non-numeric columns?</h4>
+<p><strong>Answer:</strong> Yes. MIN/MAX work on dates (earliest/latest), strings (alphabetically first/last), and any comparable type. MIN(created_at) gives the earliest date. MIN(first_name) gives alphabetically first name.</p>
+
+<h4>Q10: Write a query to calculate conversion rate (completed orders / total orders).</h4>
+<p><strong>Answer:</strong> <code>SELECT ROUND(100.0 * COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) / COUNT(*), 2) AS conversion_rate FROM orders;</code></p>
+
+<h3>GROUP BY with Aggregate Functions</h3>
+<p>While GROUP BY is covered in depth later, aggregate functions almost always appear with GROUP BY in real QA queries.</p>
+
+<pre><code>-- Orders per user with average order value
+SELECT
+    user_id,
+    COUNT(*) AS order_count,
+    SUM(total_amount) AS total_spent,
+    AVG(total_amount) AS avg_order_value,
+    MIN(created_at) AS first_order,
+    MAX(created_at) AS latest_order
+FROM orders
+WHERE status = 'COMPLETED'
+GROUP BY user_id
+HAVING COUNT(*) >= 2
+ORDER BY total_spent DESC;</code></pre>
+
+<h4>Conditional aggregation with CASE</h4>
+<pre><code>SELECT
+    DATE_TRUNC('month', created_at) AS month,
+    COUNT(*) AS total_orders,
+    SUM(CASE WHEN status = 'COMPLETED' THEN total_amount ELSE 0 END) AS completed_revenue,
+    SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled_count,
+    SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending_count
+FROM orders
+GROUP BY DATE_TRUNC('month', created_at)
+ORDER BY month;</code></pre>
+
+<h3>Payment Reconciliation — Full QA Workflow</h3>
+<pre><code>-- Step 1: Total captured payments
+SELECT SUM(amount) AS total_payments FROM payments WHERE status = 'CAPTURED';
+-- Expected: 399.97
+
+-- Step 2: Total completed order amounts
+SELECT SUM(total_amount) AS total_orders FROM orders WHERE status = 'COMPLETED';
+-- Expected: 735.46 (includes orders without captured payment yet)
+
+-- Step 3: Find mismatched order-payment pairs
+SELECT
+    o.order_id,
+    o.total_amount AS order_amount,
+    p.amount AS payment_amount,
+    o.status AS order_status,
+    p.status AS payment_status,
+    o.total_amount - p.amount AS difference
+FROM orders o
+INNER JOIN payments p ON o.order_id = p.order_id
+WHERE o.total_amount != p.amount;
+
+-- Step 4: Completed orders missing captured payment
+SELECT o.order_id, o.total_amount, o.status
+FROM orders o
+LEFT JOIN payments p ON o.order_id = p.order_id AND p.status = 'CAPTURED'
+WHERE o.status = 'COMPLETED' AND p.payment_id IS NULL;</code></pre>
+
+<h3>Aggregate Function Edge Cases for Testers</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Scenario</th><th>Query</th><th>Expected Result</th></tr></thead>
+<tbody>
+<tr><td>Empty table</td><td><code>SELECT COUNT(*) FROM empty_table</code></td><td>0</td></tr>
+<tr><td>All NULLs in column</td><td><code>SELECT SUM(amount) FROM t</code></td><td>NULL (use COALESCE)</td></tr>
+<tr><td>Single row</td><td><code>SELECT AVG(price) FROM products WHERE product_id = 1</code></td><td>That row's price</td></tr>
+<tr><td>Mixed NULL and values</td><td><code>SELECT COUNT(col), COUNT(*) FROM t</code></td><td>COUNT(col) &lt; COUNT(*)</td></tr>
+<tr><td>Empty GROUP BY group</td><td><code>GROUP BY status HAVING COUNT(*) > 0</code></td><td>Empty groups excluded by HAVING</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Q11: What is conditional aggregation?</h4>
+<p><strong>Answer:</strong> Using CASE inside aggregate functions to count/sum conditionally: <code>SUM(CASE WHEN status = 'COMPLETED' THEN total_amount ELSE 0 END)</code>. This pivots data without a separate GROUP BY for each condition — essential for dashboard metric validation.</p>
+
+<h4>Q12: How do you test that a "Total Users" counter is accurate?</h4>
+<p><strong>Answer:</strong> Run <code>SELECT COUNT(*) FROM users WHERE is_active = TRUE</code> (matching the exact filter the app uses). Compare with UI. Also test after creating/deactivating users that the count updates. Check for soft-deleted users excluded via <code>is_deleted = FALSE</code>.</p>
+
+</section>
+
+<section id="section-5" class="section-card">
+<h2>Section 5: JOINs</h2>
+
+<p>JOINs combine rows from two or more tables based on related columns. This is the most critical SQL skill for QA engineers — most real-world validation queries require joining multiple tables. Master every join type.</p>
+
+<h3>Sample Tables with Data</h3>
+
+<h4>users</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>user_id</th><th>email</th><th>first_name</th><th>last_name</th><th>is_active</th></tr></thead>
+<tbody>
+<tr><td>101</td><td>alice@email.com</td><td>Alice</td><td>Johnson</td><td>TRUE</td></tr>
+<tr><td>102</td><td>bob@email.com</td><td>Bob</td><td>Smith</td><td>TRUE</td></tr>
+<tr><td>103</td><td>carol@email.com</td><td>Carol</td><td>Williams</td><td>FALSE</td></tr>
+<tr><td>104</td><td>dave@email.com</td><td>Dave</td><td>Brown</td><td>TRUE</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>orders</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>order_id</th><th>user_id</th><th>total_amount</th><th>status</th><th>created_at</th></tr></thead>
+<tbody>
+<tr><td>5001</td><td>101</td><td>249.97</td><td>COMPLETED</td><td>2026-01-15</td></tr>
+<tr><td>5002</td><td>101</td><td>89.99</td><td>SHIPPED</td><td>2026-02-20</td></tr>
+<tr><td>5003</td><td>102</td><td>150.00</td><td>COMPLETED</td><td>2026-03-01</td></tr>
+<tr><td>5004</td><td>104</td><td>320.50</td><td>PENDING</td><td>2026-03-10</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>products</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>product_id</th><th>product_name</th><th>sku</th><th>price</th><th>category</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Wireless Mouse</td><td>WM-001</td><td>29.99</td><td>Electronics</td></tr>
+<tr><td>2</td><td>USB-C Hub</td><td>UH-002</td><td>49.99</td><td>Electronics</td></tr>
+<tr><td>3</td><td>Desk Lamp</td><td>DL-003</td><td>34.99</td><td>Home Office</td></tr>
+<tr><td>4</td><td>Ergonomic Chair</td><td>EC-004</td><td>299.99</td><td>Furniture</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>order_items</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>order_item_id</th><th>order_id</th><th>product_id</th><th>quantity</th><th>unit_price</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>5001</td><td>1</td><td>2</td><td>29.99</td></tr>
+<tr><td>2</td><td>5001</td><td>2</td><td>1</td><td>49.99</td></tr>
+<tr><td>3</td><td>5001</td><td>3</td><td>3</td><td>34.99</td></tr>
+<tr><td>4</td><td>5002</td><td>1</td><td>3</td><td>29.99</td></tr>
+<tr><td>5</td><td>5003</td><td>4</td><td>1</td><td>150.00</td></tr>
+<tr><td>6</td><td>5004</td><td>2</td><td>2</td><td>49.99</td></tr>
+<tr><td>7</td><td>5004</td><td>4</td><td>1</td><td>299.99</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>payments</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>payment_id</th><th>order_id</th><th>amount</th><th>payment_method</th><th>status</th></tr></thead>
+<tbody>
+<tr><td>9001</td><td>5001</td><td>249.97</td><td>CREDIT_CARD</td><td>CAPTURED</td></tr>
+<tr><td>9002</td><td>5002</td><td>89.99</td><td>PAYPAL</td><td>AUTHORIZED</td></tr>
+<tr><td>9003</td><td>5003</td><td>150.00</td><td>CREDIT_CARD</td><td>CAPTURED</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>addresses</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>address_id</th><th>user_id</th><th>street</th><th>city</th><th>is_default</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>101</td><td>123 Main St</td><td>Seattle</td><td>TRUE</td></tr>
+<tr><td>2</td><td>101</td><td>456 Oak Ave</td><td>Portland</td><td>FALSE</td></tr>
+<tr><td>3</td><td>102</td><td>789 Pine Rd</td><td>Denver</td><td>TRUE</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>INNER JOIN</h3>
+
+<h4>Concept</h4>
+<p>INNER JOIN returns only rows where the join condition matches in BOTH tables. If a user has no orders, they won't appear. If an order references a deleted user, it won't appear.</p>
+
+<div class="ascii-diagram">
+<pre>
+INNER JOIN Venn Diagram:
+
+    ┌──────────────┐         ┌──────────────┐
+    │   Table A    │         │   Table B    │
+    │              │         │              │
+    │   ┌──────────┼─────────┼──────┐       │
+    │   │  A only  │  MATCH  │ B only│      │
+    │   │ (excluded)│ (RETURNED)│(excluded)│ │
+    │   └──────────┼─────────┼──────┘       │
+    │              │         │              │
+    └──────────────┘         └──────────────┘
+
+Only the overlapping (matching) rows are returned.
+users INNER JOIN orders → only users WHO HAVE orders
+</pre>
+</div>
+
+<h4>Example 1: Basic INNER JOIN</h4>
+<pre><code>SELECT
+    u.user_id,
+    u.first_name,
+    u.email,
+    o.order_id,
+    o.total_amount,
+    o.status
+FROM users u
+INNER JOIN orders o ON u.user_id = o.user_id;</code></pre>
+<div class="table-wrap">
+<table>
+<thead><tr><th>user_id</th><th>first_name</th><th>email</th><th>order_id</th><th>total_amount</th><th>status</th></tr></thead>
+<tbody>
+<tr><td>101</td><td>Alice</td><td>alice@email.com</td><td>5001</td><td>249.97</td><td>COMPLETED</td></tr>
+<tr><td>101</td><td>Alice</td><td>alice@email.com</td><td>5002</td><td>89.99</td><td>SHIPPED</td></tr>
+<tr><td>102</td><td>Bob</td><td>bob@email.com</td><td>5003</td><td>150.00</td><td>COMPLETED</td></tr>
+<tr><td>104</td><td>Dave</td><td>dave@email.com</td><td>5004</td><td>320.50</td><td>PENDING</td></tr>
+</tbody>
+</table>
+</div>
+<p>Note: Carol (user 103) is excluded — she has no orders. 4 rows returned.</p>
+
+<h4>Example 2: INNER JOIN with WHERE filter</h4>
+<pre><code>SELECT u.first_name, u.email, o.order_id, o.total_amount
+FROM users u
+INNER JOIN orders o ON u.user_id = o.user_id
+WHERE o.status = 'COMPLETED';</code></pre>
+<p>Expected: 2 rows — Alice's order 5001 and Bob's order 5003.</p>
+
+<h4>Example 3: INNER JOIN three tables (order details)</h4>
+<pre><code>SELECT
+    o.order_id,
+    u.email,
+    p.product_name,
+    oi.quantity,
+    oi.unit_price,
+    oi.quantity * oi.unit_price AS line_total
+FROM orders o
+INNER JOIN users u ON o.user_id = u.user_id
+INNER JOIN order_items oi ON o.order_id = oi.order_id
+INNER JOIN products p ON oi.product_id = p.product_id
+WHERE o.order_id = 5001;</code></pre>
+<div class="table-wrap">
+<table>
+<thead><tr><th>order_id</th><th>email</th><th>product_name</th><th>quantity</th><th>unit_price</th><th>line_total</th></tr></thead>
+<tbody>
+<tr><td>5001</td><td>alice@email.com</td><td>Wireless Mouse</td><td>2</td><td>29.99</td><td>59.98</td></tr>
+<tr><td>5001</td><td>alice@email.com</td><td>USB-C Hub</td><td>1</td><td>49.99</td><td>49.99</td></tr>
+<tr><td>5001</td><td>alice@email.com</td><td>Desk Lamp</td><td>3</td><td>34.99</td><td>104.97</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Real Project Usage:</strong> After checkout E2E test, verify complete order details by joining orders → order_items → products → users in a single query. Compare each line item with what was displayed in the cart.</p>
+
+<h3>LEFT JOIN (LEFT OUTER JOIN)</h3>
+
+<h4>Concept</h4>
+<p>LEFT JOIN returns ALL rows from the left table, plus matching rows from the right table. If no match exists, right table columns are NULL.</p>
+
+<div class="ascii-diagram">
+<pre>
+LEFT JOIN Venn Diagram:
+
+    ┌──────────────┐         ┌──────────────┐
+    │   Table A    │         │   Table B    │
+    │  (LEFT)      │         │  (RIGHT)     │
+    │              │         │              │
+    │   ┌──────────┼─────────┼──────┐       │
+    │   │ RETURNED │ RETURNED│ NULL │       │
+    │   │ (no match│ (matched│ fill │       │
+    │   │  → NULL) │  rows)  │      │       │
+    │   └──────────┼─────────┼──────┘       │
+    └──────────────┘         └──────────────┘
+
+ALL left rows returned. Unmatched right columns = NULL.
+</pre>
+</div>
+
+<h4>Example 1: All users with their orders (including users with no orders)</h4>
+<pre><code>SELECT
+    u.user_id,
+    u.first_name,
+    u.email,
+    o.order_id,
+    o.total_amount,
+    o.status
+FROM users u
+LEFT JOIN orders o ON u.user_id = o.user_id
+ORDER BY u.user_id, o.order_id;</code></pre>
+<div class="table-wrap">
+<table>
+<thead><tr><th>user_id</th><th>first_name</th><th>email</th><th>order_id</th><th>total_amount</th><th>status</th></tr></thead>
+<tbody>
+<tr><td>101</td><td>Alice</td><td>alice@email.com</td><td>5001</td><td>249.97</td><td>COMPLETED</td></tr>
+<tr><td>101</td><td>Alice</td><td>alice@email.com</td><td>5002</td><td>89.99</td><td>SHIPPED</td></tr>
+<tr><td>102</td><td>Bob</td><td>bob@email.com</td><td>5003</td><td>150.00</td><td>COMPLETED</td></tr>
+<tr><td>103</td><td>Carol</td><td>carol@email.com</td><td>NULL</td><td>NULL</td><td>NULL</td></tr>
+<tr><td>104</td><td>Dave</td><td>dave@email.com</td><td>5004</td><td>320.50</td><td>PENDING</td></tr>
+</tbody>
+</table>
+</div>
+<p>Carol appears with NULL order columns — she registered but never ordered.</p>
+
+<h4>Example 2: Find orders WITHOUT payments (orphan detection)</h4>
+<pre><code>SELECT o.order_id, o.user_id, o.total_amount, o.status
+FROM orders o
+LEFT JOIN payments p ON o.order_id = p.order_id
+WHERE p.payment_id IS NULL;</code></pre>
+<p>Expected: order 5004 (PENDING) — no payment record yet. This is a critical QA validation query.</p>
+
+<h4>Example 3: Users who have NEVER placed an order</h4>
+<pre><code>SELECT u.user_id, u.email, u.first_name, u.created_at
+FROM users u
+LEFT JOIN orders o ON u.user_id = o.user_id
+WHERE o.order_id IS NULL
+  AND u.is_active = TRUE;</code></pre>
+<p>Expected: users registered but with zero orders — useful for testing marketing "first order" campaigns.</p>
+
+<h4>NULL Handling in LEFT JOIN</h4>
+<div class="callout">
+<strong>Critical QA pattern:</strong> To find records in the left table WITHOUT a match in the right table, use LEFT JOIN + WHERE right_table.key IS NULL. Never use <code>WHERE right_table.key = NULL</code>.
+</div>
+
+<h3>RIGHT JOIN (RIGHT OUTER JOIN)</h3>
+
+<h4>Concept</h4>
+<p>RIGHT JOIN is the mirror of LEFT JOIN — returns ALL rows from the right table, plus matches from the left. Unmatched left columns are NULL.</p>
+
+<pre><code>-- All payments with order details (including orphaned payments)
+SELECT p.payment_id, p.amount, p.status, o.order_id, o.total_amount
+FROM orders o
+RIGHT JOIN payments p ON o.order_id = p.order_id;</code></pre>
+
+<h4>RIGHT JOIN vs LEFT JOIN</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>LEFT JOIN</th><th>RIGHT JOIN</th></tr></thead>
+<tbody>
+<tr><td>Preserves all rows from</td><td>Left table</td><td>Right table</td></tr>
+<tr><td>NULL fill on</td><td>Right columns when no match</td><td>Left columns when no match</td></tr>
+<tr><td>Can be rewritten as</td><td>—</td><td><code>A RIGHT JOIN B</code> = <code>B LEFT JOIN A</code></td></tr>
+<tr><td>Usage frequency</td><td>Very common</td><td>Rare — most devs flip tables and use LEFT JOIN</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>When to use RIGHT JOIN:</strong> Rarely needed. If you want all payments including those without orders: <code>SELECT * FROM orders o RIGHT JOIN payments p ON o.order_id = p.order_id</code> is equivalent to <code>SELECT * FROM payments p LEFT JOIN orders o ON p.order_id = o.order_id</code>.</p>
+
+<h3>FULL OUTER JOIN</h3>
+
+<h4>Concept</h4>
+<p>Returns all rows from BOTH tables. Matching rows are combined; unmatched rows have NULLs on the opposite side.</p>
+
+<div class="ascii-diagram">
+<pre>
+FULL OUTER JOIN Venn Diagram:
+
+    ┌──────────────┐         ┌──────────────┐
+    │   Table A    │         │   Table B    │
+    │              │         │              │
+    │   ┌──────────┼─────────┼──────┐       │
+    │   │ RETURNED │ RETURNED│RETURNED│     │
+    │   │ (NULL on │ (matched│ (NULL on│     │
+    │   │  B side) │  rows)  │ A side)│     │
+    │   └──────────┼─────────┼──────┘       │
+    └──────────────┘         └──────────────┘
+
+ALL rows from BOTH tables returned.
+</pre>
+</div>
+
+<pre><code>-- All users AND all orders — complete picture
+SELECT u.user_id, u.email, o.order_id, o.total_amount
+FROM users u
+FULL OUTER JOIN orders o ON u.user_id = o.user_id;</code></pre>
+
+<p><strong>Use cases:</strong></p>
+<ul>
+<li>Data reconciliation — find all mismatches between two systems</li>
+<li>Audit — identify users without orders AND orders without valid users</li>
+<li>Migration validation — compare source and target tables for completeness</li>
+</ul>
+
+<p><strong>MySQL note:</strong> MySQL does not support FULL OUTER JOIN. Simulate with: <code>SELECT ... FROM A LEFT JOIN B ... UNION SELECT ... FROM A RIGHT JOIN B ...</code></p>
+
+<h3>SELF JOIN</h3>
+
+<h4>Concept</h4>
+<p>A table joined to itself. Used for hierarchical data (employee-manager), finding duplicates, and sequential row comparisons.</p>
+
+<h4>Example 1: Employee-Manager Hierarchy</h4>
+<pre><code>-- employees table: emp_id, name, manager_id (FK to emp_id)
+SELECT
+    e.emp_id,
+    e.name AS employee,
+    m.name AS manager
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.emp_id;</code></pre>
+
+<h4>Example 2: Find duplicate emails in users</h4>
+<pre><code>SELECT
+    a.user_id AS user_id_1,
+    b.user_id AS user_id_2,
+    a.email
+FROM users a
+INNER JOIN users b ON a.email = b.email AND a.user_id &lt; b.user_id;</code></pre>
+<p>The condition <code>a.user_id &lt; b.user_id</code> prevents counting pairs twice (1-2 and 2-1).</p>
+
+<h4>Example 3: Compare consecutive orders for same user</h4>
+<pre><code>SELECT
+    o1.order_id AS first_order,
+    o2.order_id AS next_order,
+    o1.user_id,
+    o1.created_at AS first_date,
+    o2.created_at AS next_date,
+    o2.created_at - o1.created_at AS days_between
+FROM orders o1
+INNER JOIN orders o2 ON o1.user_id = o2.user_id
+    AND o2.created_at = (
+        SELECT MIN(o3.created_at) FROM orders o3
+        WHERE o3.user_id = o1.user_id AND o3.created_at > o1.created_at
+    );</code></pre>
+
+<h3>CROSS JOIN</h3>
+
+<h4>Concept</h4>
+<p>Produces the Cartesian product — every row from table A combined with every row from table B. If A has 4 rows and B has 3 rows, result has 12 rows.</p>
+
+<pre><code>-- All possible product combinations for bundle testing
+SELECT p1.product_name AS product_1, p2.product_name AS product_2
+FROM products p1
+CROSS JOIN products p2
+WHERE p1.product_id &lt; p2.product_id;</code></pre>
+
+<h4>Practical Use Cases</h4>
+<ul>
+<li>Generating test data combinations (every user × every product category)</li>
+<li>Creating date spine / calendar tables crossed with entities</li>
+<li>Finding missing combinations: <code>SELECT * FROM all_dates CROSS JOIN all_products WHERE NOT EXISTS (...)</code></li>
+</ul>
+
+<pre><code>-- Generate all size-color combinations for a product configurator
+SELECT s.size, c.color
+FROM sizes s
+CROSS JOIN colors c
+ORDER BY s.size, c.color;</code></pre>
+
+<h3>Multiple Table Joins (4+ Tables)</h3>
+
+<pre><code>-- Complete order report: user, order, items, products, payment, shipping address
+SELECT
+    o.order_id,
+    u.first_name || ' ' || u.last_name AS customer_name,
+    u.email,
+    p.product_name,
+    oi.quantity,
+    oi.unit_price,
+    pay.payment_method,
+    pay.status AS payment_status,
+    a.city AS ship_to_city,
+    o.status AS order_status,
+    o.created_at
+FROM orders o
+INNER JOIN users u ON o.user_id = u.user_id
+INNER JOIN order_items oi ON o.order_id = oi.order_id
+INNER JOIN products p ON oi.product_id = p.product_id
+LEFT JOIN payments pay ON o.order_id = pay.order_id
+LEFT JOIN addresses a ON u.user_id = a.user_id AND a.is_default = TRUE
+WHERE o.order_id = 5001;</code></pre>
+
+<p><strong>QA Testing Scenario — End-to-end order validation:</strong></p>
+<pre><code>-- Verify order 5004 has complete data across all related tables
+SELECT
+    CASE WHEN u.user_id IS NOT NULL THEN 'PASS' ELSE 'FAIL' END AS user_exists,
+    CASE WHEN oi.order_item_id IS NOT NULL THEN 'PASS' ELSE 'FAIL' END AS has_items,
+    CASE WHEN pay.payment_id IS NOT NULL THEN 'PASS' ELSE 'FAIL' END AS has_payment,
+    CASE WHEN a.address_id IS NOT NULL THEN 'PASS' ELSE 'FAIL' END AS has_address
+FROM orders o
+LEFT JOIN users u ON o.user_id = u.user_id
+LEFT JOIN order_items oi ON o.order_id = oi.order_id
+LEFT JOIN payments pay ON o.order_id = pay.order_id
+LEFT JOIN addresses a ON u.user_id = a.user_id AND a.is_default = TRUE
+WHERE o.order_id = 5004;</code></pre>
+
+<h3>JOIN vs Subquery — Performance Comparison</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>JOIN</th><th>Subquery</th></tr></thead>
+<tbody>
+<tr><td><strong>Readability</strong></td><td>Better for multi-table data retrieval</td><td>Better for single-value lookups and existence checks</td></tr>
+<tr><td><strong>Performance</strong></td><td>Generally faster — optimizer can choose best plan</td><td>Correlated subqueries can be slow (row-by-row execution)</td></tr>
+<tr><td><strong>Result columns</strong></td><td>Can select from any joined table</td><td>Subquery in WHERE only filters, doesn't add columns</td></tr>
+<tr><td><strong>NULL handling</strong></td><td>Explicit with LEFT JOIN</td><td>NOT IN with NULLs is dangerous</td></tr>
+<tr><td><strong>QA preference</strong></td><td>Use JOINs for validation queries returning multiple columns</td><td>Use EXISTS for "has related records" checks</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- Same result, JOIN approach (preferred)
+SELECT u.email, o.order_id, o.total_amount
+FROM users u
+INNER JOIN orders o ON u.user_id = o.user_id
+WHERE o.status = 'COMPLETED';
+
+-- Same result, subquery approach
+SELECT email, order_id, total_amount
+FROM users
+WHERE user_id IN (SELECT user_id FROM orders WHERE status = 'COMPLETED');</code></pre>
+
+<h3>Common JOIN Mistakes</h3>
+<ol>
+<li><strong>Missing JOIN condition → CROSS JOIN effect:</strong> Forgetting ON clause produces Cartesian product. 1000 orders × 1000 users = 1,000,000 rows.</li>
+<li><strong>Joining on wrong columns:</strong> <code>ON u.user_id = o.order_id</code> instead of <code>ON u.user_id = o.user_id</code> — silently wrong results.</li>
+<li><strong>Using INNER JOIN when LEFT JOIN is needed:</strong> Missing records that should appear with NULLs (users without orders).</li>
+<li><strong>Not aliasing tables:</strong> Ambiguous column names cause errors or wrong results. Always alias: <code>users u, orders o</code>.</li>
+<li><strong>Filtering on right table in WHERE instead of ON:</strong> <code>LEFT JOIN orders o ON u.user_id = o.user_id WHERE o.status = 'COMPLETED'</code> converts LEFT JOIN to INNER JOIN effectively. Move filter to ON clause to preserve left rows.</li>
+<li><strong>Counting duplicates after JOIN:</strong> Joining orders to order_items inflates order count. Use COUNT(DISTINCT o.order_id) or subquery.</li>
+</ol>
+
+<h3>Section 5 Interview Questions (15+)</h3>
+
+<h4>Q1: What is the difference between INNER JOIN and LEFT JOIN?</h4>
+<p><strong>Answer:</strong> INNER JOIN returns only matching rows from both tables. LEFT JOIN returns all rows from the left table plus matches from the right; unmatched right columns are NULL. Use INNER when you only want records with relationships; LEFT when you need all records from the primary table regardless of matches.</p>
+
+<h4>Q2: How do you find records in table A that have no match in table B?</h4>
+<p><strong>Answer:</strong> <code>SELECT a.* FROM A a LEFT JOIN B b ON a.key = b.key WHERE b.key IS NULL;</code> Or: <code>SELECT * FROM A WHERE key NOT IN (SELECT key FROM B)</code> (careful with NULLs). Or: <code>SELECT * FROM A a WHERE NOT EXISTS (SELECT 1 FROM B b WHERE b.key = a.key)</code>.</p>
+
+<h4>Q3: What happens if you forget the ON clause in a JOIN?</h4>
+<p><strong>Answer:</strong> You get a CROSS JOIN (Cartesian product). Every row in table A pairs with every row in table B. With 1000 rows each, that's 1,000,000 rows — likely causing performance issues or incorrect results.</p>
+
+<h4>Q4: Can you join more than two tables?</h4>
+<p><strong>Answer:</strong> Yes. Chain JOINs: <code>FROM A JOIN B ON ... JOIN C ON ... JOIN D ON ...</code>. Each additional JOIN adds another table to the result set. QA order validation typically joins 4-6 tables.</p>
+
+<h4>Q5: What is a SELF JOIN? Give an example.</h4>
+<p><strong>Answer:</strong> Joining a table to itself using aliases. Example: employee-manager hierarchy where <code>employees.manager_id</code> references <code>employees.emp_id</code>. <code>SELECT e.name, m.name AS manager FROM employees e LEFT JOIN employees m ON e.manager_id = m.emp_id</code>.</p>
+
+<h4>Q6: LEFT JOIN vs RIGHT JOIN — are they different?</h4>
+<p><strong>Answer:</strong> <code>A LEFT JOIN B</code> is equivalent to <code>B RIGHT JOIN A</code>. They produce the same result — just swap which table is considered "left" vs "right." Most developers prefer LEFT JOIN and swap table order rather than using RIGHT JOIN.</p>
+
+<h4>Q7: Why does LEFT JOIN with WHERE on the right table exclude NULL rows?</h4>
+<p><strong>Answer:</strong> WHERE filters AFTER the join. <code>WHERE o.status = 'COMPLETED'</code> removes rows where o.status is NULL (unmatched left rows). To filter right table while keeping unmatched left rows, put the condition in ON: <code>LEFT JOIN orders o ON u.user_id = o.user_id AND o.status = 'COMPLETED'</code>.</p>
+
+<h4>Q8: How do you detect orphaned records using JOINs?</h4>
+<p><strong>Answer:</strong> Orphan = child record without valid parent. <code>SELECT oi.* FROM order_items oi LEFT JOIN orders o ON oi.order_id = o.order_id WHERE o.order_id IS NULL</code> — finds order items referencing non-existent orders.</p>
+
+<h4>Q9: What is the difference between JOIN and UNION?</h4>
+<p><strong>Answer:</strong> JOIN combines columns from different tables horizontally (adding columns). UNION combines rows from different queries vertically (stacking rows). JOIN needs related columns; UNION needs same number and compatible types of columns.</p>
+
+<h4>Q10: How would you find users who ordered every product in the Electronics category?</h4>
+<p><strong>Answer:</strong> <code>SELECT u.user_id, u.email FROM users u WHERE NOT EXISTS (SELECT p.product_id FROM products p WHERE p.category = 'Electronics' AND NOT EXISTS (SELECT 1 FROM orders o JOIN order_items oi ON o.order_id = oi.order_id WHERE o.user_id = u.user_id AND oi.product_id = p.product_id))</code> — uses relational division pattern.</p>
+
+<h4>Q11: Explain CROSS JOIN with a QA example.</h4>
+<p><strong>Answer:</strong> CROSS JOIN produces every combination of rows from both tables. QA use: generate all browser × OS test configurations from a browsers table (5 rows) and os table (4 rows) = 20 test combinations automatically.</p>
+
+<h4>Q12: You join orders to order_items and get inflated revenue. Why?</h4>
+<p><strong>Answer:</strong> One order with 3 line items produces 3 joined rows. SUM(o.total_amount) counts the order total 3 times. Fix: SUM from a subquery, use SUM(DISTINCT o.order_id) with a different approach, or aggregate order_items separately.</p>
+
+<h4>Q13: Write a query showing each user and their most recent order.</h4>
+<p><strong>Answer:</strong> <code>SELECT u.user_id, u.email, o.order_id, o.created_at FROM users u LEFT JOIN orders o ON u.user_id = o.user_id AND o.created_at = (SELECT MAX(o2.created_at) FROM orders o2 WHERE o2.user_id = u.user_id);</code></p>
+
+<h4>Q14: Does MySQL support FULL OUTER JOIN?</h4>
+<p><strong>Answer:</strong> No. Simulate with UNION of LEFT and RIGHT JOIN: <code>SELECT ... FROM A LEFT JOIN B ... UNION SELECT ... FROM A RIGHT JOIN B WHERE A.key IS NULL</code>.</p>
+
+<h4>Q15: How do JOINs help in API test validation?</h4>
+<p><strong>Answer:</strong> After POST /orders API returns 201, a single JOIN query verifies: order exists with correct user_id, line items match request payload, payment record created with matching amount, inventory decremented — all in one query instead of 4 separate SELECTs.</p>
+
+<h4>Q16: What is the difference between ON and WHERE in a JOIN?</h4>
+<p><strong>Answer:</strong> ON specifies the join condition (evaluated during join). WHERE filters the final result set (evaluated after join). For INNER JOIN, they're interchangeable. For OUTER JOINs, conditions in ON preserve unmatched rows; conditions in WHERE filter them out.</p>
+
+<h4>Q17: Find pairs of products ordered together frequently.</h4>
+<p><strong>Answer:</strong> <code>SELECT oi1.product_id AS p1, oi2.product_id AS p2, COUNT(*) AS times_together FROM order_items oi1 INNER JOIN order_items oi2 ON oi1.order_id = oi2.order_id AND oi1.product_id &lt; oi2.product_id GROUP BY oi1.product_id, oi2.product_id HAVING COUNT(*) > 5 ORDER BY times_together DESC;</code></p>
+
+</section>
+
+<section id="section-6" class="section-card">
+<h2>Section 6: Subqueries</h2>
+
+<p>A subquery (inner query/nested query) is a SQL query embedded within another query. The outer query uses the result of the inner query. Subqueries are powerful for QA validation, especially for existence checks, comparisons, and data reconciliation.</p>
+
+<h3>Single-Row Subqueries</h3>
+<p>Return exactly one row and one column. Used with comparison operators: =, !=, &lt;, &gt;, &lt;=, &gt;=</p>
+
+<h4>Example 1: Orders above average order value</h4>
+<pre><code>SELECT order_id, user_id, total_amount, status
+FROM orders
+WHERE total_amount > (SELECT AVG(total_amount) FROM orders WHERE status = 'COMPLETED');
+
+-- Inner query returns single value: e.g., 183.865
+-- Outer query finds orders exceeding that average</code></pre>
+
+<h4>Example 2: User who placed the highest-value order</h4>
+<pre><code>SELECT u.user_id, u.email, o.order_id, o.total_amount
+FROM users u
+JOIN orders o ON u.user_id = o.user_id
+WHERE o.total_amount = (SELECT MAX(total_amount) FROM orders);
+-- Expected: Dave, order 5004, $320.50</code></pre>
+
+<h4>Example 3: Products priced above category average</h4>
+<pre><code>SELECT product_id, product_name, price, category
+FROM products p
+WHERE price > (
+    SELECT AVG(price) FROM products WHERE category = p.category
+);</code></pre>
+<p>Note: This is actually a correlated subquery (references outer query's p.category). See correlated section below.</p>
+
+<p><strong>QA Testing Scenario:</strong> Verify the "Premium Orders" dashboard filter shows orders above average:</p>
+<pre><code>-- Get the threshold the UI should use
+SELECT AVG(total_amount) AS threshold FROM orders WHERE status = 'COMPLETED';
+
+-- Get orders that should appear
+SELECT order_id, total_amount FROM orders
+WHERE total_amount > (SELECT AVG(total_amount) FROM orders WHERE status = 'COMPLETED')
+  AND status = 'COMPLETED';</code></pre>
+
+<h3>Multi-Row Subqueries</h3>
+<p>Return multiple rows. Used with IN, ANY, ALL operators.</p>
+
+<h4>IN — Match any value in the set</h4>
+<pre><code>-- Users who have placed at least one order
+SELECT user_id, email, first_name
+FROM users
+WHERE user_id IN (SELECT DISTINCT user_id FROM orders);
+
+-- Products that have been ordered
+SELECT product_id, product_name, price
+FROM products
+WHERE product_id IN (SELECT DISTINCT product_id FROM order_items);
+
+-- Orders paid via credit card
+SELECT order_id, total_amount, status
+FROM orders
+WHERE order_id IN (
+    SELECT order_id FROM payments WHERE payment_method = 'CREDIT_CARD'
+);</code></pre>
+
+<h4>ANY — Compare against any value (OR logic)</h4>
+<pre><code>-- Products cheaper than ANY product in the Furniture category
+SELECT product_id, product_name, price
+FROM products
+WHERE price < ANY (SELECT price FROM products WHERE category = 'Furniture');
+-- Returns products cheaper than at least one furniture item (i.e., cheaper than the most expensive furniture)</code></pre>
+
+<h4>ALL — Compare against all values (AND logic)</h4>
+<pre><code>-- Products cheaper than ALL products in the Furniture category
+SELECT product_id, product_name, price
+FROM products
+WHERE price < ALL (SELECT price FROM products WHERE category = 'Furniture');
+-- Returns products cheaper than even the cheapest furniture item</code></pre>
+
+<h3>Correlated Subqueries</h3>
+<p>The inner query references columns from the outer query. Executed once per row of the outer query — like a nested loop.</p>
+
+<div class="ascii-diagram">
+<pre>
+Correlated Subquery Execution:
+
+Outer Query Row 1 (user_id=101)
+  └── Inner Query runs: SELECT COUNT(*) FROM orders WHERE user_id = 101 → 2
+Outer Query Row 2 (user_id=102)
+  └── Inner Query runs: SELECT COUNT(*) FROM orders WHERE user_id = 102 → 1
+Outer Query Row 3 (user_id=103)
+  └── Inner Query runs: SELECT COUNT(*) FROM orders WHERE user_id = 103 → 0
+... and so on for each outer row
+</pre>
+</div>
+
+<h4>Example 1: Users with more than 1 order</h4>
+<pre><code>SELECT u.user_id, u.email, u.first_name
+FROM users u
+WHERE (
+    SELECT COUNT(*) FROM orders o WHERE o.user_id = u.user_id
+) > 1;
+-- Expected: Alice (user 101) — she has 2 orders</code></pre>
+
+<h4>Example 2: Each user's most recent order</h4>
+<pre><code>SELECT u.user_id, u.email, o.order_id, o.total_amount, o.created_at
+FROM users u
+JOIN orders o ON u.user_id = o.user_id
+WHERE o.created_at = (
+    SELECT MAX(o2.created_at)
+    FROM orders o2
+    WHERE o2.user_id = u.user_id
+);</code></pre>
+
+<h4>Example 3: Products never ordered (correlated NOT EXISTS)</h4>
+<pre><code>SELECT p.product_id, p.product_name, p.price
+FROM products p
+WHERE NOT EXISTS (
+    SELECT 1 FROM order_items oi WHERE oi.product_id = p.product_id
+);</code></pre>
+
+<h3>Nested Subqueries (Multiple Levels)</h3>
+<pre><code>-- Users who ordered products in the most popular category
+SELECT DISTINCT u.user_id, u.email
+FROM users u
+WHERE u.user_id IN (
+    SELECT o.user_id FROM orders o
+    WHERE o.order_id IN (
+        SELECT oi.order_id FROM order_items oi
+        WHERE oi.product_id IN (
+            SELECT product_id FROM products
+            WHERE category = (
+                SELECT category FROM products
+                GROUP BY category
+                ORDER BY COUNT(*) DESC
+                LIMIT 1
+            )
+        )
+    )
+);</code></pre>
+<p>Deep nesting hurts readability. Refactor to JOINs or CTEs (Common Table Expressions) for maintainability.</p>
+
+<h3>Subquery in Different Clauses</h3>
+
+<h4>Subquery in SELECT (Scalar subquery as column)</h4>
+<pre><code>SELECT
+    u.user_id,
+    u.email,
+    (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.user_id) AS order_count,
+    (SELECT COALESCE(SUM(total_amount), 0) FROM orders o WHERE o.user_id = u.user_id AND o.status = 'COMPLETED') AS total_spent
+FROM users u;</code></pre>
+
+<h4>Subquery in FROM (Derived table / inline view)</h4>
+<pre><code>SELECT user_stats.user_id, user_stats.order_count, user_stats.total_spent
+FROM (
+    SELECT
+        user_id,
+        COUNT(*) AS order_count,
+        SUM(total_amount) AS total_spent
+    FROM orders
+    WHERE status = 'COMPLETED'
+    GROUP BY user_id
+) AS user_stats
+WHERE user_stats.total_spent > 200;</code></pre>
+
+<h4>Subquery in WHERE (Filtering)</h4>
+<pre><code>-- Orders where payment amount doesn't match order total (data integrity bug)
+SELECT order_id, total_amount
+FROM orders o
+WHERE total_amount != (
+    SELECT amount FROM payments p WHERE p.order_id = o.order_id
+);</code></pre>
+
+<h4>Subquery in HAVING (Filter grouped results)</h4>
+<pre><code>-- Categories with average product price above overall average
+SELECT category, AVG(price) AS avg_category_price
+FROM products
+GROUP BY category
+HAVING AVG(price) > (SELECT AVG(price) FROM products);</code></pre>
+
+<h3>EXISTS vs IN Comparison</h3>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>EXISTS</th><th>IN</th></tr></thead>
+<tbody>
+<tr><td><strong>Returns</strong></td><td>TRUE/FALSE (existence check)</td><td>TRUE if value matches any in set</td></tr>
+<tr><td><strong>Subquery columns</strong></td><td>SELECT 1 is sufficient (ignored)</td><td>Must return the column being compared</td></tr>
+<tr><td><strong>NULL handling</strong></td><td>Not affected by NULLs in subquery</td><td>NOT IN fails if subquery has NULL</td></tr>
+<tr><td><strong>Performance</strong></td><td>Short-circuits on first match</td><td>Materializes entire subquery result</td></tr>
+<tr><td><strong>Best for</strong></td><td>Existence checks, correlated queries</td><td>Small static lists, single-column matching</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>-- IN approach
+SELECT * FROM users
+WHERE user_id IN (SELECT user_id FROM orders WHERE status = 'COMPLETED');
+
+-- EXISTS approach (preferred for large datasets)
+SELECT * FROM users u
+WHERE EXISTS (
+    SELECT 1 FROM orders o
+    WHERE o.user_id = u.user_id AND o.status = 'COMPLETED'
+);
+
+-- NOT EXISTS for orphan detection (safe with NULLs)
+SELECT * FROM orders o
+WHERE NOT EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.order_id)
+  AND o.status != 'CANCELLED';</code></pre>
+
+<h3>Real QA Validation Examples</h3>
+
+<h4>Finding Orphan Records</h4>
+<pre><code>-- Order items without valid orders
+SELECT oi.order_item_id, oi.order_id, oi.product_id
+FROM order_items oi
+WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.order_id = oi.order_id);
+
+-- Payments without valid orders
+SELECT p.payment_id, p.order_id, p.amount
+FROM payments p
+WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.order_id = p.order_id);
+
+-- Orders referencing non-existent users
+SELECT o.order_id, o.user_id
+FROM orders o
+WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.user_id = o.user_id);</code></pre>
+
+<h4>Data Comparison Between Tables</h4>
+<pre><code>-- Verify order totals match sum of line items
+SELECT o.order_id, o.total_amount,
+       (SELECT SUM(oi.quantity * oi.unit_price) FROM order_items oi WHERE oi.order_id = o.order_id) AS calculated_total
+FROM orders o
+WHERE o.total_amount != (
+    SELECT SUM(oi.quantity * oi.unit_price) FROM order_items oi WHERE oi.order_id = o.order_id
+);
+
+-- Compare staging vs production user counts per status
+SELECT status, COUNT(*) AS staging_count
+FROM orders
+GROUP BY status
+HAVING COUNT(*) != (
+    -- In practice, run against production via linked server or export
+    SELECT COUNT(*) FROM production.orders po WHERE po.status = orders.status
+);</code></pre>
+
+<h4>Validation After Data Migration</h4>
+<pre><code>-- Users in old system but not in new system
+SELECT old_user_id, email
+FROM legacy_users lu
+WHERE NOT EXISTS (
+    SELECT 1 FROM users u WHERE u.email = lu.email
+);
+
+-- Verify all completed orders have captured payments
+SELECT o.order_id, o.total_amount, o.status
+FROM orders o
+WHERE o.status = 'COMPLETED'
+  AND NOT EXISTS (
+    SELECT 1 FROM payments p
+    WHERE p.order_id = o.order_id AND p.status = 'CAPTURED'
+  );</code></pre>
+
+<h3>Performance Considerations</h3>
+<ol>
+<li><strong>Correlated subqueries are expensive</strong> — They execute once per outer row. For 10,000 users, the inner query runs 10,000 times. Rewrite as JOIN when possible.</li>
+<li><strong>IN with large subquery results</strong> — Materializes the entire subquery. Use EXISTS for better performance with large datasets.</li>
+<li><strong>Subquery in SELECT</strong> — Runs for every row in the result. Consider JOIN with GROUP BY instead.</li>
+<li><strong>Use EXPLAIN/EXPLAIN ANALYZE</strong> — Check query execution plan. Look for "SubPlan" or "Nested Loop" which indicate correlated subquery overhead.</li>
+</ol>
+
+<pre><code>-- Slow: correlated subquery in SELECT
+SELECT u.email, (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.user_id) AS cnt
+FROM users u;
+
+-- Faster: JOIN with GROUP BY
+SELECT u.email, COUNT(o.order_id) AS cnt
+FROM users u
+LEFT JOIN orders o ON u.user_id = o.user_id
+GROUP BY u.user_id, u.email;</code></pre>
+
+<h3>Section 6 Interview Questions</h3>
+
+<h4>Q1: What is a subquery? Where can it be used?</h4>
+<p><strong>Answer:</strong> A query nested inside another query. Can appear in SELECT (scalar column), FROM (derived table), WHERE (filtering), and HAVING (group filtering) clauses. The outer query uses the inner query's result.</p>
+
+<h4>Q2: What is the difference between single-row and multi-row subqueries?</h4>
+<p><strong>Answer:</strong> Single-row returns one value — use with =, &lt;, &gt;. Multi-row returns multiple values — use with IN, ANY, ALL. Using = with a multi-row subquery causes a runtime error.</p>
+
+<h4>Q3: What is a correlated subquery?</h4>
+<p><strong>Answer:</strong> A subquery that references a column from the outer query. It executes once for each row of the outer query. Example: finding users with above-average order counts where the inner query references outer user_id.</p>
+
+<h4>Q4: EXISTS vs IN — when to use which?</h4>
+<p><strong>Answer:</strong> Use EXISTS for existence checks ("has this user placed an order?") — it's NULL-safe and short-circuits. Use IN for matching against a small set of values. Avoid NOT IN when subquery might return NULLs; use NOT EXISTS instead.</p>
+
+<h4>Q5: What happens if a single-row subquery returns multiple rows?</h4>
+<p><strong>Answer:</strong> Database raises an error: "subquery returns more than one row." This is a common bug when the inner query isn't properly filtered to guarantee a single result. Use LIMIT 1, MAX(), or IN depending on intent.</p>
+
+<h4>Q6: How do you find orphan records using subqueries?</h4>
+<p><strong>Answer:</strong> <code>SELECT * FROM child_table c WHERE NOT EXISTS (SELECT 1 FROM parent_table p WHERE p.id = c.parent_id)</code> — finds child records with no matching parent. Safe with NULLs unlike NOT IN.</p>
+
+<h4>Q7: Can a subquery return multiple columns?</h4>
+<p><strong>Answer:</strong> In the FROM clause (derived table), yes — it can return any number of columns. In WHERE with IN, only one column. In SELECT as scalar subquery, exactly one column and one row.</p>
+
+<h4>Q8: Write a subquery to find the second highest order amount.</h4>
+<p><strong>Answer:</strong> <code>SELECT MAX(total_amount) FROM orders WHERE total_amount &lt; (SELECT MAX(total_amount) FROM orders);</code> Or using OFFSET: <code>SELECT total_amount FROM orders ORDER BY total_amount DESC LIMIT 1 OFFSET 1;</code></p>
+
+<h4>Q9: What is the difference between ANY and ALL?</h4>
+<p><strong>Answer:</strong> ANY: condition true if it holds for at least one value in the set (OR logic). ALL: condition true only if it holds for every value in the set (AND logic). <code>price &lt; ANY(100,200,300)</code> means price &lt; 100 OR price &lt; 200 OR price &lt; 300, which simplifies to price &lt; 300.</p>
+
+<h4>Q10: How would you rewrite a correlated subquery as a JOIN?</h4>
+<p><strong>Answer:</strong> <code>SELECT u.email FROM users u WHERE (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.user_id) > 1</code> becomes <code>SELECT u.email FROM users u JOIN (SELECT user_id, COUNT(*) AS cnt FROM orders GROUP BY user_id HAVING COUNT(*) > 1) o ON u.user_id = o.user_id</code>.</p>
+
+<h4>Q11: Why is NOT IN dangerous with NULLs?</h4>
+<p><strong>Answer:</strong> If the subquery returns ANY NULL value, NOT IN returns zero rows for all inputs. Because <code>x NOT IN (1, 2, NULL)</code> evaluates to <code>x != 1 AND x != 2 AND x != NULL</code>, and the last comparison is always UNKNOWN/false. Always use NOT EXISTS instead.</p>
+
+<h4>Q12: How do you use a subquery in the FROM clause?</h4>
+<p><strong>Answer:</strong> Wrap the subquery in parentheses with an alias: <code>SELECT * FROM (SELECT user_id, COUNT(*) AS cnt FROM orders GROUP BY user_id) AS order_counts WHERE cnt > 5</code>. The alias is mandatory in most databases.</p>
+
+</section>

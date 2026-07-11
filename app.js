@@ -393,7 +393,7 @@
 
   /* ============ READ TIME MODULE ============ */
   const ReadTime = {
-    WPM: 200,
+    WPM: 120,
 
     countWords(el) {
       const text = el.innerText || el.textContent || '';
@@ -667,7 +667,8 @@
       'git_github.html': 16,
       'unix_linux.html': 21,
       'api_testing_notes.html': 14,
-      'dipali_notes.html': 12
+      'dipali_notes.html': 12,
+      'sql_database_notes.html': 20
     },
 
     init() {
