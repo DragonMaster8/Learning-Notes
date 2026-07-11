@@ -17,12 +17,25 @@
     <div class="login-icon">&#128218;</div>
     <h1>Learning Notes</h1>
     <p>Sign in to access your knowledge base</p>
-    <form id="login-form">
-      <input type="text" id="login-user" placeholder="Username" autocomplete="off" autofocus>
-      <input type="password" id="login-pass" placeholder="Password">
-      <button type="submit">Sign In</button>
-      <div class="login-error" id="login-error"></div>
-    </form>
+    <div id="login-panel">
+      <form id="login-form">
+        <input type="text" id="login-user" placeholder="Username" autocomplete="off" autofocus>
+        <input type="password" id="login-pass" placeholder="Password">
+        <button type="submit">Sign In</button>
+        <div class="login-error" id="login-error"></div>
+      </form>
+      <div class="auth-toggle">Don't have an account? <a id="show-register">Register</a></div>
+    </div>
+    <div id="register-panel">
+      <form id="register-form">
+        <input type="text" id="reg-user" placeholder="Choose a username" autocomplete="off">
+        <input type="password" id="reg-pass" placeholder="Choose a password">
+        <input type="password" id="reg-confirm" placeholder="Confirm password">
+        <button type="submit">Create Account</button>
+        <div class="register-error" id="register-error"></div>
+      </form>
+      <div class="auth-toggle">Already have an account? <a id="show-login">Sign In</a></div>
+    </div>
   </div>
 </div>
 
@@ -33,6 +46,7 @@
     <p class="tagline">Your personal knowledge base — performance testing, automation, and beyond.</p>
     <div class="dashboard-nav">
       <input type="text" class="dashboard-search" placeholder="Search topics... (Ctrl+K)" aria-label="Search topics">
+      <div class="dash-user-bar"><span class="user-avatar"></span><span class="user-greeting"></span></div>
       <button class="dashboard-logout">Logout</button>
     </div>
   </header>
@@ -75,6 +89,19 @@
         <span class="topic-tag">20 Modules</span>
         <span class="topic-tag">300+ Commands</span>
         <span class="topic-tag">200+ Interview Q&amp;A</span>
+      </div>
+    </a>
+
+    <!-- ========== TOPIC CARD: API Testing & Automation ========== -->
+    <a href="api_testing_notes.html" class="topic-card">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-icon">&#128640;</div>
+      <h3>API Testing &amp; Automation</h3>
+      <p>Complete study material &mdash; REST Assured, Postman (mock servers, e-commerce flow), SOAP, SoapUI (Groovy, Axis2), GraphQL, OAuth&nbsp;2.0, Newman, Jenkins CI/CD, Jira API, and 250+ interview questions.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">14 Modules</span>
+        <span class="topic-tag">3500+ Topics</span>
+        <span class="topic-tag">250+ Interview Q&amp;A</span>
       </div>
     </a>
 

@@ -16,12 +16,25 @@
     <div class="login-icon">&#128427;</div>
     <h1>Learning Notes</h1>
     <p>Sign in to access your knowledge base</p>
-    <form id="login-form">
-      <input type="text" id="login-user" placeholder="Username" autocomplete="off" autofocus>
-      <input type="password" id="login-pass" placeholder="Password">
-      <button type="submit">Sign In</button>
-      <div class="login-error" id="login-error"></div>
-    </form>
+    <div id="login-panel">
+      <form id="login-form">
+        <input type="text" id="login-user" placeholder="Username" autocomplete="off" autofocus>
+        <input type="password" id="login-pass" placeholder="Password">
+        <button type="submit">Sign In</button>
+        <div class="login-error" id="login-error"></div>
+      </form>
+      <div class="auth-toggle">Don't have an account? <a id="show-register">Register</a></div>
+    </div>
+    <div id="register-panel">
+      <form id="register-form">
+        <input type="text" id="reg-user" placeholder="Choose a username" autocomplete="off">
+        <input type="password" id="reg-pass" placeholder="Choose a password">
+        <input type="password" id="reg-confirm" placeholder="Confirm password">
+        <button type="submit">Create Account</button>
+        <div class="register-error" id="register-error"></div>
+      </form>
+      <div class="auth-toggle">Already have an account? <a id="show-login">Sign In</a></div>
+    </div>
   </div>
 </div>
 
@@ -32,6 +45,7 @@
 <aside id="sidebar">
   <button class="sidebar-collapse-btn" aria-label="Hide sidebar" title="Hide sidebar">&laquo;</button>
   <div class="logo"><span>&#128427;</span> UNIX/Linux</div>
+  <div class="user-bar"><span class="user-avatar"></span><span class="user-greeting"></span></div>
   <a href="index.html" class="back-to-home">&larr; All Topics</a>
   <div id="search-container">
     <input type="text" id="search-box" placeholder="Search notes..." aria-label="Search">
@@ -75,6 +89,18 @@
     <div class="stat"><div class="stat-num">200+</div><div class="stat-label">Interview Q&amp;A</div></div>
     <div class="stat"><div class="stat-num">50+</div><div class="stat-label">Real Scenarios</div></div>
   </div>
+</div>
+
+<div id="reading-toolbar">
+  <div class="toolbar-group"><span class="toolbar-label">Font</span><button class="font-decrease" title="Decrease font">A&minus;</button><span class="font-size-display">16px</span><button class="font-increase" title="Increase font">A+</button></div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-group"><span class="toolbar-label">Total</span><span id="total-read-time"></span></div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-group"><span class="toolbar-label">Progress</span><span id="sections-progress"></span></div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-group toolbar-kbd"><kbd>&larr;</kbd><kbd>&rarr;</kbd> Navigate &bull; <kbd>Ctrl</kbd>+<kbd>K</kbd> Search</div>
+  <div class="toolbar-sep"></div>
+  <button id="reset-progress" title="Reset all progress on this page">Reset Progress</button>
 </div>
 
 <div id="no-results" class="no-results">No matching content found.</div>
