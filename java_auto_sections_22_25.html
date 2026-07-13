@@ -1,0 +1,2195 @@
+<!-- Sections 22-25: SDET Coding, Cheat Sheet, Revision, Career Roadmap -->
+<!-- CSS classes: .section-card, .callout, .table-wrap, .ascii-diagram, h3, h4, pre>code -->
+
+<section id="section-22" class="section-card">
+<h2>Section 22: SDET Coding Rounds — Company-Wise Questions</h2>
+<p>Top 50 coding questions from real SDET and automation interviews at major service and product companies. Each solution is runnable Java with framework context where relevant.</p>
+<div class="callout"><strong>How to use:</strong> Practice writing each solution on paper first, then relate it to your framework — HashMap for test data lookup, ThreadLocal for parallel WebDriver, Stream API for report filtering.</div>
+
+<h3>INFOSYS / TCS / WIPRO (Entry–Mid Level)</h3>
+
+<h3>Q1. Reverse a String</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Infosys, TCS, Wipro</td></tr>
+<tr><td><strong>Question</strong></td><td>Reverse a given string and return the result.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Two pointers on char array swapping from both ends; or StringBuilder.reverse().</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n) for new char array</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Mention String immutability — cannot reverse in-place on String object itself.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol>
+<li>Convert String to char[] for mutability.</li>
+<li>Set left=0, right=length-1; swap and move inward.</li>
+<li>Return new String from char array.</li>
+</ol>
+<h4>Complete Solution Code</h4>
+<pre><code>public class ReverseString {
+    public static String reverse(String input) {
+        if (input == null) return null;
+        char[] chars = input.toCharArray();
+        int left = 0, right = chars.length - 1;
+        while (left &lt; right) {
+            char temp = chars[left];
+            chars[left++] = chars[right];
+            chars[right--] = temp;
+        }
+        return new String(chars);
+    }
+    public static void main(String[] args) {
+        System.out.println(reverse("automation")); // noitamotua
+    }
+}</code></pre>
+<h4>Alternative Approach</h4>
+<p><code>new StringBuilder(input).reverse().toString()</code> — one line but allocates StringBuilder object.</p>
+
+<h3>Q2. Check Palindrome</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Infosys, TCS, Wipro</td></tr>
+<tr><td><strong>Question</strong></td><td>Determine if a string reads the same forward and backward.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Two-pointer comparison; optionally skip non-alphanumeric and ignore case.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Clarify whether spaces and punctuation matter — common follow-up.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol>
+<li>Use two pointers from both ends.</li>
+<li>Skip non-alphanumeric characters if required.</li>
+<li>Compare lowercase chars; return false on mismatch.</li>
+</ol>
+<h4>Complete Solution Code</h4>
+<pre><code>public class PalindromeCheck {
+    public static boolean isPalindrome(String s) {
+        if (s == null) return false;
+        int l = 0, r = s.length() - 1;
+        while (l &lt; r) {
+            while (l &lt; r &amp;&amp; !Character.isLetterOrDigit(s.charAt(l))) l++;
+            while (l &lt; r &amp;&amp; !Character.isLetterOrDigit(s.charAt(r))) r--;
+            if (Character.toLowerCase(s.charAt(l++)) != Character.toLowerCase(s.charAt(r--)))
+                return false;
+        }
+        return true;
+    }
+    public static void main(String[] args) {
+        System.out.println(isPalindrome("A man a plan a canal Panama"));
+    }
+}</code></pre>
+
+<h3>Q3. Find Factorial</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Infosys, TCS, Wipro</td></tr>
+<tr><td><strong>Question</strong></td><td>Compute n! iteratively or recursively.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Iterative loop from 2 to n — avoids stack overflow.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Use <code>long</code> for n &gt; 12; relate to combinatorial test case generation.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol>
+<li>Handle n=0 and n=1 returning 1.</li>
+<li>Multiply result from 2 to n.</li>
+<li>Return factorial value.</li>
+</ol>
+<h4>Complete Solution Code</h4>
+<pre><code>public class Factorial {
+    public static long factorial(int n) {
+        if (n &lt; 0) throw new IllegalArgumentException("n must be &gt;= 0");
+        long result = 1;
+        for (int i = 2; i &lt;= n; i++) result *= i;
+        return result;
+    }
+    public static void main(String[] args) {
+        System.out.println(factorial(5)); // 120
+    }
+}</code></pre>
+<h4>Alternative Approach</h4>
+<p>Recursive: <code>factorial(n-1) * n</code> — O(n) time, O(n) stack space.</p>
+
+<h3>Q4. Fibonacci Series</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Infosys, TCS, Wipro</td></tr>
+<tr><td><strong>Question</strong></td><td>Print first n Fibonacci numbers or return nth value.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Iterative with two variables — optimal for interviews.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Avoid naive recursion O(2^n); mention memoization if asked.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol>
+<li>Initialize a=0, b=1.</li>
+<li>Loop n times: print a, then shift a,b to next pair.</li>
+<li>For nth value, loop until index n.</li>
+</ol>
+<h4>Complete Solution Code</h4>
+<pre><code>public class Fibonacci {
+    public static void printSeries(int n) {
+        int a = 0, b = 1;
+        for (int i = 0; i &lt; n; i++) {
+            System.out.print(a + " ");
+            int next = a + b; a = b; b = next;
+        }
+    }
+    public static int nth(int n) {
+        if (n &lt;= 1) return n;
+        int a = 0, b = 1;
+        for (int i = 2; i &lt;= n; i++) {
+            int next = a + b; a = b; b = next;
+        }
+        return b;
+    }
+    public static void main(String[] args) {
+        printSeries(10);
+        System.out.println("\n10th: " + nth(10));
+    }
+}</code></pre>
+
+<h3>Q5. Count Vowels and Consonants</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Infosys, TCS, Wipro</td></tr>
+<tr><td><strong>Question</strong></td><td>Count vowels and consonants in a string.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Single pass checking each letter against vowel set.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Useful for validating random test data generators in frameworks.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol>
+<li>Define vowel string a,e,i,o,u (case insensitive).</li>
+<li>Iterate chars; increment vowel or consonant counter.</li>
+<li>Return int array with both counts.</li>
+</ol>
+<h4>Complete Solution Code</h4>
+<pre><code>public class VowelConsonantCount {
+    public static int[] count(String s) {
+        int vowels = 0, consonants = 0;
+        String v = "aeiouAEIOU";
+        for (char c : s.toCharArray()) {
+            if (Character.isLetter(c)) {
+                if (v.indexOf(c) &gt;= 0) vowels++;
+                else consonants++;
+            }
+        }
+        return new int[]{vowels, consonants};
+    }
+    public static void main(String[] args) {
+        int[] r = count("Automation Framework");
+        System.out.println("Vowels: " + r[0] + ", Consonants: " + r[1]);
+    }
+}</code></pre>
+
+<h3>Q6. Swap Two Numbers Without Temp</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Infosys, TCS, Wipro</td></tr>
+<tr><td><strong>Question</strong></td><td>Swap two integers without a third variable.</td></tr>
+<tr><td><strong>Approach</strong></td><td>XOR swap or arithmetic add/subtract.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Mention overflow risk with arithmetic; XOR works cleanly for integers.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol>
+<li>Apply XOR: a = a ^ b; b = a ^ b; a = a ^ b.</li>
+<li>Verify with sample values.</li>
+<li>Discuss readability vs cleverness trade-off.</li>
+</ol>
+<h4>Complete Solution Code</h4>
+<pre><code>public class SwapWithoutTemp {
+    public static void main(String[] args) {
+        int a = 10, b = 20;
+        a = a ^ b; b = a ^ b; a = a ^ b;
+        System.out.println("a=" + a + ", b=" + b);
+    }
+}</code></pre>
+
+<h3>Q7. Check Prime Number</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Infosys, TCS, Wipro</td></tr>
+<tr><td><strong>Question</strong></td><td>Return true if n is a prime number.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Check divisibility from 2 to sqrt(n); skip even numbers after 2.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(sqrt n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Edge cases: n &lt;= 1 false, n == 2 true.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol>
+<li>Return false for n &lt; 2.</li>
+<li>Return false if n is even (except 2).</li>
+<li>Test odd divisors from 3 to sqrt(n).</li>
+</ol>
+<h4>Complete Solution Code</h4>
+<pre><code>public class PrimeCheck {
+    public static boolean isPrime(int n) {
+        if (n &lt;= 1) return false;
+        if (n == 2) return true;
+        if (n % 2 == 0) return false;
+        for (int i = 3; i * i &lt;= n; i += 2)
+            if (n % i == 0) return false;
+        return true;
+    }
+    public static void main(String[] args) {
+        System.out.println(isPrime(29));
+    }
+}</code></pre>
+
+<h3>Q8. Find Largest in Array</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Infosys, TCS, Wipro</td></tr>
+<tr><td><strong>Question</strong></td><td>Return the maximum element in an integer array.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Single pass tracking running maximum.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Relate to finding max wait timeout from a config list.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol>
+<li>Initialize max = arr[0].</li>
+<li>Compare each element and update max.</li>
+<li>Return max.</li>
+</ol>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.Arrays;
+public class FindLargest {
+    public static int findMax(int[] arr) {
+        if (arr == null || arr.length == 0)
+            throw new IllegalArgumentException("Empty array");
+        int max = arr[0];
+        for (int n : arr) if (n &gt; max) max = n;
+        return max;
+    }
+    public static void main(String[] args) {
+        System.out.println(findMax(new int[]{3, 9, 1, 7}));
+    }
+}</code></pre>
+<h4>Alternative Approach</h4>
+<p><code>Arrays.stream(arr).max().orElseThrow()</code> — concise Java 8 style.</p>
+
+<h3>Q9. Sort Array (Bubble Sort)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Infosys, TCS, Wipro</td></tr>
+<tr><td><strong>Question</strong></td><td>Sort an integer array in ascending order.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Bubble sort — swap adjacent elements; early exit if no swaps.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n²)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Mention <code>Arrays.sort()</code> uses TimSort O(n log n) in production code.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol>
+<li>Outer loop for number of passes.</li>
+<li>Inner loop compares arr[j] and arr[j+1]; swap if out of order.</li>
+<li>Break early if no swaps in a pass.</li>
+</ol>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.Arrays;
+public class BubbleSort {
+    public static void sort(int[] arr) {
+        for (int i = 0; i &lt; arr.length - 1; i++) {
+            boolean swapped = false;
+            for (int j = 0; j &lt; arr.length - 1 - i; j++) {
+                if (arr[j] &gt; arr[j + 1]) {
+                    int t = arr[j]; arr[j] = arr[j + 1]; arr[j + 1] = t;
+                    swapped = true;
+                }
+            }
+            if (!swapped) break;
+        }
+    }
+    public static void main(String[] args) {
+        int[] a = {5, 1, 4, 2};
+        sort(a);
+        System.out.println(Arrays.toString(a));
+    }
+}</code></pre>
+
+<h3>Q10. Find Duplicate in Array</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Infosys, TCS, Wipro</td></tr>
+<tr><td><strong>Question</strong></td><td>Find duplicate in array of n+1 elements containing values 1..n.</td></tr>
+<tr><td><strong>Approach</strong></td><td>HashSet tracks seen elements; Floyd cycle for O(1) space variant.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Framework link: detect duplicate test IDs in DataProvider list.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol>
+<li>Create HashSet for seen values.</li>
+<li>If add() returns false, element is duplicate.</li>
+<li>Return duplicate value.</li>
+</ol>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.HashSet;
+import java.util.Set;
+public class FindDuplicate {
+    public static int findDuplicate(int[] nums) {
+        Set&lt;Integer&gt; seen = new HashSet&lt;&gt;();
+        for (int n : nums) {
+            if (!seen.add(n)) return n;
+        }
+        throw new IllegalArgumentException("No duplicate");
+    }
+    public static void main(String[] args) {
+        System.out.println(findDuplicate(new int[]{1, 3, 4, 2, 2}));
+    }
+}</code></pre>
+<h4>Alternative Approach</h4>
+<p>Floyd tortoise-hare on index-as-pointer graph — O(1) space.</p>
+
+<h3>COGNIZANT / CAPGEMINI / ACCENTURE (Mid Level)</h3>
+
+<h3>Q11. Find Second Largest in Array</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Cognizant, Capgemini, Accenture</td></tr>
+<tr><td><strong>Question</strong></td><td>Find the second largest distinct element in an array.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Track largest and secondLargest in one pass.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Handle duplicates and arrays with fewer than 2 distinct elements.</td></tr>
+</tbody></table></div>
+<h4>Step-by-Step Explanation</h4>
+<ol><li>Initialize first and second to Integer.MIN_VALUE.</li><li>Update both when finding a new maximum.</li><li>Return second; throw if not found.</li></ol>
+<h4>Complete Solution Code</h4>
+<pre><code>public class SecondLargest {
+    public static int findSecond(int[] arr) {
+        int first = Integer.MIN_VALUE, second = Integer.MIN_VALUE;
+        for (int n : arr) {
+            if (n &gt; first) { second = first; first = n; }
+            else if (n &gt; second &amp;&amp; n != first) second = n;
+        }
+        if (second == Integer.MIN_VALUE) throw new IllegalStateException("No second largest");
+        return second;
+    }
+    public static void main(String[] args) {
+        System.out.println(findSecond(new int[]{12, 35, 1, 10, 35}));
+    }
+}</code></pre>
+
+<h3>Q12. Remove Duplicates from String</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Cognizant, Capgemini, Accenture</td></tr>
+<tr><td><strong>Question</strong></td><td>Remove duplicate characters preserving insertion order.</td></tr>
+<tr><td><strong>Approach</strong></td><td>LinkedHashSet maintains order while deduplicating.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Similar to deduplicating test case names before suite execution.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.LinkedHashSet;
+public class RemoveDuplicatesString {
+    public static String removeDuplicates(String s) {
+        LinkedHashSet&lt;Character&gt; set = new LinkedHashSet&lt;&gt;();
+        for (char c : s.toCharArray()) set.add(c);
+        StringBuilder sb = new StringBuilder();
+        for (char c : set) sb.append(c);
+        return sb.toString();
+    }
+    public static void main(String[] args) {
+        System.out.println(removeDuplicates("programming"));
+    }
+}</code></pre>
+
+<h3>Q13. Anagram Check</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Cognizant, Capgemini, Accenture</td></tr>
+<tr><td><strong>Question</strong></td><td>Check if two strings are anagrams.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Count char frequencies in int[26] or HashMap.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1) for fixed alphabet</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Sort approach is O(n log n) — mention both.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>public class AnagramCheck {
+    public static boolean isAnagram(String a, String b) {
+        if (a.length() != b.length()) return false;
+        int[] count = new int[26];
+        for (char c : a.toCharArray()) count[c - 'a']++;
+        for (char c : b.toCharArray()) if (--count[c - 'a'] &lt; 0) return false;
+        return true;
+    }
+    public static void main(String[] args) {
+        System.out.println(isAnagram("listen", "silent"));
+    }
+}</code></pre>
+
+<h3>Q14. Find Missing Number in Array</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Cognizant, Capgemini, Accenture</td></tr>
+<tr><td><strong>Question</strong></td><td>Array contains 1..n with one missing; find it.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Gauss sum formula: expected - actual.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>XOR all indices and values for same complexity.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>public class MissingNumber {
+    public static int findMissing(int[] arr, int n) {
+        int expected = n * (n + 1) / 2;
+        int actual = 0;
+        for (int x : arr) actual += x;
+        return expected - actual;
+    }
+    public static void main(String[] args) {
+        System.out.println(findMissing(new int[]{1, 2, 4, 5}, 5));
+    }
+}</code></pre>
+
+<h3>Q15. Two Sum Problem</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Cognizant, Capgemini, Accenture</td></tr>
+<tr><td><strong>Question</strong></td><td>Find indices of two numbers that sum to target.</td></tr>
+<tr><td><strong>Approach</strong></td><td>HashMap stores complement -&gt; index.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>State brute force O(n²) first, then optimize.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class TwoSum {
+    public static int[] twoSum(int[] nums, int target) {
+        Map&lt;Integer, Integer&gt; map = new HashMap&lt;&gt;();
+        for (int i = 0; i &lt; nums.length; i++) {
+            int need = target - nums[i];
+            if (map.containsKey(need)) return new int[]{map.get(need), i};
+            map.put(nums[i], i);
+        }
+        throw new IllegalArgumentException("No solution");
+    }
+    public static void main(String[] args) {
+        System.out.println(Arrays.toString(twoSum(new int[]{2,7,11,15}, 9)));
+    }
+}</code></pre>
+
+<h3>Q16. Reverse Words in Sentence</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Cognizant, Capgemini, Accenture</td></tr>
+<tr><td><strong>Question</strong></td><td>Reverse word order: "hello world" -&gt; "world hello".</td></tr>
+<tr><td><strong>Approach</strong></td><td>Split, two-pointer swap words, join.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Used when parsing log lines or BDD step text.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>public class ReverseWords {
+    public static String reverseWords(String s) {
+        String[] words = s.trim().split("\\s+");
+        int l = 0, r = words.length - 1;
+        while (l &lt; r) { String t = words[l]; words[l++] = words[r]; words[r--] = t; }
+        return String.join(" ", words);
+    }
+    public static void main(String[] args) {
+        System.out.println(reverseWords("  automation   test  suite  "));
+    }
+}</code></pre>
+
+<h3>Q17. Character Frequency using HashMap</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Cognizant, Capgemini, Accenture</td></tr>
+<tr><td><strong>Question</strong></td><td>Count frequency of each character in a string.</td></tr>
+<tr><td><strong>Approach</strong></td><td>HashMap.merge or getOrDefault increment pattern.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(k) unique chars</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Count failure types from test report strings.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class CharFrequency {
+    public static Map&lt;Character, Integer&gt; frequency(String s) {
+        Map&lt;Character, Integer&gt; map = new HashMap&lt;&gt;();
+        for (char c : s.toCharArray()) map.merge(c, 1, Integer::sum);
+        return map;
+    }
+    public static void main(String[] args) {
+        System.out.println(frequency("selenium"));
+    }
+}</code></pre>
+
+<h3>Q18. First Non-Repeated Character</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Cognizant, Capgemini, Accenture</td></tr>
+<tr><td><strong>Question</strong></td><td>Find the first character with frequency 1.</td></tr>
+<tr><td><strong>Approach</strong></td><td>LinkedHashMap for ordered single-pass counting.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(k)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Two-pass with HashMap also acceptable.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class FirstNonRepeated {
+    public static Character firstNonRepeated(String s) {
+        LinkedHashMap&lt;Character, Integer&gt; map = new LinkedHashMap&lt;&gt;();
+        for (char c : s.toCharArray()) map.merge(c, 1, Integer::sum);
+        for (Map.Entry&lt;Character, Integer&gt; e : map.entrySet())
+            if (e.getValue() == 1) return e.getKey();
+        return null;
+    }
+    public static void main(String[] args) {
+        System.out.println(firstNonRepeated("swiss"));
+    }
+}</code></pre>
+
+<h3>Q19. Sort HashMap by Value</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Cognizant, Capgemini, Accenture</td></tr>
+<tr><td><strong>Question</strong></td><td>Sort map entries by value descending.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Stream sorted with Map.Entry.comparingByValue.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n log n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Sort test failure counts for triage dashboards.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+import java.util.stream.*;
+public class SortHashMapByValue {
+    public static Map&lt;String, Integer&gt; sortByValue(Map&lt;String, Integer&gt; map) {
+        return map.entrySet().stream()
+            .sorted(Map.Entry.&lt;String, Integer&gt;comparingByValue().reversed())
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                (a, b) -&gt; a, LinkedHashMap::new));
+    }
+    public static void main(String[] args) {
+        Map&lt;String, Integer&gt; m = new HashMap&lt;&gt;();
+        m.put("LoginTest", 5); m.put("CheckoutTest", 12);
+        System.out.println(sortByValue(m));
+    }
+}</code></pre>
+
+<h3>Q20. Merge Two Sorted Arrays</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Cognizant, Capgemini, Accenture</td></tr>
+<tr><td><strong>Question</strong></td><td>Merge two sorted arrays into one sorted array.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Two pointers compare and copy smaller element.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(m + n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(m + n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Merge sorted test result lists from parallel CI jobs.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.Arrays;
+public class MergeSortedArrays {
+    public static int[] merge(int[] a, int[] b) {
+        int[] result = new int[a.length + b.length];
+        int i = 0, j = 0, k = 0;
+        while (i &lt; a.length &amp;&amp; j &lt; b.length)
+            result[k++] = (a[i] &lt;= b[j]) ? a[i++] : b[j++];
+        while (i &lt; a.length) result[k++] = a[i++];
+        while (j &lt; b.length) result[k++] = b[j++];
+        return result;
+    }
+    public static void main(String[] args) {
+        System.out.println(Arrays.toString(merge(new int[]{1,3,5}, new int[]{2,4,6})));
+    }
+}</code></pre>
+
+<h3>EPAM / GLOBANT / LTIMINDTREE (Senior Level)</h3>
+
+<h3>Q21. Longest Substring Without Repeating</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>EPAM, Globant, LTIMindtree</td></tr>
+<tr><td><strong>Question</strong></td><td>Find length of longest substring with all unique characters.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Sliding window with HashSet; shrink on duplicate.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(min(n, m)) charset size</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Sliding window pattern applies to rate-limit testing windows.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class LongestSubstring {
+    public static int lengthOfLongest(String s) {
+        Set&lt;Character&gt; set = new HashSet&lt;&gt;();
+        int max = 0, left = 0;
+        for (int right = 0; right &lt; s.length(); right++) {
+            while (set.contains(s.charAt(right))) set.remove(s.charAt(left++));
+            set.add(s.charAt(right));
+            max = Math.max(max, right - left + 1);
+        }
+        return max;
+    }
+    public static void main(String[] args) {
+        System.out.println(lengthOfLongest("abcabcbb"));
+    }
+}</code></pre>
+
+<h3>Q22. Valid Parentheses (Stack)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>EPAM, Globant, LTIMindtree</td></tr>
+<tr><td><strong>Question</strong></td><td>Validate balanced brackets: (), {}, [].</td></tr>
+<tr><td><strong>Approach</strong></td><td>Stack push opening; pop and match on closing.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Stack models nested TestNG group/suite structure.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class ValidParentheses {
+    public static boolean isValid(String s) {
+        Map&lt;Character, Character&gt; map = Map.of(')', '(', '}', '{', ']', '[');
+        Deque&lt;Character&gt; stack = new ArrayDeque&lt;&gt;();
+        for (char c : s.toCharArray()) {
+            if (map.containsValue(c)) stack.push(c);
+            else if (map.containsKey(c)) {
+                if (stack.isEmpty() || stack.pop() != map.get(c)) return false;
+            }
+        }
+        return stack.isEmpty();
+    }
+    public static void main(String[] args) {
+        System.out.println(isValid("{[()]}"));
+    }
+}</code></pre>
+
+<h3>Q23. Move Zeros to End</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>EPAM, Globant, LTIMindtree</td></tr>
+<tr><td><strong>Question</strong></td><td>Move all zeros to end preserving non-zero order.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Two-pointer write index for non-zero elements.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>In-place compaction like filtering null WebDriver references.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.Arrays;
+public class MoveZeros {
+    public static void moveZeroes(int[] nums) {
+        int w = 0;
+        for (int n : nums) if (n != 0) nums[w++] = n;
+        while (w &lt; nums.length) nums[w++] = 0;
+    }
+    public static void main(String[] args) {
+        int[] a = {0,1,0,3,12};
+        moveZeroes(a);
+        System.out.println(Arrays.toString(a));
+    }
+}</code></pre>
+
+<h3>Q24. Maximum Subarray Sum (Kadane's)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>EPAM, Globant, LTIMindtree</td></tr>
+<tr><td><strong>Question</strong></td><td>Find maximum sum of contiguous subarray.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Track currentMax and globalMax at each index.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Classic DP — explain subproblem at each index.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>public class MaxSubarray {
+    public static int maxSubArray(int[] nums) {
+        int current = nums[0], best = nums[0];
+        for (int i = 1; i &lt; nums.length; i++) {
+            current = Math.max(nums[i], current + nums[i]);
+            best = Math.max(best, current);
+        }
+        return best;
+    }
+    public static void main(String[] args) {
+        System.out.println(maxSubArray(new int[]{-2,1,-3,4,-1,2,1,-5,4}));
+    }
+}</code></pre>
+
+<h3>Q25. Rotate Array by K Positions</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>EPAM, Globant, LTIMindtree</td></tr>
+<tr><td><strong>Question</strong></td><td>Rotate array right by k steps.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Reverse entire array, then reverse two segments.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Circular buffer pattern in retry queues.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.Arrays;
+public class RotateArray {
+    private static void reverse(int[] a, int l, int r) {
+        while (l &lt; r) { int t = a[l]; a[l++] = a[r]; a[r--] = t; }
+    }
+    public static void rotate(int[] nums, int k) {
+        if (nums.length == 0) return;
+        k %= nums.length;
+        reverse(nums, 0, nums.length - 1);
+        reverse(nums, 0, k - 1);
+        reverse(nums, k, nums.length - 1);
+    }
+    public static void main(String[] args) {
+        int[] a = {1,2,3,4,5,6,7};
+        rotate(a, 3);
+        System.out.println(Arrays.toString(a));
+    }
+}</code></pre>
+
+<h3>Q26. Group Anagrams using HashMap</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>EPAM, Globant, LTIMindtree</td></tr>
+<tr><td><strong>Question</strong></td><td>Group strings that are anagrams of each other.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Key = sorted string or char-count signature.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n * k log k)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n * k)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Group test methods by feature tag in custom runners.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class GroupAnagrams {
+    public static List&lt;List&lt;String&gt;&gt; group(String[] words) {
+        Map&lt;String, List&lt;String&gt;&gt; map = new HashMap&lt;&gt;();
+        for (String w : words) {
+            char[] c = w.toCharArray();
+            Arrays.sort(c);
+            String key = new String(c);
+            map.computeIfAbsent(key, k -&gt; new ArrayList&lt;&gt;()).add(w);
+        }
+        return new ArrayList&lt;&gt;(map.values());
+    }
+    public static void main(String[] args) {
+        System.out.println(group(new String[]{"eat","tea","tan","ate","nat","bat"}));
+    }
+}</code></pre>
+
+<h3>Q27. Find Intersection of Two Arrays</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>EPAM, Globant, LTIMindtree</td></tr>
+<tr><td><strong>Question</strong></td><td>Return unique common elements between two arrays.</td></tr>
+<tr><td><strong>Approach</strong></td><td>HashSet for arr1; check arr2 membership.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(m + n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(m)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Find common tags between two test suites.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class ArrayIntersection {
+    public static List&lt;Integer&gt; intersect(int[] a, int[] b) {
+        Set&lt;Integer&gt; set = new HashSet&lt;&gt;();
+        for (int x : a) set.add(x);
+        Set&lt;Integer&gt; result = new HashSet&lt;&gt;();
+        for (int x : b) if (set.contains(x)) result.add(x);
+        return new ArrayList&lt;&gt;(result);
+    }
+    public static void main(String[] args) {
+        System.out.println(intersect(new int[]{1,2,2,1}, new int[]{2,2}));
+    }
+}</code></pre>
+
+<h3>Q28. String Compression</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>EPAM, Globant, LTIMindtree</td></tr>
+<tr><td><strong>Question</strong></td><td>Compress "aabcc" to "a2b1c2".</td></tr>
+<tr><td><strong>Approach</strong></td><td>Count consecutive same characters in one pass.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Run-length encoding for compact log storage.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>public class StringCompression {
+    public static String compress(String s) {
+        if (s.isEmpty()) return s;
+        StringBuilder sb = new StringBuilder();
+        int count = 1;
+        for (int i = 1; i &lt;= s.length(); i++) {
+            if (i &lt; s.length() &amp;&amp; s.charAt(i) == s.charAt(i - 1)) count++;
+            else { sb.append(s.charAt(i - 1)).append(count); count = 1; }
+        }
+        return sb.toString();
+    }
+    public static void main(String[] args) {
+        System.out.println(compress("aabcccccaaa"));
+    }
+}</code></pre>
+
+<h3>Q29. Sort Employees by Multiple Fields</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>EPAM, Globant, LTIMindtree</td></tr>
+<tr><td><strong>Question</strong></td><td>Sort Employee list by department then salary descending.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Comparator chaining with thenComparing.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n log n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Sort test results by priority then duration.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class SortEmployees {
+    static class Employee {
+        String name, dept; int salary;
+        Employee(String n, String d, int s) { name=n; dept=d; salary=s; }
+        public String toString() { return name + "(" + dept + "," + salary + ")"; }
+    }
+    public static void main(String[] args) {
+        List&lt;Employee&gt; list = Arrays.asList(
+            new Employee("A","QA",80000), new Employee("B","Dev",90000),
+            new Employee("C","QA",95000), new Employee("D","Dev",85000));
+        list.sort(Comparator.comparing((Employee e) -&gt; e.dept)
+            .thenComparing(e -&gt; e.salary, Comparator.reverseOrder()));
+        System.out.println(list);
+    }
+}</code></pre>
+
+<h3>Q30. Find Pairs with Given Sum</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>EPAM, Globant, LTIMindtree</td></tr>
+<tr><td><strong>Question</strong></td><td>Print all pairs in array summing to target.</td></tr>
+<tr><td><strong>Approach</strong></td><td>HashSet tracks seen; check target - num.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Pairwise config keys for matrix testing.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class PairsWithSum {
+    public static void findPairs(int[] arr, int target) {
+        Set&lt;Integer&gt; seen = new HashSet&lt;&gt;();
+        for (int n : arr) {
+            if (seen.contains(target - n)) System.out.println((target - n) + " + " + n);
+            seen.add(n);
+        }
+    }
+    public static void main(String[] args) {
+        findPairs(new int[]{1, 5, 7, -1, 5}, 6);
+    }
+}</code></pre>
+
+<h3>PRODUCT COMPANIES (Amazon, Google, Microsoft, Flipkart)</h3>
+
+<h3>Q31. Two Sum with HashMap O(n)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Amazon, Google, Microsoft</td></tr>
+<tr><td><strong>Question</strong></td><td>Optimal Two Sum — single pass HashMap.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Store value-&gt;index; lookup complement each step.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Always state brute force first, then optimize — product pattern.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class TwoSumOptimal {
+    public static int[] twoSum(int[] nums, int target) {
+        Map&lt;Integer, Integer&gt; idx = new HashMap&lt;&gt;();
+        for (int i = 0; i &lt; nums.length; i++) {
+            int comp = target - nums[i];
+            if (idx.containsKey(comp)) return new int[]{idx.get(comp), i};
+            idx.put(nums[i], i);
+        }
+        return new int[]{};
+    }
+    public static void main(String[] args) {
+        System.out.println(Arrays.toString(twoSum(new int[]{3,2,4}, 6)));
+    }
+}</code></pre>
+
+<h3>Q32. Three Sum Problem</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Amazon, Google, Flipkart</td></tr>
+<tr><td><strong>Question</strong></td><td>Find all unique triplets summing to zero.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Sort + fix one element + two-pointer on remainder.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n²)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1) excluding output</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Skip duplicate values at i, lo, hi to avoid duplicate triplets.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class ThreeSum {
+    public static List&lt;List&lt;Integer&gt;&gt; threeSum(int[] nums) {
+        Arrays.sort(nums);
+        List&lt;List&lt;Integer&gt;&gt; res = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; nums.length - 2; i++) {
+            if (i &gt; 0 &amp;&amp; nums[i] == nums[i-1]) continue;
+            int lo = i + 1, hi = nums.length - 1;
+            while (lo &lt; hi) {
+                int sum = nums[i] + nums[lo] + nums[hi];
+                if (sum == 0) {
+                    res.add(Arrays.asList(nums[i], nums[lo], nums[hi]));
+                    while (lo &lt; hi &amp;&amp; nums[lo] == nums[lo+1]) lo++;
+                    while (lo &lt; hi &amp;&amp; nums[hi] == nums[hi-1]) hi--;
+                    lo++; hi--;
+                } else if (sum &lt; 0) lo++; else hi--;
+            }
+        }
+        return res;
+    }
+    public static void main(String[] args) {
+        System.out.println(threeSum(new int[]{-1,0,1,2,-1,-4}));
+    }
+}</code></pre>
+
+<h3>Q33. Sliding Window Maximum</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Amazon, Microsoft</td></tr>
+<tr><td><strong>Question</strong></td><td>Find max in each sliding window of size k.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Monotonic deque storing indices in decreasing value order.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(k)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Advanced but frequently asked at product companies.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class SlidingWindowMax {
+    public static int[] maxSlidingWindow(int[] nums, int k) {
+        Deque&lt;Integer&gt; dq = new ArrayDeque&lt;&gt;();
+        int[] result = new int[nums.length - k + 1];
+        for (int i = 0; i &lt; nums.length; i++) {
+            while (!dq.isEmpty() &amp;&amp; dq.peekFirst() &lt;= i - k) dq.pollFirst();
+            while (!dq.isEmpty() &amp;&amp; nums[dq.peekLast()] &lt;= nums[i]) dq.pollLast();
+            dq.offerLast(i);
+            if (i &gt;= k - 1) result[i - k + 1] = nums[dq.peekFirst()];
+        }
+        return result;
+    }
+    public static void main(String[] args) {
+        System.out.println(Arrays.toString(maxSlidingWindow(new int[]{1,3,-1,-3,5,3,6,7}, 3)));
+    }
+}</code></pre>
+
+<h3>Q34. LRU Cache Design</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Google, Amazon</td></tr>
+<tr><td><strong>Question</strong></td><td>Design LRU cache with O(1) get and put.</td></tr>
+<tr><td><strong>Approach</strong></td><td>HashMap + doubly linked list for order.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(1) per operation</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(capacity)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Same pattern as caching Page Object elements or API responses.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class LRUCache {
+    class Node { int key, val; Node prev, next; Node(int k, int v){key=k;val=v;} }
+    private final int cap;
+    private final Map&lt;Integer, Node&gt; map = new HashMap&lt;&gt;();
+    private final Node head = new Node(0,0), tail = new Node(0,0);
+    public LRUCache(int capacity) { cap = capacity; head.next = tail; tail.prev = head; }
+    public int get(int key) {
+        if (!map.containsKey(key)) return -1;
+        Node n = map.get(key); moveToHead(n); return n.val;
+    }
+    public void put(int key, int value) {
+        if (map.containsKey(key)) { map.get(key).val = value; moveToHead(map.get(key)); }
+        else {
+            Node n = new Node(key, value); map.put(key, n); addToHead(n);
+            if (map.size() &gt; cap) { Node rem = tail.prev; remove(rem); map.remove(rem.key); }
+        }
+    }
+    private void moveToHead(Node n){ remove(n); addToHead(n); }
+    private void addToHead(Node n){ n.prev=head; n.next=head.next; head.next.prev=n; head.next=n; }
+    private void remove(Node n){ n.prev.next=n.next; n.next.prev=n.prev; }
+}</code></pre>
+
+<h3>Q35. Stack using Queue</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Microsoft, Flipkart</td></tr>
+<tr><td><strong>Question</strong></td><td>Implement stack using one or two queues.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Push-costly: enqueue then rotate size-1 times.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n) push, O(1) pop</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Shows ADT conversion — relate to custom event queues.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class StackUsingQueue {
+    private Queue&lt;Integer&gt; q = new LinkedList&lt;&gt;();
+    public void push(int x) {
+        q.offer(x);
+        for (int i = 0; i &lt; q.size() - 1; i++) q.offer(q.poll());
+    }
+    public int pop() { return q.poll(); }
+    public int top() { return q.peek(); }
+    public boolean empty() { return q.isEmpty(); }
+    public static void main(String[] args) {
+        StackUsingQueue s = new StackUsingQueue();
+        s.push(1); s.push(2);
+        System.out.println(s.top()); System.out.println(s.pop());
+    }
+}</code></pre>
+
+<h3>Q36. Binary Search Variations</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Google, Amazon</td></tr>
+<tr><td><strong>Question</strong></td><td>Find target in sorted array; know first/last occurrence variants.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Standard binary search with lo, hi, mid.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(log n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Also know search in rotated sorted array.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>public class BinarySearch {
+    public static int search(int[] arr, int target) {
+        int lo = 0, hi = arr.length - 1;
+        while (lo &lt;= hi) {
+            int mid = lo + (hi - lo) / 2;
+            if (arr[mid] == target) return mid;
+            if (arr[mid] &lt; target) lo = mid + 1; else hi = mid - 1;
+        }
+        return -1;
+    }
+    public static void main(String[] args) {
+        System.out.println(search(new int[]{1,3,5,7,9}, 7));
+    }
+}</code></pre>
+<h4>Alternative Approach</h4>
+<p>First occurrence: when found, set <code>hi = mid - 1</code> and save answer.</p>
+
+<h3>Q37. Linked List Cycle Detection (Floyd's)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Amazon, Microsoft</td></tr>
+<tr><td><strong>Question</strong></td><td>Detect if a linked list has a cycle.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Slow and fast pointers — meet if cycle exists.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Detect infinite retry loops in flaky test handlers.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>public class LinkedListCycle {
+    static class Node { int val; Node next; Node(int v){val=v;} }
+    public static boolean hasCycle(Node head) {
+        Node slow = head, fast = head;
+        while (fast != null &amp;&amp; fast.next != null) {
+            slow = slow.next; fast = fast.next.next;
+            if (slow == fast) return true;
+        }
+        return false;
+    }
+    public static void main(String[] args) {
+        Node n1 = new Node(1), n2 = new Node(2), n3 = new Node(3);
+        n1.next = n2; n2.next = n3; n3.next = n2;
+        System.out.println(hasCycle(n1));
+    }
+}</code></pre>
+
+<h3>Q38. Word Ladder Problem</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Google, Amazon</td></tr>
+<tr><td><strong>Question</strong></td><td>Shortest transformation from beginWord to endWord.</td></tr>
+<tr><td><strong>Approach</strong></td><td>BFS — try changing each char to a-z.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(M² × N)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(M × N)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Explain BFS shortest path with queue + visited set.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.*;
+public class WordLadder {
+    public static int ladderLength(String begin, String end, List&lt;String&gt; wordList) {
+        Set&lt;String&gt; dict = new HashSet&lt;&gt;(wordList);
+        if (!dict.contains(end)) return 0;
+        Queue&lt;String&gt; q = new LinkedList&lt;&gt;();
+        q.offer(begin);
+        int level = 1;
+        while (!q.isEmpty()) {
+            int size = q.size();
+            for (int i = 0; i &lt; size; i++) {
+                char[] word = q.poll().toCharArray();
+                for (int j = 0; j &lt; word.length; j++) {
+                    char orig = word[j];
+                    for (char c = 'a'; c &lt;= 'z'; c++) {
+                        word[j] = c;
+                        String next = new String(word);
+                        if (next.equals(end)) return level + 1;
+                        if (dict.contains(next)) { q.offer(next); dict.remove(next); }
+                    }
+                    word[j] = orig;
+                }
+            }
+            level++;
+        }
+        return 0;
+    }
+}</code></pre>
+
+<h3>Q39. Roman to Integer</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Amazon, Flipkart</td></tr>
+<tr><td><strong>Question</strong></td><td>Convert Roman numeral string to integer.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Subtract if smaller symbol precedes larger.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Parse config version strings in legacy test env files.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.util.Map;
+public class RomanToInt {
+    public static int romanToInt(String s) {
+        Map&lt;Character, Integer&gt; map = Map.of(
+            'I',1,'V',5,'X',10,'L',50,'C',100,'D',500,'M',1000);
+        int total = 0;
+        for (int i = 0; i &lt; s.length(); i++) {
+            int val = map.get(s.charAt(i));
+            if (i + 1 &lt; s.length() &amp;&amp; val &lt; map.get(s.charAt(i + 1))) total -= val;
+            else total += val;
+        }
+        return total;
+    }
+    public static void main(String[] args) {
+        System.out.println(romanToInt("MCMXCIV"));
+    }
+}</code></pre>
+
+<h3>Q40. Integer to Roman</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Amazon, Microsoft</td></tr>
+<tr><td><strong>Question</strong></td><td>Convert integer to Roman numeral.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Greedy with value-symbol pairs including subtractive forms.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Predefine pairs: 900, 400, 90, 40, 9, 4, 1.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>public class IntToRoman {
+    public static String intToRoman(int num) {
+        int[] vals = {1000,900,500,400,100,90,50,40,10,9,5,4,1};
+        String[] syms = {"M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"};
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i &lt; vals.length; i++)
+            while (num &gt;= vals[i]) { sb.append(syms[i]); num -= vals[i]; }
+        return sb.toString();
+    }
+    public static void main(String[] args) {
+        System.out.println(intToRoman(1994));
+    }
+}</code></pre>
+
+<h3>SDET-SPECIFIC (Framework / Automation Focused)</h3>
+
+<h3>Q41. Write Singleton DriverFactory</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>All SDET interviews</td></tr>
+<tr><td><strong>Question</strong></td><td>Thread-safe singleton WebDriver factory reading browser from config.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Double-checked locking with volatile instance.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Explain why singleton alone fails in parallel — lead to ThreadLocal (Q42).</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+public class DriverFactory {
+    private static volatile DriverFactory instance;
+    private WebDriver driver;
+
+    private DriverFactory() {}
+
+    public static DriverFactory getInstance() {
+        if (instance == null) {
+            synchronized (DriverFactory.class) {
+                if (instance == null) instance = new DriverFactory();
+            }
+        }
+        return instance;
+    }
+
+    public WebDriver getDriver(String browser) {
+        if (driver == null) {
+            driver = "firefox".equalsIgnoreCase(browser)
+                ? new FirefoxDriver() : new ChromeDriver();
+        }
+        return driver;
+    }
+
+    public void quitDriver() {
+        if (driver != null) { driver.quit(); driver = null; }
+    }
+}</code></pre>
+
+<h3>Q42. Write ThreadLocal WebDriver Manager</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>SDET 4+ years</td></tr>
+<tr><td><strong>Question</strong></td><td>Isolated WebDriver per TestNG thread for parallel execution.</td></tr>
+<tr><td><strong>Approach</strong></td><td>ThreadLocal set in @BeforeMethod, remove in @AfterMethod.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(threads)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Standard production pattern — always call remove() to prevent leaks.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class DriverManager {
+    private static final ThreadLocal&lt;WebDriver&gt; DRIVER = new ThreadLocal&lt;&gt;();
+
+    public static void setDriver(String browser) {
+        WebDriver driver = new ChromeDriver(); // extend for browser switch
+        DRIVER.set(driver);
+    }
+
+    public static WebDriver getDriver() {
+        WebDriver driver = DRIVER.get();
+        if (driver == null)
+            throw new IllegalStateException("WebDriver not initialized for thread");
+        return driver;
+    }
+
+    public static void removeDriver() {
+        WebDriver driver = DRIVER.get();
+        if (driver != null) driver.quit();
+        DRIVER.remove();
+    }
+}</code></pre>
+
+<h3>Q43. Create Custom Retry Mechanism</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>SDET / Lead interviews</td></tr>
+<tr><td><strong>Question</strong></td><td>Retry failed tests n times with configurable count.</td></tr>
+<tr><td><strong>Approach</strong></td><td>TestNG IRetryAnalyzer + IAnnotationTransformer.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(attempts)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Discuss idempotent tests and screenshot on final failure only.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import org.testng.IRetryAnalyzer;
+import org.testng.ITestResult;
+
+public class RetryAnalyzer implements IRetryAnalyzer {
+    private int count = 0;
+    private static final int MAX = 2;
+
+    @Override
+    public boolean retry(ITestResult result) {
+        if (count &lt; MAX) { count++; return true; }
+        return false;
+    }
+}
+// Usage: @Test(retryAnalyzer = RetryAnalyzer.class)</code></pre>
+
+<h3>Q44. Design Data-Driven Framework Utility</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>SDET interviews</td></tr>
+<tr><td><strong>Question</strong></td><td>Read test data and feed TestNG @DataProvider.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Return Object[][] from List&lt;Map&lt;String,String&gt;&gt;.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(rows × cols)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(rows × cols)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Separate data layer from test logic — core framework principle.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import org.testng.annotations.DataProvider;
+import java.util.*;
+
+public class DataDrivenUtil {
+    public static List&lt;Map&lt;String, String&gt;&gt; readTestData() {
+        List&lt;Map&lt;String, String&gt;&gt; rows = new ArrayList&lt;&gt;();
+        rows.add(Map.of("username", "admin", "password", "pass123"));
+        rows.add(Map.of("username", "guest", "password", "guest"));
+        return rows;
+    }
+
+    @DataProvider(name = "loginData")
+    public Object[][] loginData() {
+        List&lt;Map&lt;String, String&gt;&gt; data = readTestData();
+        Object[][] out = new Object[data.size()][1];
+        for (int i = 0; i &lt; data.size(); i++) out[i][0] = data.get(i);
+        return out;
+    }
+}</code></pre>
+
+<h3>Q45. Parse JSON and Extract Values</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>API + UI hybrid SDET</td></tr>
+<tr><td><strong>Question</strong></td><td>Read JSON test data and extract nested field values.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Jackson ObjectMapper + JsonNode navigation.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(n)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Standard in REST Assured + JSON-driven UI test data.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class JsonParserUtil {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    public static String extract(String json, String field) throws Exception {
+        JsonNode root = MAPPER.readTree(json);
+        return root.get(field).asText();
+    }
+
+    public static void main(String[] args) throws Exception {
+        String json = "{\"user\":{\"name\":\"sdet\",\"role\":\"automation\"}}";
+        JsonNode node = MAPPER.readTree(json);
+        System.out.println(node.get("user").get("role").asText());
+    }
+}</code></pre>
+
+<h3>Q46. Read Excel and Return List&lt;Map&gt;</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Data-driven framework interviews</td></tr>
+<tr><td><strong>Question</strong></td><td>Apache POI reads .xlsx into List&lt;Map&lt;String,String&gt;&gt;.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Row 0 = headers; each row becomes a Map.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(rows × cols)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(rows × cols)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Most common data-driven pattern in Java Selenium interviews.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.FileInputStream;
+import java.util.*;
+
+public class ExcelReader {
+    public static List&lt;Map&lt;String, String&gt;&gt; read(String path, String sheetName) throws Exception {
+        List&lt;Map&lt;String, String&gt;&gt; data = new ArrayList&lt;&gt;();
+        try (Workbook wb = new XSSFWorkbook(new FileInputStream(path))) {
+            Sheet sheet = wb.getSheet(sheetName);
+            Row header = sheet.getRow(0);
+            for (int i = 1; i &lt;= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                Map&lt;String, String&gt; map = new LinkedHashMap&lt;&gt;();
+                for (int j = 0; j &lt; header.getLastCellNum(); j++)
+                    map.put(header.getCell(j).getStringCellValue(),
+                            row.getCell(j).getStringCellValue());
+                data.add(map);
+            }
+        }
+        return data;
+    }
+}</code></pre>
+
+<h3>Q47. Write Custom Wait Utility</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Selenium framework interviews</td></tr>
+<tr><td><strong>Question</strong></td><td>Fluent wait wrapper with logging and config-driven timeout.</td></tr>
+<tr><td><strong>Approach</strong></td><td>WebDriverWait + ExpectedConditions + polling interval.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(wait time)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Never use Thread.sleep — always explicit waits in framework code.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.*;
+import java.time.Duration;
+
+public class WaitUtil {
+    public static WebElement waitVisible(WebDriver driver, By locator, int seconds) {
+        return new WebDriverWait(driver, Duration.ofSeconds(seconds))
+            .pollingEvery(Duration.ofMillis(500))
+            .until(ExpectedConditions.visibilityOfElementLocated(locator));
+    }
+}</code></pre>
+
+<h3>Q48. Implement Builder Pattern for Test Config</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Senior SDET</td></tr>
+<tr><td><strong>Question</strong></td><td>Immutable TestConfig built step-by-step with Builder.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Static nested Builder with chained setters.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Keeps BaseTest setup readable: browser, url, headless flags.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>public class TestConfig {
+    private final String browser, url;
+    private final boolean headless;
+
+    private TestConfig(Builder b) { browser=b.browser; url=b.url; headless=b.headless; }
+    public String getBrowser(){ return browser; }
+    public String getUrl(){ return url; }
+    public boolean isHeadless(){ return headless; }
+
+    public static class Builder {
+        private String browser = "chrome", url = "about:blank";
+        private boolean headless = false;
+        public Builder browser(String v){ browser=v; return this; }
+        public Builder url(String v){ url=v; return this; }
+        public Builder headless(boolean v){ headless=v; return this; }
+        public TestConfig build(){ return new TestConfig(this); }
+    }
+
+    public static void main(String[] args) {
+        TestConfig cfg = new TestConfig.Builder()
+            .browser("chrome").url("https://qa.app.com").headless(true).build();
+        System.out.println(cfg.getUrl());
+    }
+}</code></pre>
+
+<h3>Q49. Create Custom Annotation Processor</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>Lead SDET / Architect</td></tr>
+<tr><td><strong>Question</strong></td><td>@RetryCount meta-annotation read via reflection in TestNG listener.</td></tr>
+<tr><td><strong>Approach</strong></td><td>RetentionPolicy.RUNTIME + IInvokedMethodListener.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Shows framework extensibility beyond basic Page Object Model.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Method;
+
+@Retention(RetentionPolicy.RUNTIME)
+@interface RetryCount { int value() default 1; }
+
+public class AnnotationProcessor {
+    public static int getRetryCount(Method method) {
+        if (method.isAnnotationPresent(RetryCount.class))
+            return method.getAnnotation(RetryCount.class).value();
+        return 1;
+    }
+}
+// @Test @RetryCount(3) public void flakyLoginTest() { ... }</code></pre>
+
+<h3>Q50. Design Page Object Base Class</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><strong>Company</strong></td><td>All SDET levels</td></tr>
+<tr><td><strong>Question</strong></td><td>Abstract BasePage with driver, wait, and common actions.</td></tr>
+<tr><td><strong>Approach</strong></td><td>Constructor injection + PageFactory.initElements.</td></tr>
+<tr><td><strong>Time Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Space Complexity</strong></td><td>O(1)</td></tr>
+<tr><td><strong>Interview Tip</strong></td><td>Core POM pattern — every SDET must whiteboard this confidently.</td></tr>
+</tbody></table></div>
+<h4>Complete Solution Code</h4>
+<pre><code>import org.openqa.selenium.*;
+import org.openqa.selenium.support.*;
+import org.openqa.selenium.support.ui.*;
+import java.time.Duration;
+
+public abstract class BasePage {
+    protected WebDriver driver;
+    protected WebDriverWait wait;
+
+    protected BasePage(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        PageFactory.initElements(driver, this);
+    }
+
+    protected void click(WebElement element) {
+        wait.until(d -&gt; element.isDisplayed() &amp;&amp; element.isEnabled());
+        element.click();
+    }
+
+    protected void type(WebElement element, String text) {
+        wait.until(d -&gt; element.isDisplayed());
+        element.clear();
+        element.sendKeys(text);
+    }
+}</code></pre>
+
+</section>
+
+<section id="section-23" class="section-card">
+<h2>Section 23: Java Cheat Sheet for Automation Engineers</h2>
+<p>Quick reference tables optimized for automation interviews. Memorize framework usage columns — interviewers expect you to connect Java concepts to Selenium, TestNG, and CI pipelines.</p>
+
+<h3>OOP Concepts</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Concept</th><th>Definition</th><th>Framework Usage</th><th>Key Interview Point</th></tr></thead>
+<tbody>
+<tr><td><strong>Encapsulation</strong></td><td>Hide data; expose via methods</td><td>Private WebDriver in BasePage; public getDriver()</td><td>"Page Objects hide locators from tests"</td></tr>
+<tr><td><strong>Inheritance</strong></td><td>Child extends parent class</td><td>LoginPage extends BasePage</td><td>"Reuse wait/click helpers across all pages"</td></tr>
+<tr><td><strong>Polymorphism</strong></td><td>Same method, different behavior</td><td>WebDriver driver = new ChromeDriver() or FirefoxDriver()</td><td>"Tests depend on WebDriver interface, not ChromeDriver"</td></tr>
+<tr><td><strong>Abstraction</strong></td><td>Hide implementation details</td><td>Abstract BasePage; interface DriverFactory</td><td>"Tests call login(), not findElement logic"</td></tr>
+<tr><td><strong>Composition</strong></td><td>Has-a relationship</td><td>Test class has LoginPage instance</td><td>"Prefer composition over deep inheritance hierarchies"</td></tr>
+<tr><td><strong>Overloading</strong></td><td>Same method name, different params</td><td>click(By) and click(WebElement) overloads</td><td>"Compile-time polymorphism — different signatures"</td></tr>
+<tr><td><strong>Overriding</strong></td><td>Subclass redefines parent method</td><td>@BeforeMethod setup() overridden in child BaseTest</td><td>"Runtime polymorphism — @Override annotation required"</td></tr>
+</tbody></table></div>
+
+<h3>Primitive Types</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Size</th><th>Default</th><th>Automation Usage</th></tr></thead>
+<tbody>
+<tr><td><strong>byte</strong></td><td>1 byte</td><td>0</td><td>Rare; binary file reads in upload tests</td></tr>
+<tr><td><strong>short</strong></td><td>2 bytes</td><td>0</td><td>Rare in automation</td></tr>
+<tr><td><strong>int</strong></td><td>4 bytes</td><td>0</td><td>Loop counters, timeout seconds, retry counts</td></tr>
+<tr><td><strong>long</strong></td><td>8 bytes</td><td>0L</td><td>Thread IDs, epoch timestamps in reports</td></tr>
+<tr><td><strong>float</strong></td><td>4 bytes</td><td>0.0f</td><td>Rare; price comparisons need BigDecimal instead</td></tr>
+<tr><td><strong>double</strong></td><td>8 bytes</td><td>0.0d</td><td>Performance metrics, response time averages</td></tr>
+<tr><td><strong>char</strong></td><td>2 bytes</td><td>'\u0000'</td><td>Parsing single-char delimiters in CSV data</td></tr>
+<tr><td><strong>boolean</strong></td><td>1 bit</td><td>false</td><td>headless flag, isDisplayed checks, test pass/fail</td></tr>
+</tbody></table></div>
+
+<h3>String Methods</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Method</th><th>Return</th><th>Description</th><th>Automation Usage</th></tr></thead>
+<tbody>
+<tr><td><strong>length()</strong></td><td>int</td><td>Number of characters</td><td>Validate input field max length</td></tr>
+<tr><td><strong>charAt(i)</strong></td><td>char</td><td>Char at index</td><td>Parse fixed-format test IDs</td></tr>
+<tr><td><strong>substring(a,b)</strong></td><td>String</td><td>Extract portion</td><td>Extract order ID from confirmation text</td></tr>
+<tr><td><strong>toLowerCase()</strong></td><td>String</td><td>Lowercase copy</td><td>Case-insensitive assertion on UI text</td></tr>
+<tr><td><strong>trim()</strong></td><td>String</td><td>Remove leading/trailing spaces</td><td>Clean Excel cell values before compare</td></tr>
+<tr><td><strong>split(regex)</strong></td><td>String[]</td><td>Split by delimiter</td><td>Parse CSV test data lines</td></tr>
+<tr><td><strong>contains(s)</strong></td><td>boolean</td><td>Check substring</td><td>Assert page title or URL contains keyword</td></tr>
+<tr><td><strong>equals(s)</strong></td><td>boolean</td><td>Content comparison</td><td>Compare expected vs actual message text</td></tr>
+<tr><td><strong>equalsIgnoreCase(s)</strong></td><td>boolean</td><td>Case-insensitive equals</td><td>Browser name comparison from config</td></tr>
+<tr><td><strong>startsWith / endsWith</strong></td><td>boolean</td><td>Prefix/suffix check</td><td>Validate URL pattern after navigation</td></tr>
+<tr><td><strong>replace(old,new)</strong></td><td>String</td><td>Replace all occurrences</td><td>Sanitize dynamic locator strings</td></tr>
+<tr><td><strong>isEmpty()</strong></td><td>boolean</td><td>True if length 0</td><td>Check mandatory field validation messages</td></tr>
+<tr><td><strong>isBlank()</strong></td><td>boolean</td><td>True if empty or whitespace (Java 11)</td><td>Validate optional form fields</td></tr>
+<tr><td><strong>format()</strong></td><td>String</td><td>Formatted string (String.format)</td><td>Dynamic XPath: String.format("//a[text()='%s']", name)</td></tr>
+<tr><td><strong>join(delimiter, parts)</strong></td><td>String</td><td>Join strings (Java 8)</td><td>Build comma-separated tag list for TestNG groups</td></tr>
+</tbody></table></div>
+
+<h3>Collections</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Ordered</th><th>Duplicates</th><th>Thread-Safe</th><th>Automation Usage</th></tr></thead>
+<tbody>
+<tr><td><strong>ArrayList</strong></td><td>Yes</td><td>Yes</td><td>No</td><td>Store test case names, WebElement lists</td></tr>
+<tr><td><strong>LinkedList</strong></td><td>Yes</td><td>Yes</td><td>No</td><td>Queue for BFS page navigation tests</td></tr>
+<tr><td><strong>HashSet</strong></td><td>No</td><td>No</td><td>No</td><td>Deduplicate test IDs; unique browser tabs</td></tr>
+<tr><td><strong>LinkedHashSet</strong></td><td>Yes</td><td>No</td><td>No</td><td>Unique test tags preserving insertion order</td></tr>
+<tr><td><strong>TreeSet</strong></td><td>Sorted</td><td>No</td><td>No</td><td>Sorted priority list for test execution order</td></tr>
+<tr><td><strong>HashMap</strong></td><td>No</td><td>Keys: No</td><td>No</td><td>Test data key-value; config cache</td></tr>
+<tr><td><strong>LinkedHashMap</strong></td><td>Yes</td><td>Keys: No</td><td>No</td><td>Excel row as ordered column map</td></tr>
+<tr><td><strong>Hashtable</strong></td><td>No</td><td>Keys: No</td><td>Yes</td><td>Legacy; avoid — use ConcurrentHashMap</td></tr>
+<tr><td><strong>ConcurrentHashMap</strong></td><td>No</td><td>Keys: No</td><td>Yes</td><td>Shared test state in parallel Grid runs</td></tr>
+<tr><td><strong>PriorityQueue</strong></td><td>Heap order</td><td>Yes</td><td>No</td><td>Schedule high-priority smoke tests first</td></tr>
+</tbody></table></div>
+
+<h3>HashMap Operations</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Operation</th><th>Method</th><th>Complexity</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Insert/Update</td><td>put(key, val)</td><td>O(1) avg</td><td>data.put("username", "admin")</td></tr>
+<tr><td>Retrieve</td><td>get(key)</td><td>O(1) avg</td><td>data.get("password")</td></tr>
+<tr><td>Check existence</td><td>containsKey(key)</td><td>O(1) avg</td><td>if (map.containsKey("env"))</td></tr>
+<tr><td>Remove</td><td>remove(key)</td><td>O(1) avg</td><td>cache.remove("staleSession")</td></tr>
+<tr><td>Iterate entries</td><td>entrySet()</td><td>O(n)</td><td>for (Map.Entry e : map.entrySet())</td></tr>
+<tr><td>Default if absent</td><td>getOrDefault(k, d)</td><td>O(1) avg</td><td>timeout = map.getOrDefault("timeout", "30")</td></tr>
+<tr><td>Compute if absent</td><td>computeIfAbsent(k, fn)</td><td>O(1) avg</td><td>cache.computeIfAbsent(url, k -&gt; fetchPage(k))</td></tr>
+<tr><td>Merge/increment</td><td>merge(k, v, remappingFn)</td><td>O(1) avg</td><td>failures.merge(testName, 1, Integer::sum)</td></tr>
+</tbody></table></div>
+
+<h3>ArrayList Operations</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Operation</th><th>Method</th><th>Complexity</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Add element</td><td>add(e)</td><td>O(1) amortized</td><td>tests.add("LoginTest")</td></tr>
+<tr><td>Add at index</td><td>add(i, e)</td><td>O(n)</td><td>tests.add(0, "SetupTest")</td></tr>
+<tr><td>Get by index</td><td>get(i)</td><td>O(1)</td><td>tests.get(0)</td></tr>
+<tr><td>Remove by index</td><td>remove(i)</td><td>O(n)</td><td>failedTests.remove(0)</td></tr>
+<tr><td>Size</td><td>size()</td><td>O(1)</td><td>assertEquals(list.size(), 5)</td></tr>
+<tr><td>Contains</td><td>contains(e)</td><td>O(n)</td><td>tags.contains("smoke")</td></tr>
+<tr><td>Clear all</td><td>clear()</td><td>O(n)</td><td>results.clear() between suites</td></tr>
+<tr><td>Convert to array</td><td>toArray()</td><td>O(n)</td><td>String[] arr = list.toArray(new String[0])</td></tr>
+</tbody></table></div>
+
+<h3>Stream Operations</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Operation</th><th>Type</th><th>Returns</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>filter</strong></td><td>Intermediate</td><td>Stream</td><td>tests.stream().filter(t -&gt; t.isFailed())</td></tr>
+<tr><td><strong>map</strong></td><td>Intermediate</td><td>Stream</td><td>tests.stream().map(TestResult::getName)</td></tr>
+<tr><td><strong>sorted</strong></td><td>Intermediate</td><td>Stream</td><td>names.stream().sorted()</td></tr>
+<tr><td><strong>distinct</strong></td><td>Intermediate</td><td>Stream</td><td>tags.stream().distinct()</td></tr>
+<tr><td><strong>limit</strong></td><td>Intermediate</td><td>Stream</td><td>failures.stream().limit(10)</td></tr>
+<tr><td><strong>collect</strong></td><td>Terminal</td><td>Collection</td><td>.collect(Collectors.toList())</td></tr>
+<tr><td><strong>forEach</strong></td><td>Terminal</td><td>void</td><td>tests.forEach(t -&gt; log.info(t.getName()))</td></tr>
+<tr><td><strong>count</strong></td><td>Terminal</td><td>long</td><td>tests.stream().filter(Test::isFailed).count()</td></tr>
+<tr><td><strong>findFirst</strong></td><td>Terminal</td><td>Optional</td><td>tests.stream().filter(t -&gt; t.isFailed()).findFirst()</td></tr>
+<tr><td><strong>anyMatch</strong></td><td>Terminal</td><td>boolean</td><td>results.stream().anyMatch(r -&gt; r.contains("ERROR"))</td></tr>
+<tr><td><strong>reduce</strong></td><td>Terminal</td><td>Object</td><td>times.stream().reduce(0, Integer::sum)</td></tr>
+<tr><td><strong>groupingBy</strong></td><td>Collector</td><td>Map</td><td>tests.stream().collect(Collectors.groupingBy(Test::getStatus))</td></tr>
+</tbody></table></div>
+
+<h3>Exception Keywords</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Keyword</th><th>Purpose</th><th>Syntax</th></tr></thead>
+<tbody>
+<tr><td><strong>try</strong></td><td>Wrap risky code</td><td>try { driver.findElement(by); }</td></tr>
+<tr><td><strong>catch</strong></td><td>Handle exception</td><td>catch (NoSuchElementException e) { screenshot(); }</td></tr>
+<tr><td><strong>finally</strong></td><td>Always executes</td><td>finally { driver.quit(); }</td></tr>
+<tr><td><strong>throw</strong></td><td>Throw exception manually</td><td>throw new RuntimeException("Config missing");</td></tr>
+<tr><td><strong>throws</strong></td><td>Declare checked exception</td><td>void read() throws IOException</td></tr>
+</tbody></table></div>
+
+<h3>Selenium Exceptions</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Exception</th><th>Cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td><strong>NoSuchElementException</strong></td><td>Locator not found in DOM</td><td>Verify locator; add explicit wait</td></tr>
+<tr><td><strong>StaleElementReferenceException</strong></td><td>Element detached after DOM refresh</td><td>Re-find element; use fresh reference</td></tr>
+<tr><td><strong>ElementNotInteractableException</strong></td><td>Element hidden or disabled</td><td>Scroll into view; wait for clickable</td></tr>
+<tr><td><strong>TimeoutException</strong></td><td>Wait condition not met in time</td><td>Increase timeout; fix locator/condition</td></tr>
+<tr><td><strong>ElementClickInterceptedException</strong></td><td>Overlay blocks click</td><td>Close popup; JavaScript click fallback</td></tr>
+<tr><td><strong>NoSuchFrameException</strong></td><td>iframe not found</td><td>Switch to correct frame first</td></tr>
+<tr><td><strong>SessionNotCreatedException</strong></td><td>Driver/browser version mismatch</td><td>Align ChromeDriver with Chrome version</td></tr>
+<tr><td><strong>WebDriverException</strong></td><td>Generic driver failure</td><td>Check Grid node; restart browser</td></tr>
+</tbody></table></div>
+
+<h3>Access Modifiers</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Modifier</th><th>Class</th><th>Package</th><th>Subclass</th><th>World</th></tr></thead>
+<tbody>
+<tr><td><strong>private</strong></td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
+<tr><td><strong>default</strong></td><td>Yes</td><td>Yes</td><td>No</td><td>No</td></tr>
+<tr><td><strong>protected</strong></td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+<tr><td><strong>public</strong></td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+</tbody></table></div>
+
+<h3>Design Patterns</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Pattern</th><th>Purpose</th><th>Framework Usage</th><th>Key Code</th></tr></thead>
+<tbody>
+<tr><td><strong>Singleton</strong></td><td>One instance globally</td><td>ConfigReader, ReportManager</td><td>private static instance; private constructor</td></tr>
+<tr><td><strong>Factory</strong></td><td>Create objects without specifying class</td><td>DriverFactory.createDriver("chrome")</td><td>switch(browser) return new ChromeDriver()</td></tr>
+<tr><td><strong>Page Object</strong></td><td>Encapsulate page UI + actions</td><td>LoginPage.login(user, pass)</td><td>@FindBy + public action methods</td></tr>
+<tr><td><strong>Builder</strong></td><td>Step-by-step object construction</td><td>TestConfig.Builder().browser().url().build()</td><td>Chained setters returning this</td></tr>
+</tbody></table></div>
+
+<h3>ThreadLocal Quick Reference</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Method</th><th>Purpose</th><th>Framework Pattern</th></tr></thead>
+<tbody>
+<tr><td><strong>set(value)</strong></td><td>Bind value to current thread</td><td>DRIVER.set(new ChromeDriver()) in @BeforeMethod</td></tr>
+<tr><td><strong>get()</strong></td><td>Retrieve thread-bound value</td><td>WebDriver d = DRIVER.get() in Page Object</td></tr>
+<tr><td><strong>remove()</strong></td><td>Clear binding; prevent memory leak</td><td>DRIVER.remove() in @AfterMethod after quit()</td></tr>
+</tbody></table></div>
+<div class="callout"><strong>ThreadLocal pattern:</strong> <code>set()</code> in setup → <code>get()</code> throughout test → <code>quit()</code> + <code>remove()</code> in teardown. Never share one WebDriver across parallel threads.</div>
+
+<h3>Java 8 Quick Reference</h3>
+<h4>Lambda Syntax Template</h4>
+<pre><code>(parameters) -&gt; expression
+(parameters) -&gt; { statements; return value; }
+// Example: list.stream().filter(s -&gt; s.startsWith("test"))</code></pre>
+
+<h4>Functional Interfaces</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Interface</th><th>Method</th><th>Usage in Automation</th></tr></thead>
+<tbody>
+<tr><td><strong>Predicate&lt;T&gt;</strong></td><td>boolean test(T t)</td><td>Filter failed tests: t -&gt; t.isFailed()</td></tr>
+<tr><td><strong>Function&lt;T,R&gt;</strong></td><td>R apply(T t)</td><td>Map test name to report URL</td></tr>
+<tr><td><strong>Consumer&lt;T&gt;</strong></td><td>void accept(T t)</td><td>Log each result: r -&gt; log.info(r)</td></tr>
+<tr><td><strong>Supplier&lt;T&gt;</strong></td><td>T get()</td><td>Lazy WebDriver creation: () -&gt; new ChromeDriver()</td></tr>
+</tbody></table></div>
+
+<h4>Stream Pipeline</h4>
+<div class="ascii-diagram"><pre>
+  Source          Intermediate Ops           Terminal Op
+  ──────          ─────────────────          ───────────
+  list.stream() → filter() → map() → sorted() → collect(toList())
+</pre></div>
+
+<h4>Optional Methods</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Method</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><strong>of(value)</strong></td><td>Non-null wrapper</td><td>Optional.of("chrome")</td></tr>
+<tr><td><strong>ofNullable(value)</strong></td><td>Allows null</td><td>Optional.ofNullable(driver.get())</td></tr>
+<tr><td><strong>orElse(default)</strong></td><td>Return value or default</td><td>config.orElse("qa")</td></tr>
+<tr><td><strong>ifPresent(consumer)</strong></td><td>Act if present</td><td>result.ifPresent(r -&gt; assertEquals(r, "PASS"))</td></tr>
+</tbody></table></div>
+
+<h3>Code Templates</h3>
+<h4>Singleton ConfigReader (5 lines)</h4>
+<pre><code>private static Properties prop;
+static { prop = new Properties(); prop.load(new FileInputStream("config.properties")); }
+public static String get(String key) { return prop.getProperty(key); }</code></pre>
+
+<h4>ThreadLocal DriverFactory (8 lines)</h4>
+<pre><code>private static ThreadLocal&lt;WebDriver&gt; driver = new ThreadLocal&lt;&gt;();
+public static void init(String browser) { driver.set(new ChromeDriver()); }
+public static WebDriver get() { return driver.get(); }
+public static void quit() { if (driver.get()!=null) driver.get().quit(); driver.remove(); }</code></pre>
+
+<h4>Stream Filter + Collect (3 lines)</h4>
+<pre><code>List&lt;String&gt; failed = results.stream()
+    .filter(r -&gt; "FAIL".equals(r.getStatus()))
+    .map(TestResult::getName).collect(Collectors.toList());</code></pre>
+
+<h4>HashMap Frequency Count (4 lines)</h4>
+<pre><code>Map&lt;String, Integer&gt; freq = new HashMap&lt;&gt;();
+for (String s : failures) freq.merge(s, 1, Integer::sum);
+freq.forEach((k,v) -&gt; System.out.println(k + ": " + v));</code></pre>
+
+<h3>Quick Interview Snippets</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Scenario</th><th>Java Construct</th><th>One-Liner</th></tr></thead>
+<tbody>
+<tr><td>Read config property</td><td>Properties</td><td><code>prop.getProperty("browser", "chrome")</code></td></tr>
+<tr><td>Filter failed tests</td><td>Stream + filter</td><td><code>results.stream().filter(r -&gt; r.isFailed()).count()</code></td></tr>
+<tr><td>Unique test tags</td><td>HashSet</td><td><code>new HashSet&lt;&gt;(Arrays.asList(tags))</code></td></tr>
+<tr><td>Safe null config</td><td>Optional</td><td><code>Optional.ofNullable(url).orElse("about:blank")</code></td></tr>
+<tr><td>Sort by duration</td><td>Comparator</td><td><code>list.sort(Comparator.comparing(Test::getDuration))</code></td></tr>
+<tr><td>Parallel-safe map</td><td>ConcurrentHashMap</td><td><code>Map&lt;String, Object&gt; ctx = new ConcurrentHashMap&lt;&gt;()</code></td></tr>
+</tbody></table></div>
+
+<div class="callout"><strong>Interview hack:</strong> When asked any Java concept, answer with: Definition → Syntax → Automation example → Trade-off. This structure scores consistently in SDET rounds.</div>
+
+</section>
+
+<section id="section-24" class="section-card">
+<h2>Section 24: 1-Day Interview Revision Notes</h2>
+<p>Condensed revision for SDET interviews — read once in the morning, practice 5 coding problems in the afternoon, mock framework design in the evening.</p>
+
+<h3>Top 25 Most Asked Java Questions for SDET</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Question</th><th>2-Line Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>What is JDK vs JRE vs JVM?</td><td>JDK compiles and develops; JRE runs apps; JVM executes bytecode. Automation needs JDK on CI for Maven compilation.</td></tr>
+<tr><td>2</td><td>Why is String immutable?</td><td>Security (credentials), thread safety (String pool), and hash stability. Use StringBuilder for loop concatenation in report builders.</td></tr>
+<tr><td>3</td><td>== vs .equals()?</td><td>== compares references; equals() compares content. Always use equals() for String comparison in assertions.</td></tr>
+<tr><td>4</td><td>What is method overloading?</td><td>Same method name, different parameters — compile time. Example: click(By) and click(WebElement) in BasePage.</td></tr>
+<tr><td>5</td><td>What is method overriding?</td><td>Subclass redefines parent method — runtime polymorphism. Example: @BeforeMethod setup() in child BaseTest.</td></tr>
+<tr><td>6</td><td>Abstract class vs Interface?</td><td>Abstract class: partial implementation + state. Interface: contract only (Java 8+ default methods). DriverFactory often uses interface.</td></tr>
+<tr><td>7</td><td>What is encapsulation?</td><td>Hide fields, expose via getters/setters. Page Objects hide WebElement locators from test classes.</td></tr>
+<tr><td>8</td><td>Checked vs Unchecked exception?</td><td>Checked: must handle (IOException). Unchecked: RuntimeException (NoSuchElementException). Selenium throws mostly unchecked.</td></tr>
+<tr><td>9</td><td>What is final keyword?</td><td>final class = no inheritance; final method = no override; final variable = constant. Config URLs often final static.</td></tr>
+<tr><td>10</td><td>What is static keyword?</td><td>Belongs to class, not instance. ConfigReader.get() is static — shared across all tests in JVM.</td></tr>
+<tr><td>11</td><td>How does HashMap work internally?</td><td>Array of buckets; hashCode → bucket index; collision via linked list/tree (Java 8). O(1) average get/put.</td></tr>
+<tr><td>12</td><td>ArrayList vs LinkedList?</td><td>ArrayList: fast random access O(1). LinkedList: fast insert/delete O(1). Use ArrayList for test name lists.</td></tr>
+<tr><td>13</td><td>What is ThreadLocal?</td><td>Thread-bound variable storage. Each TestNG thread gets its own WebDriver instance via ThreadLocal.</td></tr>
+<tr><td>14</td><td>What is synchronized?</td><td>Lock for thread-safe access. Rare in tests; prefer ThreadLocal over synchronized WebDriver access.</td></tr>
+<tr><td>15</td><td>What are Java 8 lambdas?</td><td>Anonymous functions enabling functional-style code. Filter failed tests: results.stream().filter(r -&gt; r.isFailed()).</td></tr>
+<tr><td>16</td><td>What is Optional?</td><td>Container avoiding NullPointerException. findFirst() returns Optional — use orElse/orElseThrow safely.</td></tr>
+<tr><td>17</td><td>Comparable vs Comparator?</td><td>Comparable: natural order (implements compareTo). Comparator: custom order. Sort tests by duration with Comparator.</td></tr>
+<tr><td>18</td><td>What is garbage collection?</td><td>JVM reclaims unreferenced objects. driver.quit() releases browser; null references help GC reclaim memory.</td></tr>
+<tr><td>19</td><td>What is autoboxing?</td><td>Primitive ↔ wrapper automatic conversion. int ↔ Integer in collections and stream operations.</td></tr>
+<tr><td>20</td><td>What is serialization?</td><td>Object → byte stream for storage/transmission. Save Cucumber test context or session cookies to file.</td></tr>
+<tr><td>21</td><td>What is reflection?</td><td>Inspect/modify classes at runtime. TestNG uses reflection to invoke @Test methods; read custom annotations.</td></tr>
+<tr><td>22</td><td>What is Singleton pattern?</td><td>One instance per JVM. ConfigReader and ReportManager — but NOT WebDriver in parallel (use ThreadLocal).</td></tr>
+<tr><td>23</td><td>What is Factory pattern?</td><td>Centralized object creation. DriverFactory.createDriver(browser) returns correct WebDriver implementation.</td></tr>
+<tr><td>24</td><td>What is Builder pattern?</td><td>Step-by-step object construction. TestConfig.Builder().browser("chrome").url(url).build().</td></tr>
+<tr><td>25</td><td>What is Page Object Model?</td><td>UI locators + actions in page classes; tests call business methods. Reduces duplication and maintenance cost.</td></tr>
+</tbody></table></div>
+
+<h3>Top 25 Most Asked Coding Questions</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Question</th><th>Approach Hint</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Reverse a String</td><td>Two pointers on char[] or StringBuilder.reverse()</td></tr>
+<tr><td>2</td><td>Check Palindrome</td><td>Two pointers; skip non-alphanumeric</td></tr>
+<tr><td>3</td><td>Find duplicate in array</td><td>HashSet or Floyd cycle detection</td></tr>
+<tr><td>4</td><td>Two Sum</td><td>HashMap complement lookup O(n)</td></tr>
+<tr><td>5</td><td>Valid parentheses</td><td>Stack push open, pop match close</td></tr>
+<tr><td>6</td><td>First non-repeated char</td><td>LinkedHashMap frequency count</td></tr>
+<tr><td>7</td><td>Anagram check</td><td>Sort both strings or char frequency array</td></tr>
+<tr><td>8</td><td>Find missing number</td><td>Gauss sum: n*(n+1)/2 - actual sum</td></tr>
+<tr><td>9</td><td>Merge sorted arrays</td><td>Two pointers compare and copy</td></tr>
+<tr><td>10</td><td>Move zeros to end</td><td>Two-pointer write index for non-zeros</td></tr>
+<tr><td>11</td><td>Maximum subarray sum</td><td>Kadane's algorithm — track current and best</td></tr>
+<tr><td>12</td><td>Longest substring without repeat</td><td>Sliding window + HashSet</td></tr>
+<tr><td>13</td><td>Binary search</td><td>lo, hi, mid — narrow range each step</td></tr>
+<tr><td>14</td><td>Reverse linked list</td><td>Three pointers: prev, curr, next</td></tr>
+<tr><td>15</td><td>Detect cycle in linked list</td><td>Floyd slow/fast pointers</td></tr>
+<tr><td>16</td><td>Sort HashMap by value</td><td>Stream sorted + collect to LinkedHashMap</td></tr>
+<tr><td>17</td><td>Character frequency</td><td>HashMap.merge(c, 1, Integer::sum)</td></tr>
+<tr><td>18</td><td>Find second largest</td><td>Track first and second in one pass</td></tr>
+<tr><td>19</td><td>Rotate array by K</td><td>Reverse whole array, then two segments</td></tr>
+<tr><td>20</td><td>Group anagrams</td><td>HashMap key = sorted string</td></tr>
+<tr><td>21</td><td>ThreadLocal WebDriver</td><td>set in @BeforeMethod, remove in @AfterMethod</td></tr>
+<tr><td>22</td><td>Singleton ConfigReader</td><td>Static block loads properties once</td></tr>
+<tr><td>23</td><td>Read Excel to List&lt;Map&gt;</td><td>Apache POI: row 0 headers, data rows to maps</td></tr>
+<tr><td>24</td><td>Custom retry analyzer</td><td>IRetryAnalyzer with retry count limit</td></tr>
+<tr><td>25</td><td>BasePage design</td><td>Constructor WebDriver + PageFactory + wait helpers</td></tr>
+</tbody></table></div>
+
+<h3>Frequently Confused Topics</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Topic A</th><th>Topic B</th><th>Key Difference</th><th>Automation Example</th></tr></thead>
+<tbody>
+<tr><td>==</td><td>.equals()</td><td>Reference vs content equality</td><td>Compare expected message text with equals()</td></tr>
+<tr><td>String</td><td>StringBuilder</td><td>Immutable vs mutable</td><td>Build dynamic XPath in loop with StringBuilder</td></tr>
+<tr><td>StringBuilder</td><td>StringBuffer</td><td>Not thread-safe vs thread-safe</td><td>StringBuilder in single-thread test; StringBuffer in parallel report builder</td></tr>
+<tr><td>ArrayList</td><td>LinkedList</td><td>Array-backed vs node chain</td><td>ArrayList for test case list; LinkedList for BFS crawl queue</td></tr>
+<tr><td>HashMap</td><td>Hashtable</td><td>Not sync vs synchronized; null allowed vs not</td><td>HashMap for test data; avoid Hashtable</td></tr>
+<tr><td>HashMap</td><td>ConcurrentHashMap</td><td>Not thread-safe vs thread-safe</td><td>ConcurrentHashMap for shared parallel test state</td></tr>
+<tr><td>HashSet</td><td>TreeSet</td><td>Unordered vs sorted; O(1) vs O(log n)</td><td>HashSet for unique tags; TreeSet for sorted priority</td></tr>
+<tr><td>HashSet</td><td>LinkedHashSet</td><td>No order vs insertion order</td><td>LinkedHashSet for unique tests in run order</td></tr>
+<tr><td>Abstract Class</td><td>Interface</td><td>Can have state + partial impl vs contract</td><td>BasePage abstract; WebDriver is interface</td></tr>
+<tr><td>Overloading</td><td>Overriding</td><td>Same class, diff params vs subclass redefines</td><td>click(By) overload vs @BeforeMethod override</td></tr>
+<tr><td>Checked</td><td>Unchecked Exception</td><td>Must handle vs optional handle</td><td>IOException reading Excel vs NoSuchElementException</td></tr>
+<tr><td>final</td><td>finally</td><td>Keyword vs block</td><td>final static URL; finally { driver.quit(); }</td></tr>
+<tr><td>finally</td><td>finalize()</td><td>Always runs vs GC callback (deprecated)</td><td>Use finally for cleanup, never rely on finalize()</td></tr>
+<tr><td>static</td><td>instance variable</td><td>Class-level vs object-level</td><td>static config vs instance Page Object fields</td></tr>
+<tr><td>Comparable</td><td>Comparator</td><td>Natural order vs custom order</td><td>Sort tests by name vs by duration</td></tr>
+<tr><td>Thread</td><td>Runnable</td><td>Class extends Thread vs implements Runnable</td><td>TestNG uses Runnable for parallel methods</td></tr>
+<tr><td>synchronized</td><td>ThreadLocal</td><td>Shared lock vs thread isolation</td><td>ThreadLocal for WebDriver; avoid synchronized driver</td></tr>
+<tr><td>throw</td><td>throws</td><td>Throw exception vs declare in signature</td><td>throw new RuntimeException("fail"); vs throws IOException</td></tr>
+<tr><td>Singleton</td><td>Static methods</td><td>Single instance object vs utility class</td><td>Singleton ConfigReader vs static Utils.click()</td></tr>
+</tbody></table></div>
+
+<h3>50 Quick Revision Points</h3>
+<h4>1–10: OOP Essentials</h4>
+<ol>
+<li>Four pillars: Encapsulation, Inheritance, Polymorphism, Abstraction.</li>
+<li>Page Object Model is encapsulation applied to UI automation.</li>
+<li>WebDriver is an interface — ChromeDriver/FirefoxDriver are implementations.</li>
+<li>Overloading: same name, different parameters — compile time binding.</li>
+<li>Overriding: subclass method replaces parent — runtime binding with @Override.</li>
+<li>Abstract class can have constructors; interface cannot (until Java changes).</li>
+<li>Java supports single inheritance for classes; multiple interfaces allowed.</li>
+<li>super() calls parent constructor; super.method() calls parent method.</li>
+<li>this() calls another constructor in same class.</li>
+<li>Composition (has-a) preferred over deep inheritance for test utilities.</li>
+</ol>
+
+<h4>11–20: String Essentials</h4>
+<ol start="11">
+<li>String is immutable — every modification creates new object.</li>
+<li>String pool interns literal strings for memory efficiency.</li>
+<li>StringBuilder for single-thread string building in loops.</li>
+<li>String.join(",", list) replaces manual comma concatenation.</li>
+<li>String.format("//a[text()='%s']", name) for dynamic XPath.</li>
+<li>split("\\s+") handles multiple spaces in log parsing.</li>
+<li>equalsIgnoreCase for browser name from config comparison.</li>
+<li>trim() before comparing Excel cell values.</li>
+<li>isBlank() (Java 11) checks empty or whitespace-only strings.</li>
+<li>Never use == for String content comparison in assertions.</li>
+</ol>
+
+<h4>21–30: Collections Essentials</h4>
+<ol start="21">
+<li>ArrayList: default choice for ordered test case lists.</li>
+<li>HashMap: default for key-value test data and config cache.</li>
+<li>HashSet: deduplicate test IDs or tags.</li>
+<li>LinkedHashMap preserves Excel column order in row maps.</li>
+<li>ConcurrentHashMap for thread-safe shared state in parallel runs.</li>
+<li>Iterator.remove() safe during iteration; avoid ConcurrentModificationException.</li>
+<li>Collections.sort() vs list.sort(Comparator) — prefer latter in Java 8+.</li>
+<li>Map.getOrDefault(key, default) avoids null checks on config keys.</li>
+<li>Map.merge(key, 1, Integer::sum) for frequency counting.</li>
+<li>Arrays.asList() returns fixed-size list — use new ArrayList&lt;&gt;() if mutating.</li>
+</ol>
+
+<h4>31–40: Java 8 Essentials</h4>
+<ol start="31">
+<li>Lambda: (param) -&gt; expression — replaces anonymous inner classes.</li>
+<li>Method reference: TestResult::getName shorthand for t -&gt; t.getName().</li>
+<li>Stream pipeline: source → intermediate → terminal operation.</li>
+<li>filter + map + collect is the most common stream pattern in reports.</li>
+<li>Predicate&lt;T&gt; for filtering; Function&lt;T,R&gt; for mapping.</li>
+<li>Optional.ofNullable avoids NullPointerException on findFirst results.</li>
+<li>Collectors.groupingBy groups test results by status/pass/fail.</li>
+<li>Collectors.toMap builds lookup from test name to TestResult.</li>
+<li>forEach is terminal — use for side effects like logging.</li>
+<li>Parallel streams rarely help in Selenium tests (I/O bound, not CPU bound).</li>
+</ol>
+
+<h4>41–50: Framework / Design Essentials</h4>
+<ol start="41">
+<li>ThreadLocal WebDriver: set → get → quit → remove per test thread.</li>
+<li>Singleton ConfigReader: load properties once in static block.</li>
+<li>Factory pattern: DriverFactory.createDriver(browser) centralizes creation.</li>
+<li>Builder pattern: fluent TestConfig construction with validation.</li>
+<li>Page Object: @FindBy locators + public action methods + no assertions in page.</li>
+<li>BaseTest: @BeforeMethod driver setup, @AfterMethod teardown + screenshot on fail.</li>
+<li>Explicit waits (WebDriverWait) — never Thread.sleep in framework code.</li>
+<li>DataProvider returns Object[][] from Excel/JSON reader utility.</li>
+<li>IRetryAnalyzer for flaky test retry with max attempt limit.</li>
+<li>Layered framework: Tests → Page Objects → Utilities → Config/Data.</li>
+</ol>
+
+<h3>Common Interview Mistakes for 4+ Years</h3>
+<div class="callout">
+<ol>
+<li><strong>Saying "I know Java" but can't write code</strong> — always practice on whiteboard/paper.</li>
+<li><strong>Not explaining framework architecture</strong> — draw layers: config, driver, pages, tests, reports.</li>
+<li><strong>Confusing overloading/overriding</strong> — overload = same class; override = inheritance.</li>
+<li><strong>Not knowing HashMap internal working</strong> — hashCode, bucket, collision chain/tree.</li>
+<li><strong>Can't explain ThreadLocal</strong> — per-thread WebDriver isolation for parallel TestNG.</li>
+<li><strong>Not knowing design patterns</strong> — Singleton, Factory, Builder, Page Object minimum.</li>
+<li><strong>Poor coding</strong> — no edge cases (null, empty), no error handling.</li>
+<li><strong>Not discussing time complexity</strong> — always state Big-O for coding solutions.</li>
+<li><strong>Not relating Java to automation</strong> — connect every concept to framework usage.</li>
+<li><strong>Using deprecated practices</strong> — findElementBy* instead of By locators; Thread.sleep.</li>
+<li><strong>Not knowing Java 8 features</strong> — streams, lambdas, Optional expected at 4+ years.</li>
+<li><strong>Poor problem-solving approach</strong> — clarify input/output, examples, edge cases before coding.</li>
+</ol>
+</div>
+
+<h3>Interview Tips for Senior SDET (10 Points)</h3>
+<ol>
+<li>Start with requirements clarification — ask about parallel execution, browsers, CI environment.</li>
+<li>Whiteboard framework architecture before diving into code — show system thinking.</li>
+<li>Discuss trade-offs: Singleton vs ThreadLocal, implicit vs explicit waits, POM vs Screenplay.</li>
+<li>Mention scalability: Selenium Grid, Docker, parallel TestNG threads, thread-safe utilities.</li>
+<li>Cover error handling: screenshot on failure, retry strategy, logging, report integration.</li>
+<li>Reference real project experience — "In my framework, I used..." with specific patterns.</li>
+<li>Know CI/CD integration — Maven profiles, Jenkins pipeline, test tagging for smoke/regression.</li>
+<li>Demonstrate API + UI hybrid knowledge — REST Assured, JSON parsing, same Java codebase.</li>
+<li>Ask thoughtful questions about team test strategy, flakiness, coverage metrics.</li>
+<li>Stay calm on unknowns — explain your approach even if you can't finish optimal solution.</li>
+</ol>
+
+<h3>What Interviewers Look For at 4+ Years</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Skill</th><th>Expected</th><th>Red Flag</th></tr></thead>
+<tbody>
+<tr><td><strong>Java Coding</strong></td><td>Write clean solutions with edge cases and Big-O analysis</td><td>Can't reverse a string or explain HashMap</td></tr>
+<tr><td><strong>Framework Design</strong></td><td>Explain POM, BaseTest, config, data, reporting layers</td><td>"I just write test scripts" — no architecture</td></tr>
+<tr><td><strong>Parallel Execution</strong></td><td>ThreadLocal, TestNG parallel, thread-safe utilities</td><td>Single shared WebDriver across threads</td></tr>
+<tr><td><strong>Design Patterns</strong></td><td>Apply Singleton, Factory, Builder with real examples</td><td>Can't name patterns used in own project</td></tr>
+<tr><td><strong>Java 8+</strong></td><td>Streams, lambdas, Optional in test data processing</td><td>Only knows Java 7 syntax in 2025 interview</td></tr>
+<tr><td><strong>Selenium Depth</strong></td><td>Waits, exceptions, Grid, cross-browser strategy</td><td>Only record-and-playback experience</td></tr>
+<tr><td><strong>API Testing</strong></td><td>REST Assured, JSON validation, status/body assertions</td><td>UI-only tester with no API exposure</td></tr>
+<tr><td><strong>CI/CD</strong></td><td>Maven, Jenkins, Docker basics, test tagging</td><td>Never ran tests in pipeline</td></tr>
+<tr><td><strong>Problem Solving</strong></td><td>Structured approach: clarify → brute force → optimize</td><td>Jumps to code without planning</td></tr>
+<tr><td><strong>Communication</strong></td><td>Explains thought process clearly while coding</td><td>Silent coding with no explanation</td></tr>
+</tbody></table></div>
+
+<h3>Last-Minute Revision Checklist (Day of Interview)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Time</th><th>Activity</th><th>Focus</th></tr></thead>
+<tbody>
+<tr><td>30 min before</td><td>Skim Section 23 cheat sheet tables</td><td>String methods, Collections, Stream ops</td></tr>
+<tr><td>20 min before</td><td>Review ThreadLocal + Singleton pattern code</td><td>Framework design whiteboard ready</td></tr>
+<tr><td>10 min before</td><td>Practice 2 easy problems on paper</td><td>Reverse string + Two Sum</td></tr>
+<tr><td>5 min before</td><td>Deep breath; prepare 2-min project intro</td><td>Framework you built, tools, impact</td></tr>
+</tbody></table></div>
+
+<div class="callout"><strong>Remember:</strong> At 4+ years, interviewers weight framework design and communication equally with raw coding. Explain your thinking out loud even when stuck.</div>
+
+</section>
+
+<section id="section-25" class="section-card">
+<h2>Section 25: Career Roadmap</h2>
+<p>Career planning for Automation Engineers with ~4 years experience targeting Senior SDET, Lead, or Architect roles in 12–18 months.</p>
+
+<h3>Current: Automation Engineer (4 Years) — Skills Self-Assessment</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Skill</th><th>Current Level (1–5)</th><th>Target Level</th><th>Priority</th></tr></thead>
+<tbody>
+<tr><td><strong>Java</strong></td><td>3</td><td>5</td><td>High</td></tr>
+<tr><td><strong>Collections</strong></td><td>3</td><td>5</td><td>High</td></tr>
+<tr><td><strong>Streams (Java 8)</strong></td><td>2</td><td>4</td><td>High</td></tr>
+<tr><td><strong>Design Patterns</strong></td><td>2</td><td>4</td><td>High</td></tr>
+<tr><td><strong>Selenium</strong></td><td>4</td><td>5</td><td>Medium</td></tr>
+<tr><td><strong>API Testing</strong></td><td>3</td><td>4</td><td>High</td></tr>
+<tr><td><strong>TestNG</strong></td><td>4</td><td>5</td><td>Medium</td></tr>
+<tr><td><strong>Cucumber</strong></td><td>3</td><td>4</td><td>Medium</td></tr>
+<tr><td><strong>SQL</strong></td><td>2</td><td>3</td><td>Medium</td></tr>
+<tr><td><strong>CI/CD</strong></td><td>2</td><td>4</td><td>High</td></tr>
+<tr><td><strong>Docker</strong></td><td>1</td><td>3</td><td>Medium</td></tr>
+<tr><td><strong>System Design</strong></td><td>1</td><td>3</td><td>High</td></tr>
+</tbody></table></div>
+<div class="callout"><strong>Rating guide:</strong> 1=Aware, 2=Basic usage, 3=Independent, 4=Advanced/Design, 5=Expert/Mentor. Be honest — gaps drive your 6-week plan.</div>
+
+<h3>Career Path 1: Senior AE → Lead QA → QA Manager → Director of QA</h3>
+<ul>
+<li><strong>Focus:</strong> Team leadership, process improvement, test strategy, stakeholder management.</li>
+<li><strong>Key skills:</strong> People management, Agile ceremonies, metrics (defect escape rate, automation coverage), budgeting.</li>
+<li><strong>Java relevance:</strong> Code review automation frameworks; guide team on standards — not daily coding.</li>
+<li><strong>Timeline:</strong> Senior AE (4–5 yrs) → Lead (6–8 yrs) → Manager (8–12 yrs) → Director (12+ yrs).</li>
+</ul>
+
+<h3>Career Path 2: SDET II → SDET III → Staff SDET → Principal SDET</h3>
+<ul>
+<li><strong>Focus:</strong> Technical depth, framework architecture, tooling, performance, platform engineering.</li>
+<li><strong>Key skills:</strong> System design, Java advanced, CI/CD pipelines, test infrastructure, mentoring engineers.</li>
+<li><strong>Java relevance:</strong> Daily — build libraries, custom TestNG listeners, REST frameworks, Grid solutions.</li>
+<li><strong>Timeline:</strong> SDET II (3–5 yrs) → SDET III (5–7 yrs) → Staff (7–10 yrs) → Principal (10+ yrs).</li>
+</ul>
+
+<h3>Career Path 3: Test Architect → Engineering Manager</h3>
+<ul>
+<li><strong>Focus:</strong> System design, cross-team impact, quality strategy across org, build vs buy decisions.</li>
+<li><strong>Key skills:</strong> Architecture diagrams, scalability, microservices testing, cloud (AWS/GCP), leadership.</li>
+<li><strong>Java relevance:</strong> Design multi-module Maven projects, shared automation libraries, SDK for internal teams.</li>
+<li><strong>Timeline:</strong> Test Architect (7–9 yrs) → EM (9+ yrs) if transitioning to people management.</li>
+</ul>
+
+<h3>Java Skills at Each Career Level</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Level</th><th>Java Topics</th><th>Design Patterns</th><th>Framework Skill</th><th>Coding Level</th></tr></thead>
+<tbody>
+<tr><td><strong>Junior (0–2)</strong></td><td>Syntax, OOP basics, Strings, arrays</td><td>Know names only</td><td>Write simple scripts, basic POM</td><td>Easy problems (reverse, palindrome)</td></tr>
+<tr><td><strong>Mid (2–4)</strong></td><td>Collections, exceptions, file I/O</td><td>Singleton, Factory</td><td>Data-driven, BaseTest, config reader</td><td>HashMap problems, Two Sum</td></tr>
+<tr><td><strong>Senior (4–7)</strong></td><td>Java 8+, thread safety, generics</td><td>Builder, Page Object, Strategy</td><td>Design framework from scratch</td><td>Medium LeetCode, ThreadLocal design</td></tr>
+<tr><td><strong>Architect (7+)</strong></td><td>Concurrency, JVM tuning, modules</td><td>All common + custom patterns</td><td>Multi-module, Grid, CI integration</td><td>System design + hard coding</td></tr>
+</tbody></table></div>
+
+<h3>Certifications</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Certification</th><th>Relevance</th><th>When to Pursue</th></tr></thead>
+<tbody>
+<tr><td><strong>ISTQB Foundation / Advanced</strong></td><td>Testing fundamentals, recognized globally</td><td>Before Lead/Manager interviews</td></tr>
+<tr><td><strong>AWS Cloud Practitioner</strong></td><td>Cloud CI/CD, Lambda, S3 for reports</td><td>When targeting product companies</td></tr>
+<tr><td><strong>Oracle Java Certification</strong></td><td>Validates Java depth (OCA/OCP)</td><td>When Java coding round is weak area</td></tr>
+<tr><td><strong>CSM (Scrum Master)</strong></td><td>Agile leadership for Lead/Manager path</td><td>When moving to people management</td></tr>
+</tbody></table></div>
+
+<h3>Salary Benchmarks by Level (India, 2025–2026 Approximate)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Level</th><th>Experience</th><th>Service Companies</th><th>Product Companies</th></tr></thead>
+<tbody>
+<tr><td>Junior AE</td><td>0–2 yrs</td><td>₹4–8 LPA</td><td>₹8–14 LPA</td></tr>
+<tr><td>Mid AE / SDET I</td><td>2–4 yrs</td><td>₹8–14 LPA</td><td>₹14–22 LPA</td></tr>
+<tr><td>Senior SDET</td><td>4–7 yrs</td><td>₹14–22 LPA</td><td>₹22–40 LPA</td></tr>
+<tr><td>Staff / Lead</td><td>7–10 yrs</td><td>₹22–35 LPA</td><td>₹35–60 LPA</td></tr>
+<tr><td>Architect / Principal</td><td>10+ yrs</td><td>₹30–45 LPA</td><td>₹50–80+ LPA</td></tr>
+</tbody></table></div>
+
+<h3>Learning Resources</h3>
+<h4>YouTube Channels (5)</h4>
+<ul>
+<li><strong>Automation Step by Step</strong> — Selenium, TestNG, framework tutorials</li>
+<li><strong>Testers Talk</strong> — SDET interview prep, Java for automation</li>
+<li><strong>Software Testing Mentor</strong> — API testing, REST Assured, CI/CD</li>
+<li><strong>Amigoscode</strong> — Java, Spring, modern backend (applicable to SDET)</li>
+<li><strong>Traversy Media</strong> — Docker, DevOps basics for test infrastructure</li>
+</ul>
+
+<h4>Blogs (5)</h4>
+<ul>
+<li><strong>Selenium.dev official blog</strong> — WebDriver updates, best practices</li>
+<li><strong>Angie Jones (tech.blog)</strong> — Test automation strategy and patterns</li>
+<li><strong>Ministry of Testing</strong> — Community articles on QA craft</li>
+<li><strong>Baeldung Java</strong> — Java tutorials from basics to advanced</li>
+<li><strong>TestAutomationU (Applitools)</strong> — Free courses and articles</li>
+</ul>
+
+<h4>GitHub Repos (5)</h4>
+<ul>
+<li><strong>SeleniumHQ/selenium</strong> — Official WebDriver source and examples</li>
+<li><strong>diemol/selenium-java</strong> — Modern Selenium 4 Java examples</li>
+<li><strong>cucumber/cucumber-jvm</strong> — BDD framework reference implementation</li>
+<li><strong>rest-assured/rest-assured</strong> — API testing library examples</li>
+<li><strong>Bonigarcia/webdrivermanager</strong> — Driver management best practice</li>
+</ul>
+
+<h4>Books (3)</h4>
+<ul>
+<li><strong>"Effective Java" — Joshua Bloch</strong> — Java best practices for SDET coding depth</li>
+<li><strong>"Agile Testing" — Lisa Crispin</strong> — Whole-team quality mindset for Lead path</li>
+<li><strong>"Continuous Delivery" — Humble &amp; Farley</strong> — CI/CD pipeline design for test automation</li>
+</ul>
+
+<h3>6-Week Interview Preparation Plan</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Week</th><th>Focus</th><th>Daily Hours</th><th>Activities</th><th>Resources</th></tr></thead>
+<tbody>
+<tr><td><strong>Week 1</strong></td><td>Java OOP + Strings + Collections</td><td>2–3 hrs</td><td>Review OOP concepts; solve 3 easy problems/day; practice HashMap/ArrayList ops</td><td>Section 23 cheat sheet; LeetCode easy</td></tr>
+<tr><td><strong>Week 2</strong></td><td>Java 8 + Multithreading + Design Patterns</td><td>2–3 hrs</td><td>Stream exercises; ThreadLocal whiteboard; implement Singleton/Factory/Builder</td><td>Section 11–16 notes; Effective Java ch. 1–4</td></tr>
+<tr><td><strong>Week 3</strong></td><td>Selenium + Framework Design + POM</td><td>2–3 hrs</td><td>Build mini framework: BasePage, DriverManager, ConfigReader; explain architecture aloud</td><td>Section 22 Q41–Q50; own project refactor</td></tr>
+<tr><td><strong>Week 4</strong></td><td>TestNG + Cucumber + API Testing</td><td>2–3 hrs</td><td>DataProvider, listeners, retry; write 5 REST Assured tests; BDD feature file</td><td>testng_cucumber_notes; api_testing_notes</td></tr>
+<tr><td><strong>Week 5</strong></td><td>Coding Practice</td><td>3 hrs</td><td>2 problems/day from Section 22; time yourself 25 min each; explain Big-O aloud</td><td>Section 22 all 50 questions; LeetCode top 75</td></tr>
+<tr><td><strong>Week 6</strong></td><td>Mock Interviews + Revision</td><td>2–3 hrs</td><td>1 mock/day (coding + framework design); revise Section 24; fill skill gaps from self-assessment</td><td>Section 24 revision; peer/pramp mock</td></tr>
+</tbody></table></div>
+
+<div class="ascii-diagram"><pre>
+  6-Week SDET Interview Prep Flow
+  ═══════════════════════════════
+
+  Week 1-2          Week 3-4           Week 5-6
+  Java Core    ──►  Framework     ──►  Practice + Mock
+  OOP/Collections   Selenium/API       50 Coding Qs
+  Java 8/Patterns   TestNG/Cucumber    Revision Notes
+       │                 │                  │
+       └─────────────────┴──────────────────┘
+                         │
+                    Interview Ready
+              (Senior SDET / 4+ Years Level)
+</pre></div>
+
+<div class="callout"><strong>Final advice:</strong> At 4 years, interviewers expect you to <em>design</em> frameworks, not just use them. Practice explaining your current project's architecture using the patterns in Section 22 (Q41–Q50) and connect every Java concept to automation context.</div>
+
+<h3>90-Day Action Plan After Interview Prep</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Month</th><th>Goal</th><th>Actions</th><th>Success Metric</th></tr></thead>
+<tbody>
+<tr><td><strong>Month 1</strong></td><td>Close Java gaps</td><td>Java 8 streams daily; 1 design pattern/week; refactor one utility to use lambdas</td><td>Pass 20 medium coding problems timed</td></tr>
+<tr><td><strong>Month 2</strong></td><td>Framework ownership</td><td>Lead framework improvement sprint; add ThreadLocal if missing; CI integration</td><td>Present architecture to team; get peer review</td></tr>
+<tr><td><strong>Month 3</strong></td><td>Apply and iterate</td><td>Apply to 5 target companies; 2 mocks/week; document lessons learned</td><td>2+ interview callbacks; 1 offer pipeline</td></tr>
+</tbody></table></div>
+
+<h3>Skills Priority Matrix for 4-Year AE</h3>
+<div class="ascii-diagram"><pre>
+                    IMPACT ON INTERVIEW
+                    High ◄──────────────► Low
+              ┌─────────────────────────────────┐
+         High │  Java 8      │  Docker          │
+              │  Patterns    │  (nice-to-have)  │
+    EFFORT    │  Framework   ├──────────────────┤
+              │  Design      │  Certifications  │
+         Low  │  ThreadLocal │  (long-term)     │
+              └─────────────────────────────────┘
+              Focus TOP-LEFT quadrant first in 6-week plan
+</pre></div>
+
+<h3>Networking and Visibility</h3>
+<ul>
+<li>Contribute to one open-source test project (WebDriverManager, REST Assured docs).</li>
+<li>Write a Medium/LinkedIn post on a framework pattern you implemented — builds credibility.</li>
+<li>Join local QA meetups or Ministry of Testing chapters for referral opportunities.</li>
+<li>Maintain GitHub portfolio with: framework skeleton, API test suite, CI pipeline YAML.</li>
+<li>Request LinkedIn recommendations from Lead/Dev who saw your automation impact.</li>
+</ul>
+
+</section>

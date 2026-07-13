@@ -1,0 +1,1678 @@
+<section id="section-10" class="section-card">
+<h2>Section 10: JIRA Workflow &amp; Project Lifecycle</h2>
+
+<p>Understanding Jira end-to-end is essential for Senior QA and SDET roles. Interviewers expect you to explain not just what Jira is, but how requirements flow through the system, how sprints are managed, and how QA fits into every transition.</p>
+
+<h3>End-to-End Jira Workflow: Requirement → Epic → Story → Task → Dev → Testing → Release</h3>
+
+<p>The Jira project lifecycle mirrors Agile delivery. A business requirement enters as an Epic, gets decomposed into Stories, broken into Tasks and Sub-tasks, developed, tested, and released under a Fix Version.</p>
+
+<div class="ascii-diagram"><pre>
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                    END-TO-END JIRA PROJECT LIFECYCLE                             │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  [Business Requirement]
+           │
+           ▼
+  ┌─────────────────┐     Product Owner creates Epic in Backlog
+  │      EPIC       │     Epic: "User Authentication Module"
+  │  (Jira Issue)   │     Labels: auth, security | Component: Identity
+  └────────┬────────┘
+           │ Grooming / Refinement
+           ▼
+  ┌─────────────────┐     Stories linked to Epic via "Epic Link" or Parent
+  │     STORY       │     Story: "As a user, I can register with email"
+  │  (User Story)   │     Acceptance Criteria in Description
+  └────────┬────────┘
+           │ Sprint Planning — team selects stories
+           ▼
+  ┌─────────────────┐     Dev creates Tasks / Sub-tasks under Story
+  │  TASK / SUB-    │     Task: "Implement registration API"
+  │     TASK        │     Task: "Create registration UI"
+  └────────┬────────┘     Sub-task: "Write unit tests"
+           │
+           ▼
+  ┌─────────────────┐     Developer moves Story: To Do → In Progress → Code Review
+  │   DEVELOPMENT   │     Branch linked via Smart Commits or DevOps integration
+  └────────┬────────┘
+           │
+           ▼
+  ┌─────────────────┐     QA picks up when Story reaches "Ready for QA" / "In Test"
+  │     TESTING     │     Test cases executed, bugs logged and linked
+  └────────┬────────┘     Story transitions: In Test → QA Pass / QA Fail
+           │
+     ┌─────┴─────┐
+     ▼           ▼
+ [BUGS]     [PASS]
+     │           │
+     └─────┬─────┘
+           ▼
+  ┌─────────────────┐     Story → Done | Fix Version assigned
+  │     RELEASE     │     Release notes generated from resolved issues
+  └────────┬────────┘     Version deployed: v2.4.0
+           ▼
+  [Production / Done]
+</pre></div>
+
+<h4>Key Issue Types and Hierarchy</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Issue Type</th><th>Created By</th><th>Purpose</th><th>Typical Fields</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Epic</td><td>Product Owner / BA</td><td>Large feature grouping</td><td>Epic Name, Start/End Date, Color</td></tr>
+    <tr><td>Story</td><td>PO / BA</td><td>User-facing deliverable</td><td>Story Points, Acceptance Criteria, Sprint</td></tr>
+    <tr><td>Task</td><td>Dev / QA</td><td>Technical work unit</td><td>Assignee, Original Estimate</td></tr>
+    <tr><td>Bug</td><td>QA / Anyone</td><td>Defect tracking</td><td>Severity, Priority, Environment, Steps</td></tr>
+    <tr><td>Sub-task</td><td>Team member</td><td>Granular work under Story/Task</td><td>Assignee, Time Tracking</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Real Sprint Workflow Example: Sprint 1 — User Registration Feature</h3>
+
+<p>This walkthrough demonstrates how a 2-week sprint unfolds in Jira for a registration feature.</p>
+
+<h4>Step 1: Epic Created (Pre-Sprint)</h4>
+<div class="callout">
+<strong>EPIC-101:</strong> User Registration Module<br>
+<strong>Summary:</strong> Enable new users to register via email and phone<br>
+<strong>Status:</strong> Backlog → In Progress (during refinement)<br>
+<strong>Fix Version:</strong> v2.4.0<br>
+<strong>Stories linked:</strong> US-201, US-202, US-203
+</div>
+
+<h4>Step 2: Stories Broken Down</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Story ID</th><th>Summary</th><th>Points</th><th>Acceptance Criteria (Summary)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>US-201</td><td>Email registration with OTP</td><td>5</td><td>Valid email, OTP sent, account created</td></tr>
+    <tr><td>US-202</td><td>Phone registration with OTP</td><td>5</td><td>Valid phone, OTP verified, profile saved</td></tr>
+    <tr><td>US-203</td><td>Password strength validation</td><td>3</td><td>Min 8 chars, upper/lower/number/special</td></tr>
+    <tr><td>US-204</td><td>Duplicate email handling</td><td>2</td><td>Error message, no duplicate record</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Step 3: Tasks Assigned During Sprint Planning</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Task ID</th><th>Parent Story</th><th>Assignee</th><th>Estimate</th><th>Type</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>T-301</td><td>US-201</td><td>Dev: Raj</td><td>8h</td><td>Backend API</td></tr>
+    <tr><td>T-302</td><td>US-201</td><td>Dev: Priya</td><td>6h</td><td>Frontend UI</td></tr>
+    <tr><td>T-303</td><td>US-201</td><td>QA: Ananya</td><td>4h</td><td>Test case creation</td></tr>
+    <tr><td>T-304</td><td>US-202</td><td>Dev: Raj</td><td>6h</td><td>SMS OTP integration</td></tr>
+    <tr><td>T-305</td><td>US-203</td><td>Dev: Priya</td><td>4h</td><td>Validation logic</td></tr>
+    <tr><td>T-306</td><td>US-201</td><td>QA: Ananya</td><td>6h</td><td>Test execution</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Step 4: Bugs Logged During Testing</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Bug ID</th><th>Linked Story</th><th>Summary</th><th>Severity</th><th>Status Flow</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>BUG-401</td><td>US-201</td><td>OTP expires in 30s instead of 5 min</td><td>Major</td><td>Open → In Progress → Fixed → Verified → Closed</td></tr>
+    <tr><td>BUG-402</td><td>US-203</td><td>Weak password "Password1" accepted</td><td>Critical</td><td>Open → In Progress → Fixed → Verified → Closed</td></tr>
+    <tr><td>BUG-403</td><td>US-204</td><td>Error message not displayed for duplicate email</td><td>Minor</td><td>Open → Won't Fix (moved to Sprint 2)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Step 5: Sprint Board State (Day 10 — End of Sprint)</h4>
+<div class="ascii-diagram"><pre>
+SPRINT 1 BOARD — "Phoenix" Team | Sprint Goal: Complete User Registration
+
+┌──────────┬──────────────┬─────────────┬──────────┬──────────┬────────┐
+│  TO DO   │ IN PROGRESS  │ CODE REVIEW │ IN TEST  │ QA PASS  │  DONE  │
+│  (0)     │    (0)       │    (0)      │   (0)    │   (0)    │  (4)   │
+├──────────┼──────────────┼─────────────┼──────────┼──────────┼────────┤
+│          │              │             │          │          │ US-201 │
+│          │              │             │          │          │ US-202 │
+│          │              │             │          │          │ US-203 │
+│          │              │             │          │          │ US-204 │
+└──────────┴──────────────┴─────────────┴──────────┴──────────┴────────┘
+
+Sprint Metrics:
+  Committed: 15 story points | Completed: 15 story points | Velocity: 15
+  Bugs found: 3 | Bugs fixed: 2 | Bugs deferred: 1
+  Sprint burndown: On track — completed Day 9
+</pre></div>
+
+<h3>Bug Workflow in Jira: Complete Lifecycle</h3>
+
+<p>Every organization customizes workflows, but Senior QA candidates should articulate a full bug lifecycle with transitions, assignees, and QA verification gates.</p>
+
+<div class="ascii-diagram"><pre>
+                        BUG LIFECYCLE IN JIRA
+                        ═════════════════════
+
+                    ┌─────────────┐
+                    │    OPEN     │  ◄── QA creates bug, links to Story
+                    │  (Reported) │      Fields: Steps, Expected, Actual,
+                    └──────┬──────┘      Environment, Severity, Attachments
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │ REOPENED │ │ TRIAGED  │ │ REJECTED │──► Invalid / Duplicate / Cannot Reproduce
+        │(from Fix)│ │(Triage)  │ │          │
+        └────┬─────┘ └────┬─────┘ └──────────┘
+             │            │
+             └─────┬──────┘
+                   ▼
+            ┌─────────────┐
+            │ IN PROGRESS │  ◄── Auto-assigned to Dev via Component/Module
+            │  (Assigned) │
+            └──────┬──────┘
+                   │
+                   ▼
+            ┌─────────────┐
+            │    FIXED    │  ◄── Dev resolves, adds Fix Version, Root Cause
+            │  (Resolved) │
+            └──────┬──────┘
+                   │
+                   ▼
+            ┌─────────────┐
+            │   VERIFIED  │  ◄── QA retests on QA/Staging environment
+            │ (QA Retest) │
+            └──────┬──────┘
+                   │
+          ┌────────┴────────┐
+          ▼                 ▼
+   ┌─────────────┐   ┌─────────────┐
+   │   CLOSED    │   │  REOPENED   │──► Back to IN PROGRESS
+   │  (Done)     │   │ (Fail QA)   │
+   └─────────────┘   └─────────────┘
+
+Transition Triggers:
+  OPEN → IN PROGRESS     : Dev picks up OR automation assigns
+  IN PROGRESS → FIXED    : Dev commits fix, updates resolution
+  FIXED → VERIFIED       : QA begins retest (auto-notify via automation)
+  VERIFIED → CLOSED      : QA confirms fix on target environment
+  VERIFIED → REOPENED    : Fix incomplete or regression introduced
+  ANY → REJECTED         : PO/Dev marks as not a bug
+</pre></div>
+
+<h4>Essential Bug Fields for QA</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Field</th><th>What to Enter</th><th>Why It Matters</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Summary</td><td>Concise defect title</td><td>Searchability in Jira filters</td></tr>
+    <tr><td>Description</td><td>Steps to Reproduce, Expected, Actual</td><td>Dev can reproduce without asking QA</td></tr>
+    <tr><td>Environment</td><td>QA, Staging, Browser/OS</td><td>Environment-specific bugs</td></tr>
+    <tr><td>Severity</td><td>Blocker/Critical/Major/Minor/Trivial</td><td>Impact on system</td></tr>
+    <tr><td>Priority</td><td>P1/P2/P3/P4</td><td>Fix order within sprint</td></tr>
+    <tr><td>Linked Issues</td><td>Relates to / Blocks Story</td><td>Traceability to requirement</td></tr>
+    <tr><td>Fix Version</td><td>Target release</td><td>Release planning</td></tr>
+    <tr><td>Attachments</td><td>Screenshots, logs, HAR files</td><td>Evidence for triage</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Release Management in Jira</h3>
+
+<h4>Fix Versions</h4>
+<p>Fix Versions represent planned or completed releases. QA uses them to scope regression, verify release candidates, and confirm which bugs ship in which release.</p>
+
+<div class="callout">
+<strong>Workflow:</strong> Create version (v2.4.0) → Assign to Stories/Bugs during development → Mark "Released" on deploy day → Archive old versions.<br>
+<strong>QA responsibility:</strong> Filter <code>fixVersion = "v2.4.0" AND status != Done</code> before sign-off to ensure nothing slips through.
+</div>
+
+<h4>Release Notes Generation</h4>
+<p>Jira can auto-generate release notes from resolved issues grouped by type (New Features, Bug Fixes, Known Issues). QA validates accuracy — especially bug fix descriptions visible to customers.</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Release Note Section</th><th>Jira JQL Filter</th><th>QA Action</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>New Features</td><td>type = Story AND fixVersion = v2.4.0</td><td>Verify feature list matches demo</td></tr>
+    <tr><td>Bug Fixes</td><td>type = Bug AND fixVersion = v2.4.0 AND status = Closed</td><td>Confirm customer-facing wording</td></tr>
+    <tr><td>Known Issues</td><td>type = Bug AND fixVersion = v2.4.0 AND status != Closed</td><td>Document workarounds</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Jira Automation Rules Useful for QA</h3>
+
+<h4>1. Auto-Assign Bugs to Dev When Status Changes</h4>
+<pre><code>Rule: When Bug transitions to "In Progress"
+Trigger: Issue transitioned → In Progress
+Condition: Issue type = Bug
+Action: Assign issue to user in custom field "Module Owner"
+        OR assign based on Component (Auth → dev-auth-team lead)</code></pre>
+
+<h4>2. Auto-Transition When Subtasks Complete</h4>
+<pre><code>Rule: Move Story to "Ready for QA" when all sub-tasks done
+Trigger: Sub-task transitioned → Done
+Condition: All sub-tasks of parent Story are Done
+           AND parent status = "In Progress"
+Action: Transition parent Story → "Ready for QA"
+        Add comment: "All development sub-tasks complete. Ready for QA."</code></pre>
+
+<h4>3. Notification Rules</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Rule</th><th>Trigger</th><th>Notify</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Bug Created</td><td>Issue created, type = Bug</td><td>Dev lead, PO (if Blocker)</td></tr>
+    <tr><td>Bug Fixed</td><td>Status → Fixed</td><td>QA reporter via @mention</td></tr>
+    <tr><td>Story Ready for QA</td><td>Status → Ready for QA</td><td>QA assignee, Slack channel</td></tr>
+    <tr><td>Sprint Started</td><td>Sprint activated</td><td>Entire team</td></tr>
+    <tr><td>Release Deployed</td><td>Fix Version released</td><td>QA for smoke test trigger</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Board Configuration</h3>
+
+<h4>Columns and Workflow Mapping</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Column</th><th>Mapped Statuses</th><th>WIP Limit</th><th>Purpose</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>To Do</td><td>Open, Backlog</td><td>None</td><td>Sprint backlog items</td></tr>
+    <tr><td>In Progress</td><td>In Progress, In Development</td><td>4</td><td>Limit concurrent dev work</td></tr>
+    <tr><td>Code Review</td><td>In Review, PR Open</td><td>3</td><td>Prevent review bottleneck</td></tr>
+    <tr><td>In Test</td><td>Ready for QA, In Test</td><td>3</td><td>QA capacity management</td></tr>
+    <tr><td>Done</td><td>Done, Closed</td><td>None</td><td>Completed work</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Swimlanes</h4>
+<p>Common swimlane strategies: by Epic (feature visibility), by Assignee (individual workload), by Priority (P1 bugs surfaced first). QA boards often use swimlanes by Epic during regression to track feature completion.</p>
+
+<h3>Sprint Planning in Jira</h3>
+
+<h4>Capacity Planning</h4>
+<div class="callout">
+<strong>Formula:</strong> Team Capacity = (Team Members × Available Days × Hours/Day) − Meetings − PTO<br>
+<strong>Example:</strong> 5 devs + 2 QA × 10 days × 6 productive hours = 420 hours − 40 hours ceremonies = <strong>380 hours</strong><br>
+<strong>Velocity:</strong> Use average of last 3 sprints (e.g., 42 points) — do not over-commit.
+</div>
+
+<h4>Story Selection Process</h4>
+<ol>
+  <li>PO presents prioritized backlog filtered by Epic/Roadmap</li>
+  <li>Team reviews Story Points, dependencies, and Definition of Ready</li>
+  <li>Stories dragged into Sprint — total points ≤ velocity</li>
+  <li>Tasks created and estimated in hours</li>
+  <li>Sprint Goal documented in Jira Sprint field</li>
+</ol>
+
+<h3>Sprint Closure Process</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Step</th><th>Action in Jira</th><th>Owner</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1. Complete testing</td><td>All stories Done or moved to next sprint</td><td>QA</td></tr>
+    <tr><td>2. Close verified bugs</td><td>Bugs in Verified → Closed</td><td>QA</td></tr>
+    <tr><td>3. Move incomplete work</td><td>Drag unfinished stories back to backlog</td><td>PO</td></tr>
+    <tr><td>4. Update Fix Versions</td><td>Confirm version assignment on all Done items</td><td>Dev Lead</td></tr>
+    <tr><td>5. Generate sprint report</td><td>Sprint Report → Burndown, Velocity</td><td>Scrum Master</td></tr>
+    <tr><td>6. Close sprint</td><td>Complete Sprint in Jira — auto-moves open items</td><td>Scrum Master</td></tr>
+    <tr><td>7. Retrospective</td><td>Document action items as Tasks for next sprint</td><td>Team</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Interview Questions &amp; Answers (Section 10)</h3>
+
+<h4>Q1: Explain the Jira issue hierarchy from Epic to Sub-task.</h4>
+<p><strong>A:</strong> Epic is the largest container for a feature initiative. Stories (or User Stories) deliver user value and link to Epics. Tasks break stories into dev/QA work. Sub-tasks are the smallest units assigned to individuals. Bugs can link to Stories independently. In Jira Cloud, Epics can also be parents in next-gen projects.</p>
+
+<h4>Q2: What is the difference between Priority and Severity in Jira bugs?</h4>
+<p><strong>A:</strong> Severity measures technical impact (Blocker = system down). Priority measures business urgency for fix order (P1 = fix immediately). A cosmetic UI bug might be Low Severity but High Priority if a key client demo is tomorrow.</p>
+
+<h4>Q3: How do you use Fix Versions in release management?</h4>
+<p><strong>A:</strong> Fix Version tags which release includes a fix or feature. Before release, I run JQL to find open issues in that version. After deployment, I mark the version Released and generate release notes from resolved issues.</p>
+
+<h4>Q4: Describe a Jira workflow you configured or improved for QA.</h4>
+<p><strong>A:</strong> I added a "Ready for QA" status between Code Review and In Test. Automation notifies QA on transition. Stories cannot move to Done without passing through Verified. This prevents devs from closing stories before QA sign-off.</p>
+
+<h4>Q5: What JQL query finds all open bugs blocking a release?</h4>
+<p><strong>A:</strong> <code>project = PROJ AND type = Bug AND fixVersion = "v2.4.0" AND status not in (Closed, Done, Rejected)</code>. Add <code>AND priority in (P1, P2)</code> for critical blockers only.</p>
+
+<h4>Q6: How do WIP limits help QA teams?</h4>
+<p><strong>A:</strong> WIP limits on "In Test" column (e.g., 3) prevent dev from flooding QA with stories. When limit is reached, team swarms on testing before pulling new dev work — improving flow and reducing context switching.</p>
+
+<h4>Q7: Explain sprint velocity and how it guides planning.</h4>
+<p><strong>A:</strong> Velocity is completed story points per sprint, averaged over 3+ sprints. If average is 40 points, we commit ~40 points next sprint. It's a planning guide, not a performance metric — teams shouldn't inflate estimates to increase velocity.</p>
+
+<h4>Q8: What happens to incomplete stories when a sprint closes?</h4>
+<p><strong>A:</strong> Jira moves them back to the backlog (or next sprint if manually moved). Their story points don't count toward velocity. Sprint Report shows spillover — a signal for retrospective discussion on over-commitment or blockers.</p>
+
+<h4>Q9: How do you link a bug to the story it was found in?</h4>
+<p><strong>A:</strong> Use "Linked Issues" → "relates to" or "is caused by" the Story. Also set the Epic Link to maintain traceability. Some teams use "Blocks" if the bug prevents story completion.</p>
+
+<h4>Q10: What automation would you set up for bug triage?</h4>
+<p><strong>A:</strong> When Bug is created with Severity = Blocker, auto-assign to on-call dev, notify PO via Slack, and add label "needs-triage". When status stays Open &gt; 24 hours, escalate to dev lead with email notification.</p>
+
+<h4>Q11: Difference between Scrum board and Kanban board in Jira?</h4>
+<p><strong>A:</strong> Scrum boards are tied to Sprints with start/end dates and backlog grooming. Kanban boards are continuous flow without sprints, ideal for support/ops teams. Both support columns, WIP limits, and swimlanes.</p>
+
+<h4>Q12: How do Smart Commits integrate Git with Jira?</h4>
+<p><strong>A:</strong> Commit messages like <code>PROJ-123 #comment Fixed login #time 2h #resolve</code> automatically update Jira issues — adding comments, logging time, and transitioning status. QA verifies these transitions match actual test results.</p>
+
+</section>
+
+<section id="section-11" class="section-card">
+<h2>Section 11: JIRA for QA Engineers</h2>
+
+<p>Jira is the operational hub for QA in Agile teams. Senior QA and SDET candidates must demonstrate daily Jira fluency — from sprint planning through metrics reporting — not just bug logging.</p>
+
+<h3>QA Daily Activities in Jira: Day-by-Day Sprint Breakdown</h3>
+
+<p>A typical 2-week (10 working day) sprint from a QA engineer's perspective:</p>
+
+<h4>Days 1–2: Sprint Planning, Story Analysis, Test Case Creation</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Day</th><th>Activity</th><th>Jira Actions</th><th>Deliverables</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Day 1 AM</td><td>Sprint Planning ceremony</td><td>Review stories in backlog; note story points and dependencies</td><td>Sprint commitment understood</td></tr>
+    <tr><td>Day 1 PM</td><td>Story analysis</td><td>Open each assigned story; read AC; add clarifying comments</td><td>Questions posted on US-201, US-202</td></tr>
+    <tr><td>Day 2 AM</td><td>Test planning</td><td>Create Test Plan sub-tasks; link to stories; add labels: regression, smoke</td><td>Test tasks T-401, T-402 created</td></tr>
+    <tr><td>Day 2 PM</td><td>Test case creation</td><td>Log test cases in Zephyr/Xray OR document in Confluence linked from story</td><td>15 test cases for US-201 ready</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Day 1 Jira Comment Example (on US-201):</strong><br>
+"@PO — AC #3 says OTP expires in 5 minutes. Is resend OTP allowed before expiry? What is max resend count? @Dev — Is OTP stored hashed in DB? Need test data setup for expired OTP scenario."
+</div>
+
+<h4>Days 3–7: Test Execution, Bug Logging, Daily Updates</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Day</th><th>Activity</th><th>Jira Actions</th><th>Metrics</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Day 3</td><td>Smoke test on QA build</td><td>Transition US-201 → In Test; log BUG-501 (OTP timing)</td><td>5/15 tests executed</td></tr>
+    <tr><td>Day 4</td><td>Functional testing US-201</td><td>Execute linked test cases; update execution status in Xray</td><td>12/15 pass, 3 fail</td></tr>
+    <tr><td>Day 5</td><td>Bug verification + US-202 start</td><td>Verify BUG-501 fix → Closed; begin US-202 testing</td><td>1 bug closed, 8 tests run</td></tr>
+    <tr><td>Day 6</td><td>Cross-browser testing</td><td>Log BUG-502 (Safari layout); attach screenshots</td><td>US-202: 10/12 pass</td></tr>
+    <tr><td>Day 7</td><td>API + integration testing</td><td>Log BUG-503 (API 500 on invalid phone); daily standup update via board</td><td>US-202 Done, US-203 In Test</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Days 8–9: Regression, Retesting, Status Updates</h4>
+<ul>
+  <li><strong>Day 8:</strong> Run regression suite tagged <code>label = regression</code> in test tool. Retest all Fixed bugs. Update story statuses. Filter: <code>sprint = "Sprint 12" AND status = "In Test"</code></li>
+  <li><strong>Day 9:</strong> Full sprint regression on QA staging. Verify Fix Version assignments. Move passed stories to Done. Document known issues for demo.</li>
+</ul>
+
+<h4>Day 10: Sprint Demo Prep, Retrospective, Closure</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Time</th><th>Activity</th><th>Jira Action</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>AM</td><td>Demo prep</td><td>Filter Done stories; verify all AC met; prepare defect summary dashboard</td></tr>
+    <tr><td>PM</td><td>Sprint Review</td><td>Demo completed stories; PO accepts/rejects in Jira</td></tr>
+    <tr><td>PM</td><td>Retrospective</td><td>Create improvement Tasks (e.g., "Add OTP test data script") for next sprint</td></tr>
+    <tr><td>EOD</td><td>Sprint closure</td><td>Close verified bugs; confirm spillover stories moved; log time on all tasks</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Requirement Analysis Using Jira</h3>
+
+<h4>How to Read Stories Effectively</h4>
+<ol>
+  <li><strong>Summary + Description:</strong> User role, action, and benefit (As a / I want / So that)</li>
+  <li><strong>Acceptance Criteria:</strong> Testable conditions — each AC becomes ≥1 test case</li>
+  <li><strong>Attachments:</strong> Mockups, API specs, data models</li>
+  <li><strong>Linked Issues:</strong> Dependencies, blocked-by stories, related bugs</li>
+  <li><strong>Custom Fields:</strong> Platform, API endpoint, Feature flag name</li>
+</ol>
+
+<h4>Asking Questions in Comments</h4>
+<div class="callout">
+<strong>Best practices:</strong> Tag relevant people (@PO, @Dev). Reference specific AC numbers. Propose edge cases. Convert agreed answers into story updates or AC amendments. Use "Questions" label until resolved.
+</div>
+
+<h3>Test Planning in Jira</h3>
+
+<h4>Linking Test Cases to Stories</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Method</th><th>How It Works</th><th>Best For</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Xray Test Set</td><td>Create Test issue; link to Story via "Tests" association</td><td>Full traceability, execution tracking</td></tr>
+    <tr><td>Zephyr Scale</td><td>Test Case linked via traceability tab on Story</td><td>Enterprise test management</td></tr>
+    <tr><td>Sub-task</td><td>"QA: Execute registration tests" sub-task under Story</td><td>Simple teams without test plugin</td></tr>
+    <tr><td>Confluence link</td><td>Test plan page URL in Story description</td><td>Documentation-heavy teams</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Using Labels and Components</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Label/Component</th><th>Usage</th><th>Example Filter</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>regression</td><td>Tests in regression suite</td><td>labels = regression AND sprint = current</td></tr>
+    <tr><td>smoke</td><td>Post-deploy smoke tests</td><td>labels = smoke AND type = Test</td></tr>
+    <tr><td>automation</td><td>Automated test coverage</td><td>labels = automation AND status = Done</td></tr>
+    <tr><td>Component: Auth</td><td>Module-based filtering</td><td>component = Auth AND assignee = currentUser()</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Defect Tracking in Jira</h3>
+
+<h4>Creating Bugs with Proper Fields</h4>
+<pre><code>Summary: [Registration] OTP validation accepts expired code after 5 minutes
+
+Description:
+Steps to Reproduce:
+1. Register with email test@example.com
+2. Wait 6 minutes without entering OTP
+3. Enter the original OTP code
+4. Click Verify
+
+Expected Result: Error "OTP expired. Request a new code."
+Actual Result: Account created successfully
+
+Environment: QA | Chrome 125 | Windows 11
+Build: v2.4.0-build.142
+Test Data: test@example.com (fresh registration)
+
+Linked Issue: US-201 (relates to)
+Fix Version: v2.4.0
+Severity: Major | Priority: P2</code></pre>
+
+<h4>Tracking Resolution</h4>
+<div class="ascii-diagram"><pre>
+QA DEFECT TRACKING FLOW
+───────────────────────
+
+  Found during test ──► Create Bug ──► Link to Story
+                            │
+                            ▼
+                    Monitor daily via filter:
+                    "reporter = currentUser()
+                     AND status not in (Closed, Rejected)"
+                            │
+                            ▼
+                    Dev fixes ──► Status: Fixed
+                            │
+                            ▼
+                    QA retests ──► Verified or Reopened
+                            │
+                            ▼
+                    Close + update test execution in Xray/Zephyr
+</pre></div>
+
+<h3>Sprint Monitoring: Boards, Filters, Dashboards</h3>
+
+<h4>Essential QA Filters</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Filter Name</th><th>JQL</th><th>Purpose</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>My Open Bugs</td><td>reporter = currentUser() AND type = Bug AND status != Closed</td><td>Track your reported defects</td></tr>
+    <tr><td>Ready for QA</td><td>status = "Ready for QA" AND sprint in openSprints()</td><td>Test queue</td></tr>
+    <tr><td>Bugs to Retest</td><td>type = Bug AND status = Fixed AND fixVersion = "v2.4.0"</td><td>Retest backlog</td></tr>
+    <tr><td>Sprint Test Progress</td><td>sprint = "Sprint 12" AND assignee = currentUser()</td><td>Personal sprint workload</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Dashboard Gadgets for QA</h4>
+<ul>
+  <li><strong>Filter Results:</strong> Open bugs by priority (pie chart)</li>
+  <li><strong>Sprint Burndown:</strong> Track remaining work</li>
+  <li><strong>Created vs Resolved:</strong> Bug trend over 30 days</li>
+  <li><strong>Two-Dimensional Stats:</strong> Bugs by Component × Severity</li>
+</ul>
+
+<h3>Report Generation</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Report</th><th>Source</th><th>Audience</th><th>Frequency</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Sprint Velocity</td><td>Sprint Report in Jira</td><td>Scrum Master, PO</td><td>End of sprint</td></tr>
+    <tr><td>Bug Metrics</td><td>Dashboard + JQL export</td><td>QA Lead, Dev Lead</td><td>Weekly</td></tr>
+    <tr><td>Test Execution Status</td><td>Xray/Zephyr Test Execution report</td><td>QA, PO</td><td>Daily during sprint</td></tr>
+    <tr><td>Defect Leakage</td><td>Production bugs / total bugs</td><td>Management</td><td>Monthly</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>QA Metrics Tracked in Jira</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Metric</th><th>Formula</th><th>Target Range</th><th>How to Track in Jira</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Test Case Pass/Fail Rate</td><td>(Passed / Total Executed) × 100</td><td>≥ 95% pass before release</td><td>Xray Test Execution report; export to Excel</td></tr>
+    <tr><td>Defect Density</td><td>Total Bugs / Story Points (or KLOC)</td><td>&lt; 0.5 bugs per story point</td><td>JQL: bugs in sprint ÷ completed points</td></tr>
+    <tr><td>Defect Leakage</td><td>(Prod Bugs / Total Bugs) × 100</td><td>&lt; 5%</td><td>Label prod-bugs; compare with QA-found bugs</td></tr>
+    <tr><td>Automation Coverage</td><td>(Automated TCs / Total TCs) × 100</td><td>≥ 60% for regression</td><td>Label "automation" on Test issues; filter count</td></tr>
+    <tr><td>Sprint Completion Rate</td><td>(Completed Points / Committed Points) × 100</td><td>≥ 85%</td><td>Sprint Report → committed vs completed</td></tr>
+    <tr><td>Bug Reopen Rate</td><td>(Reopened Bugs / Total Closed) × 100</td><td>&lt; 10%</td><td>Status history → count Reopened transitions</td></tr>
+    <tr><td>Mean Time to Resolve</td><td>Avg(Closed Date − Created Date)</td><td>P1: &lt; 24h, P2: &lt; 3 days</td><td>Jira Control Chart or export + calculate</td></tr>
+    <tr><td>Test Execution Progress</td><td>(Executed / Planned) × 100</td><td>100% by Day 9</td><td>Test management plugin dashboard</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Test Management Tools Integration with Jira</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Tool</th><th>Integration Type</th><th>Key Features</th><th>QA Workflow</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Zephyr Scale</td><td>Jira native app</td><td>Test cases, cycles, traceability matrix</td><td>Create cycle per sprint; link tests to stories; execute and track</td></tr>
+    <tr><td>Xray</td><td>Jira native app</td><td>Test, Precondition, Test Set, Test Plan issues</td><td>BDD support; test plans per sprint; CI integration via REST</td></tr>
+    <tr><td>TestRail</td><td>Jira plugin (bidirectional)</td><td>External test repo with Jira defect push</td><td>Push failures to Jira as bugs; link results to stories</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>QA Best Practices in Jira (12 Tips)</h3>
+<ol>
+  <li>Always link bugs to the story where they were found — never orphan bugs</li>
+  <li>Use consistent Severity/Priority definitions documented in Confluence</li>
+  <li>Include build number and environment in every bug — saves retest cycles</li>
+  <li>Log time on test tasks for capacity planning accuracy</li>
+  <li>Comment on stories when testing starts and completes — visibility for team</li>
+  <li>Use templates for bug descriptions (Steps/Expected/Actual)</li>
+  <li>Apply labels consistently: regression, smoke, automation, prod-bug</li>
+  <li>Review "Ready for QA" queue daily — don't let stories sit untested</li>
+  <li>Verify Fix Version before closing bugs — prevents wrong release attribution</li>
+  <li>Export sprint metrics before sprint close — historical data for trends</li>
+  <li>Use @mentions sparingly but effectively — tag dev for blockers only</li>
+  <li>Keep dashboards updated — stale gadgets erode team trust in QA reporting</li>
+</ol>
+
+<h3>Common Mistakes QA Makes in Jira</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Mistake</th><th>Impact</th><th>Correct Approach</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Vague bug summaries ("Login broken")</td><td>Dev cannot prioritize or reproduce</td><td>Specific: "[Login] SSO redirect fails on Safari 17"</td></tr>
+    <tr><td>Not linking bugs to stories</td><td>Lost traceability; PO can't assess story quality</td><td>Always use Linked Issues → relates to Story</td></tr>
+    <tr><td>Closing bugs without retesting</td><td>Defect leakage to production</td><td>Verify on same environment class where found</td></tr>
+    <tr><td>Creating duplicate bugs</td><td>Noise in backlog; wasted dev time</td><td>Search before creating; link as duplicate if exists</td></tr>
+    <tr><td>Ignoring story comments</td><td>Test wrong behavior; AC misunderstandings</td><td>Read all comments; ask questions Day 1-2</td></tr>
+    <tr><td>Not updating test execution status</td><td>False progress reporting</td><td>Update Xray/Zephyr in real-time during execution</td></tr>
+    <tr><td>Setting wrong Fix Version</td><td>Release scope errors</td><td>Confirm with dev lead before bug creation</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Interview Questions &amp; Answers (Section 11)</h3>
+
+<h4>Q1: Walk me through your typical day as QA using Jira.</h4>
+<p><strong>A:</strong> I start by checking my "Ready for QA" filter and open bugs needing retest. I update the sprint board, execute tests linked to in-progress stories, log defects with full reproduction steps, and comment on stories with test progress. End of day I update test execution reports and flag blockers in standup.</p>
+
+<h4>Q2: How do you ensure test coverage is traceable to requirements in Jira?</h4>
+<p><strong>A:</strong> Each acceptance criterion maps to one or more test cases linked via Xray/Zephyr. I generate a traceability matrix report showing Story → Test Cases → Execution Result → Defects. Gaps (AC with no linked test) are flagged before testing starts.</p>
+
+<h4>Q3: How do you calculate and report defect density?</h4>
+<p><strong>A:</strong> Defect Density = Total bugs found in sprint / Story points completed. If Sprint 12 had 8 bugs and 40 points, density = 0.2. I track trend over sprints — increasing density signals quality issues in new features or tech debt.</p>
+
+<h4>Q4: What JQL do you use daily as QA?</h4>
+<p><strong>A:</strong> Key queries: (1) <code>status = "Ready for QA" AND sprint in openSprints()</code>, (2) <code>type = Bug AND status = Fixed AND reporter = currentUser()</code>, (3) <code>sprint in openSprints() AND assignee = currentUser() AND status != Done</code>.</p>
+
+<h4>Q5: How do you handle a bug that cannot be reproduced?</h4>
+<p><strong>A:</strong> Add detailed logs, video recording, HAR file. Tag "intermittent" label. If dev cannot reproduce, move to Cannot Reproduce with comment documenting attempts. Reopen if seen again with additional evidence. Never close without team agreement.</p>
+
+<h4>Q6: Compare Zephyr Scale vs Xray for Jira test management.</h4>
+<p><strong>A:</strong> Both are native Jira apps. Xray uses Jira issue types (Test, Test Plan) — good for teams wanting everything as Jira issues. Zephyr Scale has a dedicated test repository with versioning — better for large enterprise test libraries. Both support traceability and CI integration; choice depends on team size and BDD needs.</p>
+
+<h4>Q7: How do you track defect leakage in Jira?</h4>
+<p><strong>A:</strong> Production bugs get label "prod-bug" and Component matching the feature. Leakage Rate = prod-bugs / (QA bugs + prod-bugs) × 100. Root cause analysis on each prod bug: missed AC, missing test case, environment gap, or regression.</p>
+
+<h4>Q8: What should a good bug report contain?</h4>
+<p><strong>A:</strong> Clear summary, numbered reproduction steps, expected vs actual result, environment details (OS, browser, build), test data used, screenshots/logs attached, severity/priority, linked story, and Fix Version. A developer should reproduce without asking me questions.</p>
+
+<h4>Q9: How do you use Jira dashboards to communicate QA status?</h4>
+<p><strong>A:</strong> My dashboard shows: open bugs by priority (pie), test execution progress (bar), bugs created vs resolved trend (line), and stories in "In Test" (filter results). I share the dashboard link in sprint reviews instead of building slides manually.</p>
+
+<h4>Q10: How do you manage test cases for regression in Jira?</h4>
+<p><strong>A:</strong> Tag regression test cases with label "regression" and organize into a Test Set/Cycle per release. Each sprint, clone the cycle, execute against the staging build, and track pass/fail. Failed tests either log new bugs or reopen existing ones.</p>
+
+<h4>Q11: What is your approach to requirement clarification in Jira?</h4>
+<p><strong>A:</strong> During Days 1-2, I review every story's AC and post structured questions as comments. I identify edge cases (empty input, max length, concurrent users) and propose additional AC if missing. I don't start test case writing until critical questions are resolved.</p>
+
+<h4>Q12: How do you prevent duplicate bug reports?</h4>
+<p><strong>A:</strong> Before creating a bug, I search JQL: <code>text ~ "OTP expired" AND project = PROJ AND status != Closed</code>. If found, I add a comment with my additional evidence and link as "duplicates" rather than creating a new issue.</p>
+
+</section>
+
+<section id="section-12" class="section-card">
+<h2>Section 12: Agile Testing</h2>
+
+<p>Agile Testing is not a phase — it is continuous quality feedback integrated into every sprint activity. Senior QA and SDET interviews heavily test your understanding of testing quadrants, shift-left/right, CI/CD gates, and automation strategy.</p>
+
+<h3>What is Agile Testing?</h3>
+
+<p>Agile Testing applies testing principles within Agile development: short iterations, continuous feedback, whole-team quality ownership, and adapting test activities to changing requirements. Unlike Waterfall (test after build), Agile embeds testing from story refinement through production monitoring.</p>
+
+<div class="callout">
+<strong>Core Principles:</strong> Test early and often | Whole team owns quality | Face-to-face communication | Respond to change | Working software over documentation | Continuous improvement each retrospective
+</div>
+
+<h3>Agile Testing Quadrants (Brian Marick's Model)</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Quadrant</th><th>Orientation</th><th>Audience</th><th>Test Types</th><th>Automation</th><th>Examples</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Q1</td><td>Technology-facing, supporting team</td><td>Developers</td><td>Unit, Component</td><td>Highly automated</td><td>JUnit tests, API unit tests, TDD</td></tr>
+    <tr><td>Q2</td><td>Business-facing, supporting team</td><td>Developers, QA</td><td>Functional, Story, Prototype</td><td>Automated + Manual</td><td>Selenium story tests, Cucumber scenarios</td></tr>
+    <tr><td>Q3</td><td>Business-facing, critiquing product</td><td>Business, QA</td><td>Exploratory, UAT, Alpha/Beta</td><td>Mostly manual</td><td>Exploratory sessions, usability testing</td></tr>
+    <tr><td>Q4</td><td>Technology-facing, critiquing product</td><td>Ops, Security</td><td>Performance, Security, Load</td><td>Tool-driven</td><td>JMeter load tests, OWASP ZAP scans</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="ascii-diagram"><pre>
+                    AGILE TESTING QUADRANTS
+                    ═══════════════════════
+
+          Business-Facing                Technology-Facing
+          ───────────────                ───────────────────
+
+              Q3                              Q4
+         ┌─────────────┐                 ┌─────────────┐
+         │ Exploratory │                 │ Performance │
+         │    UAT      │  CRITIQUE       │  Security   │
+         │  Usability  │  PRODUCT  ──►   │  Load/Stress│
+         └─────────────┘                 └─────────────┘
+              ▲                               ▲
+              │                               │
+    SUPPORT   │                               │   SUPPORT
+    TEAM      │                               │   TEAM
+              ▼                               ▼
+         ┌─────────────┐                 ┌─────────────┐
+         │ Functional  │                 │    Unit     │
+         │ Story Tests │  ◄── SUPPORT ── │  Component  │
+         │  Prototype  │     TEAM        │    Tests    │
+         └─────────────┘                 └─────────────┘
+              Q2                              Q1
+
+  Sprint Timeline Mapping:
+    Refinement → Q2 (story test design), Q3 (exploratory ideas)
+    Development → Q1 (unit), Q2 (automated functional)
+    Testing     → Q2 (execution), Q3 (exploratory), Q4 (NFR)
+    Release     → Q4 (perf/security gate), Q3 (UAT sign-off)
+</pre></div>
+
+<h3>Shift Left Testing</h3>
+
+<h4>Concept and Benefits</h4>
+<p>Shift Left moves testing activities earlier in the development lifecycle — during requirements, design, and coding — rather than waiting for a completed build.</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Benefit</th><th>Impact</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Early defect detection</td><td>Bugs found in design cost 10× less than in production</td></tr>
+    <tr><td>Faster feedback</td><td>Devs fix issues while context is fresh</td></tr>
+    <tr><td>Better requirements</td><td>QA questions expose ambiguities before coding</td></tr>
+    <tr><td>Reduced rework</td><td>Fewer sprint spillovers due to late-found bugs</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>How QA Implements Shift Left</h4>
+<ul>
+  <li>Participate in backlog refinement — review AC before sprint planning</li>
+  <li>Write test cases during development, not after</li>
+  <li>Pair with developers on testable code design</li>
+  <li>Run API tests against dev environment before UI is ready</li>
+  <li>Review pull requests for test coverage and edge cases</li>
+  <li>Set up pre-commit hooks running smoke tests locally</li>
+</ul>
+
+<h4>Real Example: Registration Feature</h4>
+<div class="callout">
+<strong>Without Shift Left:</strong> Dev completes US-201 → QA tests Day 8 → finds OTP expiry bug → fix takes 2 days → story spills.<br>
+<strong>With Shift Left:</strong> QA reviews AC Day 1 → asks "What is OTP expiry?" → PO clarifies 5 min → QA writes API test Day 3 against dev branch → bug found Day 4 → dev fixes same day → UI testing Day 7 proceeds smoothly.
+</div>
+
+<h3>Shift Right Testing</h3>
+
+<p>Shift Right extends testing into production and post-release monitoring — complementing Shift Left, not replacing it.</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Practice</th><th>Description</th><th>Tools</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Production monitoring</td><td>Track error rates, latency, user flows</td><td>Datadog, New Relic, Sentry</td></tr>
+    <tr><td>Canary releases</td><td>Deploy to 5% traffic; monitor before full rollout</td><td>Feature flags, Kubernetes</td></tr>
+    <tr><td>A/B testing</td><td>Compare feature variants with real users</td><td>LaunchDarkly, Optimizely</td></tr>
+    <tr><td>Chaos engineering</td><td>Inject failures to test resilience</td><td>Chaos Monkey, Gremlin</td></tr>
+    <tr><td>Synthetic monitoring</td><td>Automated probes simulating user journeys</td><td>Pingdom, Checkly</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Continuous Testing in CI/CD Pipeline</h3>
+
+<div class="ascii-diagram"><pre>
+              CONTINUOUS TESTING CI/CD PIPELINE
+              ══════════════════════════════════
+
+  ┌──────┐   ┌───────┐   ┌────────────┐   ┌──────────────────┐
+  │ CODE │──►│ BUILD │──►│ UNIT TESTS │──►│ INTEGRATION TESTS│
+  │Commit│   │Compile│   │  (Q1)      │   │     (Q1/Q2)      │
+  └──────┘   └───────┘   └─────┬──────┘   └────────┬─────────┘
+                               │ QA Gate: ≥80%      │ QA Gate: All pass
+                               │ coverage           │
+                               ▼                    ▼
+                        ┌─────────────┐      ┌──────────────┐
+                        │ DEPLOY TO   │      │  STATIC CODE │
+                        │ DEV/QA ENV  │      │  ANALYSIS    │
+                        └──────┬──────┘      └──────────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │  FUNCTIONAL TESTS   │
+                    │  (Q2 — Selenium/    │
+                    │   Playwright/API)   │
+                    └──────────┬──────────┘
+                               │ QA Gate: Smoke + Regression pass
+                               ▼
+                    ┌─────────────────────┐
+                    │ PERFORMANCE TESTS   │
+                    │  (Q4 — JMeter/k6)   │
+                    └──────────┬──────────┘
+                               │ QA Gate: p95 &lt; 500ms, 0 errors
+                               ▼
+                    ┌─────────────────────┐
+                    │  SECURITY SCAN      │
+                    │  (Q4 — OWASP ZAP)   │
+                    └──────────┬──────────┘
+                               │ QA Gate: No critical CVEs
+                               ▼
+                    ┌─────────────────────┐
+                    │  DEPLOY TO PROD     │
+                    │  (Canary → Full)    │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │ PRODUCTION MONITOR  │
+                    │ (Shift Right — Q3/4)│
+                    └─────────────────────┘
+</pre></div>
+
+<h4>QA Gates at Each Stage</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Stage</th><th>Gate Criteria</th><th>Failure Action</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Unit Tests</td><td>≥ 80% code coverage; 0 failures</td><td>Block merge to main</td></tr>
+    <tr><td>Integration Tests</td><td>All API contract tests pass</td><td>Block deploy to QA</td></tr>
+    <tr><td>Functional Tests</td><td>Smoke 100% pass; regression ≥ 95%</td><td>Block release candidate</td></tr>
+    <tr><td>Performance Tests</td><td>Response p95 &lt; SLA; error rate &lt; 0.1%</td><td>Block production deploy</td></tr>
+    <tr><td>Security Scan</td><td>Zero critical/high vulnerabilities</td><td>Block deploy; create Jira security bug</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Test Automation in Agile</h3>
+
+<h4>What to Automate vs What NOT to Automate</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Criteria</th><th>Automate ✅</th><th>Do NOT Automate ❌</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Frequency</td><td>Runs every sprint/build (regression, smoke)</td><td>One-time ad hoc checks</td></tr>
+    <tr><td>Stability</td><td>Stable UI/API with defined assertions</td><td>Flaky, frequently changing UI</td></tr>
+    <tr><td>Data</td><td>Deterministic test data available</td><td>Complex visual/layout validation</td></tr>
+    <tr><td>ROI</td><td>High execution count justifies maintenance</td><td>Low-value edge case run once</td></tr>
+    <tr><td>Type</td><td>API tests, CRUD flows, data-driven tests</td><td>Exploratory, usability, one-off investigations</td></tr>
+    <tr><td>Speed need</td><td>Must run in CI within minutes</td><td>Tests requiring manual judgment</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Test Pyramid</h4>
+<div class="ascii-diagram"><pre>
+                    TEST AUTOMATION PYRAMID
+                    ═══════════════════════
+
+                         ┌───────┐
+                         │  E2E  │  ← Few (5-10%): Slow, brittle, expensive
+                         │  UI   │     Selenium, Playwright, Cypress
+                       ┌─┴───────┴─┐
+                       │Integration│  ← Some (20-30%): API, DB, service tests
+                       │   Tests   │     REST Assured, Postman, Testcontainers
+                     ┌─┴───────────┴─┐
+                     │   Unit Tests   │  ← Many (60-70%): Fast, cheap, stable
+                     │   (Dev-owned)  │     JUnit, TestNG, pytest
+                     └───────────────┘
+
+  Rule: If E2E test fails, ask "Could this be caught at integration or unit level?"
+</pre></div>
+
+<h4>Automation ROI Calculation</h4>
+<div class="callout">
+<strong>ROI = (Manual Execution Cost × Runs per Year − Automation Maintenance Cost) / Automation Investment</strong><br><br>
+<strong>Example:</strong> Regression suite = 40 manual hours × $50/hr = $2,000 per run × 26 sprints = $52,000/year manual cost.<br>
+Automation investment = 200 hours × $50 = $10,000. Maintenance = 40 hours/year × $50 = $2,000/year.<br>
+Automated run cost = 2 hours × $50 × 26 = $2,600/year.<br>
+<strong>ROI = ($52,000 − $2,600 − $2,000) / $10,000 = 4.74× return in Year 1.</strong>
+</div>
+
+<h3>Testing in Each Sprint Phase</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Phase</th><th>Testing Activity</th><th>Tools</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Sprint Planning</td><td>Review AC, identify testability gaps, estimate QA effort</td><td>Jira, Confluence</td></tr>
+    <tr><td>Refinement</td><td>Write test scenarios, clarify requirements, define test data needs</td><td>Jira comments, Miro</td></tr>
+    <tr><td>Development (Days 1-5)</td><td>API testing on dev builds, unit test review, test case authoring</td><td>REST Assured, Postman, Git</td></tr>
+    <tr><td>Development (Days 5-8)</td><td>Functional testing, bug logging, automation script updates</td><td>Selenium/Playwright, Jira</td></tr>
+    <tr><td>Testing (Days 7-9)</td><td>Full story testing, regression, cross-browser, retesting fixes</td><td>TestNG, BrowserStack, Xray</td></tr>
+    <tr><td>Sprint End (Day 10)</td><td>Regression sign-off, sprint demo support, test report</td><td>Allure, Jira Dashboard</td></tr>
+    <tr><td>Release</td><td>Smoke on staging, performance gate, production verification</td><td>Jenkins, JMeter, Datadog</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Tools in Agile Testing Ecosystem</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Category</th><th>Tools</th><th>Purpose in Agile</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Planning</td><td>Jira, Azure DevOps</td><td>Sprint backlog, bug tracking, metrics</td></tr>
+    <tr><td>Documentation</td><td>Confluence, Notion</td><td>Test plans, DoD, test data docs</td></tr>
+    <tr><td>Version Control</td><td>Git, GitHub, GitLab</td><td>Test code alongside app code</td></tr>
+    <tr><td>CI/CD</td><td>Jenkins, GitHub Actions, GitLab CI</td><td>Automated test execution on every commit</td></tr>
+    <tr><td>UI Automation</td><td>Selenium, Playwright, Cypress</td><td>E2E and functional test automation</td></tr>
+    <tr><td>API Automation</td><td>REST Assured, Postman, Karate</td><td>Service layer testing in CI</td></tr>
+    <tr><td>Test Framework</td><td>TestNG, JUnit, pytest</td><td>Test organization, parallel execution</td></tr>
+    <tr><td>Reporting</td><td>Allure, ExtentReports</td><td>Visual test reports for stakeholders</td></tr>
+    <tr><td>Performance</td><td>JMeter, k6, Gatling</td><td>Load and stress testing</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>BDD (Behavior Driven Development)</h3>
+
+<h4>Gherkin Syntax</h4>
+<pre><code>Feature: User Registration
+  As a new visitor
+  I want to register with my email
+  So that I can access the platform
+
+  Background:
+    Given the registration page is open
+
+  Scenario: Successful email registration
+    When I enter email "user@test.com"
+    And I enter password "SecurePass1!"
+    And I click the Register button
+    Then I should see "Verify your email"
+    And a verification email should be sent to "user@test.com"
+
+  Scenario Outline: Invalid password rejected
+    When I enter email "user@test.com"
+    And I enter password "&lt;password&gt;"
+    And I click the Register button
+    Then I should see error "&lt;error_message&gt;"
+
+    Examples:
+      | password   | error_message                    |
+      | short      | Password must be at least 8 chars|
+      | nodigits   | Password must contain a number   |
+      | noSpecial  | Password must contain a special  |</code></pre>
+
+<h4>Cucumber Integration</h4>
+<p>Feature files (.feature) live in <code>src/test/resources/features/</code>. Step definitions in Java map Gherkin steps to Selenium/API code. Cucumber hooks handle setup/teardown. Reports integrate with Allure for stakeholder-readable output.</p>
+
+<h3>TDD vs BDD vs ATDD Comparison</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Aspect</th><th>TDD</th><th>BDD</th><th>ATDD</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Full Form</td><td>Test-Driven Development</td><td>Behavior-Driven Development</td><td>Acceptance Test-Driven Development</td></tr>
+    <tr><td>Primary Owner</td><td>Developer</td><td>Whole team (3 Amigos)</td><td>QA + PO + Dev</td></tr>
+    <tr><td>Language</td><td>Code (JUnit, TestNG)</td><td>Gherkin (Given/When/Then)</td><td>Acceptance criteria → automated tests</td></tr>
+    <tr><td>Focus</td><td>Code design via unit tests</td><td>Behavior specification</td><td>Acceptance criteria validation</td></tr>
+    <tr><td>Test Level</td><td>Unit tests</td><td>Functional/E2E</td><td>Acceptance/Story level</td></tr>
+    <tr><td>When Applied</td><td>During coding</td><td>During refinement + coding</td><td>Before/during sprint start</td></tr>
+    <tr><td>Tools</td><td>JUnit, NUnit, pytest</td><td>Cucumber, SpecFlow, Behave</td><td>Robot Framework, FitNesse, Cucumber</td></tr>
+    <tr><td>Audience</td><td>Developers</td><td>Business + Dev + QA</td><td>PO + QA + Dev</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Definition of Done for Testing</h3>
+
+<div class="callout">
+<strong>Testing DoD Checklist (team-agreed):</strong>
+<ul>
+  <li>All acceptance criteria verified with evidence</li>
+  <li>Unit test coverage ≥ 80% for new code</li>
+  <li>Automated functional tests pass in CI</li>
+  <li>No open P1/P2 bugs on the story</li>
+  <li>Test cases linked and executed in test management tool</li>
+  <li>Regression suite pass rate ≥ 95%</li>
+  <li>Cross-browser testing complete (Chrome, Firefox, Safari)</li>
+  <li>API tests pass against staging environment</li>
+  <li>Performance baseline met (if applicable)</li>
+  <li>Test data cleaned up; no orphaned records</li>
+</ul>
+</div>
+
+<h3>Interview Questions &amp; Answers (Section 12)</h3>
+
+<h4>Q1: What is Agile Testing and how is it different from traditional testing?</h4>
+<p><strong>A:</strong> Agile Testing is continuous and iterative — testing happens throughout the sprint alongside development, not as a separate phase after coding. Testers collaborate daily with dev and PO, adapt to changing requirements, and automate regression to keep pace with frequent releases.</p>
+
+<h4>Q2: Explain the four Agile Testing Quadrants.</h4>
+<p><strong>A:</strong> Q1 (unit/component, tech, support team), Q2 (functional/story, business, support team), Q3 (exploratory/UAT, business, critique product), Q4 (performance/security, tech, critique product). All four quadrants are needed — not just Q2 functional testing.</p>
+
+<h4>Q3: What is Shift Left testing? Give a practical example.</h4>
+<p><strong>A:</strong> Shift Left means testing earlier in the lifecycle. Example: During refinement, I review acceptance criteria and identify that "password must be strong" is vague. I ask PO to define rules before dev starts. I write API tests against the dev branch on Day 3 — finding a validation bug before UI is even built.</p>
+
+<h4>Q4: What is Shift Right testing?</h4>
+<p><strong>A:</strong> Shift Right extends testing into production — monitoring real user behavior, canary deployments, feature flags, synthetic monitoring, and chaos engineering. It catches issues that lab environments miss: real traffic patterns, data edge cases, and infrastructure failures.</p>
+
+<h4>Q5: Describe QA gates in a CI/CD pipeline.</h4>
+<p><strong>A:</strong> Each pipeline stage has pass/fail criteria that block progression. Unit tests must pass with ≥80% coverage before merge. Integration tests gate deploy to QA. Functional smoke/regression gates release candidate. Performance and security scans gate production deploy. Failures notify QA and dev via Slack/Jira.</p>
+
+<h4>Q6: Explain the Test Automation Pyramid.</h4>
+<p><strong>A:</strong> Base = many fast unit tests (60-70%). Middle = integration/API tests (20-30%). Top = few E2E UI tests (5-10%). The pyramid shape reflects speed, stability, and cost — push tests as low as possible. E2E tests are slow and brittle; rely on them sparingly.</p>
+
+<h4>Q7: What tests should you NOT automate?</h4>
+<p><strong>A:</strong> Exploratory tests, one-time investigations, frequently changing UI features, tests requiring human judgment (usability, visual design), unstable/flaky scenarios, and tests where automation maintenance exceeds manual execution cost.</p>
+
+<h4>Q8: How do you calculate automation ROI?</h4>
+<p><strong>A:</strong> ROI = (Manual cost per year − Automated run cost − Maintenance cost) / Initial investment. If manual regression costs $52K/year and automation costs $10K to build + $4.6K/year to run/maintain, ROI = 3.4× in Year 1. Present this to justify automation sprint capacity.</p>
+
+<h4>Q9: What is BDD and how does Gherkin help?</h4>
+<p><strong>A:</strong> BDD uses natural language (Gherkin: Given/When/Then) to define behavior collaboratively with PO, dev, and QA. Feature files become living documentation and automated test scripts via Cucumber step definitions. It bridges communication gaps between technical and business teams.</p>
+
+<h4>Q10: Compare TDD, BDD, and ATDD.</h4>
+<p><strong>A:</strong> TDD is developer-driven unit testing before code (Red-Green-Refactor). BDD specifies behavior in Gherkin for the whole team. ATDD defines acceptance tests from AC before development starts — typically in "Three Amigos" sessions. They complement each other: TDD for code quality, ATDD for requirements, BDD for communication.</p>
+
+<h4>Q11: What is your Definition of Done for testing?</h4>
+<p><strong>A:</strong> All AC verified, automated tests pass in CI, no open P1/P2 bugs, test cases executed and linked in Xray, regression ≥95% pass, cross-browser tested, and test data cleaned up. DoD is team-agreed and displayed in Confluence — not QA-only criteria.</p>
+
+<h4>Q12: How do you balance manual and automated testing in a sprint?</h4>
+<p><strong>A:</strong> Automate regression and smoke tests for stable features. Manual effort focuses on new story testing (first-time validation), exploratory testing (Q3), and complex scenarios hard to automate. Each sprint I allocate ~60% execution on automation, ~40% on manual/exploratory for new features.</p>
+
+<h4>Q13: How does continuous testing differ from test automation?</h4>
+<p><strong>A:</strong> Test automation is writing scripts to execute tests. Continuous testing is the practice of running the right tests automatically at every pipeline stage with quality gates. It includes automation plus CI integration, test selection, environment management, and result-driven deploy decisions.</p>
+
+<h4>Q14: What testing activities happen during backlog refinement?</h4>
+<p><strong>A:</strong> QA reviews stories for testability, identifies missing AC, proposes edge cases, estimates testing effort, and flags dependencies. I ask: "How do we test this? What test data is needed? Are there NFR requirements?" This is Shift Left in action.</p>
+
+<h4>Q15: How do you handle testing when requirements change mid-sprint?</h4>
+<p><strong>A:</strong> Assess impact on existing test cases and automation scripts. Update test cases in Jira/Xray. Communicate scope change to SM/PO. Reprioritize — drop lower-priority tests if needed. Update AC comments with agreed changes. Never silently test against old requirements.</p>
+
+<h4>Q16: What role does QA play in CI/CD?</h4>
+<p><strong>A:</strong> QA defines quality gates, maintains automated test suites in the pipeline, triages test failures (bug vs flaky test), manages test environments and data, reviews deployment checklists, and performs smoke tests post-deploy. QA is a pipeline stakeholder, not just a consumer of builds.</p>
+
+</section>
+
+<section id="section-13" class="section-card">
+<h2>Section 13: Real-Time Project Scenarios</h2>
+
+<p>Interviewers for Senior QA and SDET roles often present live scenarios: "Here's a user story — how would you test it?" This section provides five end-to-end scenarios with requirements, stories, test cases, SQL validation, sample defects, and Jira workflow walkthroughs.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h3>Scenario 1: Login Feature Testing</h3>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h4>Requirement</h4>
+<p>The application must support secure user authentication via multiple methods (email, phone, SSO), with session management (Remember Me), password recovery, and account lockout after repeated failed attempts.</p>
+
+<h4>User Story with Acceptance Criteria</h4>
+<div class="callout">
+<strong>US-501: User Login</strong><br>
+As a registered user, I want to log in using email, phone, or SSO, so that I can access my account securely.<br><br>
+<strong>Acceptance Criteria:</strong>
+<ol>
+  <li>User can log in with valid email + password → redirected to dashboard</li>
+  <li>User can log in with valid phone number + OTP → redirected to dashboard</li>
+  <li>User can log in via Google SSO → account linked or created</li>
+  <li>"Remember Me" keeps session active for 30 days on trusted device</li>
+  <li>"Forgot Password" sends reset link valid for 15 minutes</li>
+  <li>Account locks after 5 consecutive failed password attempts for 30 minutes</li>
+  <li>Invalid credentials show generic error: "Invalid email or password" (no user enumeration)</li>
+  <li>Session expires after 24 hours of inactivity (without Remember Me)</li>
+</ol>
+</div>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>TC ID</th><th>Test Case</th><th>Precondition</th><th>Steps</th><th>Expected Result</th><th>Priority</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>TC-L01</td><td>Valid email login</td><td>User exists: john@test.com</td><td>Enter email + valid password → Login</td><td>Redirect to /dashboard; session created</td><td>P1</td></tr>
+    <tr><td>TC-L02</td><td>Valid phone + OTP login</td><td>User with phone +91-9876543210</td><td>Enter phone → Request OTP → Enter OTP → Login</td><td>Redirect to dashboard</td><td>P1</td></tr>
+    <tr><td>TC-L03</td><td>Google SSO login</td><td>Google account linked</td><td>Click "Sign in with Google" → Authorize</td><td>Redirect to dashboard; SSO token stored</td><td>P1</td></tr>
+    <tr><td>TC-L04</td><td>Remember Me — 30 day session</td><td>Valid user</td><td>Check Remember Me → Login → Close browser → Reopen after 1 day</td><td>User still logged in</td><td>P2</td></tr>
+    <tr><td>TC-L05</td><td>Forgot Password flow</td><td>Registered email</td><td>Click Forgot Password → Enter email → Check inbox → Click reset link → Set new password</td><td>Password updated; can login with new password</td><td>P1</td></tr>
+    <tr><td>TC-L06</td><td>Account lockout after 5 failures</td><td>Valid user account</td><td>Enter wrong password 5 times</td><td>Account locked message; login blocked for 30 min</td><td>P1</td></tr>
+    <tr><td>TC-L07</td><td>Invalid credentials — no enumeration</td><td>None</td><td>Login with non-existent email OR wrong password</td><td>Same error: "Invalid email or password"</td><td>P1</td></tr>
+    <tr><td>TC-L08</td><td>Session timeout — 24hr inactivity</td><td>Logged in without Remember Me</td><td>Wait 24+ hours idle → perform action</td><td>Redirect to login page</td><td>P2</td></tr>
+    <tr><td>TC-L09</td><td>Expired reset link</td><td>Reset link generated</td><td>Wait 16 minutes → click reset link</td><td>Error: "Link expired. Request a new one."</td><td>P2</td></tr>
+    <tr><td>TC-L10</td><td>SSO — new user auto-registration</td><td>Google account NOT linked</td><td>Sign in with Google (first time)</td><td>Account created; redirected to profile setup</td><td>P2</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>SQL Validation Queries</h4>
+<pre><code>-- Verify successful login creates session record
+SELECT u.email, s.session_token, s.expires_at, s.remember_me
+FROM users u
+JOIN user_sessions s ON u.id = s.user_id
+WHERE u.email = 'john@test.com'
+  AND s.is_active = 1
+ORDER BY s.created_at DESC
+LIMIT 1;
+
+-- Verify account lockout after 5 failed attempts
+SELECT email, failed_login_count, locked_until, status
+FROM users
+WHERE email = 'john@test.com';
+-- Expected: failed_login_count = 5, locked_until = NOW() + 30 min, status = 'LOCKED'
+
+-- Verify password reset token expiry
+SELECT email, reset_token, reset_token_expires_at
+FROM users
+WHERE email = 'john@test.com';
+-- Expected: reset_token_expires_at within 15 minutes of created_at</code></pre>
+
+<h4>Defects Found (Sample)</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Bug ID</th><th>Summary</th><th>Severity</th><th>Root Cause</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>BUG-601</td><td>Account lockout triggers after 3 attempts, not 5</td><td>Major</td><td>Config value wrong in auth-service.properties</td></tr>
+    <tr><td>BUG-602</td><td>Non-existent email shows "User not found" — enumeration risk</td><td>Critical</td><td>Different error messages in AuthController</td></tr>
+    <tr><td>BUG-603</td><td>Remember Me session expires after 7 days, not 30</td><td>Minor</td><td>Cookie maxAge set to 604800 instead of 2592000</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Jira Workflow Walkthrough</h4>
+<div class="ascii-diagram"><pre>
+US-501 Login Feature — Jira Timeline
+─────────────────────────────────────
+Day 1:  Story in Sprint → QA creates sub-task "Test case design"
+Day 3:  Dev moves to "Ready for QA" → QA transitions to "In Test"
+Day 4:  TC-L01 to L07 executed → BUG-601, BUG-602 logged (linked to US-501)
+Day 5:  Dev fixes BUG-602 (Critical) → QA verifies → Closed
+Day 6:  BUG-601 fixed → QA retest TC-L06 → Pass → Closed
+Day 7:  TC-L08 to L10 executed → BUG-603 logged (Minor, deferred to Sprint 14)
+Day 8:  All P1/P2 tests pass → US-501 → Done | Fix Version: v3.1.0
+</pre></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h3>Scenario 2: Order Placement Flow (E-Commerce)</h3>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h4>Requirement</h4>
+<p>Registered users must be able to add products to cart, proceed through checkout with address and payment details, apply discount codes, and receive order confirmation. System must validate stock availability and calculate prices correctly including taxes and discounts.</p>
+
+<h4>User Story with Acceptance Criteria</h4>
+<div class="callout">
+<strong>US-601: Place Order</strong><br>
+As a registered user, I want to complete an order from cart to confirmation, so that I receive my purchased products.<br><br>
+<strong>Acceptance Criteria:</strong>
+<ol>
+  <li>User can add products to cart and view updated cart total</li>
+  <li>Checkout validates stock availability before order creation</li>
+  <li>User selects/adds shipping address during checkout</li>
+  <li>Price = (Unit Price × Quantity) − Discount + Tax (18% GST)</li>
+  <li>Valid discount code reduces total; invalid/expired code shows error</li>
+  <li>Payment success → order status = CONFIRMED, confirmation email sent</li>
+  <li>Order confirmation page shows order ID, items, total, estimated delivery</li>
+  <li>Out-of-stock item cannot be checked out — user notified to remove item</li>
+</ol>
+</div>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>TC ID</th><th>Test Case</th><th>Precondition</th><th>Steps</th><th>Expected Result</th><th>Priority</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>TC-O01</td><td>Add single product to cart</td><td>Product SKU-101 in stock (qty 50)</td><td>Click "Add to Cart" on product page</td><td>Cart shows 1 item; subtotal = unit price</td><td>P1</td></tr>
+    <tr><td>TC-O02</td><td>Add multiple products</td><td>3 products in stock</td><td>Add 3 different products → View cart</td><td>Cart shows 3 items; subtotal = sum of prices</td><td>P1</td></tr>
+    <tr><td>TC-O03</td><td>Update quantity in cart</td><td>Item in cart qty=1, price=₹500</td><td>Change qty to 3</td><td>Line total = ₹1500; cart subtotal updated</td><td>P1</td></tr>
+    <tr><td>TC-O04</td><td>Stock validation — insufficient stock</td><td>Product stock = 2; cart qty = 5</td><td>Proceed to checkout</td><td>Error: "Only 2 units available"; checkout blocked</td><td>P1</td></tr>
+    <tr><td>TC-O05</td><td>Price calculation with tax</td><td>Cart subtotal = ₹1000, no discount</td><td>Proceed to checkout → review summary</td><td>Tax (18%) = ₹180; Total = ₹1180</td><td>P1</td></tr>
+    <tr><td>TC-O06</td><td>Valid discount code applied</td><td>Code SAVE10 (10% off, active)</td><td>Enter SAVE10 at checkout</td><td>Discount = ₹100; Total = ₹1000 + ₹162 tax = ₹1162</td><td>P1</td></tr>
+    <tr><td>TC-O07</td><td>Invalid discount code</td><td>Code EXPIRED (expired yesterday)</td><td>Enter EXPIRED at checkout</td><td>Error: "Invalid or expired coupon code"</td><td>P2</td></tr>
+    <tr><td>TC-O08</td><td>Complete checkout — happy path</td><td>Logged in, cart with items, valid address</td><td>Checkout → Address → Payment → Confirm</td><td>Order CONFIRMED; email sent; confirmation page shown</td><td>P1</td></tr>
+    <tr><td>TC-O09</td><td>Out-of-stock at checkout time</td><td>Another user buys last unit during checkout</td><td>Start checkout → complete payment</td><td>Error: "Item out of stock"; order NOT created</td><td>P1</td></tr>
+    <tr><td>TC-O10</td><td>Remove item from cart</td><td>2 items in cart</td><td>Remove 1 item</td><td>Cart updates; subtotal recalculated</td><td>P2</td></tr>
+    <tr><td>TC-O11</td><td>Empty cart checkout blocked</td><td>Empty cart</td><td>Navigate to /checkout</td><td>Redirect to cart with message "Cart is empty"</td><td>P2</td></tr>
+    <tr><td>TC-O12</td><td>Address validation — missing fields</td><td>Cart with items</td><td>Checkout with blank pincode</td><td>Validation error on pincode field</td><td>P2</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>SQL Validation Queries</h4>
+<pre><code>-- Verify order created with correct totals after checkout
+SELECT o.order_id, o.status, o.subtotal, o.discount_amount,
+       o.tax_amount, o.total_amount, oi.product_id, oi.quantity, oi.unit_price
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+WHERE o.user_id = (SELECT id FROM users WHERE email = 'buyer@test.com')
+ORDER BY o.created_at DESC
+LIMIT 1;
+-- Expected: status='CONFIRMED', total = subtotal - discount + tax
+
+-- Verify stock decremented after order
+SELECT p.sku, p.stock_quantity, p.reserved_quantity
+FROM products p
+WHERE p.sku = 'SKU-101';
+-- Expected: stock_quantity decreased by ordered qty
+
+-- Verify discount code usage tracked
+SELECT dc.code, dc.times_used, dc.max_uses, ou.order_id
+FROM discount_codes dc
+JOIN order_discounts od ON dc.id = od.discount_code_id
+JOIN orders ou ON od.order_id = ou.order_id
+WHERE dc.code = 'SAVE10'
+ORDER BY ou.created_at DESC
+LIMIT 1;</code></pre>
+
+<h4>Defects Found (Sample)</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Bug ID</th><th>Summary</th><th>Severity</th><th>Root Cause</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>BUG-701</td><td>Tax calculated on post-discount amount but AC says pre-discount</td><td>Major</td><td>Tax service applies after discount instead of before</td></tr>
+    <tr><td>BUG-702</td><td>Stock not decremented — overselling possible</td><td>Critical</td><td>Missing stock update in order confirmation handler</td></tr>
+    <tr><td>BUG-703</td><td>Confirmation email not sent for orders &gt; ₹5000</td><td>Major</td><td>Email queue filter excludes high-value orders</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Jira Workflow Walkthrough</h4>
+<div class="ascii-diagram"><pre>
+US-601 Order Placement — Jira Timeline
+─────────────────────────────────────────
+Day 1:  QA analyzes AC → creates 12 test cases in Xray linked to US-601
+Day 4:  Build deployed to QA → QA starts TC-O01 to O05
+Day 5:  BUG-702 logged (Critical, Blocks US-601) → escalated to Dev Lead
+Day 6:  BUG-702 fixed + verified → TC-O04, O09 pass
+Day 7:  BUG-701 logged → PO clarifies AC #4 → tax calc corrected
+Day 8:  TC-O06 to O12 pass → US-601 → Done
+        Sprint board: US-601 moved to Done column | Fix Version: v3.2.0
+</pre></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h3>Scenario 3: Payment Integration Testing</h3>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h4>Requirement</h4>
+<p>Integrate payment gateway supporting credit card, debit card, UPI, and wallet payments. Handle success, failure, timeout, and refund scenarios. Comply with PCI DSS — no card data stored in application database.</p>
+
+<h4>User Story with Acceptance Criteria</h4>
+<div class="callout">
+<strong>US-701: Payment Processing</strong><br>
+As a customer, I want to pay using my preferred payment method, so that I can complete my purchase securely.<br><br>
+<strong>Acceptance Criteria:</strong>
+<ol>
+  <li>Credit/debit card payment via gateway → order status = PAID on success</li>
+  <li>UPI payment with valid VPA → payment confirmed within 60 seconds</li>
+  <li>Wallet payment deducts balance and confirms order</li>
+  <li>Failed payment (declined card) → order status = PAYMENT_FAILED; user can retry</li>
+  <li>Payment timeout (no response in 120s) → order status = PAYMENT_PENDING; retry allowed</li>
+  <li>Refund initiated → amount credited within 5-7 business days; order status = REFUNDED</li>
+  <li>No raw card numbers stored in DB — only tokenized reference (PCI DSS)</li>
+  <li>Payment amount must match order total exactly — mismatch rejected</li>
+</ol>
+</div>
+
+<h4>PCI DSS Brief</h4>
+<div class="callout">
+<strong>PCI DSS Requirements for QA:</strong> Never log full card numbers in test evidence. Use gateway test cards only (e.g., 4111111111111111). Verify application stores only payment_token, last4, card_brand — never CVV or full PAN. Test that API responses don't expose card data. Verify HTTPS on all payment endpoints.
+</div>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>TC ID</th><th>Test Case</th><th>Precondition</th><th>Steps</th><th>Expected Result</th><th>Priority</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>TC-P01</td><td>Credit card — successful payment</td><td>Order ₹1180, test card 4111...1111</td><td>Select Card → Enter details → Pay</td><td>Payment success; order = PAID; receipt shown</td><td>P1</td></tr>
+    <tr><td>TC-P02</td><td>Debit card — successful payment</td><td>Order ₹500, test debit card</td><td>Select Debit Card → Pay</td><td>Payment success; order = PAID</td><td>P1</td></tr>
+    <tr><td>TC-P03</td><td>UPI payment — success</td><td>Order ₹2000, valid VPA test@upi</td><td>Select UPI → Enter VPA → Confirm on UPI app</td><td>Payment confirmed within 60s; order = PAID</td><td>P1</td></tr>
+    <tr><td>TC-P04</td><td>Wallet payment — sufficient balance</td><td>Wallet balance ₹5000, order ₹1500</td><td>Select Wallet → Pay</td><td>Balance deducted to ₹3500; order = PAID</td><td>P1</td></tr>
+    <tr><td>TC-P05</td><td>Declined card — payment failure</td><td>Test card 4000...0002 (decline)</td><td>Enter declined card → Pay</td><td>Error: "Payment declined"; order = PAYMENT_FAILED; retry option shown</td><td>P1</td></tr>
+    <tr><td>TC-P06</td><td>Payment timeout</td><td>Simulate gateway delay &gt;120s</td><td>Initiate payment → wait 120s</td><td>Status = PAYMENT_PENDING; "Retry Payment" button shown</td><td>P2</td></tr>
+    <tr><td>TC-P07</td><td>Refund — full refund</td><td>Order PAID ₹1180</td><td>Admin initiates refund</td><td>Order = REFUNDED; refund record created; customer notified</td><td>P1</td></tr>
+    <tr><td>TC-P08</td><td>Amount mismatch rejected</td><td>Order total ₹1180</td><td>Intercept API; send amount ₹1000</td><td>Payment rejected; error logged; order unchanged</td><td>P1</td></tr>
+    <tr><td>TC-P09</td><td>Wallet — insufficient balance</td><td>Wallet balance ₹100, order ₹500</td><td>Select Wallet → Pay</td><td>Error: "Insufficient wallet balance"</td><td>P2</td></tr>
+    <tr><td>TC-P10</td><td>PCI — no card data in DB</td><td>Successful card payment</td><td>Query payments table for card number</td><td>Only payment_token, last4, brand stored; no PAN/CVV</td><td>P1</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>SQL Validation Queries</h4>
+<pre><code>-- Verify payment record after successful transaction
+SELECT p.payment_id, p.order_id, p.method, p.amount, p.status,
+       p.gateway_transaction_id, p.payment_token, p.card_last4
+FROM payments p
+JOIN orders o ON p.order_id = o.order_id
+WHERE o.order_id = 'ORD-2024-00142'
+ORDER BY p.created_at DESC
+LIMIT 1;
+-- Expected: status='SUCCESS', amount=1180.00, payment_token NOT NULL, card_last4='1111'
+
+-- Verify NO sensitive card data stored (PCI DSS)
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'payments'
+  AND column_name IN ('card_number', 'cvv', 'pan');
+-- Expected: 0 rows (these columns must NOT exist)
+
+-- Verify refund record
+SELECT r.refund_id, r.payment_id, r.amount, r.status, r.initiated_at
+FROM refunds r
+WHERE r.payment_id = (SELECT payment_id FROM payments WHERE order_id = 'ORD-2024-00142')
+ORDER BY r.created_at DESC
+LIMIT 1;
+-- Expected: status='INITIATED' or 'COMPLETED', amount matches original payment</code></pre>
+
+<h4>Defects Found (Sample)</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Bug ID</th><th>Summary</th><th>Severity</th><th>Root Cause</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>BUG-801</td><td>Full card number logged in application logs</td><td>Critical</td><td>PaymentService debug log prints request body</td></tr>
+    <tr><td>BUG-802</td><td>Timeout does not set PAYMENT_PENDING — order stuck in PROCESSING</td><td>Major</td><td>Missing timeout handler in payment webhook listener</td></tr>
+    <tr><td>BUG-803</td><td>Double charge on retry after timeout</td><td>Critical</td><td>Idempotency key not sent on retry request</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Jira Workflow Walkthrough</h4>
+<div class="ascii-diagram"><pre>
+US-701 Payment Integration — Jira Timeline
+───────────────────────────────────────────
+Day 1:  Story assigned → QA reviews payment gateway sandbox docs
+Day 2:  Test cases TC-P01 to P10 created; test cards documented in Confluence
+Day 4:  QA executes TC-P01 (pass), TC-P05 (pass), TC-P10 → BUG-801 found (Critical)
+Day 4:  BUG-801 Blocks US-701 → immediate fix required (PCI violation)
+Day 5:  BUG-801 fixed → QA verifies TC-P10 pass → BUG-801 Closed
+Day 6:  TC-P06 → BUG-802 logged → fixed → retest pass
+Day 7:  TC-P06 retry scenario → BUG-803 (Critical) → fixed same day
+Day 8:  All P1 tests pass → US-701 → Done | Fix Version: v3.2.0
+        Security team notified of BUG-801 for compliance audit trail
+</pre></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h3>Scenario 4: User Registration</h3>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h4>Requirement</h4>
+<p>New users register with email or phone, verify identity via OTP, and set a strong password. System prevents duplicate registrations and validates all form inputs server-side and client-side.</p>
+
+<h4>User Story with Acceptance Criteria</h4>
+<div class="callout">
+<strong>US-801: User Registration</strong><br>
+As a new visitor, I want to create an account with email or phone, so that I can access platform features.<br><br>
+<strong>Acceptance Criteria:</strong>
+<ol>
+  <li>Valid email + strong password + OTP verification → account created</li>
+  <li>Valid phone + OTP verification → account created with phone as identifier</li>
+  <li>Password: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character</li>
+  <li>Duplicate email registration blocked with error "Email already registered"</li>
+  <li>Duplicate phone registration blocked with error "Phone already registered"</li>
+  <li>OTP expires after 5 minutes; expired OTP shows error with resend option</li>
+  <li>Max 3 OTP resend attempts per hour per email/phone</li>
+  <li>Invalid email format rejected with inline validation error</li>
+</ol>
+</div>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>TC ID</th><th>Test Case</th><th>Precondition</th><th>Steps</th><th>Expected Result</th><th>Priority</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>TC-R01</td><td>Successful email registration</td><td>Email not registered</td><td>Enter email, strong password → Submit → Enter OTP → Verify</td><td>Account created; welcome email sent; redirect to dashboard</td><td>P1</td></tr>
+    <tr><td>TC-R02</td><td>Successful phone registration</td><td>Phone not registered</td><td>Enter phone → Receive OTP → Enter OTP → Set password</td><td>Account created with phone identifier</td><td>P1</td></tr>
+    <tr><td>TC-R03</td><td>Weak password rejected</td><td>None</td><td>Enter email + password "password"</td><td>Validation error listing password requirements</td><td>P1</td></tr>
+    <tr><td>TC-R04</td><td>Duplicate email blocked</td><td>john@test.com exists</td><td>Register with john@test.com</td><td>Error: "Email already registered"</td><td>P1</td></tr>
+    <tr><td>TC-R05</td><td>Duplicate phone blocked</td><td>+91-9876543210 exists</td><td>Register with same phone</td><td>Error: "Phone already registered"</td><td>P1</td></tr>
+    <tr><td>TC-R06</td><td>OTP expiry — 5 minutes</td><td>OTP sent</td><td>Wait 6 minutes → Enter OTP</td><td>Error: "OTP expired"; Resend button enabled</td><td>P1</td></tr>
+    <tr><td>TC-R07</td><td>OTP resend limit — 3 per hour</td><td>OTP sent</td><td>Click Resend OTP 4 times within 1 hour</td><td>4th attempt blocked: "Max resend limit reached"</td><td>P2</td></tr>
+    <tr><td>TC-R08</td><td>Invalid email format</td><td>None</td><td>Enter "notanemail" + password</td><td>Inline error: "Enter a valid email address"</td><td>P2</td></tr>
+    <tr><td>TC-R09</td><td>Invalid OTP entered</td><td>OTP sent to valid email</td><td>Enter wrong OTP "000000"</td><td>Error: "Invalid OTP. 2 attempts remaining."</td><td>P2</td></tr>
+    <tr><td>TC-R10</td><td>SQL injection in email field</td><td>None</td><td>Enter "' OR '1'='1" as email</td><td>Validation error; no DB error; no account created</td><td>P1</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>SQL Validation Queries</h4>
+<pre><code>-- Verify new user created after successful registration
+SELECT id, email, phone, status, email_verified, created_at
+FROM users
+WHERE email = 'newuser@test.com';
+-- Expected: status='ACTIVE', email_verified=1
+
+-- Verify NO duplicate record on duplicate registration attempt
+SELECT COUNT(*) AS user_count
+FROM users
+WHERE email = 'john@test.com';
+-- Expected: user_count = 1 (not 2 after duplicate attempt)
+
+-- Verify OTP record and expiry
+SELECT otp_code, expires_at, attempts, resend_count, created_at
+FROM otp_verifications
+WHERE identifier = 'newuser@test.com'
+ORDER BY created_at DESC
+LIMIT 1;
+-- Expected: expires_at = created_at + 5 minutes, resend_count &lt;= 3
+
+-- Verify password is hashed, not plain text
+SELECT email, password_hash
+FROM users
+WHERE email = 'newuser@test.com';
+-- Expected: password_hash is bcrypt/argon2 hash, NOT plain text</code></pre>
+
+<h4>Defects Found (Sample)</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Bug ID</th><th>Summary</th><th>Severity</th><th>Root Cause</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>BUG-901</td><td>Password "Password1" accepted — missing special char check</td><td>Major</td><td>Regex validation incomplete in PasswordValidator</td></tr>
+    <tr><td>BUG-902</td><td>Duplicate email creates second inactive record instead of error</td><td>Critical</td><td>Unique constraint missing on email column</td></tr>
+    <tr><td>BUG-903</td><td>OTP valid for 30 minutes instead of 5</td><td>Major</td><td>Expiry config OTP_TTL=1800 instead of 300</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Jira Workflow Walkthrough</h4>
+<div class="ascii-diagram"><pre>
+US-801 User Registration — Jira Timeline
+─────────────────────────────────────────
+Day 1:  QA reviews AC → posts question on OTP resend limit → PO confirms AC #7
+Day 2:  Test cases TC-R01 to R10 written in Zephyr, linked to US-801
+Day 3:  Dev deploys to QA → QA executes TC-R01 (pass), TC-R03 → BUG-901 logged
+Day 4:  TC-R04 → BUG-902 (Critical) → Blocks US-801 → DBA adds unique constraint
+Day 5:  BUG-902 verified → TC-R04 pass → TC-R06 → BUG-903 logged
+Day 6:  All bugs fixed → full regression TC-R01 to R10 → all pass
+Day 7:  US-801 → Done | Fix Version: v3.1.0
+        QA comments on story: "All 10 test cases pass. 3 bugs found and closed."
+</pre></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h3>Scenario 5: API Validation with Database</h3>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h4>Requirement</h4>
+<p>REST API for Product Management supports CRUD operations. Every API response must be validated against database state. DELETE performs soft delete (is_deleted flag) unless forced via query parameter.</p>
+
+<h4>User Story with Acceptance Criteria</h4>
+<div class="callout">
+<strong>US-901: Product API CRUD</strong><br>
+As an admin user, I want to manage products via REST API, so that the product catalog stays updated.<br><br>
+<strong>Acceptance Criteria:</strong>
+<ol>
+  <li>POST /api/products → creates product; returns 201 with product ID and details</li>
+  <li>GET /api/products/{id} → returns product matching DB record</li>
+  <li>PUT /api/products/{id} → updates fields; DB reflects changes</li>
+  <li>DELETE /api/products/{id} → soft delete (is_deleted=1); GET returns 404</li>
+  <li>DELETE /api/products/{id}?force=true → hard delete; record removed from DB</li>
+  <li>POST with duplicate SKU → returns 409 Conflict</li>
+  <li>Unauthorized request (no token) → returns 401</li>
+</ol>
+</div>
+
+<h4>Test Cases</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>TC ID</th><th>Test Case</th><th>Method</th><th>Expected API Response</th><th>DB Validation</th><th>Priority</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>TC-A01</td><td>Create product — valid payload</td><td>POST /api/products</td><td>201 Created; body has id, sku, name, price</td><td>Row exists in products table with matching values</td><td>P1</td></tr>
+    <tr><td>TC-A02</td><td>Get product by ID</td><td>GET /api/products/{id}</td><td>200 OK; JSON matches DB record</td><td>SELECT returns same data as API response</td><td>P1</td></tr>
+    <tr><td>TC-A03</td><td>Update product price</td><td>PUT /api/products/{id}</td><td>200 OK; updated price in response</td><td>price column updated; updated_at changed</td><td>P1</td></tr>
+    <tr><td>TC-A04</td><td>Soft delete product</td><td>DELETE /api/products/{id}</td><td>204 No Content</td><td>is_deleted=1; row still exists; GET returns 404</td><td>P1</td></tr>
+    <tr><td>TC-A05</td><td>Hard delete product</td><td>DELETE /api/products/{id}?force=true</td><td>204 No Content</td><td>Row completely removed from products table</td><td>P2</td></tr>
+    <tr><td>TC-A06</td><td>Duplicate SKU rejected</td><td>POST /api/products</td><td>409 Conflict; error message about duplicate SKU</td><td>Only 1 row with that SKU in DB</td><td>P1</td></tr>
+    <tr><td>TC-A07</td><td>Unauthorized access</td><td>GET /api/products (no token)</td><td>401 Unauthorized</td><td>No DB changes</td><td>P1</td></tr>
+    <tr><td>TC-A08</td><td>Get non-existent product</td><td>GET /api/products/99999</td><td>404 Not Found</td><td>SELECT returns 0 rows</td><td>P2</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>REST Assured Code Snippet</h4>
+<pre><code>// TC-A01: POST creates product → verify API response → verify DB
+@Test
+public void testCreateProduct_verifyApiAndDb() {
+    String sku = "SKU-TEST-" + System.currentTimeMillis();
+    ProductRequest payload = new ProductRequest(sku, "Test Widget", 999.99, 100);
+
+    Response response = given()
+        .header("Authorization", "Bearer " + authToken)
+        .contentType(ContentType.JSON)
+        .body(payload)
+    .when()
+        .post("/api/products")
+    .then()
+        .statusCode(201)
+        .body("sku", equalTo(sku))
+        .body("name", equalTo("Test Widget"))
+        .body("price", equalTo(999.99f))
+        .body("id", notNullValue())
+        .extract().response();
+
+    int productId = response.jsonPath().getInt("id");
+
+    // DB Validation
+    Map&lt;String, Object&gt; dbRow = dbHelper.queryForMap(
+        "SELECT id, sku, name, price, stock_quantity, is_deleted " +
+        "FROM products WHERE id = ?", productId);
+
+    assertEquals(sku, dbRow.get("sku"));
+    assertEquals("Test Widget", dbRow.get("name"));
+    assertEquals(new BigDecimal("999.99"), dbRow.get("price"));
+    assertEquals(0, dbRow.get("is_deleted"));
+}
+
+// TC-A04: Soft delete → verify is_deleted flag in DB
+@Test
+public void testSoftDelete_verifyDbFlag() {
+    int productId = createTestProduct();
+
+    given()
+        .header("Authorization", "Bearer " + authToken)
+    .when()
+        .delete("/api/products/" + productId)
+    .then()
+        .statusCode(204);
+
+    // Verify soft delete in DB
+    Map&lt;String, Object&gt; row = dbHelper.queryForMap(
+        "SELECT is_deleted FROM products WHERE id = ?", productId);
+    assertEquals(1, row.get("is_deleted"));
+
+    // Verify GET returns 404
+    given()
+        .header("Authorization", "Bearer " + authToken)
+    .when()
+        .get("/api/products/" + productId)
+    .then()
+        .statusCode(404);
+}</code></pre>
+
+<h4>SQL Validation Queries</h4>
+<pre><code>-- After POST: Verify product created
+SELECT id, sku, name, price, stock_quantity, is_deleted, created_at
+FROM products
+WHERE sku = 'SKU-TEST-1718123456789';
+-- Expected: 1 row, is_deleted = 0
+
+-- After PUT: Verify price update
+SELECT price, updated_at
+FROM products
+WHERE id = 42;
+-- Expected: price = 1299.99, updated_at &gt; created_at
+
+-- After soft DELETE: Record exists but flagged
+SELECT id, sku, is_deleted, deleted_at
+FROM products
+WHERE id = 42;
+-- Expected: is_deleted = 1, deleted_at IS NOT NULL
+
+-- After hard DELETE: Record gone
+SELECT COUNT(*) FROM products WHERE id = 42;
+-- Expected: 0
+
+-- Verify audit trail (if applicable)
+SELECT action, entity_id, old_values, new_values, performed_by, performed_at
+FROM audit_log
+WHERE entity_type = 'PRODUCT' AND entity_id = 42
+ORDER BY performed_at DESC;</code></pre>
+
+<h4>Defects Found (Sample)</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Bug ID</th><th>Summary</th><th>Severity</th><th>Root Cause</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>BUG-951</td><td>PUT updates API response but DB not updated (cache issue)</td><td>Critical</td><td>Service updates cache but skips DB write on certain fields</td></tr>
+    <tr><td>BUG-952</td><td>Soft delete sets is_deleted=1 but GET still returns 200</td><td>Major</td><td>GET endpoint missing is_deleted filter in query</td></tr>
+    <tr><td>BUG-953</td><td>Duplicate SKU returns 500 instead of 409</td><td>Major</td><td>Uncaught DuplicateKeyException in ProductController</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Jira Workflow Walkthrough</h4>
+<div class="ascii-diagram"><pre>
+US-901 Product API CRUD — Jira Timeline
+─────────────────────────────────────────
+Day 1:  QA writes REST Assured automation for TC-A01 to A08
+Day 2:  Automation runs in CI against QA env → TC-A01, A02 pass
+Day 3:  TC-A03 fails → BUG-951 logged (Critical) → API/DB mismatch
+Day 3:  TC-A06 fails → BUG-953 logged (500 instead of 409)
+Day 4:  Dev fixes BUG-951, BUG-953 → CI pipeline re-run → pass
+Day 5:  TC-A04 → BUG-952 (soft delete GET issue) → fixed → retest pass
+Day 6:  Full API regression suite green → US-901 → Done
+        Automation scripts committed to repo; linked in Jira story comment
+        Fix Version: v3.3.0
+</pre></div>
+
+<h3>Cross-Scenario Interview Tips</h3>
+
+<div class="callout">
+<strong>When presenting scenarios in interviews:</strong>
+<ol>
+  <li>Start with requirement clarification — show you ask questions before testing</li>
+  <li>Map each AC to test cases explicitly — interviewers check traceability</li>
+  <li>Mention both positive and negative test cases — not just happy path</li>
+  <li>Include DB/API validation for SDET roles — distinguishes senior candidates</li>
+  <li>Describe Jira workflow naturally — shows real project experience</li>
+  <li>Prioritize defects by severity and business impact — Critical first</li>
+  <li>Mention security considerations (PCI DSS, SQL injection, enumeration) proactively</li>
+</ol>
+</div>
+
+<h3>Quick Reference: Scenario Summary Table</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Scenario</th><th>Story ID</th><th>Test Cases</th><th>Bugs Found</th><th>Key Validation</th><th>Fix Version</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Login Feature</td><td>US-501</td><td>10</td><td>3</td><td>Session table, lockout fields</td><td>v3.1.0</td></tr>
+    <tr><td>Order Placement</td><td>US-601</td><td>12</td><td>3</td><td>Orders, stock, discount tables</td><td>v3.2.0</td></tr>
+    <tr><td>Payment Integration</td><td>US-701</td><td>10</td><td>3</td><td>Payments, refunds, PCI compliance</td><td>v3.2.0</td></tr>
+    <tr><td>User Registration</td><td>US-801</td><td>10</td><td>3</td><td>Users, OTP, password hash</td><td>v3.1.0</td></tr>
+    <tr><td>API + Database</td><td>US-901</td><td>8</td><td>3</td><td>REST Assured + SQL cross-check</td><td>v3.3.0</td></tr>
+  </tbody>
+</table>
+</div>
+
+</section>

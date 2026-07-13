@@ -1,0 +1,2329 @@
+<section id="section-1" class="section-card">
+<h2>Section 1: Java Fundamentals</h2>
+
+<h3>Java Overview</h3>
+<p>Java is a high-level, object-oriented programming language developed by Sun Microsystems (now Oracle) in 1995. It is designed for building platform-independent applications — from enterprise backends to mobile apps (Android) to test automation frameworks like Selenium, TestNG, and Cucumber.</p>
+
+<h4>What is Java?</h4>
+<p>Java is a compiled-then-interpreted language. Source code (<code>.java</code>) is compiled into platform-neutral <strong>bytecode</strong> (<code>.class</code>), which the JVM executes on any operating system. This makes Java ideal for cross-platform test suites that run on Windows CI agents, macOS developer machines, and Linux Docker containers without code changes.</p>
+
+<h4>Why Java for QA Automation?</h4>
+<ul>
+<li><strong>Industry standard</strong> — Selenium WebDriver, TestNG, JUnit, Rest Assured, and Cucumber all have first-class Java support.</li>
+<li><strong>Rich ecosystem</strong> — Maven/Gradle, ExtentReports, Log4j, Jackson, and Apache POI for data-driven testing.</li>
+<li><strong>Strong typing</strong> — catches errors at compile time, reducing flaky test code.</li>
+<li><strong>OOP design</strong> — Page Object Model, Factory patterns, and layered frameworks map naturally to Java.</li>
+<li><strong>Enterprise adoption</strong> — most SDET/Senior QA roles expect Java proficiency.</li>
+</ul>
+
+<h4>Platform Independence &amp; "Write Once, Run Anywhere" (WORA)</h4>
+<p>Java achieves platform independence through bytecode and the JVM. You compile once; the JVM on each platform translates bytecode to native machine instructions. Your Selenium tests compiled on Windows run identically on a Linux Jenkins agent — only the browser/driver binaries differ.</p>
+
+<div class="callout">
+<strong>Interview Tip:</strong> WORA means bytecode portability, not absolute zero configuration. You still need a JVM and OS-specific native drivers (ChromeDriver, geckodriver) on each machine.
+</div>
+
+<h3>JDK vs JRE vs JVM</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Component</th><th>Purpose</th><th>Contains</th><th>Example</th><th>Who Needs It</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>JVM</strong> (Java Virtual Machine)</td><td>Runtime engine that executes bytecode</td><td>Class loader, memory areas, GC, execution engine</td><td>HotSpot JVM (default since JDK 9)</td><td>End users running Java apps/tests</td></tr>
+<tr><td><strong>JRE</strong> (Java Runtime Environment)</td><td>Provides runtime libraries to run Java programs</td><td>JVM + core libraries (java.lang, java.util, etc.)</td><td><code>java -jar tests.jar</code></td><td>QA running pre-built test JARs on CI without compiling</td></tr>
+<tr><td><strong>JDK</strong> (Java Development Kit)</td><td>Full toolkit to develop, compile, debug, and run Java</td><td>JRE + compiler (javac), debugger (jdb), javadoc, jar</td><td>JDK 17, JDK 21</td><td>SDETs writing and building automation frameworks</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>JVM Architecture</h3>
+<pre class="ascii-diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                     JVM ARCHITECTURE                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────┐                                               │
+│  │ ClassLoader  │──► Loads .class files into Method Area         │
+│  │  Subsystem   │    (Bootstrap → Extension → Application)      │
+│  └──────┬───────┘                                               │
+│         │                                                       │
+│         ▼                                                       │
+│  ┌──────────────┐    ┌─────────────────────────────────────┐  │
+│  │ Method Area  │    │              HEAP                     │  │
+│  │ (MetaSpace)  │    │  ┌─────────┐  ┌──────────────────┐  │  │
+│  │ Class data,  │    │  │ Young   │  │    Old Gen       │  │  │
+│  │ static vars, │    │  │  Gen    │  │  (Long-lived     │  │  │
+│  │ constant pool│    │  │ Eden +  │  │   objects)       │  │  │
+│  └──────────────┘    │  │ Survivor│  └──────────────────┘  │  │
+│                      │  └─────────┘                          │  │
+│  Per Thread:         └─────────────────────────────────────┘  │
+│  ┌──────────────┐                                               │
+│  │    STACK     │  Local vars, method calls, partial results   │
+│  │  (LIFO frames)│                                              │
+│  └──────────────┘                                               │
+│  ┌──────────────┐                                               │
+│  │ PC Register  │  Address of current executing instruction     │
+│  └──────────────┘                                               │
+│  ┌──────────────┐                                               │
+│  │ Native Method│  Native (C/C++) method calls                 │
+│  │    Stack     │                                               │
+│  └──────────────┘                                               │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │              EXECUTION ENGINE                             │  │
+│  │  Interpreter │ JIT Compiler │ Garbage Collector           │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>Java Architecture — Source to Execution</h3>
+<pre class="ascii-diagram">
+  ┌─────────────┐     javac      ┌─────────────┐     java      ┌─────────────┐
+  │  Source     │  ──────────►   │  Bytecode   │  ─────────►  │    JVM      │
+  │  (.java)    │   (Compiler)   │  (.class)   │  (ClassLoader)│             │
+  └─────────────┘                └─────────────┘               └──────┬──────┘
+  LoginTest.java                   LoginTest.class                      │
+  BasePage.java                    BasePage.class                       ▼
+                                                              ┌─────────────────┐
+                                                              │ Execution Engine │
+                                                              │ (Interpreter +   │
+                                                              │  JIT Compiler)   │
+                                                              └────────┬────────┘
+                                                                       ▼
+                                                              ┌─────────────────┐
+                                                              │  Machine Code   │
+                                                              │  (OS-specific)  │
+                                                              └─────────────────┘
+</pre>
+
+<h3>Compilation Process</h3>
+<pre><code>// Step 1: Write source code
+// File: HelloTest.java
+public class HelloTest {
+    public static void main(String[] args) {
+        System.out.println("Automation Ready!");
+    }
+}
+
+// Step 2: Compile — produces HelloTest.class (bytecode)
+// Command: javac HelloTest.java
+
+// Step 3: Run — JVM loads and executes bytecode
+// Command: java HelloTest
+// Output: Automation Ready!</code></pre>
+<p><strong>Key commands for SDETs:</strong></p>
+<ul>
+<li><code>javac *.java</code> — compile all source files</li>
+<li><code>java com.company.tests.LoginTest</code> — run by fully qualified class name</li>
+<li><code>jar cf tests.jar *.class</code> — package compiled tests</li>
+<li><code>mvn clean test</code> — Maven compiles and runs TestNG suites (standard in frameworks)</li>
+</ul>
+
+<h3>Memory Management</h3>
+<h4>Stack vs Heap</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Stack</th><th>Heap</th></tr>
+</thead>
+<tbody>
+<tr><td>Stores</td><td>Method frames, local primitives, object references</td><td>Actual objects and instance/static variables</td></tr>
+<tr><td>Size</td><td>Smaller, fixed per thread (~1 MB default)</td><td>Larger, shared across threads (configurable via -Xmx)</td></tr>
+<tr><td>Speed</td><td>Fast (LIFO allocation/deallocation)</td><td>Slower (dynamic allocation)</td></tr>
+<tr><td>Memory management</td><td>Automatic when method returns (pop frame)</td><td>Garbage Collector reclaims unused objects</td></tr>
+<tr><td>Thread safety</td><td>Each thread has its own stack</td><td>Shared — requires synchronization for thread safety</td></tr>
+<tr><td>Example in automation</td><td><code>int timeout = 10;</code> local in wait method</td><td><code>WebDriver driver = new ChromeDriver();</code> object on heap</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Garbage Collection Basics</h4>
+<p>GC automatically reclaims heap memory from objects with no live references. When your test finishes and the <code>WebDriver</code> reference goes out of scope (or is set to null), GC eventually frees that memory.</p>
+<ul>
+<li><strong>Minor GC</strong> — cleans Young Generation (Eden/Survivor); frequent, fast</li>
+<li><strong>Major/Full GC</strong> — cleans Old Generation; less frequent, can cause pauses</li>
+<li><strong>Unreachable objects</strong> — no reference chain from GC roots (stack refs, static fields, JNI refs)</li>
+</ul>
+
+<h4>GC Algorithms</h4>
+<ul>
+<li><strong>Serial GC</strong> (<code>-XX:+UseSerialGC</code>) — single thread; small apps, low memory</li>
+<li><strong>Parallel GC</strong> (<code>-XX:+UseParallelGC</code>) — multi-threaded; throughput-focused; default for server-class machines</li>
+<li><strong>G1 GC</strong> (<code>-XX:+UseG1GC</code>) — default since JDK 9; divides heap into regions; predictable pauses; ideal for large parallel test suites</li>
+</ul>
+
+<div class="callout">
+<strong>CI Tip:</strong> Parallel test runs consume heap fast. Set <code>-Xmx2g -XX:+UseG1GC</code> in your Maven Surefire or Jenkins JVM args to avoid OOM during large suites.
+</div>
+
+<h3>Java Features</h3>
+<ul>
+<li><strong>Object-Oriented</strong> — everything (except primitives) is an object; supports encapsulation, inheritance, polymorphism, abstraction</li>
+<li><strong>Platform Independent</strong> — bytecode + JVM = WORA</li>
+<li><strong>Robust</strong> — strong typing, exception handling, no pointer arithmetic</li>
+<li><strong>Secure</strong> — bytecode verification, SecurityManager (deprecated in 17), sandboxing</li>
+<li><strong>Multithreaded</strong> — built-in <code>Thread</code> class; run parallel tests with TestNG <code>parallel="methods"</code></li>
+<li><strong>Architecture Neutral</strong> — same bytecode runs on 32-bit or 64-bit JVMs</li>
+</ul>
+
+<h3>Data Types Preview</h3>
+<p>Java has <strong>8 primitive types</strong> (byte, short, int, long, float, double, char, boolean) and <strong>reference types</strong> (String, arrays, classes, interfaces). Primitives store values directly; references store memory addresses pointing to heap objects.</p>
+
+<h3>Naming Conventions</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Element</th><th>Convention</th><th>Example (Automation)</th></tr>
+</thead>
+<tbody>
+<tr><td>Class</td><td>PascalCase</td><td><code>LoginPage</code>, <code>DriverFactory</code></td></tr>
+<tr><td>Interface</td><td>PascalCase (often adjective)</td><td><code>Retryable</code>, <code>WebDriver</code></td></tr>
+<tr><td>Method</td><td>camelCase (verb)</td><td><code>clickSubmit()</code>, <code>getPageTitle()</code></td></tr>
+<tr><td>Variable</td><td>camelCase</td><td><code>driver</code>, <code>expectedTitle</code></td></tr>
+<tr><td>Constant</td><td>UPPER_SNAKE_CASE</td><td><code>DEFAULT_TIMEOUT</code>, <code>BASE_URL</code></td></tr>
+<tr><td>Package</td><td>lowercase</td><td><code>com.company.pages</code></td></tr>
+<tr><td>Test method</td><td>descriptive camelCase</td><td><code>verifyLoginWithValidCredentials()</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>JDK Versions Timeline — What Matters for Automation</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Version</th><th>Release</th><th>Key Features for SDETs</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Java 8</strong></td><td>2014</td><td>Lambda expressions, Streams API, Optional, default interface methods — still common in legacy frameworks</td><td>LTS (extended support)</td></tr>
+<tr><td><strong>Java 11</strong></td><td>2018</td><td><code>var</code> in lambdas, HTTP Client API, removed Java EE modules — widely used LTS in enterprise CI</td><td>LTS</td></tr>
+<tr><td><strong>Java 17</strong></td><td>2021</td><td>Sealed classes, pattern matching for switch, strong encapsulation — current industry standard for new projects</td><td>LTS (recommended)</td></tr>
+<tr><td><strong>Java 21</strong></td><td>2023</td><td>Virtual threads, sequenced collections, record patterns — emerging in modern frameworks</td><td>LTS (latest)</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout">
+<strong>Interview Answer:</strong> "For automation I prefer JDK 17 LTS — stable, long support, compatible with Selenium 4.x, TestNG 7.x, and Maven. Java 8 is legacy but still appears in older codebases. Java 21 virtual threads help high-concurrency API test runners."
+</div>
+
+<h3>Interview Q&amp;A — Section 1</h3>
+
+<h4>Q1: What is the difference between JDK, JRE, and JVM?</h4>
+<p><strong>A:</strong> JVM executes bytecode. JRE = JVM + runtime libraries (enough to run apps). JDK = JRE + development tools like javac (needed to write and compile code). SDETs need JDK; CI runners executing pre-built JARs may only need JRE.</p>
+
+<h4>Q2: Explain "Write Once, Run Anywhere."</h4>
+<p><strong>A:</strong> Java source compiles to platform-neutral bytecode. Any OS with a compatible JVM can run that bytecode. The JVM handles OS-specific details. In automation, the same test JAR runs on Windows, macOS, and Linux agents.</p>
+
+<h4>Q3: What is bytecode?</h4>
+<p><strong>A:</strong> Intermediate instruction set produced by javac, stored in .class files. It is neither source code nor native machine code — the JVM interprets or JIT-compiles it to native instructions at runtime.</p>
+
+<h4>Q4: Stack vs Heap — where is a WebDriver object stored?</h4>
+<p><strong>A:</strong> The reference variable <code>driver</code> is on the stack (local variable in a method). The actual <code>ChromeDriver</code> object lives on the heap. When the method ends, the stack reference is popped; the heap object becomes eligible for GC.</p>
+
+<h4>Q5: What is Garbage Collection?</h4>
+<p><strong>A:</strong> Automatic memory management that reclaims heap objects no longer reachable from GC roots. Prevents memory leaks in long-running test suites. Triggered automatically; can be hinted with <code>System.gc()</code> but never guaranteed.</p>
+
+<h4>Q6: What is the main method signature and why is it required?</h4>
+<p><strong>A:</strong> <code>public static void main(String[] args)</code> — JVM entry point. <code>public</code> for JVM access, <code>static</code> so JVM can call without creating an object, <code>void</code> returns nothing, <code>String[] args</code> for command-line params. TestNG/JUnit don't need main — their runners invoke tests directly.</p>
+
+<h4>Q7: What is JIT compilation?</h4>
+<p><strong>A:</strong> Just-In-Time compiler converts frequently executed bytecode to native machine code at runtime for performance. Hot methods in your framework (waits, element lookups) benefit from JIT after warm-up runs.</p>
+
+<h4>Q8: Can Java run without main method?</h4>
+<p><strong>A:</strong> Yes. Applets (deprecated), servlets, TestNG test classes, and Spring Boot apps use other entry points. TestNG uses annotations like <code>@Test</code> discovered by the TestNG runner.</p>
+
+<h4>Q9: What is the role of ClassLoader?</h4>
+<p><strong>A:</strong> Loads .class files into Method Area. Bootstrap loads core JDK classes, Extension loads extension libs, Application loads classpath classes (your test framework). Custom ClassLoaders exist for plugin architectures.</p>
+
+<h4>Q10: Why is Java popular for test automation?</h4>
+<p><strong>A:</strong> Mature Selenium bindings, strong typing, excellent IDE support (IntelliJ), Maven/Gradle dependency management, enterprise adoption, OOP for Page Object Model, and vast hiring demand for Java SDETs.</p>
+
+<h4>Q11: What happens when you run <code>java LoginTest</code>?</h4>
+<p><strong>A:</strong> JVM starts → ClassLoader loads LoginTest.class → bytecode verified → main (or TestNG runner) invoked → Execution Engine interprets/JIT-compiles → native code runs on OS.</p>
+
+<h4>Q12: What is -Xmx and -Xms?</h4>
+<p><strong>A:</strong> JVM heap flags. <code>-Xms</code> = initial heap size, <code>-Xmx</code> = maximum heap size. Example: <code>-Xms512m -Xmx2g</code>. Critical for parallel test execution to avoid OutOfMemoryError.</p>
+
+<h4>Q13: Is Java compiled or interpreted?</h4>
+<p><strong>A:</strong> Both. Source is compiled to bytecode by javac (compile-time). JVM interprets bytecode at runtime and JIT-compiles hot code to native machine code. Hence "compiled-then-interpreted."</p>
+
+<h4>Q14: What is MetaSpace (Java 8+)?</h4>
+<p><strong>A:</strong> Replaced PermGen. Stores class metadata in native memory (not heap). Grows dynamically. PermGen OutOfMemoryErrors from loading too many classes (dynamic proxies in frameworks) are largely resolved.</p>
+
+<h4>Q15: Difference between .java and .class files?</h4>
+<p><strong>A:</strong> .java is human-readable source code you write. .class is compiled bytecode the JVM executes. One .java file typically produces one .class file (inner classes produce additional .class files).</p>
+
+<h4>Q16: What JVM do you use in production CI?</h4>
+<p><strong>A:</strong> HotSpot (default Oracle/OpenJDK JVM). Amazon Corretto, Eclipse Temurin, and Azul Zulu are popular distributions. All implement the same JVM spec — choose based on org licensing and support policies.</p>
+</section>
+
+<section id="section-2" class="section-card">
+<h2>Section 2: OOPS Concepts</h2>
+
+<h3>Class</h3>
+<h4>Definition</h4>
+<p>A <strong>class</strong> is a blueprint or template that defines the structure (fields) and behavior (methods) of objects. It encapsulates data and operations into a single unit.</p>
+
+<h4>Real-World Analogy</h4>
+<p>A house blueprint defines rooms, doors, and layout. You don't live in the blueprint — you build actual houses from it. Similarly, a <code>LoginPage</code> class defines locators and actions; each test creates a real instance to interact with the browser.</p>
+
+<h4>Java Code Example</h4>
+<pre><code>public class LoginPage {
+    // Fields (state)
+    private WebDriver driver;
+    private By usernameField = By.id("username");
+    private By passwordField = By.id("password");
+    private By loginButton   = By.id("loginBtn");
+
+    // Default constructor (no-args)
+    public LoginPage() {
+        this.driver = DriverFactory.getDriver();
+    }
+
+    // Parameterized constructor
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+    }
+
+    // Copy constructor
+    public LoginPage(LoginPage other) {
+        this.driver = other.driver;
+    }
+
+    // Methods (behavior)
+    public void enterUsername(String username) {
+        driver.findElement(usernameField).sendKeys(username);
+    }
+
+    public void enterPassword(String password) {
+        driver.findElement(passwordField).sendKeys(password);
+    }
+
+    public void clickLogin() {
+        driver.findElement(loginButton).click();
+    }
+
+    public void login(String user, String pass) {
+        enterUsername(user);
+        enterPassword(pass);
+        clickLogin();
+    }
+}</code></pre>
+
+<h4>Constructor Types</h4>
+<ul>
+<li><strong>Default</strong> — no-args; JVM provides one if none defined</li>
+<li><strong>Parameterized</strong> — accepts arguments to initialize fields</li>
+<li><strong>Copy</strong> — creates new object from existing object's state</li>
+</ul>
+
+<h4><code>this</code> Keyword</h4>
+<p>Refers to the current object instance. Used to: differentiate fields from parameters, call other constructors (<code>this()</code>), return current instance for method chaining.</p>
+
+<h4>Selenium Usage</h4>
+<p>Page Object classes are the cornerstone of maintainable automation. Each page/component gets its own class with locators as private fields and user actions as public methods.</p>
+
+<h4>Interview Q&amp;A — Class</h4>
+<p><strong>Q: Can a class have multiple constructors?</strong><br>
+<strong>A:</strong> Yes — constructor overloading. Same class name, different parameter lists. JVM selects based on arguments passed at instantiation.</p>
+
+<h3>Object</h3>
+<h4>Definition</h4>
+<p>An <strong>object</strong> is an instance of a class — a concrete entity in memory with its own state (field values) and behavior (methods).</p>
+
+<h4>Real-World Analogy</h4>
+<p>If <code>Car</code> is a class, your specific Toyota Camry is an object — it has actual color, mileage, and license plate values.</p>
+
+<h4>Java Code Example</h4>
+<pre><code>// Class definition
+public class DashboardPage {
+    private WebDriver driver;
+
+    public DashboardPage(WebDriver driver) {
+        this.driver = driver;
+    }
+
+    public String getWelcomeMessage() {
+        return driver.findElement(By.id("welcome")).getText();
+    }
+}
+
+// Object creation
+public class LoginTest {
+    @Test
+    public void testSuccessfulLogin() {
+        WebDriver driver = new ChromeDriver();          // Object 1
+        LoginPage loginPage = new LoginPage(driver);      // Object 2
+        loginPage.login("admin", "pass123");
+
+        DashboardPage dashboard = new DashboardPage(driver); // Object 3
+        Assert.assertTrue(dashboard.getWelcomeMessage().contains("Welcome"));
+    }
+}</code></pre>
+
+<h4>Key Concepts</h4>
+<ul>
+<li><code>new</code> keyword allocates memory on heap and invokes constructor</li>
+<li>Reference variable (e.g., <code>loginPage</code>) on stack points to heap object</li>
+<li>Multiple references can point to same object</li>
+<li><code>null</code> means reference points to nothing — calling methods causes NullPointerException</li>
+</ul>
+
+<h4>Selenium Usage</h4>
+<pre><code>LoginPage loginPage = new LoginPage(driver);
+loginPage.login("testuser", "password");
+// loginPage is a reference; the LoginPage object holds driver state and locators</code></pre>
+
+<h3>Encapsulation</h3>
+<h4>Definition</h4>
+<p>Encapsulation bundles data (fields) and methods that operate on that data within a class, restricting direct access via access modifiers. Data hiding through private fields + public getters/setters.</p>
+
+<h4>Real-World Analogy</h4>
+<p>A TV remote exposes buttons (public interface) but hides internal circuitry (private). You press "power" without knowing how the transistor switches work.</p>
+
+<h4>Complete Code Example</h4>
+<pre><code>public class ConfigReader {
+    // Private fields — hidden from outside
+    private static Properties properties = new Properties();
+    private static final String CONFIG_PATH = "src/test/resources/config.properties";
+
+    // Private constructor — prevent instantiation (utility class pattern)
+    private ConfigReader() {}
+
+    // Controlled public access
+    public static String getProperty(String key) {
+        loadPropertiesIfNeeded();
+        return properties.getProperty(key);
+    }
+
+    public static String getBaseUrl() {
+        return getProperty("base.url");
+    }
+
+    public static int getTimeout() {
+        return Integer.parseInt(getProperty("timeout.seconds"));
+    }
+
+    private static void loadPropertiesIfNeeded() {
+        if (properties.isEmpty()) {
+            try (FileInputStream fis = new FileInputStream(CONFIG_PATH)) {
+                properties.load(fis);
+            } catch (IOException e) {
+                throw new FrameworkException("Failed to load config", e);
+            }
+        }
+    }
+}
+
+// Encapsulated WebDriver in BaseTest
+public class BaseTest {
+    private WebDriver driver;  // private — tests can't accidentally reassign
+
+    protected WebDriver getDriver() {
+        return driver;
+    }
+
+    @BeforeMethod
+    public void setUp() {
+        driver = DriverFactory.createDriver("chrome");
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+}</code></pre>
+
+<h4>Selenium Usage</h4>
+<p>Page Objects hide locator details (private <code>By</code> fields). Tests call <code>loginPage.login(user, pass)</code> without knowing element IDs changed from <code>#user</code> to <code>#username</code>.</p>
+
+<h4>Interview Q&amp;A — Encapsulation</h4>
+<p><strong>Q: How does encapsulation help test maintenance?</strong><br>
+<strong>A:</strong> Locator changes happen in one class. Tests remain unchanged. Reduces duplication and prevents tests from directly manipulating WebDriver internals.</p>
+
+<h3>Inheritance</h3>
+<h4>Definition</h4>
+<p>Inheritance allows a class (child/subclass) to acquire fields and methods of another class (parent/superclass) using <code>extends</code>. Establishes an IS-A relationship.</p>
+
+<h4>Real-World Analogy</h4>
+<p>A <code>ElectricCar</code> IS-A <code>Car</code> — it inherits wheels, engine concept, but adds battery-specific behavior.</p>
+
+<h4>Types of Inheritance in Java</h4>
+<ul>
+<li><strong>Single</strong> — one parent, one child: <code>LoginTest extends BaseTest</code></li>
+<li><strong>Multilevel</strong> — chain: <code>SmokeTest → RegressionTest → BaseTest</code></li>
+<li><strong>Hierarchical</strong> — multiple children, one parent: <code>LoginTest</code> and <code>SearchTest</code> both extend <code>BaseTest</code></li>
+<li><strong>Multiple inheritance of classes</strong> — NOT supported in Java</li>
+</ul>
+
+<h4>Complete Inheritance Hierarchy</h4>
+<pre><code>// Parent / Super class
+public class BaseTest {
+    protected WebDriver driver;
+    protected Logger logger = LogManager.getLogger(this.getClass());
+
+    @BeforeMethod
+    @Parameters({"browser"})
+    public void setUp(@Optional("chrome") String browser) {
+        driver = DriverFactory.createDriver(browser);
+        driver.manage().window().maximize();
+        logger.info("Browser launched: " + browser);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+            logger.info("Browser closed");
+        }
+    }
+
+    protected void takeScreenshot(String name) {
+        // shared utility for all tests
+    }
+}
+
+// Child / Sub class
+public class LoginTest extends BaseTest {
+
+    private LoginPage loginPage;
+
+    @BeforeMethod
+    public void initPage() {
+        loginPage = new LoginPage(driver);  // driver inherited from BaseTest
+    }
+
+    @Test
+    public void verifyValidLogin() {
+        loginPage.login("admin", "admin123");
+        Assert.assertTrue(driver.getCurrentUrl().contains("dashboard"));
+    }
+
+    @Test
+    public void verifyInvalidLogin() {
+        loginPage.login("wrong", "wrong");
+        Assert.assertTrue(loginPage.isErrorDisplayed());
+    }
+}
+
+// Multilevel example
+public class SmokeTestSuite extends BaseTest {
+    // smoke-specific helpers
+}
+
+public class CriticalPathTest extends SmokeTestSuite {
+    // inherits from SmokeTest which inherits from BaseTest
+}</code></pre>
+
+<h4>Method Overriding</h4>
+<pre><code>public class Animal {
+    public void makeSound() {
+        System.out.println("Some sound");
+    }
+}
+
+public class Dog extends Animal {
+    @Override  // runtime polymorphism
+    public void makeSound() {
+        System.out.println("Bark");
+    }
+}
+
+// Automation example
+public class BasePage {
+    public void waitForPageLoad() {
+        new WebDriverWait(driver, Duration.ofSeconds(30))
+            .until(d -> ((JavascriptExecutor) d)
+                .executeScript("return document.readyState").equals("complete"));
+    }
+}
+
+public class AngularPage extends BasePage {
+    @Override
+    public void waitForPageLoad() {
+        super.waitForPageLoad();  // call parent first
+        // additional wait for Angular app to stabilize
+        new WebDriverWait(driver, Duration.ofSeconds(15))
+            .until(d -> (Boolean) ((JavascriptExecutor) d)
+                .executeScript("return window.getAllAngularTestabilities().length > 0"));
+    }
+}</code></pre>
+
+<h4><code>super</code> Keyword</h4>
+<p>Refers to immediate parent class. Used to call parent constructor (<code>super()</code>), access parent fields (<code>super.driver</code>), or invoke overridden parent methods (<code>super.waitForPageLoad()</code>).</p>
+
+<h4>Why Multiple Inheritance Not Supported — Diamond Problem</h4>
+<pre class="ascii-diagram">
+        ClassA
+       /      \
+   method()  method()
+     /          \
+ ClassB        ClassC
+     \          /
+      \        /
+       ClassD  ← Which method() does D inherit?
+</pre>
+<p>If ClassB and ClassC both override <code>method()</code> differently, ClassD inheriting from both creates ambiguity. Java avoids this by allowing single class inheritance + multiple interface implementation.</p>
+
+<h4>Selenium Usage</h4>
+<p><code>BaseTest</code> provides driver setup/teardown. All test classes extend it — DRY principle. Common waits, screenshots, and reporting live in the base class.</p>
+
+<h3>Polymorphism</h3>
+<h4>Definition</h4>
+<p>"Many forms" — same interface, different implementations. Enables flexible, extensible code.</p>
+
+<h4>Compile-Time Polymorphism (Method Overloading)</h4>
+<p>Same method name, different parameter lists. Resolved at compile time.</p>
+<pre><code>public class ElementHelper {
+    // Overloaded click methods
+    public void click(By locator) {
+        driver.findElement(locator).click();
+    }
+
+    public void click(WebElement element) {
+        element.click();
+    }
+
+    public void click(By locator, int timeoutSeconds) {
+        new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds))
+            .until(ExpectedConditions.elementToBeClickable(locator)).click();
+    }
+}
+
+// Usage — compiler picks method based on arguments
+helper.click(By.id("submit"));                    // By version
+helper.click(driver.findElement(By.id("submit"))); // WebElement version
+helper.click(By.id("submit"), 20);                 // By + timeout version</code></pre>
+
+<h4>Runtime Polymorphism (Method Overriding)</h4>
+<p>Parent reference holds child object. Method invoked depends on actual object type at runtime.</p>
+<pre><code>// THE most important polymorphism in Selenium:
+WebDriver driver = new ChromeDriver();   // parent ref → child object
+driver = new FirefoxDriver();            // same ref, different implementation
+driver = new EdgeDriver();               // swap at runtime
+
+driver.get("https://example.com");       // each browser executes its own get()
+
+// Another example
+BaseTest test = new LoginTest();  // reference type BaseTest, actual object LoginTest
+test.setUp();                     // calls LoginTest's setUp if overridden
+
+// Interface polymorphism
+List&lt;WebElement&gt; elements = driver.findElements(By.tagName("a"));
+// ArrayList or other implementation returned — you use List interface</code></pre>
+
+<h4>Real-World Analogy</h4>
+<p>A "Remote Control" button (interface) works on any TV brand (implementation). Press "volume up" — Samsung or LG each handle it their way.</p>
+
+<h4>Interview Q&amp;A — Polymorphism</h4>
+<p><strong>Q: Give a runtime polymorphism example from your framework.</strong><br>
+<strong>A:</strong> <code>WebDriver driver = DriverFactory.getDriver(browser);</code> — factory returns ChromeDriver, FirefoxDriver, or EdgeDriver based on config, but all tests use the WebDriver interface.</p>
+
+<h3>Abstraction</h3>
+<h4>Definition</h4>
+<p>Abstraction hides complex implementation details and exposes only essential features. Achieved via abstract classes and interfaces.</p>
+
+<h4>Real-World Analogy</h4>
+<p>Driving a car — you use steering wheel and pedals (interface) without understanding fuel injection internals (implementation).</p>
+
+<h4>Abstract Class Example</h4>
+<pre><code>public abstract class BasePage {
+    protected WebDriver driver;
+    protected WebDriverWait wait;
+
+    public BasePage(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+    }
+
+    // Abstract method — must be implemented by subclasses
+    public abstract boolean isPageLoaded();
+
+    // Concrete method — shared implementation
+    public String getPageTitle() {
+        return driver.getTitle();
+    }
+
+    protected void click(By locator) {
+        wait.until(ExpectedConditions.elementToBeClickable(locator)).click();
+    }
+}
+
+public class HomePage extends BasePage {
+    private By logo = By.id("logo");
+
+    public HomePage(WebDriver driver) {
+        super(driver);
+    }
+
+    @Override
+    public boolean isPageLoaded() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(logo)).isDisplayed();
+    }
+}</code></pre>
+
+<h4>Interface Example</h4>
+<pre><code>public interface Retryable {
+    int MAX_RETRIES = 3;  // public static final by default
+
+    boolean execute();     // public abstract by default
+
+    default void onFailure(int attempt) {  // Java 8+ default method
+        System.out.println("Attempt " + attempt + " failed, retrying...");
+    }
+}
+
+public class FlakyElementClick implements Retryable {
+    private WebDriver driver;
+    private By locator;
+
+    public FlakyElementClick(WebDriver driver, By locator) {
+        this.driver = driver;
+        this.locator = locator;
+    }
+
+    @Override
+    public boolean execute() {
+        for (int i = 1; i &lt;= MAX_RETRIES; i++) {
+            try {
+                driver.findElement(locator).click();
+                return true;
+            } catch (ElementClickInterceptedException e) {
+                onFailure(i);
+            }
+        }
+        return false;
+    }
+}</code></pre>
+
+<h4>Selenium: WebDriver Interface</h4>
+<pre><code>// WebDriver is an interface; ChromeDriver implements it
+WebDriver driver = new ChromeDriver();
+// You program to the interface, not the implementation
+// Enables browser-agnostic test code</code></pre>
+
+<h4>Abstract Class vs Interface</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Abstract Class</th><th>Interface</th></tr>
+</thead>
+<tbody>
+<tr><td>Instantiation</td><td>Cannot instantiate</td><td>Cannot instantiate</td></tr>
+<tr><td>Methods</td><td>Abstract + concrete methods</td><td>Abstract (implicit), default, static methods (Java 8+)</td></tr>
+<tr><td>Fields</td><td>Any access modifier</td><td>public static final only</td></tr>
+<tr><td>Inheritance</td><td>Single class extends</td><td>Multiple interfaces implement</td></tr>
+<tr><td>Constructor</td><td>Yes</td><td>No</td></tr>
+<tr><td>When to use</td><td>Shared state/implementation (BasePage)</td><td>Contract/capability (Retryable, Searchable)</td></tr>
+<tr><td>Example</td><td><code>BasePage</code> with common wait logic</td><td><code>WebDriver</code>, <code>TakesScreenshot</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Constructor</h3>
+<h4>Types &amp; Chaining</h4>
+<pre><code>public class TestData {
+    private String username;
+    private String password;
+    private String environment;
+
+    // Default constructor
+    public TestData() {
+        this("defaultUser", "defaultPass", "qa");  // constructor chaining via this()
+    }
+
+    // Parameterized
+    public TestData(String username, String password, String environment) {
+        this.username = username;
+        this.password = password;
+        this.environment = environment;
+    }
+
+    // Copy constructor
+    public TestData(TestData other) {
+        this(other.username, other.password, other.environment);
+    }
+}
+
+public class AdminTestData extends TestData {
+    public AdminTestData() {
+        super("admin", "admin123", "staging");  // super() calls parent constructor
+    }
+}</code></pre>
+<ul>
+<li><strong>Constructor chaining</strong> — <code>this()</code> calls another constructor in same class; must be first statement</li>
+<li><strong>super()</strong> — calls parent constructor; must be first statement if used</li>
+<li>If no constructor defined, JVM provides default no-arg constructor</li>
+</ul>
+
+<h3>OOP Relationships</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Relationship</th><th>Type</th><th>Description</th><th>Java Example</th><th>Automation Example</th></tr>
+</thead>
+<tbody>
+<tr><td>IS-A</td><td>Inheritance</td><td>Child is a type of parent</td><td><code>LoginTest extends BaseTest</code></td><td>LoginTest IS-A BaseTest</td></tr>
+<tr><td>HAS-A</td><td>Composition/Aggregation</td><td>Class contains another class</td><td><code>LoginPage has WebDriver</code></td><td>Page Object HAS-A driver reference</td></tr>
+<tr><td>Association</td><td>Uses</td><td>Two classes related, independent lifecycles</td><td>Test uses Helper class</td><td>Test class uses ReportGenerator</td></tr>
+<tr><td>Aggregation</td><td>Weak HAS-A</td><td>Whole has parts; parts can exist independently</td><td>TestSuite has Tests</td><td>Suite contains tests that run standalone</td></tr>
+<tr><td>Composition</td><td>Strong HAS-A</td><td>Part cannot exist without whole</td><td>Car has Engine</td><td>Page Object composes WebDriverWait tied to its driver</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>OOP Pillars Diagram</h3>
+<pre class="ascii-diagram">
+                    ┌─────────────────────────┐
+                    │     OOP PILLARS (4)     │
+                    └───────────┬─────────────┘
+          ┌──────────┬──────────┼──────────┬──────────┐
+          ▼          ▼          ▼          ▼          │
+   ┌────────────┐ ┌────────┐ ┌──────────┐ ┌───────────┐
+   │Encapsulation│ │Inherit-│ │Polymorph-│ │Abstraction│
+   │ Data hiding │ │ ance   │ │  ism     │ │ Hide impl │
+   │ private +   │ │ IS-A   │ │ Overload │ │ abstract  │
+   │ getters     │ │ extends│ │ Override │ │ interface │
+   └────────────┘ └────────┘ └──────────┘ └───────────┘
+          │              │           │            │
+          └──────────────┴───────────┴────────────┘
+                    Applied in Automation:
+              Page Objects | BaseTest | WebDriver
+                         Factory Pattern
+</pre>
+
+<h3>Interview Q&amp;A — Section 2 (20+ Questions)</h3>
+
+<h4>Q1: What are the four pillars of OOP?</h4>
+<p><strong>A:</strong> Encapsulation, Inheritance, Polymorphism, Abstraction.</p>
+
+<h4>Q2: Difference between method overloading and overriding?</h4>
+<p><strong>A:</strong> Overloading: same class, same name, different params, compile-time. Overriding: parent-child, same signature, runtime dispatch based on object type.</p>
+
+<h4>Q3: Can you override static methods?</h4>
+<p><strong>A:</strong> No — static methods belong to the class, not instance. Subclass can define same signature (method hiding), but it's not true overriding. No dynamic dispatch.</p>
+
+<h4>Q4: Can you override private methods?</h4>
+<p><strong>A:</strong> No — private methods are not visible to subclasses. Subclass can define same signature but it's a new method, not an override.</p>
+
+<h4>Q5: Why use Page Object Model?</h4>
+<p><strong>A:</strong> Encapsulates locators and actions (encapsulation), enables reuse via inheritance (BasePage), supports polymorphism (different page implementations), and abstracts UI complexity from test logic.</p>
+
+<h4>Q6: IS-A vs HAS-A — which is LoginPage and WebDriver?</h4>
+<p><strong>A:</strong> LoginPage HAS-A WebDriver (composition/association). LoginTest IS-A BaseTest (inheritance).</p>
+
+<h4>Q7: When to use abstract class vs interface?</h4>
+<p><strong>A:</strong> Abstract class when subclasses share state and common implementation (BasePage). Interface when defining a contract multiple unrelated classes implement (Retryable, WebDriver).</p>
+
+<h4>Q8: Can an abstract class have a constructor?</h4>
+<p><strong>A:</strong> Yes. Called when subclass object is created via <code>super()</code>. Initializes abstract class fields.</p>
+
+<h4>Q9: Can an interface extend another interface?</h4>
+<p><strong>A:</strong> Yes. Interface inheritance is supported: <code>interface B extends A</code>.</p>
+
+<h4>Q10: What is the Diamond Problem?</h4>
+<p><strong>A:</strong> Ambiguity when a class inherits two classes with same method. Java prevents multiple class inheritance. Interfaces with default methods require explicit override if both define same method.</p>
+
+<h4>Q11: What is composition over inheritance?</h4>
+<p><strong>A:</strong> Design principle: prefer HAS-A (composition) over IS-A (inheritance) for flexibility. Example: inject WebDriverHelper into Page instead of extending it — easier to test and swap.</p>
+
+<h4>Q12: Explain <code>@Override</code> annotation.</h4>
+<p><strong>A:</strong> Tells compiler to verify method actually overrides a parent method. Catches typos in method signatures at compile time.</p>
+
+<h4>Q13: Can a constructor be private?</h4>
+<p><strong>A:</strong> Yes — Singleton pattern, utility classes (ConfigReader). Prevents external instantiation.</p>
+
+<h4>Q14: What is final keyword in OOP context?</h4>
+<p><strong>A:</strong> <code>final</code> class — cannot extend. <code>final</code> method — cannot override. <code>final</code> variable — cannot reassign (constant reference).</p>
+
+<h4>Q15: Runtime polymorphism example with collections?</h4>
+<p><strong>A:</strong> <code>List&lt;String&gt; data = new ArrayList&lt;&gt;();</code> — reference is List, implementation is ArrayList. Methods like add(), get() dispatch to ArrayList at runtime.</p>
+
+<h4>Q16: How does WebDriver demonstrate abstraction?</h4>
+<p><strong>A:</strong> WebDriver interface defines get(), findElement(), quit() without browser-specific code. ChromeDriver, FirefoxDriver provide implementations hidden from test code.</p>
+
+<h4>Q17: Can you instantiate an abstract class?</h4>
+<p><strong>A:</strong> No. Must create concrete subclass that implements all abstract methods.</p>
+
+<h4>Q18: Difference between aggregation and composition?</h4>
+<p><strong>A:</strong> Aggregation: weak ownership, parts survive independently (TestSuite ↔ Tests). Composition: strong ownership, parts destroyed with whole (Order ↔ OrderItems).</p>
+
+<h4>Q19: Why is BaseTest usually abstract?</h4>
+<p><strong>A:</strong> Provides shared setup/teardown but isn't a test itself. Abstract prevents accidental instantiation while forcing subclasses to implement test methods.</p>
+
+<h4>Q20: How do default interface methods affect multiple inheritance?</h4>
+<p><strong>A:</strong> A class implementing two interfaces with conflicting default methods must override and specify which to use: <code>InterfaceA.super.method()</code>.</p>
+
+<h4>Q21: What is coupling and how does OOP reduce it?</h4>
+<p><strong>A:</strong> Coupling = dependency between classes. Encapsulation and interfaces reduce coupling — tests depend on Page Object public methods, not internal locators or WebDriver details.</p>
+
+<h4>Q22: Explain Object class role in inheritance.</h4>
+<p><strong>A:</strong> Every class implicitly extends <code>java.lang.Object</code>. Inherits equals(), hashCode(), toString(), getClass(). Override toString() in Page Objects for meaningful debug output.</p>
+</section>
+
+<section id="section-3" class="section-card">
+<h2>Section 3: Variables &amp; Data Types</h2>
+
+<h3>Primitive Data Types</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Type</th><th>Size</th><th>Range</th><th>Default</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>byte</code></td><td>1 byte (8 bit)</td><td>-128 to 127</td><td>0</td><td><code>byte retryCount = 3;</code></td></tr>
+<tr><td><code>short</code></td><td>2 bytes</td><td>-32,768 to 32,767</td><td>0</td><td><code>short port = 8080;</code></td></tr>
+<tr><td><code>int</code></td><td>4 bytes</td><td>-2³¹ to 2³¹-1</td><td>0</td><td><code>int timeout = 30;</code></td></tr>
+<tr><td><code>long</code></td><td>8 bytes</td><td>-2⁶³ to 2⁶³-1</td><td>0L</td><td><code>long timestamp = 1710000000L;</code></td></tr>
+<tr><td><code>float</code></td><td>4 bytes</td><td>~±3.4E+38 (6-7 digits)</td><td>0.0f</td><td><code>float price = 19.99f;</code></td></tr>
+<tr><td><code>double</code></td><td>8 bytes</td><td>~±1.7E+308 (15 digits)</td><td>0.0d</td><td><code>double responseTime = 1.234;</code></td></tr>
+<tr><td><code>char</code></td><td>2 bytes (Unicode)</td><td>'\u0000' to '\uffff'</td><td>'\u0000'</td><td><code>char grade = 'A';</code></td></tr>
+<tr><td><code>boolean</code></td><td>1 bit (JVM dependent)</td><td>true / false</td><td>false</td><td><code>boolean isDisplayed = true;</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Non-Primitive (Reference) Types</h3>
+<ul>
+<li><strong>String</strong> — sequence of characters; immutable; most used in assertions</li>
+<li><strong>Array</strong> — fixed-size collection of same type: <code>String[] browsers = {"chrome", "firefox"};</code></li>
+<li><strong>Class</strong> — custom types: <code>WebDriver</code>, <code>LoginPage</code></li>
+<li><strong>Interface</strong> — contract types: <code>List&lt;WebElement&gt;</code>, <code>Map&lt;String, String&gt;</code></li>
+</ul>
+
+<h3>Variable Types</h3>
+
+<h4>Local Variables</h4>
+<p>Declared inside methods, constructors, or blocks. No default value — must initialize before use. Scope limited to the block.</p>
+<pre><code>public void validateRowCount() {
+    int rowCount = driver.findElements(By.xpath("//table/tbody/tr")).size();
+    boolean isValid = rowCount > 0;  // must initialize
+    Assert.assertTrue(isValid);
+    // rowCount destroyed when method ends (stack)
+}</code></pre>
+
+<h4>Instance Variables</h4>
+<p>Declared inside class, outside methods. Each object gets its own copy. Default values assigned (0, false, null).</p>
+<pre><code>public class SearchResultsPage {
+    private WebDriver driver;       // null until constructor runs
+    private int resultCount = 0;    // per-object state
+    private String lastQuery;       // null default
+
+    public int getResultCount() {
+        return resultCount;  // instance variable accessible in all instance methods
+    }
+}</code></pre>
+
+<h4>Static (Class) Variables</h4>
+<p>Shared across all instances. One copy in memory. Belong to the class, not any object. Access via class name.</p>
+<pre><code>public class TestConfig {
+    public static String BASE_URL = "https://qa.example.com";
+    public static int DEFAULT_TIMEOUT = 15;
+    private static int testRunCount = 0;
+
+    public static void incrementRunCount() {
+        testRunCount++;  // shared across all tests
+    }
+}
+
+// Usage — no object needed
+driver.get(TestConfig.BASE_URL);</code></pre>
+
+<h3>Type Casting</h3>
+
+<h4>Widening (Implicit) — Safe, Automatic</h4>
+<p>Smaller type → larger type. No data loss.</p>
+<pre><code>int timeout = 10;
+long longTimeout = timeout;     // int → long (implicit)
+double precise = timeout;       // int → double (implicit)
+
+byte small = 5;
+int larger = small;               // byte → int → automatic</code></pre>
+
+<h4>Narrowing (Explicit) — Requires Cast, Possible Data Loss</h4>
+<pre><code>double responseTime = 1234.567;
+int rounded = (int) responseTime;  // 1234 — decimal lost
+
+long big = 9999999999L;
+int smaller = (int) big;           // overflow possible
+
+// Selenium — casting WebDriver to JavascriptExecutor
+WebDriver driver = new ChromeDriver();
+JavascriptExecutor js = (JavascriptExecutor) driver;  // explicit cast
+js.executeScript("window.scrollTo(0, document.body.scrollHeight)");</code></pre>
+
+<h3>Autoboxing &amp; Unboxing</h3>
+<p>Automatic conversion between primitives and wrapper classes (Java 5+).</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Primitive</th><th>Wrapper Class</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>byte</code></td><td><code>Byte</code></td><td><code>Byte b = 10;</code> (autoboxing)</td></tr>
+<tr><td><code>short</code></td><td><code>Short</code></td><td><code>short s = new Short((short)5);</code> (unboxing)</td></tr>
+<tr><td><code>int</code></td><td><code>Integer</code></td><td><code>Integer count = elements.size();</code></td></tr>
+<tr><td><code>long</code></td><td><code>Long</code></td><td><code>Long id = 123456789L;</code></td></tr>
+<tr><td><code>float</code></td><td><code>Float</code></td><td><code>Float rate = 3.14f;</code></td></tr>
+<tr><td><code>double</code></td><td><code>Double</code></td><td><code>Double avg = calculateAverage();</code></td></tr>
+<tr><td><code>char</code></td><td><code>Character</code></td><td><code>Character ch = 'X';</code></td></tr>
+<tr><td><code>boolean</code></td><td><code>Boolean</code></td><td><code>Boolean visible = element.isDisplayed();</code></td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>// Autoboxing: primitive → wrapper
+int primitiveCount = 5;
+Integer wrapperCount = primitiveCount;  // auto
+
+// Unboxing: wrapper → primitive
+Integer size = driver.findElements(By.tagName("li")).size();
+int listSize = size;  // auto unboxing
+
+// NullPointerException risk on unboxing!
+Integer nullInt = null;
+// int bad = nullInt;  // NPE at runtime!</code></pre>
+
+<h3><code>var</code> Keyword (Java 10+)</h3>
+<p>Local variable type inference. Compiler deduces type from initializer. Cannot use for fields or method params.</p>
+<pre><code>var driver = new ChromeDriver();                    // inferred: ChromeDriver
+var elements = driver.findElements(By.tagName("a")); // inferred: List&lt;WebElement&gt;
+var title = driver.getTitle();                       // inferred: String
+var wait = new WebDriverWait(driver, Duration.ofSeconds(10)); // WebDriverWait
+
+// Must initialize — var x; is invalid
+// Cannot use when type isn't obvious: var x = null;</code></pre>
+
+<h3>Selenium Usage Examples</h3>
+<pre><code>// Storing element text
+String actualTitle = driver.getTitle();
+String buttonText = driver.findElement(By.id("submit")).getText();
+
+// Counts
+int rowCount = driver.findElements(By.xpath("//tr")).size();
+int linkCount = driver.findElements(By.cssSelector("a")).size();
+
+// Boolean checks
+boolean isEnabled = driver.findElement(By.id("btn")).isEnabled();
+boolean isSelected = driver.findElement(By.id("checkbox")).isSelected();
+boolean isDisplayed = driver.findElement(By.id("modal")).isDisplayed();
+
+// Assertions
+Assert.assertEquals("Expected Title", actualTitle);
+Assert.assertTrue(isEnabled, "Submit button should be enabled");
+Assert.assertEquals(10, rowCount, "Table should have 10 rows");</code></pre>
+
+<h3>Interview Q&amp;A — Section 3</h3>
+
+<h4>Q1: How many primitive types does Java have?</h4>
+<p><strong>A:</strong> 8 — byte, short, int, long, float, double, char, boolean.</p>
+
+<h4>Q2: Difference between primitive and reference types?</h4>
+<p><strong>A:</strong> Primitives store actual values on stack (when local). References store memory addresses pointing to heap objects. Primitives have default values; references default to null.</p>
+
+<h4>Q3: What is the default value of an instance int variable?</h4>
+<p><strong>A:</strong> 0. Local int variables have no default — compiler error if used uninitialized.</p>
+
+<h4>Q4: Can static variables be accessed without creating an object?</h4>
+<p><strong>A:</strong> Yes. <code>TestConfig.BASE_URL</code> — belongs to class, not instance.</p>
+
+<h4>Q5: What happens if you unbox a null Integer?</h4>
+<p><strong>A:</strong> NullPointerException. Always null-check wrapper types before unboxing.</p>
+
+<h4>Q6: Why cast WebDriver to JavascriptExecutor?</h4>
+<p><strong>A:</strong> WebDriver interface doesn't declare executeScript(). JavascriptExecutor extends WebDriver capabilities. Cast is safe when using ChromeDriver/FirefoxDriver which implement both.</p>
+
+<h4>Q7: When to use long vs int for timestamps?</h4>
+<p><strong>A:</strong> System.currentTimeMillis() returns long — exceeds int range. Always use long for timestamps and large counts.</p>
+
+<h4>Q8: What is var and its limitations?</h4>
+<p><strong>A:</strong> Local type inference (Java 10+). Only for local variables with initializer. Not for fields, method parameters, or return types. Improves readability for complex generics.</p>
+
+<h4>Q9: Difference between float and double?</h4>
+<p><strong>A:</strong> double has double precision (8 bytes, ~15 digits). float has single precision (4 bytes, ~6 digits). Use double by default; float only when memory-critical.</p>
+
+<h4>Q10: Can boolean be converted to int?</h4>
+<p><strong>A:</strong> No implicit conversion. Use ternary: <code>int val = flag ? 1 : 0;</code> Unlike C/C++.</p>
+
+<h4>Q11: What is scope of a local variable?</h4>
+<p><strong>A:</strong> From declaration to end of block (method, loop, if-block). Cannot access outside declaring block.</p>
+
+<h4>Q12: Why use Integer instead of int in collections?</h4>
+<p><strong>A:</strong> Generics don't support primitives. <code>List&lt;Integer&gt;</code> not <code>List&lt;int&gt;</code>. Autoboxing handles conversion transparently.</p>
+</section>
+
+<section id="section-4" class="section-card">
+<h2>Section 4: Operators &amp; Control Statements</h2>
+
+<h3>Operators</h3>
+
+<h4>Arithmetic Operators</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Operator</th><th>Syntax</th><th>Example</th><th>Automation Use</th></tr>
+</thead>
+<tbody>
+<tr><td><code>+</code></td><td><code>a + b</code></td><td><code>total = passed + failed;</code></td><td>Concatenate strings: <code>"Test " + testId</code></td></tr>
+<tr><td><code>-</code></td><td><code>a - b</code></td><td><code>remaining = max - current;</code></td><td>Calculate retry attempts left</td></tr>
+<tr><td><code>*</code></td><td><code>a * b</code></td><td><code>delay = seconds * 1000;</code></td><td>Convert seconds to milliseconds</td></tr>
+<tr><td><code>/</code></td><td><code>a / b</code></td><td><code>avg = total / count;</code></td><td>Average response time</td></tr>
+<tr><td><code>%</code></td><td><code>a % b</code></td><td><code>retry % 3 == 0</code></td><td>Cycle through test data sets</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Relational Operators</h4>
+<pre><code>int actualCount = driver.findElements(By.xpath("//tr")).size();
+int expectedCount = 10;
+
+boolean isEqual       = (actualCount == expectedCount);
+boolean isNotEqual    = (actualCount != expectedCount);
+boolean isLess        = (actualCount &lt; expectedCount);
+boolean isGreater     = (actualCount > expectedCount);
+boolean isLessOrEqual = (actualCount &lt;= expectedCount);</code></pre>
+
+<h4>Logical Operators</h4>
+<pre><code>WebElement btn = driver.findElement(By.id("submit"));
+boolean canClick = btn.isDisplayed() && btn.isEnabled();
+boolean shouldSkip = btn.isDisplayed() || btn.isEnabled();
+boolean isHidden   = !btn.isDisplayed();
+
+// Short-circuit: && stops if first is false; || stops if first is true
+if (driver != null && driver.getTitle().contains("Login")) { /* safe */ }</code></pre>
+
+<h4>Assignment Operators</h4>
+<pre><code>int retryCount = 0;
+retryCount += 1;    // retryCount = retryCount + 1
+retryCount -= 1;
+timeout *= 2;       // double the timeout
+index /= 2;</code></pre>
+
+<h4>Ternary Operator</h4>
+<pre><code>String browser = System.getProperty("browser", "chrome");
+String driverPath = browser.equals("chrome")
+    ? "drivers/chromedriver.exe"
+    : "drivers/geckodriver.exe";
+
+String status = testPassed ? "PASS" : "FAIL";
+int timeout = isProd ? 30 : 10;</code></pre>
+
+<h4><code>instanceof</code> Operator</h4>
+<pre><code>WebDriver driver = DriverFactory.getDriver("chrome");
+
+if (driver instanceof ChromeDriver) {
+    ChromeOptions options = new ChromeOptions();
+    // Chrome-specific setup
+}
+
+if (driver instanceof TakesScreenshot) {
+    TakesScreenshot ts = (TakesScreenshot) driver;
+    File screenshot = ts.getScreenshotAs(OutputType.FILE);
+}
+
+if (driver instanceof JavascriptExecutor) {
+    ((JavascriptExecutor) driver).executeScript("alert('test')");
+}</code></pre>
+
+<h3>Control Statements</h3>
+
+<h4>if / else if / else</h4>
+<pre><code>WebElement errorMsg = driver.findElement(By.id("error"));
+
+if (errorMsg.isDisplayed()) {
+    Assert.fail("Login failed: " + errorMsg.getText());
+} else if (driver.getCurrentUrl().contains("dashboard")) {
+    System.out.println("Login successful");
+} else {
+    Assert.fail("Unexpected state after login");
+}
+
+// Check element visibility before interaction
+WebElement modal = driver.findElement(By.id("popup"));
+if (modal.isDisplayed()) {
+    driver.findElement(By.id("closeModal")).click();
+}</code></pre>
+
+<h4>switch Statement</h4>
+<pre><code>// Browser selection factory
+String browser = ConfigReader.getProperty("browser");
+WebDriver driver;
+
+switch (browser.toLowerCase()) {
+    case "chrome":
+        driver = new ChromeDriver();
+        break;
+    case "firefox":
+        driver = new FirefoxDriver();
+        break;
+    case "edge":
+        driver = new EdgeDriver();
+        break;
+    default:
+        throw new IllegalArgumentException("Unsupported browser: " + browser);
+}
+
+// Environment selection (Java 14+ switch expression)
+String env = ConfigReader.getProperty("env");
+String baseUrl = switch (env) {
+    case "dev"  -> "https://dev.example.com";
+    case "qa"   -> "https://qa.example.com";
+    case "prod" -> "https://www.example.com";
+    default     -> throw new InvalidConfigException("Unknown env: " + env);
+};</code></pre>
+
+<h4>for Loop — Iterate Elements</h4>
+<pre><code>List&lt;WebElement&gt; rows = driver.findElements(By.xpath("//table/tbody/tr"));
+for (int i = 0; i &lt; rows.size(); i++) {
+    String cellText = rows.get(i).findElement(By.tagName("td")).getText();
+    System.out.println("Row " + i + ": " + cellText);
+}</code></pre>
+
+<h4>Enhanced for Loop</h4>
+<pre><code>List&lt;WebElement&gt; links = driver.findElements(By.tagName("a"));
+for (WebElement link : links) {
+    System.out.println(link.getText() + " -> " + link.getAttribute("href"));
+}
+
+String[] browsers = {"chrome", "firefox", "edge"};
+for (String b : browsers) {
+    runTestOnBrowser(b);
+}</code></pre>
+
+<h4>while Loop — Wait / Retry Logic</h4>
+<pre><code>// Retry until success or max attempts
+int attempts = 0;
+int maxRetries = 3;
+boolean clicked = false;
+
+while (attempts &lt; maxRetries && !clicked) {
+    try {
+        driver.findElement(By.id("flakyBtn")).click();
+        clicked = true;
+    } catch (ElementClickInterceptedException e) {
+        attempts++;
+        Thread.sleep(1000);
+    }
+}
+
+// Wait until condition
+int waitSeconds = 0;
+while (!driver.getTitle().contains("Dashboard") && waitSeconds &lt; 30) {
+    Thread.sleep(1000);
+    waitSeconds++;
+}</code></pre>
+
+<h4>do-while Loop — Execute At Least Once</h4>
+<pre><code>int page = 1;
+do {
+    navigateToPage(page);
+    scrapeData();
+    page++;
+} while (hasNextPage() && page &lt;= 10);
+
+// Accept alert at least once attempt
+do {
+    try {
+        driver.switchTo().alert().accept();
+    } catch (NoAlertPresentException e) {
+        break;
+    }
+} while (true);</code></pre>
+
+<h4>break and continue</h4>
+<pre><code>// break — stop iteration
+for (WebElement row : rows) {
+    if (row.getText().contains("ERROR")) {
+        Assert.fail("Error row found: " + row.getText());
+        break;
+    }
+}
+
+// continue — skip current iteration
+for (WebElement link : links) {
+    String href = link.getAttribute("href");
+    if (href == null || href.isEmpty()) {
+        continue;  // skip empty links
+    }
+    validateLink(href);
+}</code></pre>
+
+<h3>Automation-Specific Examples</h3>
+
+<h4>Iterate Dropdown Options</h4>
+<pre><code>Select dropdown = new Select(driver.findElement(By.id("country")));
+List&lt;WebElement&gt; options = dropdown.getOptions();
+
+for (WebElement option : options) {
+    String value = option.getAttribute("value");
+    dropdown.selectByValue(value);
+    Assert.assertTrue(driver.findElement(By.id("result")).isDisplayed());
+}</code></pre>
+
+<h4>Count Table Rows</h4>
+<pre><code>int dataRows = 0;
+List&lt;WebElement&gt; rows = driver.findElements(By.xpath("//table[@id='data']/tbody/tr"));
+
+for (WebElement row : rows) {
+    if (!row.getAttribute("class").contains("hidden")) {
+        dataRows++;
+    }
+}
+Assert.assertEquals(25, dataRows, "Expected 25 visible data rows");</code></pre>
+
+<h4>Conditional Test Execution</h4>
+<pre><code>String runEnv = System.getProperty("env", "qa");
+
+if ("prod".equals(runEnv)) {
+    throw new SkipException("Smoke tests only on prod — skipping data mutation tests");
+}
+
+if (ConfigReader.getProperty("feature.newUI").equals("true")) {
+    runNewUITestSuite();
+} else {
+    runLegacyUITestSuite();
+}</code></pre>
+
+<h4>Browser Factory Switch</h4>
+<pre><code>public class DriverFactory {
+    public static WebDriver createDriver(String browser) {
+        return switch (browser.toLowerCase()) {
+            case "chrome"  -> new ChromeDriver(getChromeOptions());
+            case "firefox" -> new FirefoxDriver(getFirefoxOptions());
+            case "edge"    -> new EdgeDriver(getEdgeOptions());
+            case "remote"  -> new RemoteWebDriver(getGridUrl(), getChromeOptions());
+            default -> throw new IllegalArgumentException("Browser not supported: " + browser);
+        };
+    }
+}</code></pre>
+
+<h3>Interview Q&amp;A — Section 4</h3>
+
+<h4>Q1: Difference between == and .equals() for Strings?</h4>
+<p><strong>A:</strong> == compares references (memory addresses). .equals() compares content. Always use .equals() for String value comparison in assertions.</p>
+
+<h4>Q2: When to use switch vs if-else?</h4>
+<p><strong>A:</strong> switch for discrete values of one variable (browser, env). if-else for complex boolean conditions (element visible AND enabled).</p>
+
+<h4>Q3: What is short-circuit evaluation?</h4>
+<p><strong>A:</strong> <code>&amp;&amp;</code> doesn't evaluate second operand if first is false. <code>||</code> skips second if first is true. Prevents NPE: <code>if (driver != null &amp;&amp; driver.getTitle().equals("X"))</code>.</p>
+
+<h4>Q4: Can switch work with String?</h4>
+<p><strong>A:</strong> Yes, since Java 7. Common in browser/env selection. Use .toLowerCase() for case-insensitive matching.</p>
+
+<h4>Q5: Difference between while and do-while?</h4>
+<p><strong>A:</strong> while checks condition first (may never execute). do-while executes at least once, then checks. Use do-while when first attempt must always run.</p>
+
+<h4>Q6: How does instanceof help in frameworks?</h4>
+<p><strong>A:</strong> Safely check capabilities before casting — TakesScreenshot for screenshots, JavascriptExecutor for JS clicks, RemoteWebDriver for Grid sessions.</p>
+
+<h4>Q7: What is break vs continue?</h4>
+<p><strong>A:</strong> break exits the loop entirely. continue skips remaining code in current iteration and moves to next. break in nested loops only exits innermost loop unless labeled.</p>
+
+<h4>Q8: Can you use String in switch with null?</h4>
+<p><strong>A:</strong> No — NullPointerException if switch variable is null. Null-check before switch.</p>
+
+<h4>Q9: Enhanced for vs traditional for?</h4>
+<p><strong>A:</strong> Enhanced for is cleaner, read-only (no index modification), works with arrays and Iterable. Traditional for needed when you need index or modify list during iteration.</p>
+
+<h4>Q10: What is ternary operator advantage?</h4>
+<p><strong>A:</strong> Concise conditional assignment. Useful for inline config: timeout values, driver paths, pass/fail status strings.</p>
+
+<h4>Q11: How to iterate Map in automation?</h4>
+<p><strong>A:</strong> <code>for (Map.Entry&lt;String, String&gt; entry : configMap.entrySet())</code> or keySet()/values() with enhanced for.</p>
+
+<h4>Q12: What happens with missing break in switch?</h4>
+<p><strong>A:</strong> Fall-through — execution continues into next case. Sometimes intentional, usually a bug. Use break or switch expressions (Java 14+) to prevent.</p>
+</section>
+
+<section id="section-5" class="section-card">
+<h2>Section 5: Strings</h2>
+
+<h3>String — Immutable</h3>
+<p>Once created, a String object cannot be modified. Any "modification" creates a new String object on the heap. This ensures thread safety and enables the String pool optimization.</p>
+
+<h3>String Pool Concept</h3>
+<pre class="ascii-diagram">
+  HEAP                              STRING POOL (inside Heap)
+ ┌─────────────────────┐            ┌──────────────────────────┐
+ │ String s1 = new     │            │  "Hello"  ◄── s3         │
+ │   String("Hello")   │──┐         │  "World"  ◄── s4, s5     │
+ │  (new object)       │  │         │  (shared literals)       │
+ └─────────────────────┘  │         └──────────────────────────┘
+                          │
+ ┌─────────────────────┐  │         s3 = "Hello"  → checks pool, reuses
+ │ String s2 = new     │──┘         s4 = "World"
+ │   String("Hello")   │            s5 = "World"  → same reference as s4
+ │  (another new obj)  │
+ └─────────────────────┘
+
+  s1 == s2  → false  (different heap objects)
+  s3 == s4  → false  (different literals)
+  s4 == s5  → true   (same pool reference)
+  s1.equals(s2) → true (same content)
+</pre>
+
+<h3>== vs .equals()</h3>
+<pre><code>String a = "Selenium";
+String b = "Selenium";
+String c = new String("Selenium");
+
+System.out.println(a == b);       // true  — same pool reference
+System.out.println(a == c);       // false — different objects
+System.out.println(a.equals(c));  // true  — same content ✓ USE THIS
+
+// In assertions — ALWAYS use equals
+Assert.assertEquals("Login Successful", actualMessage);
+Assert.assertTrue(actualUrl.contains("/dashboard"));</code></pre>
+
+<h3>StringBuilder vs StringBuffer</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>String</th><th>StringBuilder</th><th>StringBuffer</th></tr>
+</thead>
+<tbody>
+<tr><td>Mutability</td><td>Immutable</td><td>Mutable</td><td>Mutable</td></tr>
+<tr><td>Thread-safe</td><td>Yes (immutable)</td><td>No</td><td>Yes (synchronized)</td></tr>
+<tr><td>Performance</td><td>Slow for concatenation in loops</td><td>Fast</td><td>Slower than StringBuilder</td></tr>
+<tr><td>Storage</td><td>String Pool + Heap</td><td>Heap only</td><td>Heap only</td></tr>
+<tr><td>When to use</td><td>Constants, assertions, params</td><td>Building strings in loops (reports)</td><td>Multi-threaded string building</td></tr>
+<tr><td>Introduced</td><td>Java 1.0</td><td>Java 5</td><td>Java 1.0</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>// BAD — creates many String objects in loop
+String report = "";
+for (String result : testResults) {
+    report = report + result + "\n";  // new String each iteration
+}
+
+// GOOD — StringBuilder
+StringBuilder sb = new StringBuilder();
+for (String result : testResults) {
+    sb.append(result).append("\n");
+}
+String report = sb.toString();</code></pre>
+
+<h3>Important String Methods</h3>
+
+<h4>equals() / equalsIgnoreCase()</h4>
+<pre><code>String actual = driver.findElement(By.id("msg")).getText();
+Assert.assertEquals("Success", actual);                    // TestNG uses equals internally
+Assert.assertTrue(actual.equalsIgnoreCase("SUCCESS"));     // case-insensitive</code></pre>
+
+<h4>contains()</h4>
+<pre><code>String url = driver.getCurrentUrl();
+Assert.assertTrue(url.contains("/dashboard"), "Should be on dashboard");
+Assert.assertTrue(errorMsg.contains("invalid credentials"));</code></pre>
+
+<h4>startsWith() / endsWith()</h4>
+<pre><code>String currentUrl = driver.getCurrentUrl();
+Assert.assertTrue(currentUrl.startsWith("https://"), "Must be HTTPS");
+Assert.assertTrue(currentUrl.endsWith("/login") || currentUrl.contains("/login"));</code></pre>
+
+<h4>replace() / replaceAll()</h4>
+<pre><code>String raw = "test@email.com;admin@email.com";
+String cleaned = raw.replace(";", ",");           // literal replace
+String digits = "Order #12345".replaceAll("[^0-9]", "");  // regex: "12345"
+String locator = "xpath=//div[@id='btn']".replace("xpath=", "");</code></pre>
+
+<h4>split()</h4>
+<pre><code>// Parse CSV test data
+String csvLine = "admin,password123,QA";
+String[] credentials = csvLine.split(",");
+String username = credentials[0];  // "admin"
+String password = credentials[1];  // "password123"
+
+// Split URL path
+String[] pathParts = driver.getCurrentUrl().split("/");
+String pageName = pathParts[pathParts.length - 1];</code></pre>
+
+<h4>substring()</h4>
+<pre><code>String orderId = "Order ID: ORD-98765";
+String id = orderId.substring(10);       // "ORD-98765"
+String prefix = orderId.substring(0, 9); // "Order ID:"
+
+String date = "2024-03-15";
+String year = date.substring(0, 4);      // "2024"</code></pre>
+
+<h4>trim() / strip() (Java 11+)</h4>
+<pre><code>String input = "  admin  ";
+String clean = input.trim();   // "admin" — removes leading/trailing whitespace
+String clean2 = input.strip(); // Unicode-aware whitespace removal
+
+String text = driver.findElement(By.id("label")).getText().strip();</code></pre>
+
+<h4>length()</h4>
+<pre><code>String password = "abc";
+Assert.assertTrue(password.length() >= 8, "Password must be at least 8 chars");
+
+String searchResults = driver.findElement(By.id("count")).getText();
+// "Showing 42 results"
+int count = Integer.parseInt(searchResults.replaceAll("[^0-9]", ""));</code></pre>
+
+<h4>toLowerCase() / toUpperCase()</h4>
+<pre><code>String browser = System.getProperty("browser", "chrome").toLowerCase();
+String status = testResult.toUpperCase();  // "PASS"
+
+Assert.assertEquals("LOGIN PAGE",
+    driver.findElement(By.tagName("h1")).getText().toUpperCase());</code></pre>
+
+<h4>charAt() / indexOf()</h4>
+<pre><code>String text = "Error: Element not found";
+int colonIndex = text.indexOf(":");           // 5
+char firstChar = text.charAt(0);              // 'E'
+int notFound = text.indexOf("not found");     // 16
+int lastIndex = text.lastIndexOf("e");        // 20</code></pre>
+
+<h4>matches()</h4>
+<pre><code>String email = "user@example.com";
+Assert.assertTrue(email.matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$"));
+
+String price = driver.findElement(By.className("price")).getText();
+Assert.assertTrue(price.matches("\\$\\d+\\.\\d{2}"));  // "$19.99"</code></pre>
+
+<h4>format()</h4>
+<pre><code>String testName = "LoginTest";
+String message = String.format("Test [%s] %s in %d ms", testName, "PASSED", 1234);
+// "Test [LoginTest] PASSED in 1234 ms"
+
+String locator = String.format("//button[@id='%s']", buttonId);
+String url = String.format("%s/users/%d/profile", baseUrl, userId);</code></pre>
+
+<h3>String Immutability — Interview Deep-Dive</h3>
+<pre><code>String s = "Hello";
+s.concat(" World");    // returns NEW String "Hello World" — s still "Hello"
+s = s.concat(" World"); // s now references new object
+
+// Why immutable?
+// 1. String Pool — safe sharing without synchronization
+// 2. Security — params, URLs, class names can't be tampered
+// 3. Thread safety — no sync needed for read-only strings
+// 4. HashCode caching — hashCode computed once, cached
+
+// String concatenation at compile time is optimized:
+String x = "Hello" + " " + "World";  // compiler creates "Hello World" in pool
+
+// Loop concatenation is NOT optimized — use StringBuilder
+</code></pre>
+
+<h3>Selenium String Usage</h3>
+<pre><code>// getText() — visible text of element
+String heading = driver.findElement(By.tagName("h1")).getText();
+
+// getAttribute() — HTML attribute value
+String href = link.getAttribute("href");
+String value = input.getAttribute("value");
+String className = element.getAttribute("class");
+
+// URL manipulation
+String currentUrl = driver.getCurrentUrl();
+String baseUrl = currentUrl.split("/")[2];  // extract domain
+driver.get(baseUrl + "/logout");</code></pre>
+
+<h3>10 Coding Questions with Solutions</h3>
+
+<h4>Q1: Reverse a string without StringBuilder.reverse()</h4>
+<pre><code>public static String reverse(String input) {
+    char[] chars = input.toCharArray();
+    int left = 0, right = chars.length - 1;
+    while (left &lt; right) {
+        char temp = chars[left];
+        chars[left++] = chars[right];
+        chars[right--] = temp;
+    }
+    return new String(chars);
+}</code></pre>
+
+<h4>Q2: Check if two strings are anagrams</h4>
+<pre><code>public static boolean isAnagram(String s1, String s2) {
+    if (s1.length() != s2.length()) return false;
+    char[] a = s1.toLowerCase().toCharArray();
+    char[] b = s2.toLowerCase().toCharArray();
+    Arrays.sort(a);
+    Arrays.sort(b);
+    return Arrays.equals(a, b);
+}</code></pre>
+
+<h4>Q3: Count vowels in a string</h4>
+<pre><code>public static int countVowels(String s) {
+    int count = 0;
+    for (char c : s.toLowerCase().toCharArray()) {
+        if ("aeiou".indexOf(c) >= 0) count++;
+    }
+    return count;
+}</code></pre>
+
+<h4>Q4: Remove duplicates from string</h4>
+<pre><code>public static String removeDuplicates(String s) {
+    StringBuilder sb = new StringBuilder();
+    for (char c : s.toCharArray()) {
+        if (sb.indexOf(String.valueOf(c)) == -1) {
+            sb.append(c);
+        }
+    }
+    return sb.toString();
+}</code></pre>
+
+<h4>Q5: Check palindrome</h4>
+<pre><code>public static boolean isPalindrome(String s) {
+    String cleaned = s.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+    return cleaned.equals(new StringBuilder(cleaned).reverse().toString());
+}</code></pre>
+
+<h4>Q6: Find first non-repeating character</h4>
+<pre><code>public static char firstNonRepeating(String s) {
+    Map&lt;Character, Integer&gt; freq = new LinkedHashMap&lt;&gt;();
+    for (char c : s.toCharArray()) {
+        freq.merge(c, 1, Integer::sum);
+    }
+    return freq.entrySet().stream()
+        .filter(e -> e.getValue() == 1)
+        .map(Map.Entry::getKey)
+        .findFirst().orElse('_');
+}</code></pre>
+
+<h4>Q7: Convert String to int without parseInt</h4>
+<pre><code>public static int stringToInt(String s) {
+    int result = 0;
+    for (char c : s.toCharArray()) {
+        result = result * 10 + (c - '0');
+    }
+    return result;
+}</code></pre>
+
+<h4>Q8: Extract numbers from string</h4>
+<pre><code>public static String extractNumbers(String s) {
+    return s.replaceAll("[^0-9]", "");
+}
+// "Price: $49.99" → "4999"</code></pre>
+
+<h4>Q9: Capitalize first letter of each word</h4>
+<pre><code>public static String capitalizeWords(String s) {
+    String[] words = s.split("\\s+");
+    StringBuilder sb = new StringBuilder();
+    for (String word : words) {
+        if (!word.isEmpty()) {
+            sb.append(Character.toUpperCase(word.charAt(0)))
+              .append(word.substring(1).toLowerCase()).append(" ");
+        }
+    }
+    return sb.toString().strip();
+}</code></pre>
+
+<h4>Q10: Compare version strings "1.10.2" vs "1.9.0"</h4>
+<pre><code>public static int compareVersions(String v1, String v2) {
+    String[] parts1 = v1.split("\\.");
+    String[] parts2 = v2.split("\\.");
+    int len = Math.max(parts1.length, parts2.length);
+    for (int i = 0; i &lt; len; i++) {
+        int n1 = i &lt; parts1.length ? Integer.parseInt(parts1[i]) : 0;
+        int n2 = i &lt; parts2.length ? Integer.parseInt(parts2[i]) : 0;
+        if (n1 != n2) return Integer.compare(n1, n2);
+    }
+    return 0;
+}</code></pre>
+
+<h3>Interview Q&amp;A — Section 5</h3>
+
+<h4>Q1: Why is String immutable?</h4>
+<p><strong>A:</strong> Security (class loading, network connections), thread safety, String pool optimization, and hashCode caching. Immutable objects are inherently thread-safe.</p>
+
+<h4>Q2: How many objects created: <code>String s = new String("Hello");</code>?</h4>
+<p><strong>A:</strong> Potentially 2 — "Hello" in pool (if not already) + new heap object from new keyword.</p>
+
+<h4>Q3: String vs StringBuilder performance in loops?</h4>
+<p><strong>A:</strong> String concatenation in loop creates O(n²) objects. StringBuilder creates O(n) — always use StringBuilder for dynamic string building.</p>
+
+<h4>Q4: Is String thread-safe?</h4>
+<p><strong>A:</strong> Yes — immutability guarantees thread safety. StringBuffer is mutable but synchronized. StringBuilder is mutable and not thread-safe.</p>
+
+<h4>Q5: What is String.intern()?</h4>
+<p><strong>A:</strong> Moves String to pool and returns pool reference. <code>s.intern()</code> — rarely needed in automation; useful for memory optimization with many duplicate strings.</p>
+
+<h4>Q6: replace() vs replaceAll()?</h4>
+<p><strong>A:</strong> replace() takes CharSequence literals. replaceAll() takes regex patterns. replaceAll("[0-9]", "") removes all digits.</p>
+
+<h4>Q7: How to compare strings ignoring whitespace?</h4>
+<p><strong>A:</strong> <code>s1.strip().equals(s2.strip())</code> or normalize both before comparison.</p>
+
+<h4>Q8: What happens with String concatenation and null?</h4>
+<p><strong>A:</strong> <code>"Hello " + null</code> produces "Hello null" (null converted to "null" string). But <code>null.equals("x")</code> throws NPE — always put literal first: <code>"x".equals(variable)</code>.</p>
+
+<h4>Q9: charAt() vs indexOf()?</h4>
+<p><strong>A:</strong> charAt(i) returns char at index i (throws IndexOutOfBounds). indexOf(c) returns first index of char/substring (-1 if not found).</p>
+
+<h4>Q10: How to validate email in test assertions?</h4>
+<p><strong>A:</strong> <code>email.matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")</code> or Apache Commons Validator for production frameworks.</p>
+
+<h4>Q11: String pool location in Java 7+?</h4>
+<p><strong>A:</strong> Moved from PermGen to Heap. Reduces PermGen OOM issues. Pool still deduplicates string literals.</p>
+
+<h4>Q12: Difference between strip() and trim()?</h4>
+<p><strong>A:</strong> trim() removes chars ≤ U+0020 (ASCII whitespace). strip() (Java 11) removes all Unicode whitespace including non-breaking spaces — preferred for modern apps.</p>
+</section>
+
+<section id="section-6" class="section-card">
+<h2>Section 6: Arrays &amp; Collections</h2>
+
+<h3>Arrays</h3>
+
+<h4>Declaration &amp; Initialization</h4>
+<pre><code>// 1D Array
+String[] browsers = new String[3];           // declare, default null
+browsers[0] = "chrome";
+browsers[1] = "firefox";
+browsers[2] = "edge";
+
+String[] envs = {"dev", "qa", "staging", "prod"};  // literal init
+int[] timeouts = new int[]{5, 10, 15, 30};
+
+// 2D Array
+String[][] testData = {
+    {"admin", "pass123", "QA"},
+    {"user1", "userpass", "Dev"},
+    {"guest", "guest", "Staging"}
+};
+String username = testData[0][0];  // "admin"</code></pre>
+
+<h4>Array Iteration</h4>
+<pre><code>// Traditional for
+for (int i = 0; i &lt; browsers.length; i++) {
+    runTestsOn(browsers[i]);
+}
+
+// Enhanced for
+for (String browser : browsers) {
+    DriverFactory.createDriver(browser);
+}
+
+// Streams (Java 8+)
+Arrays.stream(browsers).forEach(this::runTestsOn);</code></pre>
+
+<h4>Common Operations</h4>
+<pre><code>int[] nums = {5, 2, 8, 1, 9};
+Arrays.sort(nums);                          // [1, 2, 5, 8, 9]
+int index = Arrays.binarySearch(nums, 5);   // 2 (must be sorted)
+int[] copy = Arrays.copyOf(nums, nums.length);
+boolean equal = Arrays.equals(nums, copy);   // true
+String str = Arrays.toString(nums);          // "[1, 2, 5, 8, 9]"</code></pre>
+
+<h4>Array Limitations → Why Collections?</h4>
+<ul>
+<li>Fixed size — cannot grow/shrink dynamically</li>
+<li>No built-in methods for add, remove, search (manual implementation)</li>
+<li>Cannot store heterogeneous types (without Object[])</li>
+<li>No ready-made Set (unique) or Map (key-value) semantics</li>
+<li>Collections provide ArrayList, HashSet, HashMap with rich APIs</li>
+</ul>
+
+<h3>Collections Framework Hierarchy</h3>
+<pre class="ascii-diagram">
+                    Iterable
+                       │
+                   Collection
+                  /    |    \
+               List   Set   Queue
+                │      │      │
+           ArrayList  HashSet  PriorityQueue
+           LinkedList LinkedHashSet  Deque
+                    TreeSet    │
+                              ArrayDeque
+                              LinkedList
+
+        Map (separate hierarchy — not a Collection)
+         │
+    HashMap ─── LinkedHashMap ─── TreeMap
+    Hashtable (legacy, synchronized)
+    ConcurrentHashMap (thread-safe)
+</pre>
+
+<h3>List Interface</h3>
+
+<h4>ArrayList — Internal Working</h4>
+<p>Dynamic array internally. Default capacity 10. When full, grows by ~50% (newCapacity = old + old/2). Fast random access O(1). Slow middle insert/delete O(n) due to shifting.</p>
+<pre><code>List&lt;WebElement&gt; elements = new ArrayList&lt;&gt;();
+elements.add(driver.findElement(By.id("btn1")));
+elements.add(driver.findElement(By.id("btn2")));
+WebElement first = elements.get(0);  // O(1) access
+
+List&lt;String&gt; testData = new ArrayList&lt;&gt;();
+testData.add("user1@test.com");
+testData.add("user2@test.com");</code></pre>
+<p><strong>When to use:</strong> Random access, iteration, storing WebElements, test data lists, when size changes frequently.</p>
+
+<h4>LinkedList — Doubly Linked List</h4>
+<p>Each node stores data + prev/next references. O(1) insert/delete at head/tail. O(n) random access. Implements both List and Deque.</p>
+<pre><code>LinkedList&lt;String&gt; executionLog = new LinkedList&lt;&gt;();
+executionLog.addFirst("Test started");
+executionLog.addLast("Login completed");
+executionLog.removeFirst();</code></pre>
+<p><strong>When to use:</strong> Frequent insertions/deletions at beginning/end, queue-like operations. Rare in typical Selenium frameworks.</p>
+
+<h4>ArrayList vs LinkedList</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>ArrayList</th><th>LinkedList</th></tr>
+</thead>
+<tbody>
+<tr><td>Internal structure</td><td>Dynamic array</td><td>Doubly linked list</td></tr>
+<tr><td>Random access (get)</td><td>O(1) — fast</td><td>O(n) — slow</td></tr>
+<tr><td>Insert at end</td><td>O(1) amortized</td><td>O(1)</td></tr>
+<tr><td>Insert/delete middle</td><td>O(n) — shift elements</td><td>O(n) — find + O(1) link</td></tr>
+<tr><td>Memory</td><td>Less overhead</td><td>More (node pointers)</td></tr>
+<tr><td>Thread-safe</td><td>No (use Collections.synchronizedList)</td><td>No</td></tr>
+<tr><td>Cache performance</td><td>Better (contiguous memory)</td><td>Poorer (scattered nodes)</td></tr>
+<tr><td>Best for automation</td><td>WebElements, test data, locators</td><td>Execution logs, undo stacks</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Set Interface</h3>
+
+<h4>HashSet</h4>
+<p>Hash table backing. No duplicates. No order guaranteed. O(1) add/remove/contains. Allows one null.</p>
+<pre><code>Set&lt;String&gt; uniqueUrls = new HashSet&lt;&gt;();
+uniqueUrls.add("https://example.com/page1");
+uniqueUrls.add("https://example.com/page1");  // duplicate ignored
+System.out.println(uniqueUrls.size());  // 1</code></pre>
+
+<h4>LinkedHashSet</h4>
+<p>HashSet + doubly-linked list for insertion order preservation.</p>
+<pre><code>Set&lt;String&gt; orderedUrls = new LinkedHashSet&lt;&gt;();
+orderedUrls.add("/home");
+orderedUrls.add("/login");
+orderedUrls.add("/dashboard");
+// Iteration order: /home, /login, /dashboard</code></pre>
+
+<h4>TreeSet</h4>
+<p>Red-black tree. Sorted order (natural or Comparator). O(log n) operations. No null allowed.</p>
+<pre><code>Set&lt;Integer&gt; sortedPriorities = new TreeSet&lt;&gt;();
+sortedPriorities.add(3);
+sortedPriorities.add(1);
+sortedPriorities.add(2);
+// Iteration: 1, 2, 3</code></pre>
+
+<h4>Set Comparison</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>HashSet</th><th>LinkedHashSet</th><th>TreeSet</th></tr>
+</thead>
+<tbody>
+<tr><td>Ordering</td><td>None</td><td>Insertion order</td><td>Sorted (natural/Comparator)</td></tr>
+<tr><td>Performance</td><td>O(1)</td><td>O(1)</td><td>O(log n)</td></tr>
+<tr><td>Null allowed</td><td>One null</td><td>One null</td><td>No</td></tr>
+<tr><td>Implementation</td><td>Hash table</td><td>Hash table + linked list</td><td>Red-black tree</td></tr>
+<tr><td>Best for</td><td>Unique test IDs, URLs</td><td>Ordered unique steps</td><td>Sorted test priorities</td></tr>
+<tr><td>Duplicates</td><td>Not allowed</td><td>Not allowed</td><td>Not allowed</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Map Interface</h3>
+
+<h4>HashMap — Internal Working</h4>
+<p>Array of buckets (default 16). hashCode() determines bucket. Collisions handled by linked list (Java 7) or tree (Java 8+, when bucket > 8 nodes). Load factor 0.75 triggers resize (double capacity).</p>
+<pre><code>Map&lt;String, String&gt; config = new HashMap&lt;&gt;();
+config.put("browser", "chrome");
+config.put("base.url", "https://qa.example.com");
+config.put("timeout", "15");
+
+String browser = config.get("browser");  // "chrome"
+config.getOrDefault("headless", "false");</code></pre>
+
+<h4>LinkedHashMap</h4>
+<p>HashMap + insertion order (or access order if configured).</p>
+
+<h4>TreeMap</h4>
+<p>Sorted by keys. NavigableMap — floorKey, ceilingKey, subMap.</p>
+
+<h4>Hashtable (Legacy)</h4>
+<p>Synchronized, no null keys/values, slower. Replaced by ConcurrentHashMap for thread-safe needs.</p>
+
+<h4>HashMap vs Hashtable vs ConcurrentHashMap</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>HashMap</th><th>Hashtable</th><th>ConcurrentHashMap</th></tr>
+</thead>
+<tbody>
+<tr><td>Thread-safe</td><td>No</td><td>Yes (synchronized methods)</td><td>Yes (segment/cas locking)</td></tr>
+<tr><td>Null keys/values</td><td>One null key, multiple null values</td><td>Not allowed</td><td>Not allowed</td></tr>
+<tr><td>Performance</td><td>Fast (single-threaded)</td><td>Slow (full lock)</td><td>Fast (partial locking)</td></tr>
+<tr><td>Introduced</td><td>Java 1.2</td><td>Java 1.0 (legacy)</td><td>Java 1.5</td></tr>
+<tr><td>Iteration</td><td>Fail-fast iterator</td><td>Fail-fast enumerator</td><td>Weakly consistent</td></tr>
+<tr><td>Default for</td><td>General key-value storage</td><td>Deprecated</td><td>Parallel test config sharing</td></tr>
+<tr><td>NullPointerException</td><td>Only on null key get</td><td>On any null key/value</td><td>On any null key/value</td></tr>
+<tr><td>Automation use</td><td>Test params, config maps</td><td>Properties class extends it</td><td>Shared state in parallel runs</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Queue</h3>
+<pre><code>// PriorityQueue — natural ordering or Comparator
+Queue&lt;Integer&gt; testPriority = new PriorityQueue&lt;&gt;();
+testPriority.offer(3);
+testPriority.offer(1);
+testPriority.poll();  // 1 (lowest first)
+
+// Deque — double-ended queue
+Deque&lt;String&gt; browserHistory = new ArrayDeque&lt;&gt;();
+browserHistory.push("page1");
+browserHistory.push("page2");
+browserHistory.pop();  // "page2" — stack behavior</code></pre>
+
+<h3>Iterator vs ListIterator vs forEach</h3>
+<pre><code>List&lt;String&gt; tests = new ArrayList&lt;&gt;(List.of("Login", "Search", "Checkout"));
+
+// Iterator — forward only, works on any Collection
+Iterator&lt;String&gt; it = tests.iterator();
+while (it.hasNext()) {
+    System.out.println(it.next());
+    // it.remove(); — safe removal during iteration
+}
+
+// ListIterator — bidirectional, List only
+ListIterator&lt;String&gt; lit = tests.listIterator();
+while (lit.hasNext()) {
+    String test = lit.next();
+    if (test.equals("Search")) lit.set("SearchV2");  // replace during iteration
+}
+
+// forEach (Java 8+) — lambda, cannot modify during iteration
+tests.forEach(t -> System.out.println("Running: " + t));</code></pre>
+
+<h3>Collections Utility Class</h3>
+<pre><code>List&lt;Integer&gt; scores = new ArrayList&lt;&gt;(List.of(85, 92, 78, 95, 88));
+Collections.sort(scores);                    // [78, 85, 88, 92, 95]
+Collections.reverse(scores);                 // [95, 92, 88, 85, 78]
+Collections.max(scores);                     // 95
+Collections.frequency(scores, 88);           // 1
+Collections.shuffle(scores);                 // random order for test data
+
+List&lt;String&gt; immutable = Collections.unmodifiableList(tests);  // prevent modification
+List&lt;String&gt; synced = Collections.synchronizedList(tests);   // thread-safe wrapper</code></pre>
+
+<h3>Selenium &amp; Framework Usage</h3>
+<pre><code>// ArrayList — store WebElements
+List&lt;WebElement&gt; rows = new ArrayList&lt;&gt;(driver.findElements(By.xpath("//tr")));
+
+// HashMap — test parameters, config
+Map&lt;String, String&gt; testParams = new HashMap&lt;&gt;();
+testParams.put("username", "admin");
+testParams.put("password", "secret");
+testParams.put("environment", "qa");
+
+// DataProvider with 2D Object array
+@DataProvider(name = "loginData")
+public Object[][] getLoginData() {
+    Map&lt;String, String&gt; row1 = Map.of("user", "admin", "pass", "admin123");
+    Map&lt;String, String&gt; row2 = Map.of("user", "guest", "pass", "guest");
+    return new Object[][] {{row1}, {row2}};
+}
+
+// Set — unique URLs visited during crawl test
+Set&lt;String&gt; visitedUrls = new HashSet&lt;&gt;();
+
+// Properties extends Hashtable
+Properties props = new Properties();
+props.load(new FileInputStream("config.properties"));
+String url = props.getProperty("base.url");</code></pre>
+
+<h3>Interview Q&amp;A — Section 6</h3>
+
+<h4>Q1: Array vs ArrayList?</h4>
+<p><strong>A:</strong> Array: fixed size, primitives allowed, faster. ArrayList: dynamic, objects only (autoboxing), rich API (add, remove, sort). Use ArrayList in automation for flexible test data.</p>
+
+<h4>Q2: How does HashMap handle collisions?</h4>
+<p><strong>A:</strong> Same bucket → linked list of entries. Java 8+: when bucket exceeds 8 nodes, converts to red-black tree for O(log n) lookup. Rehashes when load factor exceeds 0.75.</p>
+
+<h4>Q3: Why override equals() and hashCode() together?</h4>
+<p><strong>A:</strong> HashMap/HashSet contract: equal objects must have same hashCode. Violating this breaks HashSet deduplication and HashMap lookups.</p>
+
+<h4>Q4: ArrayList vs LinkedList for storing WebElements?</h4>
+<p><strong>A:</strong> ArrayList — you iterate and occasionally access by index. LinkedList only if frequent head/tail insertions. ArrayList is default choice.</p>
+
+<h4>Q5: HashSet how does it prevent duplicates?</h4>
+<p><strong>A:</strong> Uses hashCode() to find bucket, then equals() to check existing entries. If equals match found, add() returns false.</p>
+
+<h4>Q6: ConcurrentHashMap vs Hashtable?</h4>
+<p><strong>A:</strong> ConcurrentHashMap uses finer-grained locking (segments/CAS), much better throughput in parallel tests. Hashtable locks entire table — legacy, avoid.</p>
+
+<h4>Q7: Can you add null to HashMap?</h4>
+<p><strong>A:</strong> Yes — one null key, multiple null values. TreeMap and ConcurrentHashMap reject null keys.</p>
+
+<h4>Q8: Fail-fast vs fail-safe iterator?</h4>
+<p><strong>A:</strong> Fail-fast (ArrayList, HashMap) throws ConcurrentModificationException if collection modified during iteration (except via iterator.remove()). Fail-safe (ConcurrentHashMap) works on clone, no exception.</p>
+
+<h4>Q9: How to sort HashMap by values?</h4>
+<p><strong>A:</strong> Stream API: <code>map.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(toMap(...))</code> or TreeMap with custom Comparator.</p>
+
+<h4>Q10: What is load factor in HashMap?</h4>
+<p><strong>A:</strong> Default 0.75 — when 75% of buckets are filled, HashMap doubles capacity and rehashes all entries.</p>
+
+<h4>Q11: LinkedHashMap use case in automation?</h4>
+<p><strong>A:</strong> Maintaining test step execution order, breadcrumb navigation validation, ordered config loading for reproducible test runs.</p>
+
+<h4>Q12: Difference between Collection and Collections?</h4>
+<p><strong>A:</strong> Collection is the root interface. Collections is a utility class with static methods (sort, reverse, synchronized wrappers).</p>
+
+<h4>Q13: How to convert List to Array and vice versa?</h4>
+<p><strong>A:</strong> <code>list.toArray(new String[0])</code> and <code>Arrays.asList(array)</code> or <code>new ArrayList&lt;&gt;(Arrays.asList(array))</code>.</p>
+
+<h4>Q14: Why Properties extends Hashtable?</h4>
+<p><strong>A:</strong> Legacy design. Properties is Hashtable&lt;Object, Object&gt; specialized for String key-value config files. Used extensively in config.properties loading.</p>
+
+<h4>Q15: TreeSet vs HashSet when to use?</h4>
+<p><strong>A:</strong> HashSet for fast unique collection (test IDs). TreeSet when you need sorted iteration (priority-ordered test cases).</p>
+</section>
+
+<section id="section-7" class="section-card">
+<h2>Section 7: Exception Handling</h2>
+
+<h3>Exception Hierarchy</h3>
+<pre class="ascii-diagram">
+                        Throwable
+                       /         \
+                    Error      Exception
+                   (JVM-level)     |
+                              /         \
+                    Checked Exception   RuntimeException
+                    (compile-time         (Unchecked)
+                     must handle)              |
+                    IOException          NullPointerException
+                    SQLException         IllegalArgumentException
+                    ClassNotFoundException  IndexOutOfBoundsException
+                                         NoSuchElementException  ← Selenium
+                                         TimeoutException        ← Selenium
+                                         StaleElementReferenceException
+                                         ElementClickInterceptedException
+</pre>
+
+<h3>Checked vs Unchecked Exceptions</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Checked</th><th>Unchecked (Runtime)</th></tr>
+</thead>
+<tbody>
+<tr><td>Extends</td><td>Exception (not RuntimeException)</td><td>RuntimeException</td></tr>
+<tr><td>Compile-time check</td><td>Must handle or declare throws</td><td>No compile-time requirement</td></tr>
+<tr><td>When thrown</td><td>Recoverable external failures</td><td>Programming errors, framework failures</td></tr>
+<tr><td>Examples</td><td>IOException, SQLException</td><td>NPE, NoSuchElementException</td></tr>
+<tr><td>Handling</td><td>try-catch or throws mandatory</td><td>Optional — handle when recoverable</td></tr>
+<tr><td>In automation</td><td>File not found (test data), network</td><td>Most Selenium exceptions</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Keywords</h3>
+
+<h4>try-catch</h4>
+<pre><code>try {
+    driver.findElement(By.id("submit")).click();
+} catch (NoSuchElementException e) {
+    System.out.println("Element not found: " + e.getMessage());
+    takeScreenshot("element_not_found");
+    throw e;  // re-throw to fail test
+}
+
+// Multiple catch blocks — most specific first
+try {
+    driver.findElement(By.id("btn")).click();
+} catch (ElementClickInterceptedException e) {
+    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+} catch (ElementNotInteractableException e) {
+    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
+    element.click();
+} catch (NoSuchElementException e) {
+    Assert.fail("Button not found on page");
+}
+
+// Multi-catch (Java 7+)
+try {
+    readTestData("data.csv");
+} catch (IOException | ParseException e) {
+    logger.error("Data load failed", e);
+}</code></pre>
+
+<h4>finally</h4>
+<pre><code>WebDriver driver = null;
+try {
+    driver = new ChromeDriver();
+    runTests(driver);
+} catch (WebDriverException e) {
+    logger.error("Browser error", e);
+} finally {
+    // ALWAYS executes — even if return/exception in try or catch
+    if (driver != null) {
+        driver.quit();  // cleanup guaranteed
+    }
+}</code></pre>
+
+<h4>throw — Manually Throw Exception</h4>
+<pre><code>public void login(String user, String pass) {
+    if (user == null || user.isEmpty()) {
+        throw new IllegalArgumentException("Username cannot be empty");
+    }
+    if (!isPageLoaded()) {
+        throw new PageLoadException("Login page did not load within timeout");
+    }
+    // proceed with login
+}</code></pre>
+
+<h4>throws — Method Signature Declaration</h4>
+<pre><code>public List&lt;String[]&gt; readCsvTestData(String filePath) throws IOException {
+    List&lt;String[]&gt; data = new ArrayList&lt;&gt;();
+    try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+        String line;
+        while ((line = br.readLine()) != null) {
+            data.add(line.split(","));
+        }
+    }
+    return data;
+}
+
+// Caller must handle
+@Test
+public void dataDrivenTest() throws IOException {
+    List&lt;String[]&gt; data = readCsvTestData("testdata.csv");
+}</code></pre>
+
+<h4>try-with-resources (Java 7+)</h4>
+<pre><code>// AutoCloseable — resources closed automatically in reverse order
+try (FileInputStream fis = new FileInputStream("config.properties");
+     InputStreamReader isr = new InputStreamReader(fis);
+     BufferedReader br = new BufferedReader(isr)) {
+    Properties props = new Properties();
+    props.load(br);
+    return props;
+}  // br, isr, fis all closed automatically — no finally needed
+
+// Selenium — custom AutoCloseable wrapper
+try (DriverSession session = new DriverSession("chrome")) {
+    session.getDriver().get("https://example.com");
+    runSmokeTests(session.getDriver());
+}  // driver.quit() called in close()</code></pre>
+
+<h3>Custom Exceptions</h3>
+<pre><code>// Base framework exception
+public class FrameworkException extends RuntimeException {
+    public FrameworkException(String message) {
+        super(message);
+    }
+    public FrameworkException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+// Specific exceptions
+public class InvalidConfigException extends FrameworkException {
+    public InvalidConfigException(String message) {
+        super("Config Error: " + message);
+    }
+}
+
+public class PageLoadException extends FrameworkException {
+    private final String pageName;
+    private final int timeoutSeconds;
+
+    public PageLoadException(String pageName, int timeoutSeconds) {
+        super(String.format("Page '%s' did not load within %d seconds", pageName, timeoutSeconds));
+        this.pageName = pageName;
+        this.timeoutSeconds = timeoutSeconds;
+    }
+
+    public String getPageName() { return pageName; }
+    public int getTimeoutSeconds() { return timeoutSeconds; }
+}
+
+// Usage in framework
+public class HomePage extends BasePage {
+    public void waitForLoad() {
+        try {
+            wait.until(ExpectedConditions.titleContains("Home"));
+        } catch (TimeoutException e) {
+            throw new PageLoadException("HomePage", 30);
+        }
+    }
+}
+
+public class ConfigReader {
+    public static String getRequired(String key) {
+        String value = properties.getProperty(key);
+        if (value == null) {
+            throw new InvalidConfigException("Missing required property: " + key);
+        }
+        return value;
+    }
+}</code></pre>
+
+<h3>Selenium Exceptions</h3>
+
+<h4>NoSuchElementException</h4>
+<p><strong>Cause:</strong> Locator doesn't match any DOM element.<br>
+<strong>Example:</strong> <code>driver.findElement(By.id("nonExistent"))</code><br>
+<strong>Fix:</strong> Verify locator, add explicit waits, check iframe context.</p>
+<pre><code>WebElement el = new WebDriverWait(driver, Duration.ofSeconds(10))
+    .until(ExpectedConditions.presenceOfElementLocated(By.id("submit")));</code></pre>
+
+<h4>TimeoutException</h4>
+<p><strong>Cause:</strong> Explicit wait condition not met within timeout.<br>
+<strong>Example:</strong> Waiting for element visibility that never appears.<br>
+<strong>Fix:</strong> Increase timeout, verify condition, check app state.</p>
+<pre><code>try {
+    wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("modal")));
+} catch (TimeoutException e) {
+    logger.warn("Modal did not appear — skipping optional step");
+}</code></pre>
+
+<h4>StaleElementReferenceException</h4>
+<p><strong>Cause:</strong> Element was found but DOM refreshed/re-rendered (AJAX, React re-render).<br>
+<strong>Example:</strong> Found element, page updates, then click stale reference.<br>
+<strong>Fix:</strong> Re-find element before interaction; use retry wrapper.</p>
+<pre><code>public void clickWithRetry(By locator, int maxAttempts) {
+    for (int i = 0; i &lt; maxAttempts; i++) {
+        try {
+            driver.findElement(locator).click();
+            return;
+        } catch (StaleElementReferenceException e) {
+            if (i == maxAttempts - 1) throw e;
+        }
+    }
+}</code></pre>
+
+<h4>ElementClickInterceptedException</h4>
+<p><strong>Cause:</strong> Another element (overlay, modal, cookie banner) covers target.<br>
+<strong>Example:</strong> Clicking button hidden behind cookie consent popup.<br>
+<strong>Fix:</strong> Close overlay, scroll into view, or JavaScript click.</p>
+<pre><code>try {
+    element.click();
+} catch (ElementClickInterceptedException e) {
+    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+}</code></pre>
+
+<h4>ElementNotInteractableException</h4>
+<p><strong>Cause:</strong> Element present in DOM but not interactable (hidden, disabled, zero size).<br>
+<strong>Example:</strong> Clicking hidden submit button in collapsed form.<br>
+<strong>Fix:</strong> Scroll into view, wait for enabled state, expand section first.</p>
+<pre><code>wait.until(ExpectedConditions.elementToBeClickable(locator));
+((JavascriptExecutor) driver).executeScript(
+    "arguments[0].scrollIntoView({block: 'center'});", element);</code></pre>
+
+<h4>WebDriverException</h4>
+<p><strong>Cause:</strong> Generic browser/driver failure — crash, invalid session, network to Grid.<br>
+<strong>Example:</strong> ChromeDriver process killed during test.<br>
+<strong>Fix:</strong> Restart driver, check driver version compatibility, verify Grid node health.</p>
+<pre><code>@AfterMethod
+public void tearDown(ITestResult result) {
+    if (result.getStatus() == ITestResult.FAILURE) {
+        captureScreenshot(result.getName());
+    }
+    if (driver != null) {
+        try { driver.quit(); }
+        catch (WebDriverException e) { logger.warn("Driver already dead", e); }
+    }
+}</code></pre>
+
+<h4>NoSuchWindowException</h4>
+<p><strong>Cause:</strong> Target window/tab was closed.<br>
+<strong>Example:</strong> Popup closed itself, test still references it.<br>
+<strong>Fix:</strong> Switch back to main window; validate window handles before switch.</p>
+<pre><code>Set&lt;String&gt; handles = driver.getWindowHandles();
+if (handles.size() > 1) {
+    driver.switchTo().window(handles.iterator().next());
+}</code></pre>
+
+<h4>NoSuchFrameException</h4>
+<p><strong>Cause:</strong> Frame/iframe index, name, or element not found.<br>
+<strong>Example:</strong> <code>driver.switchTo().frame("nonExistent")</code><br>
+<strong>Fix:</strong> Wait for frame, verify name/id, switch back to defaultContent after.</p>
+<pre><code>wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.id("paymentFrame")));
+// interact with frame content
+driver.switchTo().defaultContent();</code></pre>
+
+<h4>InvalidSelectorException</h4>
+<p><strong>Cause:</strong> Malformed CSS or XPath syntax.<br>
+<strong>Example:</strong> <code>By.xpath("//div[@id='btn'")</code> — missing closing bracket.<br>
+<strong>Fix:</strong> Validate locators in browser DevTools console before adding to framework.</p>
+
+<h3>Exception Handling Best Practices for Frameworks</h3>
+<ol>
+<li><strong>Use explicit waits over implicit waits</strong> — reduces TimeoutException and NoSuchElementException flakiness.</li>
+<li><strong>Never swallow exceptions silently</strong> — always log with context (page, locator, test name).</li>
+<li><strong>Re-throw after logging</strong> — catch for screenshot/reporting, then re-throw or fail test explicitly.</li>
+<li><strong>Create custom exceptions</strong> — FrameworkException hierarchy for meaningful error messages.</li>
+<li><strong>Use @AfterMethod for cleanup</strong> — finally-equivalent for driver.quit() regardless of test outcome.</li>
+<li><strong>Retry only recoverable exceptions</strong> — StaleElementReference, ElementClickIntercepted. Don't retry NoSuchElement (locator is wrong).</li>
+<li><strong>try-with-resources for I/O</strong> — config files, test data readers, report streams.</li>
+<li><strong>Fail fast on config errors</strong> — throw InvalidConfigException at startup, not mid-suite.</li>
+<li><strong>Capture diagnostics on failure</strong> — screenshot, page source, browser logs in catch blocks.</li>
+<li><strong>Avoid generic catch (Exception e)</strong> — catch specific exceptions; generic catch hides bugs.</li>
+</ol>
+
+<div class="callout">
+<strong>SDET Pattern — Retry Utility:</strong> Wrap flaky actions in a retry mechanism that catches StaleElementReferenceException and ElementClickInterceptedException, re-finds the element, and retries up to N times with exponential backoff.
+</div>
+
+<h3>Interview Q&amp;A — Section 7</h3>
+
+<h4>Q1: Difference between Error and Exception?</h4>
+<p><strong>A:</strong> Error — serious JVM problems (OutOfMemoryError, StackOverflowError), not recoverable, don't catch. Exception — recoverable conditions, should be handled.</p>
+
+<h4>Q2: Checked vs Unchecked — which are Selenium exceptions?</h4>
+<p><strong>A:</strong> All Selenium WebDriver exceptions extend RuntimeException — unchecked. No compile-time handling required.</p>
+
+<h4>Q3: Can you have try without catch?</h4>
+<p><strong>A:</strong> Yes — try with finally only, or try-with-resources. try-catch-finally and try-finally are valid.</p>
+
+<h4>Q4: Does finally always execute?</h4>
+<p><strong>A:</strong> Almost always. Exceptions: System.exit(), JVM crash, daemon thread killed, infinite loop in try. Even with return in try, finally runs first.</p>
+
+<h4>Q5: What is exception propagation?</h4>
+<p><strong>A:</strong> If not caught, exception propagates up the call stack. TestNG marks test as failed when uncaught exception reaches the test runner.</p>
+
+<h4>Q6: throw vs throws?</h4>
+<p><strong>A:</strong> throw — explicitly throws an exception instance in method body. throws — declares checked exceptions a method may throw, delegating handling to caller.</p>
+
+<h4>Q7: Why create custom exceptions?</h4>
+<p><strong>A:</strong> Meaningful error context (PageLoadException with page name), centralized handling, framework-specific recovery logic, cleaner test failure reports.</p>
+
+<h4>Q8: How to handle StaleElementReferenceException in POM?</h4>
+<p><strong>A:</strong> Don't cache WebElements as instance fields. Re-find elements in each method call, or implement retry utility that re-locates on stale.</p>
+
+<h4>Q9: What is try-with-resources?</h4>
+<p><strong>A:</strong> Java 7 feature. Resources implementing AutoCloseable declared in try parentheses are auto-closed. Suppresses close exceptions properly. Eliminates boilerplate finally blocks.</p>
+
+<h4>Q10: Can finally block throw exception?</h4>
+<p><strong>A:</strong> Yes — if finally throws, it suppresses any exception from try/catch. Avoid throwing from finally; keep it for cleanup only.</p>
+
+<h4>Q11: Multi-catch block rules?</h4>
+<p><strong>A:</strong> Java 7+. Catch multiple exceptions in one block if handling is identical. Exceptions must not have inheritance relationship. Caught as implicitly final.</p>
+
+<h4>Q12: How to fail a TestNG test with message?</h4>
+<p><strong>A:</strong> <code>Assert.fail("reason")</code>, throw AssertionError, or throw RuntimeException. Uncaught exceptions automatically fail the test.</p>
+
+<h4>Q13: ElementClickInterceptedException vs ElementNotInteractableException?</h4>
+<p><strong>A:</strong> Intercepted — element visible but another element overlays it. NotInteractable — element not clickable (hidden, disabled, off-screen). Different fixes: JS click/close overlay vs scroll/wait for enabled.</p>
+
+<h4>Q14: Should you catch Throwable?</h4>
+<p><strong>A:</strong> No in test code — catches Errors (OutOfMemoryError) which should propagate. Catch Exception or specific runtime exceptions.</p>
+
+<h4>Q15: How to log and re-throw pattern?</h4>
+<p><strong>A:</strong> <code>catch (SpecificException e) { logger.error("Context: {}", locator, e); throw e; }</code> — preserves stack trace, adds logging context.</p>
+
+<h4>Q16: What is suppressed exception (Java 7+)?</h4>
+<p><strong>A:</strong> When try and finally both throw, finally's exception is thrown and try's is suppressed. Access via <code>e.getSuppressed()</code>.</p>
+
+<h4>Q17: How does TestNG handle exceptions in @Test?</h4>
+<p><strong>A:</strong> Uncaught exception → test FAILED. Expected exceptions: <code>@Test(expectedExceptions = NoSuchElementException.class)</code>. Soft assertions collect multiple failures before throwing.</p>
+
+<h4>Q18: Best way to handle optional elements?</h4>
+<p><strong>A:</strong> Use findElements (returns empty list, no exception) or catch TimeoutException/NoSuchElementException for optional popups/cookie banners.</p>
+</section>

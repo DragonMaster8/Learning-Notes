@@ -1,0 +1,2293 @@
+<!-- SECTION 16: CUCUMBER & BDD INTRODUCTION -->
+<section id="section-16" class="section-card">
+<h2>Section 16: Cucumber &amp; BDD Introduction</h2>
+
+<h3>What is BDD? (Behavior Driven Development)</h3>
+<p><strong>Behavior Driven Development (BDD)</strong> is an agile software development methodology that encourages collaboration among developers, QA engineers, and business stakeholders by describing application behavior in plain, business-readable language before writing code or tests.</p>
+
+<div class="callout">
+<strong>Core Idea:</strong> BDD bridges the gap between business requirements and technical implementation. Instead of writing tests in programming language syntax, teams describe <em>what the system should do</em> in a shared vocabulary that everyone understands — POs, BAs, developers, and testers alike.
+</div>
+
+<h4>Key Principles of BDD</h4>
+<ul>
+<li><strong>Outside-in development</strong> — Start from user behavior and work inward to implementation.</li>
+<li><strong>Ubiquitous language</strong> — Use the same terms in requirements, tests, and code.</li>
+<li><strong>Examples over abstractions</strong> — Concrete scenarios clarify ambiguous requirements.</li>
+<li><strong>Living documentation</strong> — Feature files stay synchronized with actual system behavior.</li>
+<li><strong>Collaboration</strong> — Three Amigos (PO, Dev, QA) define behavior together before automation.</li>
+</ul>
+
+<h4>How BDD Bridges Business and Technology</h4>
+<p>Traditional testing often creates a translation gap: business writes requirements in Word/Jira, developers write code in Java, and QA writes test scripts in Selenium. BDD eliminates this gap by making Gherkin feature files the single source of truth that all three groups can read, review, and approve.</p>
+
+<pre class="ascii-diagram">
+  Business (PO/BA)          Development              QA/Automation
+  ─────────────────         ─────────────            ───────────────
+  "User must login          LoginController.java     @Given user on login page
+   with valid creds"   →   authenticate() method →  @When enters credentials
+                                                      @Then sees dashboard"
+         │                         │                         │
+         └─────────────────────────┴─────────────────────────┘
+                    Same Gherkin Feature File
+                    (shared, readable, executable)
+</pre>
+
+<h3>BDD vs TDD vs ATDD Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Criteria</th><th>BDD</th><th>TDD</th><th>ATDD</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Full Form</strong></td><td>Behavior Driven Development</td><td>Test Driven Development</td><td>Acceptance Test Driven Development</td></tr>
+<tr><td><strong>Primary Focus</strong></td><td>System behavior from user/business perspective</td><td>Code design via unit-level tests</td><td>Acceptance criteria before development</td></tr>
+<tr><td><strong>Who Writes Tests</strong></td><td>Collaborative — PO, Dev, QA together</td><td>Developers primarily</td><td>Whole team including customer/business</td></tr>
+<tr><td><strong>Language</strong></td><td>Gherkin (Given/When/Then) — business-readable</td><td>Programming language (JUnit, TestNG)</td><td>Natural language or Gherkin acceptance tests</td></tr>
+<tr><td><strong>Test Level</strong></td><td>Acceptance / integration / E2E</td><td>Unit tests (methods, classes)</td><td>Acceptance / system level</td></tr>
+<tr><td><strong>Documentation</strong></td><td>Living documentation via feature files</td><td>Tests serve as code documentation</td><td>Acceptance criteria as executable specs</td></tr>
+<tr><td><strong>Tools</strong></td><td>Cucumber, SpecFlow, Behave, JBehave</td><td>JUnit, TestNG, NUnit, pytest</td><td>Cucumber, FitNesse, Robot Framework</td></tr>
+<tr><td><strong>When Applied</strong></td><td>Before/during feature development in Agile sprints</td><td>During every code change (Red-Green-Refactor)</td><td>Before sprint starts — acceptance criteria defined</td></tr>
+<tr><td><strong>Stakeholder Involvement</strong></td><td>High — non-technical stakeholders review scenarios</td><td>Low — developer-centric</td><td>High — customer defines acceptance tests</td></tr>
+<tr><td><strong>Best For</strong></td><td>Cross-functional Agile teams, E2E workflows</td><td>Clean code, SOLID design, fast feedback loops</td><td>Contract definition between business and dev</td></tr>
+<tr><td><strong>Relationship</strong></td><td>Extends TDD to higher abstraction; often uses TDD internally</td><td>Foundation practice — BDD builds on TDD principles</td><td>Conceptual predecessor — BDD formalized ATDD with Gherkin</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>What is Cucumber?</h3>
+<p><strong>Cucumber</strong> is an open-source, Java-based BDD framework that executes plain-text specifications written in Gherkin syntax and maps them to executable step definitions written in Java (or other JVM languages like Kotlin, Scala).</p>
+
+<ul>
+<li>Originally created by Aslak Hellesøy in 2008; now maintained by the Cucumber open-source community.</li>
+<li>Supports multiple languages: Java, JavaScript, Ruby, Python (.NET via SpecFlow).</li>
+<li>Integrates with TestNG, JUnit, Maven, Gradle, Selenium, RestAssured, and CI/CD pipelines.</li>
+<li>Current stable version: Cucumber 7.x (JUnit Platform / TestNG integration).</li>
+</ul>
+
+<h3>Why Cucumber?</h3>
+<h4>Business-Readable Tests</h4>
+<p>Feature files use plain English (or any natural language). A Product Owner can read <code>Given the user is on the login page</code> without knowing Java.</p>
+
+<h4>Living Documentation</h4>
+<p>Feature files describe current system behavior. When behavior changes, scenarios are updated — documentation never goes stale like Word documents.</p>
+
+<h4>Collaboration</h4>
+<p>Three Amigos sessions produce feature files together. Everyone agrees on behavior <em>before</em> coding starts, reducing rework and miscommunication.</p>
+
+<h4>Traceability</h4>
+<p>Each scenario maps to a user story. Tags like <code>@JIRA-1234</code> link tests to tickets for audit and coverage tracking.</p>
+
+<h3>Cucumber Architecture</h3>
+<pre class="ascii-diagram">
+┌──────────────────────────────────────────────────────────────────────┐
+│                        CUCUMBER EXECUTION FLOW                       │
+└──────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────────┐
+  │  Feature File   │  login.feature (Gherkin scenarios)
+  │  (.feature)     │  Given / When / Then steps in plain language
+  └────────┬────────┘
+           │ parsed by Cucumber engine
+           ▼
+  ┌─────────────────┐
+  │ Step Definition │  LoginSteps.java (@Given, @When, @Then methods)
+  │  (Glue Code)    │  Maps Gherkin steps → Java/Selenium/API code
+  └────────┬────────┘
+           │ invoked by
+           ▼
+  ┌─────────────────┐
+  │  Runner Class   │  TestRunner.java (@CucumberOptions)
+  │  (Entry Point)  │  Specifies features, glue, tags, plugins
+  └────────┬────────┘
+           │ executed by
+           ▼
+  ┌─────────────────┐
+  │  TestNG/JUnit   │  mvn test → AbstractTestNGCucumberTests
+  │  Test Engine    │  Parallel execution, reporting, CI integration
+  └────────┬────────┘
+           ▼
+  ┌─────────────────┐
+  │  Reports        │  HTML, JSON, Allure, pretty console output
+  │  &amp; Hooks        │  @Before/@After for setup/teardown
+  └─────────────────┘
+</pre>
+
+<h3>Cucumber Dependencies for Maven</h3>
+<p>Add these dependencies to your <code>pom.xml</code> for a TestNG + Selenium + Cucumber project:</p>
+
+<pre><code>&lt;properties&gt;
+    &lt;cucumber.version&gt;7.18.0&lt;/cucumber.version&gt;
+&lt;/properties&gt;
+
+&lt;dependencies&gt;
+    &lt;!-- Core Cucumber Java library --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;io.cucumber&lt;/groupId&gt;
+        &lt;artifactId&gt;cucumber-java&lt;/artifactId&gt;
+        &lt;version&gt;${cucumber.version}&lt;/version&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- TestNG integration for Cucumber --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;io.cucumber&lt;/groupId&gt;
+        &lt;artifactId&gt;cucumber-testng&lt;/artifactId&gt;
+        &lt;version&gt;${cucumber.version}&lt;/version&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- Dependency injection for sharing state between steps --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;io.cucumber&lt;/groupId&gt;
+        &lt;artifactId&gt;cucumber-picocontainer&lt;/artifactId&gt;
+        &lt;version&gt;${cucumber.version}&lt;/version&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- TestNG --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.testng&lt;/groupId&gt;
+        &lt;artifactId&gt;testng&lt;/artifactId&gt;
+        &lt;version&gt;7.10.2&lt;/version&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+
+<div class="callout">
+<strong>Note:</strong> <code>cucumber-picocontainer</code> enables dependency injection between step definition classes without static variables. Each scenario gets a fresh instance of shared context objects.
+</div>
+
+<h3>Advantages of Cucumber (10+ Points)</h3>
+<ul>
+<li><strong>Business-readable specifications</strong> — Non-technical stakeholders can review and approve test scenarios.</li>
+<li><strong>Living documentation</strong> — Feature files always reflect current system behavior.</li>
+<li><strong>Improved collaboration</strong> — Three Amigos sessions align PO, Dev, and QA early.</li>
+<li><strong>Reusable step definitions</strong> — Same step text reused across multiple scenarios.</li>
+<li><strong>Tag-based execution</strong> — Run smoke, regression, or sprint-specific subsets selectively.</li>
+<li><strong>Multiple report formats</strong> — HTML, JSON, JUnit XML, Allure integration out of the box.</li>
+<li><strong>Data-driven testing</strong> — Scenario Outline with Examples tables for parameterized tests.</li>
+<li><strong>CI/CD friendly</strong> — Integrates with Jenkins, GitHub Actions via Maven/Gradle commands.</li>
+<li><strong>Multi-language support</strong> — Same Gherkin syntax works across Java, JS, Ruby, Python.</li>
+<li><strong>Parallel execution</strong> — TestNG parallel DataProvider runs scenarios concurrently.</li>
+<li><strong>Hooks support</strong> — @Before/@After for setup, teardown, screenshots, and conditional hooks by tag.</li>
+<li><strong>Requirement traceability</strong> — Tags link scenarios to Jira tickets and user stories.</li>
+</ul>
+
+<h3>Limitations of Cucumber (5+ Points)</h3>
+<ul>
+<li><strong>Abstraction overhead</strong> — Maintaining feature files AND step definitions doubles maintenance effort.</li>
+<li><strong>Learning curve</strong> — Teams must learn Gherkin syntax, Cucumber architecture, and DI patterns.</li>
+<li><strong>Performance</strong> — Slower than direct TestNG tests due to Gherkin parsing and step matching.</li>
+<li><strong>Over-engineering risk</strong> — Simple unit tests don't need BDD; forcing Cucumber adds unnecessary complexity.</li>
+<li><strong>Step definition sprawl</strong> — Large projects accumulate hundreds of steps; ambiguous/duplicate steps cause failures.</li>
+<li><strong>False sense of collaboration</strong> — If only QA writes feature files, BDD benefits are lost.</li>
+<li><strong>Debugging difficulty</strong> — Failures span feature file → step definition → framework code; stack traces are longer.</li>
+</ul>
+
+<h3>When to Use BDD vs Traditional Testing</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Decision Factor</th><th>Use BDD (Cucumber)</th><th>Use Traditional (TestNG/Selenium)</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Team composition</strong></td><td>Cross-functional with PO/BA actively involved</td><td>QA-only team writing automation scripts</td></tr>
+<tr><td><strong>Test audience</strong></td><td>Business stakeholders review test scenarios</td><td>Tests are developer/QA internal only</td></tr>
+<tr><td><strong>Test level</strong></td><td>Acceptance, E2E, API contract tests</td><td>Unit, integration, performance, load tests</td></tr>
+<tr><td><strong>Documentation need</strong></td><td>Living specs required for compliance/audit</td><td>Code comments and test reports sufficient</td></tr>
+<tr><td><strong>Project type</strong></td><td>Agile product with evolving user stories</td><td>Legacy system, API-only backend, microservices</td></tr>
+<tr><td><strong>Test complexity</strong></td><td>User workflows with clear Given/When/Then</td><td>Complex data setup, performance benchmarks</td></tr>
+<tr><td><strong>Speed priority</strong></td><td>Readability and collaboration over raw speed</td><td>Maximum execution speed and minimal overhead</td></tr>
+<tr><td><strong>Maintenance model</strong></td><td>Shared ownership of feature files by whole team</td><td>QA-owned automation framework</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Industry Adoption: Who Uses Cucumber and Why</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Company / Domain</th><th>Why They Use Cucumber</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Banking &amp; FinTech</strong></td><td>Regulatory compliance requires readable, auditable test specifications linked to requirements</td></tr>
+<tr><td><strong>E-Commerce (Amazon, Shopify partners)</strong></td><td>Complex user journeys (checkout, payment, returns) benefit from business-readable scenarios</td></tr>
+<tr><td><strong>Healthcare</strong></td><td>FDA/HIPAA compliance needs traceable acceptance tests with living documentation</td></tr>
+<tr><td><strong>Insurance</strong></td><td>Policy calculation rules expressed as Examples tables for actuarial validation</td></tr>
+<tr><td><strong>SaaS Startups</strong></td><td>Agile teams use BDD for sprint planning and PO sign-off on acceptance criteria</td></tr>
+<tr><td><strong>Government / Public Sector</strong></td><td>Procurement requires documented test evidence readable by non-technical auditors</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A — Cucumber &amp; BDD Introduction</h3>
+
+<h4>Q1. What is BDD and how is it different from TDD?</h4>
+<p><strong>Answer:</strong> BDD focuses on describing system behavior in business-readable language (Gherkin) for acceptance testing with stakeholder collaboration. TDD focuses on writing unit tests in programming language before code, driven by developers for design quality. BDD operates at a higher abstraction level and often uses TDD internally for step definition implementation.</p>
+
+<h4>Q2. What problem does Cucumber solve?</h4>
+<p><strong>Answer:</strong> Cucumber bridges the communication gap between business and technical teams. It allows requirements to be written as executable tests in plain language, ensuring everyone agrees on behavior before development and that tests serve as always-current documentation.</p>
+
+<h4>Q3. What is Gherkin?</h4>
+<p><strong>Answer:</strong> Gherkin is a structured plain-text language with keywords (Feature, Scenario, Given, When, Then, And, But) used to describe test scenarios in a business-readable format. Cucumber parses Gherkin and executes matching step definitions.</p>
+
+<h4>Q4. What are the main components of Cucumber framework?</h4>
+<p><strong>Answer:</strong> Feature files (Gherkin scenarios), step definitions (Java glue code), runner class (@CucumberOptions entry point), hooks (@Before/@After), and dependency injection (PicoContainer) for state sharing.</p>
+
+<h4>Q5. Can Cucumber be used without Selenium?</h4>
+<p><strong>Answer:</strong> Yes. Cucumber is a BDD test runner, not a browser automation tool. Step definitions can call REST APIs (RestAssured), database queries, unit test assertions, or any Java code. Selenium is commonly used for UI steps but is not required.</p>
+
+<h4>Q6. What is the role of a feature file?</h4>
+<p><strong>Answer:</strong> A feature file describes a feature's behavior through scenarios written in Gherkin. It serves as both an executable test specification and living documentation that business stakeholders can read and approve.</p>
+
+<h4>Q7. What is glue code in Cucumber?</h4>
+<p><strong>Answer:</strong> Glue code refers to step definition classes that connect Gherkin steps to executable Java methods. The <code>glue</code> attribute in @CucumberOptions specifies the package(s) containing these classes.</p>
+
+<h4>Q8. Is BDD suitable for all projects?</h4>
+<p><strong>Answer:</strong> No. BDD adds value when business stakeholders actively participate and acceptance tests need to be readable. For API-only backends, performance testing, or QA-only teams, traditional TestNG/JUnit frameworks are more efficient.</p>
+
+<h4>Q9. What is living documentation?</h4>
+<p><strong>Answer:</strong> Living documentation is test specifications that stay synchronized with the application. When behavior changes, feature files are updated alongside code. Unlike static Word documents, living docs are always accurate because they must pass to be considered valid.</p>
+
+<h4>Q10. How does Cucumber integrate with TestNG?</h4>
+<p><strong>Answer:</strong> Create a runner class extending <code>AbstractTestNGCucumberTests</code> with @CucumberOptions. TestNG treats each scenario as a test method. Override the <code>scenarios()</code> DataProvider for parallel execution.</p>
+
+<h4>Q11. What is the difference between Cucumber and SpecFlow?</h4>
+<p><strong>Answer:</strong> Cucumber is the original BDD framework supporting Java, JS, Ruby, Python. SpecFlow is the .NET port providing identical Gherkin syntax for C# projects. Both follow the same BDD principles and Gherkin specification.</p>
+
+<h4>Q12. What are hooks in Cucumber?</h4>
+<p><strong>Answer:</strong> Hooks are methods annotated with @Before, @After, @BeforeStep, @AfterStep that run at defined points in the scenario lifecycle. They handle setup, teardown, screenshots, and can be conditional using tag expressions like @Before("@ui").</p>
+</section>
+
+<!-- SECTION 17: BDD FRAMEWORK LIFECYCLE -->
+<section id="section-17" class="section-card">
+<h2>Section 17: BDD Framework Lifecycle</h2>
+
+<h3>BDD Lifecycle Overview</h3>
+<p>The BDD lifecycle transforms business requirements into executable, automated tests through a structured collaboration process. Each phase produces artifacts that feed the next, ensuring alignment before a single line of production code is written.</p>
+
+<pre class="ascii-diagram">
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│ Requirement  │───▶│  User Story  │───▶│ Feature File │───▶│   Scenario   │
+│  (Epic/Story)│    │  + AC        │    │  (.feature)  │    │  (Gherkin)   │
+└──────────────┘    └──────────────┘    └──────────────┘    └──────┬───────┘
+                                                                   │
+                    ┌──────────────┐    ┌──────────────┐           │
+                    │    Report    │◀───│  Execution   │◀──────────┤
+                    │  (HTML/Allure│    │  (TestNG/CI) │           │
+                    └──────────────┘    └──────────────┘           │
+                                                          ┌────────▼───────┐
+                                                          │ Step Definition│
+                                                          │  (Java glue)   │
+                                                          └────────────────┘
+</pre>
+
+<h4>Lifecycle Phases Explained</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Phase</th><th>Input</th><th>Output</th><th>Owner</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Requirement</strong></td><td>Business need, stakeholder request</td><td>Epic, high-level feature description</td><td>Product Owner</td></tr>
+<tr><td><strong>User Story</strong></td><td>Epic broken into deliverable units</td><td>Story with acceptance criteria in Jira</td><td>PO + Team</td></tr>
+<tr><td><strong>Feature File</strong></td><td>Acceptance criteria from user story</td><td>.feature file with scenarios in Gherkin</td><td>Three Amigos</td></tr>
+<tr><td><strong>Scenario</strong></td><td>Specific behavior to validate</td><td>Given/When/Then steps in feature file</td><td>QA + PO</td></tr>
+<tr><td><strong>Step Definition</strong></td><td>Gherkin steps from scenarios</td><td>Java methods with @Given/@When/@Then</td><td>SDET / Developer</td></tr>
+<tr><td><strong>Execution</strong></td><td>Runner + step definitions + app under test</td><td>Pass/fail results per scenario</td><td>CI/CD Pipeline</td></tr>
+<tr><td><strong>Report</strong></td><td>Execution results</td><td>HTML/Allure/JSON reports for stakeholders</td><td>Automated</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Complete BDD Workflow Diagram</h3>
+<pre class="ascii-diagram">
+                    BDD FRAMEWORK LIFECYCLE
+                    ═══════════════════════
+
+    ┌─────────────────────────────────────────────────────────┐
+    │                    DISCOVERY PHASE                        │
+    │  ┌─────────┐   ┌─────────┐   ┌─────────┐               │
+    │  │   PO    │ + │   Dev   │ + │   QA    │  = Three Amigos│
+    │  └────┬────┘   └────┬────┘   └────┬────┘               │
+    │       └──────────────┼──────────────┘                   │
+    │                      ▼                                  │
+    │            Discuss examples &amp; edge cases                │
+    │            Identify ambiguous requirements                │
+    └──────────────────────┬──────────────────────────────────┘
+                           ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │                  FORMULATION PHASE                        │
+    │       Write Gherkin scenarios with concrete examples      │
+    │       Define Given/When/Then for each acceptance criterion│
+    │       Add tags (@smoke, @JIRA-1234) for traceability      │
+    └──────────────────────┬──────────────────────────────────┘
+                           ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │                 AUTOMATION PHASE                          │
+    │       Implement step definitions in Java                  │
+    │       Wire Selenium/API/DB code behind Gherkin steps       │
+    │       Create runner, hooks, DI context                    │
+    │       dryRun=true → verify all steps have definitions     │
+    └──────────────────────┬──────────────────────────────────┘
+                           ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │                  EXECUTION PHASE                          │
+    │       Local: mvn test -Dcucumber.filter.tags="@smoke"     │
+    │       CI: Jenkins pipeline on every PR merge              │
+    │       Parallel: TestNG DataProvider for speed             │
+    └──────────────────────┬──────────────────────────────────┘
+                           ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │                   REPORTING PHASE                         │
+    │       HTML report → QA review                             │
+    │       Allure → stakeholder dashboard                      │
+    │       Failed scenarios → Jira bug tickets                 │
+    └──────────────────────┬──────────────────────────────────┘
+                           ▼
+              Living Documentation (always current)
+</pre>
+
+<h3>Three Amigos Meeting</h3>
+<p>The <strong>Three Amigos</strong> is a structured collaboration session involving three perspectives before development begins:</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Role</th><th>Contribution</th><th>Questions They Ask</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Product Owner (PO)</strong></td><td>Business rules, priorities, acceptance criteria</td><td>"What should happen when the user enters an expired coupon?"</td></tr>
+<tr><td><strong>Developer (Dev)</strong></td><td>Technical feasibility, edge cases, implementation approach</td><td>"Can we validate the coupon against an external API or only our DB?"</td></tr>
+<tr><td><strong>QA / SDET</strong></td><td>Test scenarios, negative cases, data requirements</td><td>"What happens with special characters in the coupon code field?"</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Outcome:</strong> A shared understanding documented as Gherkin scenarios that all three roles agree represent the intended behavior. No surprises during sprint review.
+</div>
+
+<h3>Discovery → Formulation → Automation Pattern</h3>
+<h4>1. Discovery</h4>
+<ul>
+<li>Explore the user story through conversation and concrete examples.</li>
+<li>Ask "What if?" questions to uncover edge cases and business rules.</li>
+<li>Do NOT write Gherkin yet — focus on understanding.</li>
+<li>Output: agreed examples on a whiteboard or Example Mapping cards.</li>
+</ul>
+
+<h4>2. Formulation</h4>
+<ul>
+<li>Convert discovered examples into formal Gherkin scenarios.</li>
+<li>One scenario = one behavior. Keep scenarios independent.</li>
+<li>Use Scenario Outline when multiple data combinations test the same behavior.</li>
+<li>Review with PO for sign-off before automation begins.</li>
+</ul>
+
+<h4>3. Automation</h4>
+<ul>
+<li>Implement step definitions mapping to Gherkin steps.</li>
+<li>Run with <code>dryRun = true</code> first to verify step coverage.</li>
+<li>Integrate with CI pipeline and tag appropriately.</li>
+<li>Refactor step definitions for reusability — avoid duplication.</li>
+</ul>
+
+<h3>Living Documentation Concept</h3>
+<p>Living documentation means your test specifications ARE your documentation. Feature files describe what the system does in business language, and they must pass to be valid — so they can never drift out of date.</p>
+
+<ul>
+<li><strong>Traditional docs:</strong> Written once, outdated within weeks, nobody reads them.</li>
+<li><strong>Living docs:</strong> Updated with every behavior change, executable, always accurate.</li>
+<li><strong>Published reports:</strong> Cucumber HTML reports and Allure dashboards serve as browsable documentation for stakeholders.</li>
+<li><strong>Cucumber Reports (cloud):</strong> Upload JSON results to reports.cucumber.io for team-wide visibility.</li>
+</ul>
+
+<h3>How BDD Fits into Agile Sprints</h3>
+<pre class="ascii-diagram">
+  Sprint N                          Sprint N+1
+  ────────                          ──────────
+
+  Day 1-2: Three Amigos             Day 1: Review failed scenarios
+           Example Mapping                   from previous sprint
+           Write feature files
+
+  Day 2-3: PO sign-off on           Day 2-5: Automate new stories
+           Gherkin scenarios                 Refactor step definitions
+           Add to repo
+
+  Day 3-5: Implement step           Day 5: Sprint demo using
+           definitions                      passing scenarios as
+           dryRun → execute                 acceptance evidence
+           Fix failures
+
+  Day 5: Demo scenarios             Continuous: CI runs @regression
+         as acceptance proof                 on every merge
+</pre>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Sprint Activity</th><th>BDD Artifact</th><th>Ceremony</th></tr>
+</thead>
+<tbody>
+<tr><td>Sprint Planning</td><td>User stories with acceptance criteria</td><td>Planning poker, story pointing</td></tr>
+<tr><td>Early Sprint</td><td>Draft feature files from stories</td><td>Three Amigos session</td></tr>
+<tr><td>Mid Sprint</td><td>Step definitions + first execution</td><td>Daily standup — blockers on undefined steps</td></tr>
+<tr><td>Sprint Review</td><td>Passing scenarios demo'd to PO</td><td>Demo = living proof of acceptance</td></tr>
+<tr><td>Sprint Retro</td><td>Review flaky scenarios, step duplication</td><td>Process improvement for BDD workflow</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>BDD Anti-Patterns (What NOT to Do)</h3>
+<ul>
+<li><strong>QA-only BDD</strong> — Only QA writes feature files without PO/Dev involvement. Defeats the collaboration purpose.</li>
+<li><strong>Technical Gherkin</strong> — Writing <code>Given I click element #login-btn</code> instead of <code>Given the user is on the login page</code>.</li>
+<li><strong>Scenario bloat</strong> — One scenario with 20 steps testing multiple behaviors. Split into independent scenarios.</li>
+<li><strong>Imperative steps</strong> — <code>When I enter "john" in field 1 and "pass" in field 2 and click submit</code> — too UI-specific.</li>
+<li><strong>Duplicate step definitions</strong> — Multiple Java methods matching the same Gherkin pattern causing ambiguous step errors.</li>
+<li><strong>Skipping dryRun</strong> — Running full execution before verifying all steps have definitions wastes CI time.</li>
+<li><strong>Feature file as test script</strong> — Treating Gherkin like a manual test case with every click documented.</li>
+<li><strong>No tag strategy</strong> — Running all scenarios every time instead of using @smoke, @regression tags.</li>
+<li><strong>Static test data in features</strong> — Hardcoding production-like data instead of using fixtures or factories in step definitions.</li>
+<li><strong>Ignoring failures</strong> — Tagging broken scenarios as @skip permanently instead of fixing or removing them.</li>
+</ul>
+
+<h3>Interview Q&amp;A — BDD Framework Lifecycle</h3>
+
+<h4>Q1. What are the phases of the BDD lifecycle?</h4>
+<p><strong>Answer:</strong> Requirement → User Story → Feature File → Scenario → Step Definition → Execution → Report. Before automation, teams go through Discovery (understand behavior), Formulation (write Gherkin), and Automation (implement step definitions).</p>
+
+<h4>Q2. What is a Three Amigos meeting?</h4>
+<p><strong>Answer:</strong> A collaboration session with Product Owner, Developer, and QA/Tester to discuss a user story, explore examples, identify edge cases, and agree on acceptance criteria before writing feature files or code.</p>
+
+<h4>Q3. What is Example Mapping?</h4>
+<p><strong>Answer:</strong> A structured technique using colored cards (rules, examples, questions, assumptions) during Three Amigos sessions to break down stories into concrete examples that become Gherkin scenarios.</p>
+
+<h4>Q4. Explain Discovery, Formulation, Automation.</h4>
+<p><strong>Answer:</strong> Discovery is conversational exploration of behavior with examples. Formulation converts examples into Gherkin scenarios. Automation implements step definitions and integrates with CI. Each phase has clear entry/exit criteria.</p>
+
+<h4>Q5. How does BDD fit in Agile?</h4>
+<p><strong>Answer:</strong> Feature files are created early in the sprint from user stories. Scenarios serve as acceptance criteria, definition of done, and demo evidence. CI runs tagged suites on every commit for continuous validation.</p>
+
+<h4>Q6. What is living documentation?</h4>
+<p><strong>Answer:</strong> Executable specifications that stay current with the application. Feature files must pass to be valid, so they cannot become outdated like traditional documentation. Reports provide browsable behavior catalogs.</p>
+
+<h4>Q7. What are common BDD anti-patterns?</h4>
+<p><strong>Answer:</strong> QA-only feature writing, UI-specific Gherkin, bloated scenarios, duplicate step definitions, no tag strategy, and treating feature files as manual test scripts instead of behavior descriptions.</p>
+
+<h4>Q8. Who should write feature files?</h4>
+<p><strong>Answer:</strong> Ideally the whole Three Amigos team collaboratively. PO provides business rules, QA provides test perspective, Dev confirms feasibility. In practice, QA/SDET often drafts them but PO must review and approve.</p>
+
+<h4>Q9. When should you NOT use BDD?</h4>
+<p><strong>Answer:</strong> When there is no business stakeholder involvement, for unit-level testing, performance/load testing, or when the team lacks Gherkin discipline and feature files become unmaintainable UI scripts.</p>
+
+<h4>Q10. How do you handle changing requirements in BDD?</h4>
+<p><strong>Answer:</strong> Update the feature file first during Three Amigos review, then update step definitions. The feature file change serves as the specification change request. Version control tracks all modifications.</p>
+</section>
+
+<!-- SECTION 18: GHERKIN LANGUAGE -->
+<section id="section-18" class="section-card">
+<h2>Section 18: Gherkin Language</h2>
+
+<p>Gherkin is the structured plain-text language used by Cucumber to describe software behavior. It uses a defined set of keywords to create readable, executable specifications.</p>
+
+<h3>Gherkin Keywords Reference</h3>
+
+<h4>Feature</h4>
+<p><strong>Syntax:</strong> <code>Feature: &lt;short description&gt;</code> — High-level description of functionality being tested. One Feature keyword per .feature file.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>First keyword in every feature file (after optional comments/tags).</li>
+<li>Followed by an optional multi-line description explaining business value.</li>
+<li>Groups related scenarios under one functional area.</li>
+</ul>
+<pre><code>Feature: User Login
+  As a registered user
+  I want to log in to my account
+  So that I can access personalized content
+
+  Scenario: Successful login with valid credentials
+    ...</code></pre>
+
+<h4>Background</h4>
+<p><strong>Syntax:</strong> <code>Background:</code> followed by Given/When/Then steps — Common preconditions executed before every scenario in the feature.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Runs before EACH scenario in the feature (not once per feature).</li>
+<li>Use for shared setup like navigating to a page or logging in.</li>
+<li>Keep minimal — heavy setup slows every scenario.</li>
+<li>Only one Background per feature file.</li>
+</ul>
+<pre><code>Background:
+  Given the user is on the login page
+  And the login service is available</code></pre>
+
+<h4>Scenario</h4>
+<p><strong>Syntax:</strong> <code>Scenario: &lt;description&gt;</code> — A specific test case with Given/When/Then steps.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>One scenario = one behavior/outcome.</li>
+<li>Scenarios must be independent — no execution order dependency.</li>
+<li>Use descriptive names: "Successful login with valid credentials" not "Test 1".</li>
+</ul>
+<pre><code>Scenario: Reject login with invalid password
+  Given the user is on the login page
+  When the user enters username "john@example.com"
+  And the user enters password "wrongpassword"
+  And the user clicks the login button
+  Then an error message "Invalid credentials" is displayed</code></pre>
+
+<h4>Scenario Outline</h4>
+<p><strong>Syntax:</strong> <code>Scenario Outline:</code> with <code>&lt;placeholder&gt;</code> variables and an <code>Examples:</code> table.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Template for data-driven scenarios — same steps, different data.</li>
+<li>Placeholders in angle brackets: <code>&lt;username&gt;</code>, <code>&lt;password&gt;</code>.</li>
+<li>Cucumber runs one scenario per row in the Examples table.</li>
+</ul>
+<pre><code>Scenario Outline: Login with various credentials
+  Given the user is on the login page
+  When the user enters username "&lt;username&gt;"
+  And the user enters password "&lt;password&gt;"
+  And the user clicks the login button
+  Then the user should see "&lt;expected_result&gt;"
+
+  Examples:
+    | username          | password    | expected_result      |
+    | john@example.com  | Pass@123    | Welcome dashboard    |
+    | invalid@test.com  | wrong       | Invalid credentials  |</code></pre>
+
+<h4>Examples</h4>
+<p><strong>Syntax:</strong> <code>Examples:</code> followed by a data table with column headers matching Scenario Outline placeholders.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Must follow a Scenario Outline (not a regular Scenario).</li>
+<li>Column headers become placeholder values (without angle brackets).</li>
+<li>Multiple Examples tables allowed in one Scenario Outline (e.g., grouped by browser).</li>
+<li>First row is always the header row.</li>
+</ul>
+
+<h4>Given</h4>
+<p><strong>Syntax:</strong> <code>Given &lt;precondition&gt;</code> — Sets up the initial context/state.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Describes state, not actions: "the user is logged in" not "the user logs in".</li>
+<li>First step in most scenarios (after Background).</li>
+<li>Use business language: "Given a premium subscription exists" not "Given DB row inserted".</li>
+</ul>
+<pre><code>Given the user is on the login page
+Given the cart contains 3 items
+Given the user has a valid authentication token</code></pre>
+
+<h4>When</h4>
+<p><strong>Syntax:</strong> <code>When &lt;action&gt;</code> — Describes the action or event being tested.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Describes a single key action or event.</li>
+<li>Use active voice: "When the user submits the order".</li>
+<li>Avoid UI specifics: "When the user searches for 'laptop'" not "When the user clicks #search-btn".</li>
+</ul>
+<pre><code>When the user clicks the login button
+When the user searches for "wireless headphones"
+When the user applies coupon code "SAVE20"</code></pre>
+
+<h4>Then</h4>
+<p><strong>Syntax:</strong> <code>Then &lt;expected outcome&gt;</code> — Asserts the expected result.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Must be verifiable and observable.</li>
+<li>One primary outcome per scenario (additional assertions use And).</li>
+<li>Describe what the user/system sees: "Then the order confirmation is displayed".</li>
+</ul>
+<pre><code>Then the user should be redirected to the dashboard
+Then the error message "Out of stock" is displayed
+Then the order total should be "$89.99"</code></pre>
+
+<h4>And</h4>
+<p><strong>Syntax:</strong> <code>And &lt;additional step&gt;</code> — Continues the previous step type (Given, When, or Then).</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Inherits the type of the preceding step (Given/When/Then).</li>
+<li>Improves readability over repeating Given/When/Then.</li>
+<li>Can appear multiple times in a scenario.</li>
+</ul>
+<pre><code>Given the user is on the checkout page
+And the cart contains 2 items
+And the user is logged in
+When the user selects express shipping
+And the user clicks "Place Order"
+Then the order confirmation is displayed
+And the confirmation email is sent</code></pre>
+
+<h4>But</h4>
+<p><strong>Syntax:</strong> <code>But &lt;negative additional step&gt;</code> — Negative continuation of the previous step type.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Same inheritance rule as And, but for negative assertions or exclusions.</li>
+<li>Used less frequently than And.</li>
+<li>Common in Then clauses: "But the discount should not be applied".</li>
+</ul>
+<pre><code>Then the search results should contain "laptop"
+But should not contain "refurbished" items</code></pre>
+
+<h4>Data Tables</h4>
+<p><strong>Syntax:</strong> Pipe-delimited tables passed as arguments to steps.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Used for structured data within a single step (not Scenario Outline).</li>
+<li>First row can be headers (passed to DataTable.asMaps()).</li>
+<li>Ideal for form submissions, menu selections, or multi-field validation.</li>
+</ul>
+<pre><code>When the user fills in the registration form:
+  | Field           | Value              |
+  | First Name      | John               |
+  | Last Name       | Doe                |
+  | Email           | john@example.com   |
+  | Password        | SecurePass@123     |
+Then the registration should be successful</code></pre>
+
+<h4>Doc Strings</h4>
+<p><strong>Syntax:</strong> Triple quotes <code>"""</code> for multi-line text passed to a step.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Used for long text: JSON payloads, email bodies, SQL queries, API request bodies.</li>
+<li>Content between <code>"""</code> delimiters is passed as a single String parameter.</li>
+<li>Can use content type hint: <code>"""json</code> for JSON doc strings.</li>
+</ul>
+<pre><code>When the user submits the following JSON payload:
+  """
+  {
+    "productId": "SKU-12345",
+    "quantity": 2,
+    "couponCode": "SAVE10"
+  }
+  """
+Then the API should return status code 200</code></pre>
+
+<h4>Tags</h4>
+<p><strong>Syntax:</strong> <code>@tagname</code> on the line before Feature, Scenario, or Scenario Outline.</p>
+<p><strong>Usage Rules:</strong></p>
+<ul>
+<li>Multiple tags per scenario: <code>@smoke @login @JIRA-1234</code>.</li>
+<li>Feature-level tags inherit to all scenarios in the feature.</li>
+<li>Used for selective execution, hooks, and traceability.</li>
+<li>Common: @smoke, @regression, @wip, @skip, @critical.</li>
+</ul>
+<pre><code>@smoke @login
+Scenario: Successful login with valid credentials
+  Given the user is on the login page
+  ...</code></pre>
+
+<h3>Complete Feature File Examples</h3>
+
+<h4>Example 1: Login Feature</h4>
+<pre><code>@login @authentication
+Feature: User Login
+  As a registered user
+  I want to log in to my account
+  So that I can access personalized features
+
+  Background:
+    Given the login page is accessible
+    And the authentication service is running
+
+  @smoke @positive
+  Scenario: Successful login with valid credentials
+    Given the user is on the login page
+    When the user enters username "john@example.com"
+    And the user enters password "SecurePass@123"
+    And the user clicks the login button
+    Then the user should be redirected to the dashboard
+    And the welcome message "Hello, John" should be displayed
+
+  @negative
+  Scenario: Login fails with invalid password
+    Given a registered user exists with email "john@example.com"
+    When the user enters username "john@example.com"
+    And the user enters password "wrongpassword"
+    And the user clicks the login button
+    Then an error message "Invalid credentials" should be displayed
+    And the user should remain on the login page
+
+  @negative
+  Scenario: Login fails with unregistered email
+    Given the user is on the login page
+    When the user enters username "unknown@test.com"
+    And the user enters password "anypassword"
+    And the user clicks the login button
+    Then an error message "Account not found" should be displayed
+
+  @social-login
+  Scenario: Login via Google OAuth
+    Given the user is on the login page
+    When the user clicks "Sign in with Google"
+    And the user authorizes the application in Google
+    Then the user should be redirected to the dashboard
+    And the account should be linked to Google</code></pre>
+
+<h4>Example 2: Search Feature</h4>
+<pre><code>@search
+Feature: Product Search
+  As a shopper
+  I want to search for products
+  So that I can find items to purchase
+
+  Background:
+    Given the user is on the homepage
+    And the product catalog contains 500 items
+
+  @smoke
+  Scenario: Search by keyword returns matching products
+    When the user searches for "wireless headphones"
+    Then the search results should contain at least 1 product
+    And each result should contain "headphones" in the title
+
+  @filters
+  Scenario: Search with price filter
+    When the user searches for "laptop"
+    And the user applies price filter from "$500" to "$1000"
+    Then all displayed products should be priced between $500 and $1000
+
+  @negative
+  Scenario: Search with no matching results
+    When the user searches for "xyznonexistentproduct123"
+    Then the message "No results found" should be displayed
+    And the user should see suggested popular products
+
+  Scenario: Search with special characters
+    When the user searches for "C++ programming book"
+    Then the search results should be displayed without errors
+    And results should be relevant to the query</code></pre>
+
+<h4>Example 3: Shopping Cart Feature</h4>
+<pre><code>@cart @ecommerce
+Feature: Shopping Cart Management
+  As a shopper
+  I want to manage items in my cart
+  So that I can purchase the products I want
+
+  Background:
+    Given the user is logged in
+    And the cart is empty
+
+  @smoke
+  Scenario: Add a product to cart
+    Given a product "Wireless Mouse" priced at "$29.99" is in stock
+    When the user adds "Wireless Mouse" to the cart
+    Then the cart should contain 1 item
+    And the cart total should be "$29.99"
+
+  Scenario: Remove a product from cart
+    Given the cart contains the following items:
+      | Product         | Quantity | Price   |
+      | Wireless Mouse  | 1        | $29.99  |
+      | USB Cable       | 2        | $9.99   |
+    When the user removes "USB Cable" from the cart
+    Then the cart should contain 1 item
+    And the cart total should be "$29.99"
+
+  Scenario: Update product quantity in cart
+    Given the cart contains "Wireless Mouse" with quantity 1
+    When the user updates the quantity of "Wireless Mouse" to 3
+    Then the cart should show quantity 3 for "Wireless Mouse"
+    And the cart total should be "$89.97"
+
+  @negative
+  Scenario: Cannot add out-of-stock product
+    Given a product "Limited Edition Watch" is out of stock
+    When the user attempts to add "Limited Edition Watch" to the cart
+    Then an error message "Product is out of stock" should be displayed
+    And the cart should remain empty</code></pre>
+
+<h3>Gherkin Best Practices (10+ Points)</h3>
+<ul>
+<li><strong>Write in business language</strong> — Use domain terms stakeholders understand, not CSS selectors or XPath.</li>
+<li><strong>One scenario = one behavior</strong> — Test a single outcome. Split complex flows into multiple scenarios.</li>
+<li><strong>Keep scenarios independent</strong> — Each scenario must run in isolation without depending on another scenario's state.</li>
+<li><strong>Avoid UI-specific language</strong> — "When the user searches for laptops" not "When the user clicks the search icon and types in #search-input".</li>
+<li><strong>Use Background sparingly</strong> — Only for truly shared preconditions. Heavy Backgrounds slow every scenario.</li>
+<li><strong>Descriptive scenario names</strong> — Names should explain the behavior: "Reject expired coupon at checkout".</li>
+<li><strong>Limit steps per scenario</strong> — Aim for 3–7 steps. More indicates the scenario tests too much.</li>
+<li><strong>Use Scenario Outline for data variations</strong> — Same behavior with different data belongs in Scenario Outline, not duplicate scenarios.</li>
+<li><strong>Tag consistently</strong> — Establish team conventions for @smoke, @regression, @wip and enforce them.</li>
+<li><strong>Don't test implementation details</strong> — Focus on behavior and outcomes, not internal API calls or database states.</li>
+<li><strong>Review with PO before automation</strong> — Feature files are specifications. Get sign-off before writing step definitions.</li>
+<li><strong>Avoid conjunctive steps</strong> — "When the user enters username and password and clicks login" should be three separate steps.</li>
+<li><strong>Keep feature files focused</strong> — One feature file per functional area. Don't combine login and checkout in one file.</li>
+</ul>
+
+<h3>Interview Q&amp;A — Gherkin Language</h3>
+
+<h4>Q1. What are the primary Gherkin keywords?</h4>
+<p><strong>Answer:</strong> Feature, Background, Scenario, Scenario Outline, Examples, Given, When, Then, And, But. Given sets context, When describes action, Then asserts outcome. And/But continue the preceding step type.</p>
+
+<h4>Q2. What is the difference between Scenario and Scenario Outline?</h4>
+<p><strong>Answer:</strong> Scenario is a single test case with fixed data. Scenario Outline is a template with placeholders filled by an Examples table, creating multiple scenario executions from one template.</p>
+
+<h4>Q3. What is the purpose of Background?</h4>
+<p><strong>Answer:</strong> Background defines steps that run before every scenario in a feature file. It eliminates duplication of common preconditions like navigating to a page or ensuring a service is available.</p>
+
+<h4>Q4. How do Data Tables differ from Examples tables?</h4>
+<p><strong>Answer:</strong> Data Tables pass structured data to a single step within a scenario. Examples tables drive Scenario Outline placeholders, creating multiple scenario executions. Data Tables are for one step; Examples are for entire scenarios.</p>
+
+<h4>Q5. What are Doc Strings used for?</h4>
+<p><strong>Answer:</strong> Doc Strings (triple quotes) pass multi-line text to a step definition — commonly JSON payloads, XML, email bodies, or long text content that doesn't fit on one line.</p>
+
+<h4>Q6. Can you have multiple Background sections?</h4>
+<p><strong>Answer:</strong> No. Only one Background is allowed per feature file. If you need different setups, use separate feature files or handle setup in individual scenario Given steps.</p>
+
+<h4>Q7. What happens if a scenario has no Then step?</h4>
+<p><strong>Answer:</strong> Cucumber allows it, but it's a bad practice. Every scenario should have at least one Then step asserting an observable outcome. Scenarios without assertions don't validate behavior.</p>
+
+<h4>Q8. How do tags work at the Feature level?</h4>
+<p><strong>Answer:</strong> Tags placed above the Feature keyword are inherited by all scenarios and scenario outlines in that file. Individual scenarios can have additional tags. Feature tags + scenario tags are combined for filtering.</p>
+
+<h4>Q9. What is the difference between And and But?</h4>
+<p><strong>Answer:</strong> Both continue the preceding step type (Given/When/Then). And is for additional steps of the same polarity. But is for negative/additional exclusion assertions, typically after Then.</p>
+
+<h4>Q10. How many Feature keywords can a .feature file have?</h4>
+<p><strong>Answer:</strong> Exactly one. Each .feature file describes one feature. Multiple features require multiple .feature files.</p>
+
+<h4>Q11. Can Gherkin steps be written in languages other than English?</h4>
+<p><strong>Answer:</strong> Yes. Cucumber supports 70+ languages. Use <code># language: fr</code> as the first line for French keywords (Fonctionnalité, Étant donné, etc.). The step definition annotations remain in English.</p>
+
+<h4>Q12. What makes a good Gherkin scenario?</h4>
+<p><strong>Answer:</strong> Independent, focused on one behavior, written in business language, 3–7 steps, descriptive name, clear Given/When/Then structure, and verifiable Then assertion. Reviewed and approved by PO before automation.</p>
+</section>
+
+<!-- SECTION 19: FEATURE FILES -->
+<section id="section-19" class="section-card">
+<h2>Section 19: Feature Files</h2>
+
+<h3>Feature File Structure</h3>
+<ul>
+<li><strong>Extension:</strong> <code>.feature</code> — plain text files parsed by Cucumber.</li>
+<li><strong>Location:</strong> <code>src/test/resources/features/</code> (Maven standard).</li>
+<li><strong>Encoding:</strong> UTF-8 recommended for international characters.</li>
+<li><strong>Structure:</strong> Tags → Feature → (Background) → Scenarios/Scenario Outlines.</li>
+</ul>
+
+<div class="callout">
+<strong>Convention:</strong> Mirror your application module structure. E.g., <code>features/login/login.feature</code>, <code>features/checkout/checkout.feature</code>, <code>features/search/search.feature</code>.
+</div>
+
+<h3>Feature File Naming Conventions</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Convention</th><th>Example</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>Lowercase with underscores</td><td><code>user_login.feature</code></td><td>Most common in Java projects</td></tr>
+<tr><td>Lowercase with hyphens</td><td><code>user-login.feature</code></td><td>Alternative, equally valid</td></tr>
+<tr><td>Match feature name</td><td><code>Feature: User Login</code> → <code>user_login.feature</code></td><td>One file per feature</td></tr>
+<tr><td>Module prefix</td><td><code>api_user_login.feature</code></td><td>When mixing API and UI features</td></tr>
+<tr><td>Avoid spaces</td><td>Never <code>User Login.feature</code></td><td>Breaks CI on Linux agents</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Complete Feature Files</h3>
+
+<h4>1. Login Feature (5+ Scenarios)</h4>
+<pre><code>@login @authentication
+Feature: User Login
+  As a registered user
+  I want to log in to my account
+  So that I can access personalized content and services
+
+  Background:
+    Given the login page is accessible at "/login"
+    And the authentication service is available
+
+  @smoke @positive
+  Scenario: Successful login with valid credentials
+    Given a registered user exists with email "john@example.com" and password "SecurePass@123"
+    When the user enters email "john@example.com"
+    And the user enters password "SecurePass@123"
+    And the user clicks the "Login" button
+    Then the user should be redirected to "/dashboard"
+    And the welcome message should contain "Hello, John"
+
+  @negative
+  Scenario: Login fails with incorrect password
+    Given a registered user exists with email "john@example.com"
+    When the user enters email "john@example.com"
+    And the user enters password "WrongPassword!"
+    And the user clicks the "Login" button
+    Then an error message "Invalid email or password" should be displayed
+    And the user should remain on the login page
+
+  @negative
+  Scenario: Login fails with empty credentials
+    Given the user is on the login page
+    When the user clicks the "Login" button without entering credentials
+    Then validation errors should be displayed for email and password fields
+
+  @negative @security
+  Scenario: Login blocked for locked account
+    Given a user account "locked@example.com" is locked due to 5 failed attempts
+    When the user enters email "locked@example.com"
+    And the user enters password "AnyPassword@123"
+    And the user clicks the "Login" button
+    Then an error message "Account locked. Contact support." should be displayed
+
+  @positive
+  Scenario: Remember me keeps user logged in
+    Given a registered user exists with email "john@example.com"
+    When the user enters email "john@example.com"
+    And the user enters password "SecurePass@123"
+    And the user checks the "Remember me" checkbox
+    And the user clicks the "Login" button
+    Then the user should be redirected to "/dashboard"
+    When the user closes and reopens the browser
+    Then the user should still be logged in on "/dashboard"</code></pre>
+
+<h4>2. User Registration Feature (4+ Scenarios)</h4>
+<pre><code>@registration @signup
+Feature: User Registration
+  As a new visitor
+  I want to create an account
+  So that I can access member-only features
+
+  Background:
+    Given the registration page is accessible at "/register"
+
+  @smoke @positive
+  Scenario: Successful registration with valid details
+    When the user fills in the registration form:
+      | Field           | Value                |
+      | First Name      | Jane                 |
+      | Last Name       | Smith                |
+      | Email           | jane.smith@test.com  |
+      | Password        | SecurePass@123       |
+      | Confirm Password| SecurePass@123       |
+    And the user accepts the terms and conditions
+    And the user clicks the "Register" button
+    Then the registration should be successful
+    And a verification email should be sent to "jane.smith@test.com"
+
+  @negative @validation
+  Scenario Outline: Registration validation errors
+    When the user enters email "&lt;email&gt;"
+    And the user enters password "&lt;password&gt;"
+    And the user clicks the "Register" button
+    Then the validation error "&lt;error_message&gt;" should be displayed
+
+    Examples:
+      | email              | password       | error_message                    |
+      | invalid-email      | SecurePass@123 | Please enter a valid email       |
+      | test@example.com   | short          | Password must be at least 8 chars  |
+      |                    | SecurePass@123 | Email is required                |
+
+  @negative
+  Scenario: Registration fails with duplicate email
+    Given a registered user exists with email "existing@test.com"
+    When the user enters email "existing@test.com"
+    And the user enters password "SecurePass@123"
+    And the user clicks the "Register" button
+    Then an error message "Email already registered" should be displayed
+
+  @positive @otp
+  Scenario: Complete registration with OTP verification
+    Given the user has registered with email "newuser@test.com"
+    And a verification OTP has been sent to the user's email
+    When the user enters the correct OTP
+    And the user clicks "Verify"
+    Then the account should be activated
+    And the user should be redirected to the welcome page</code></pre>
+
+<h4>3. E-Commerce Checkout Feature (5+ Scenarios)</h4>
+<pre><code>@checkout @ecommerce
+Feature: E-Commerce Checkout
+  As a shopper
+  I want to complete my purchase
+  So that I receive the products I selected
+
+  Background:
+    Given the following products are in stock:
+      | Product       | SKU      | Price   | Stock |
+      | Laptop Pro    | LP-001   | $999.00 | 10    |
+      | Wireless Mouse| WM-002   | $29.99  | 50    |
+    And shipping options are configured
+
+  @smoke @logged-in
+  Scenario: Logged-in user completes checkout
+    Given the user is logged in as "john@example.com"
+    And the cart contains "Laptop Pro" with quantity 1
+    When the user proceeds to checkout
+    And the user selects shipping address "123 Main St, New York, NY 10001"
+    And the user selects payment method "Credit Card"
+    And the user clicks "Place Order"
+    Then the order confirmation should be displayed
+    And the order total should be "$999.00"
+
+  @guest-checkout
+  Scenario: Guest user completes checkout
+    Given the cart contains "Wireless Mouse" with quantity 2
+    When the guest user proceeds to checkout
+    And the guest enters email "guest@example.com"
+    And the guest enters shipping details:
+      | Field    | Value                          |
+      | Name     | Guest User                     |
+      | Address  | 456 Oak Ave, Chicago, IL 60601 |
+      | Phone    | 555-0123                       |
+    And the guest completes payment
+    Then the order confirmation should be displayed
+    And a confirmation email should be sent to "guest@example.com"
+
+  @coupon
+  Scenario: Apply valid coupon at checkout
+    Given the user is logged in
+    And the cart contains "Laptop Pro" with quantity 1
+    And a valid coupon "SAVE10" provides 10% discount
+    When the user proceeds to checkout
+    And the user applies coupon code "SAVE10"
+    Then the discount of "$99.90" should be applied
+    And the order total should be "$899.10"
+
+  @negative @out-of-stock
+  Scenario: Checkout blocked when item goes out of stock
+    Given the user is logged in
+    And the cart contains "Laptop Pro" with quantity 1
+    And "Laptop Pro" stock becomes 0 before checkout
+    When the user proceeds to checkout
+    Then an error message "Laptop Pro is no longer available" should be displayed
+    And the checkout should be blocked
+
+  @negative @payment
+  Scenario: Checkout fails with declined payment
+    Given the user is logged in
+    And the cart contains "Wireless Mouse" with quantity 1
+    When the user proceeds to checkout
+    And the user enters a declined credit card
+    And the user clicks "Place Order"
+    Then an error message "Payment declined" should be displayed
+    And the order should not be created</code></pre>
+
+<h3>Background Usage: Shared Preconditions</h3>
+<p>Background steps execute before <strong>every</strong> scenario in the feature. Use when all scenarios share the same starting context.</p>
+
+<div class="callout">
+<strong>When to use Background:</strong> Navigation to a page, ensuring a service is up, setting up test data that ALL scenarios need. Do NOT use Background for scenario-specific setup — use Given steps instead.
+</div>
+
+<h3>Data Tables in Feature Files</h3>
+<h4>Passing a List (single column)</h4>
+<pre><code>When the user selects the following categories:
+  | Electronics |
+  | Clothing    |
+  | Books       |</code></pre>
+
+<h4>Passing a Map (two columns — key/value)</h4>
+<pre><code>When the user fills in the shipping address:
+  | Street  | 123 Main St    |
+  | City    | New York       |
+  | Zip     | 10001          |</code></pre>
+
+<h4>DataTable Class in Step Definitions</h4>
+<pre><code>// List of maps (header row = keys)
+@When("the user fills in the registration form:")
+public void fillRegistrationForm(DataTable dataTable) {
+    List&lt;Map&lt;String, String&gt;&gt; rows = dataTable.asMaps();
+    for (Map&lt;String, String&gt; row : rows) {
+        page.enterField(row.get("Field"), row.get("Value"));
+    }
+}
+
+// List of lists (no headers)
+@When("the user selects the following categories:")
+public void selectCategories(DataTable dataTable) {
+    List&lt;String&gt; categories = dataTable.asList();
+    categories.forEach(cat -&gt; page.selectCategory(cat));
+}</code></pre>
+
+<h3>Scenario Independence Principle</h3>
+<p>Each scenario must be executable in any order without depending on another scenario's side effects.</p>
+<ul>
+<li><strong>Do:</strong> Set up required state in Given steps or Background.</li>
+<li><strong>Don't:</strong> Assume Scenario 2 runs after Scenario 1 created data.</li>
+<li><strong>Do:</strong> Clean up in @After hooks if scenarios modify shared resources.</li>
+<li><strong>Don't:</strong> Use static variables to pass data between scenarios.</li>
+</ul>
+
+<h3>Feature File Organization Strategies</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Strategy</th><th>Structure</th><th>Best For</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>By Feature</strong></td><td>One file per application feature</td><td>Most projects, clear mapping to user stories</td><td><code>login.feature</code>, <code>checkout.feature</code></td></tr>
+<tr><td><strong>By Module</strong></td><td>Subdirectories per application module</td><td>Large applications with distinct modules</td><td><code>features/admin/users.feature</code></td></tr>
+<tr><td><strong>By User Story</strong></td><td>One file per Jira story</td><td>Strict traceability requirements</td><td><code>JIRA-1234_coupon_checkout.feature</code></td></tr>
+<tr><td><strong>By Layer</strong></td><td>Separate API and UI features</td><td>Projects testing both API and UI</td><td><code>features/api/</code>, <code>features/ui/</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Best Practices for Maintainable Feature Files</h3>
+<ul>
+<li>Keep feature files under 300 lines — split large features into sub-features.</li>
+<li>One Feature keyword per file — never combine unrelated features.</li>
+<li>Use consistent step phrasing across all feature files in the project.</li>
+<li>Tag every scenario with at least @smoke or @regression for selective execution.</li>
+<li>Link to user stories via @JIRA-XXXX tags for traceability.</li>
+<li>Review feature files in pull requests — treat them as production code.</li>
+<li>Avoid hardcoded environment-specific data (URLs, credentials) — use config in step definitions.</li>
+<li>Delete or update scenarios when features are removed — don't leave orphaned tests.</li>
+</ul>
+
+<h3>Interview Q&amp;A — Feature Files</h3>
+
+<h4>Q1. Where should feature files be located in a Maven project?</h4>
+<p><strong>Answer:</strong> <code>src/test/resources/features/</code> is the standard location. The path is specified in the runner's @CucumberOptions features attribute. Subdirectories organize by module.</p>
+
+<h4>Q2. Can one feature file contain multiple Feature keywords?</h4>
+<p><strong>Answer:</strong> No. Each .feature file must have exactly one Feature keyword. Multiple features require multiple files.</p>
+
+<h4>Q3. What is the scenario independence principle?</h4>
+<p><strong>Answer:</strong> Each scenario must run independently in any order. Setup belongs in Given steps or Background, not in dependencies on other scenarios' execution or side effects.</p>
+
+<h4>Q4. How do you organize feature files in a large project?</h4>
+<p><strong>Answer:</strong> By application feature/module in subdirectories under <code>features/</code>. Tag with @module tags. Separate API and UI features. Link to Jira stories with @JIRA tags for traceability.</p>
+
+<h4>Q5. When should you use Background vs Given?</h4>
+<p><strong>Answer:</strong> Background for preconditions shared by ALL scenarios in a feature. Given for scenario-specific setup. If only 2 of 5 scenarios need a precondition, use Given in those scenarios, not Background.</p>
+
+<h4>Q6. How do Data Tables work in feature files?</h4>
+<p><strong>Answer:</strong> Pipe-delimited tables passed as DataTable objects to step definitions. Use asMaps() for header-based key-value rows, asLists() for single-column lists, asList() for flat lists.</p>
+
+<h4>Q7. What naming convention do you follow for feature files?</h4>
+<p><strong>Answer:</strong> Lowercase with underscores matching the Feature name: "User Login" → <code>user_login.feature</code>. No spaces. Organized in module subdirectories.</p>
+
+<h4>Q8. How do you handle test data in feature files?</h4>
+<p><strong>Answer:</strong> Use Scenario Outline Examples for data variations. Data Tables for form data. Avoid hardcoded production data — step definitions should create test data via APIs or factories. Sensitive data goes in config files, not feature files.</p>
+</section>
+
+<!-- SECTION 20: STEP DEFINITIONS -->
+<section id="section-20" class="section-card">
+<h2>Section 20: Step Definitions</h2>
+
+<h3>What are Step Definitions?</h3>
+<p><strong>Step definitions</strong> are Java methods annotated with Cucumber annotations (@Given, @When, @Then) that map Gherkin steps from feature files to executable code. Each Gherkin step in a scenario must have exactly one matching step definition method.</p>
+
+<div class="callout">
+<strong>Glue Code:</strong> Step definitions are often called "glue code" because they glue the human-readable Gherkin specifications to the automation framework (Selenium, RestAssured, etc.).
+</div>
+
+<h3>Step Definition Class Structure</h3>
+<pre><code>package stepdefinitions;
+
+import io.cucumber.java.en.*;
+import pages.LoginPage;
+import org.testng.Assert;
+
+public class LoginSteps {
+
+    private LoginPage loginPage;
+    private TestContext testContext;
+
+    public LoginSteps(TestContext testContext) {
+        this.testContext = testContext;
+        this.loginPage = testContext.getLoginPage();
+    }
+
+    @Given("the user is on the login page")
+    public void userIsOnLoginPage() {
+        loginPage.navigateTo("/login");
+    }
+
+    @When("the user enters email {string}")
+    public void userEntersEmail(String email) {
+        loginPage.enterEmail(email);
+        testContext.setEmail(email);
+    }
+
+    @Then("the user should be redirected to {string}")
+    public void userShouldBeRedirected(String expectedUrl) {
+        Assert.assertTrue(loginPage.getCurrentUrl().contains(expectedUrl));
+    }
+}</code></pre>
+
+<h3>Regex Parameters vs Cucumber Expressions</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Cucumber Expressions</th><th>Regex Patterns</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Syntax</strong></td><td><code>{string}</code>, <code>{int}</code>, <code>{float}</code>, <code>{word}</code></td><td><code>(.*)</code>, <code>(\\d+)</code>, <code>(\\d+\\.\\d+)</code></td></tr>
+<tr><td><strong>Default since</strong></td><td>Cucumber 4+ (recommended)</td><td>Cucumber 1–3 (legacy, still supported)</td></tr>
+<tr><td><strong>Readability</strong></td><td>High — self-documenting parameter types</td><td>Low — regex knowledge required</td></tr>
+<tr><td><strong>String capture</strong></td><td><code>{string}</code> — matches quoted strings</td><td><code>"([^"]*)"</code> or <code>(.*)</code></td></tr>
+<tr><td><strong>Integer capture</strong></td><td><code>{int}</code> — matches integers</td><td><code>(\\d+)</code></td></tr>
+<tr><td><strong>Float capture</strong></td><td><code>{float}</code> — matches decimals</td><td><code>(\\d+\\.\\d+)</code></td></tr>
+<tr><td><strong>Word capture</strong></td><td><code>{word}</code> — matches single word (no spaces)</td><td><code>(\\w+)</code></td></tr>
+<tr><td><strong>Optional text</strong></td><td><code>the user(s)</code> — optional 's'</td><td><code>the user(s)?</code></td></tr>
+<tr><td><strong>Alternative text</strong></td><td><code>click(s)/tap(s)</code></td><td><code>click(s)?|tap(s)?</code></td></tr>
+<tr><td><strong>Annotation</strong></td><td><code>@Given("user has {int} items")</code></td><td><code>@Given("^user has (\\d+) items$")</code></td></tr>
+<tr><td><strong>Custom parameter types</strong></td><td>Register via <code>ParameterType</code></td><td>Capture groups with custom conversion</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Complete Step Definition Examples</h3>
+
+<h4>1. LoginSteps.java</h4>
+<pre><code>package stepdefinitions;
+
+import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.*;
+import org.testng.Assert;
+import pages.LoginPage;
+import utils.TestDataFactory;
+
+public class LoginSteps {
+
+    private final LoginPage loginPage;
+    private final TestContext context;
+
+    public LoginSteps(TestContext context) {
+        this.context = context;
+        this.loginPage = context.getLoginPage();
+    }
+
+    @Given("the login page is accessible at {string}")
+    public void loginPageAccessible(String path) {
+        loginPage.navigateTo(path);
+        Assert.assertTrue(loginPage.isPageLoaded());
+    }
+
+    @Given("the authentication service is available")
+    public void authServiceAvailable() {
+        Assert.assertTrue(loginPage.isAuthServiceUp());
+    }
+
+    @Given("a registered user exists with email {string} and password {string}")
+    public void registeredUserExists(String email, String password) {
+        TestDataFactory.createUser(email, password);
+    }
+
+    @Given("a user account {string} is locked due to {int} failed attempts")
+    public void accountIsLocked(String email, int attempts) {
+        TestDataFactory.createLockedUser(email, attempts);
+    }
+
+    @Given("the user is on the login page")
+    public void userOnLoginPage() {
+        loginPage.navigateTo("/login");
+    }
+
+    @When("the user enters email {string}")
+    public void enterEmail(String email) {
+        loginPage.enterEmail(email);
+    }
+
+    @When("the user enters password {string}")
+    public void enterPassword(String password) {
+        loginPage.enterPassword(password);
+    }
+
+    @When("the user clicks the {string} button")
+    public void clickButton(String buttonText) {
+        loginPage.clickButton(buttonText);
+    }
+
+    @When("the user checks the {string} checkbox")
+    public void checkCheckbox(String label) {
+        loginPage.checkCheckbox(label);
+    }
+
+    @Then("the user should be redirected to {string}")
+    public void verifyRedirect(String expectedPath) {
+        Assert.assertTrue(loginPage.getCurrentUrl().contains(expectedPath));
+    }
+
+    @Then("the welcome message should contain {string}")
+    public void verifyWelcomeMessage(String expectedText) {
+        Assert.assertTrue(loginPage.getWelcomeMessage().contains(expectedText));
+    }
+
+    @Then("an error message {string} should be displayed")
+    public void verifyErrorMessage(String expectedError) {
+        Assert.assertEquals(loginPage.getErrorMessage(), expectedError);
+    }
+
+    @Then("the user should remain on the login page")
+    public void verifyOnLoginPage() {
+        Assert.assertTrue(loginPage.getCurrentUrl().contains("/login"));
+    }
+}</code></pre>
+
+<h4>2. SearchSteps.java</h4>
+<pre><code>package stepdefinitions;
+
+import io.cucumber.java.en.*;
+import org.testng.Assert;
+import pages.SearchPage;
+import java.util.List;
+
+public class SearchSteps {
+
+    private final SearchPage searchPage;
+    private List&lt;String&gt; searchResults;
+
+    public SearchSteps(TestContext context) {
+        this.searchPage = context.getSearchPage();
+    }
+
+    @Given("the user is on the homepage")
+    public void userOnHomepage() {
+        searchPage.navigateTo("/");
+    }
+
+    @Given("the product catalog contains {int} items")
+    public void catalogContainsItems(int count) {
+        Assert.assertTrue(searchPage.getCatalogCount() &gt;= count);
+    }
+
+    @When("the user searches for {string}")
+    public void userSearches(String keyword) {
+        searchPage.enterSearchTerm(keyword);
+        searchPage.clickSearchButton();
+        searchResults = searchPage.getResultTitles();
+    }
+
+    @When("the user applies price filter from {string} to {string}")
+    public void applyPriceFilter(String min, String max) {
+        searchPage.setPriceRange(min, max);
+        searchResults = searchPage.getResultTitles();
+    }
+
+    @Then("the search results should contain at least {int} product")
+    public void verifyMinResults(int minCount) {
+        Assert.assertTrue(searchResults.size() &gt;= minCount);
+    }
+
+    @Then("each result should contain {string} in the title")
+    public void verifyResultsContainKeyword(String keyword) {
+        searchResults.forEach(title -&gt;
+            Assert.assertTrue(title.toLowerCase().contains(keyword.toLowerCase()))
+        );
+    }
+
+    @Then("the message {string} should be displayed")
+    public void verifyMessage(String expectedMessage) {
+        Assert.assertEquals(searchPage.getNoResultsMessage(), expectedMessage);
+    }
+
+    @Then("all displayed products should be priced between ${int} and ${int}")
+    public void verifyPriceRange(int min, int max) {
+        searchPage.getResultPrices().forEach(price -&gt; {
+            Assert.assertTrue(price &gt;= min &amp;&amp; price &lt;= max);
+        });
+    }
+}</code></pre>
+
+<h4>3. CheckoutSteps.java</h4>
+<pre><code>package stepdefinitions;
+
+import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.*;
+import org.testng.Assert;
+import pages.CheckoutPage;
+import pages.CartPage;
+import java.util.List;
+import java.util.Map;
+
+public class CheckoutSteps {
+
+    private final CheckoutPage checkoutPage;
+    private final CartPage cartPage;
+    private final TestContext context;
+
+    public CheckoutSteps(TestContext context) {
+        this.context = context;
+        this.checkoutPage = context.getCheckoutPage();
+        this.cartPage = context.getCartPage();
+    }
+
+    @Given("the cart contains {string} with quantity {int}")
+    public void cartContainsProduct(String product, int qty) {
+        cartPage.addProduct(product, qty);
+    }
+
+    @Given("a valid coupon {string} provides {int}% discount")
+    public void validCouponExists(String code, int percent) {
+        context.setCouponCode(code);
+        context.setDiscountPercent(percent);
+    }
+
+    @When("the user proceeds to checkout")
+    public void proceedToCheckout() {
+        cartPage.clickCheckout();
+    }
+
+    @When("the user applies coupon code {string}")
+    public void applyCoupon(String code) {
+        checkoutPage.enterCouponCode(code);
+        checkoutPage.clickApplyCoupon();
+    }
+
+    @When("the user selects payment method {string}")
+    public void selectPayment(String method) {
+        checkoutPage.selectPaymentMethod(method);
+    }
+
+    @When("the user clicks {string}")
+    public void clickPlaceOrder(String button) {
+        checkoutPage.clickButton(button);
+    }
+
+    @When("the guest enters shipping details:")
+    public void enterShippingDetails(DataTable dataTable) {
+        Map&lt;String, String&gt; details = dataTable.asMap(String.class, String.class);
+        checkoutPage.fillShippingForm(details);
+    }
+
+    @Then("the order confirmation should be displayed")
+    public void verifyOrderConfirmation() {
+        Assert.assertTrue(checkoutPage.isConfirmationDisplayed());
+    }
+
+    @Then("the order total should be {string}")
+    public void verifyOrderTotal(String expectedTotal) {
+        Assert.assertEquals(checkoutPage.getOrderTotal(), expectedTotal);
+    }
+
+    @Then("the discount of {string} should be applied")
+    public void verifyDiscount(String expectedDiscount) {
+        Assert.assertEquals(checkoutPage.getDiscountAmount(), expectedDiscount);
+    }
+}</code></pre>
+
+<h3>Parameterized Steps</h3>
+<p>Cucumber Expressions capture parameters directly from Gherkin text and pass them as method arguments:</p>
+<pre><code>// Feature: When the user enters email "john@example.com"
+@When("the user enters email {string}")
+public void enterEmail(String email) { ... }
+
+// Feature: Then the cart should contain 3 items
+@Then("the cart should contain {int} items")
+public void verifyCartCount(int count) { ... }
+
+// Feature: When the user waits 5 seconds
+@When("the user waits {int} seconds")
+public void waitSeconds(int seconds) throws InterruptedException {
+    Thread.sleep(seconds * 1000L);
+}</code></pre>
+
+<h3>Data Table Handling in Step Definitions</h3>
+<pre><code>import io.cucumber.datatable.DataTable;
+import java.util.List;
+import java.util.Map;
+
+public class RegistrationSteps {
+
+    // Header row becomes map keys
+    @When("the user fills in the registration form:")
+    public void fillForm(DataTable dataTable) {
+        List&lt;Map&lt;String, String&gt;&gt; rows = dataTable.asMaps();
+        for (Map&lt;String, String&gt; row : rows) {
+            String field = row.get("Field");
+            String value = row.get("Value");
+            registrationPage.enterField(field, value);
+        }
+    }
+
+    // Two-column table as single map
+    @When("the user enters shipping address:")
+    public void enterAddress(DataTable dataTable) {
+        Map&lt;String, String&gt; address = dataTable.asMap(String.class, String.class);
+        checkoutPage.fillAddress(
+            address.get("Street"),
+            address.get("City"),
+            address.get("Zip")
+        );
+    }
+
+    // Single column as list
+    @When("the user selects the following categories:")
+    public void selectCategories(DataTable dataTable) {
+        List&lt;String&gt; categories = dataTable.asList();
+        categories.forEach(cat -&gt; filterPage.selectCategory(cat));
+    }
+
+    // Raw rows without header treatment
+    @Given("the following products are in stock:")
+    public void productsInStock(DataTable dataTable) {
+        List&lt;List&lt;String&gt;&gt; rows = dataTable.asLists();
+        rows.remove(0); // skip header
+        rows.forEach(row -&gt; inventoryService.ensureStock(
+            row.get(0), row.get(1), Integer.parseInt(row.get(3))
+        ));
+    }
+}</code></pre>
+
+<h3>Sharing State Between Steps</h3>
+
+<h4>Approach 1: PicoContainer Dependency Injection</h4>
+<p>Add <code>cucumber-picocontainer</code> dependency. Register shared classes in the glue package. Cucumber creates one instance per scenario.</p>
+<pre><code>// TestContext.java — shared state container
+package stepdefinitions;
+
+public class TestContext {
+    private String email;
+    private String couponCode;
+    private int discountPercent;
+    private LoginPage loginPage;
+    private CartPage cartPage;
+
+    public TestContext() {
+        this.loginPage = new LoginPage();
+        this.cartPage = new CartPage();
+    }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public LoginPage getLoginPage() { return loginPage; }
+    public CartPage getCartPage() { return cartPage; }
+    // ... other getters/setters
+}
+
+// LoginSteps.java — receives TestContext via constructor injection
+public class LoginSteps {
+    private final TestContext context;
+
+    public LoginSteps(TestContext context) {
+        this.context = context;
+    }
+
+    @When("the user enters email {string}")
+    public void enterEmail(String email) {
+        context.getLoginPage().enterEmail(email);
+        context.setEmail(email);  // shared with other step classes
+    }
+}
+
+// CheckoutSteps.java — same TestContext instance injected
+public class CheckoutSteps {
+    private final TestContext context;
+
+    public CheckoutSteps(TestContext context) {
+        this.context = context;
+    }
+
+    @Then("a confirmation email should be sent to the user's email")
+    public void verifyConfirmationEmail() {
+        String email = context.getEmail(); // set by LoginSteps
+        Assert.assertTrue(emailService.wasSentTo(email));
+    }
+}</code></pre>
+
+<h4>Approach 2: Scenario Context Pattern</h4>
+<pre><code>public class ScenarioContext {
+    private final Map&lt;String, Object&gt; data = new HashMap&lt;&gt;();
+
+    public void set(String key, Object value) { data.put(key, value); }
+    public &lt;T&gt; T get(String key) { return (T) data.get(key); }
+    public boolean contains(String key) { return data.containsKey(key); }
+}</code></pre>
+
+<h3>Step Definition Best Practices</h3>
+<ul>
+<li><strong>Reuse steps</strong> — Write generic steps like <code>the user clicks the {string} button</code> instead of one step per button.</li>
+<li><strong>Keep step definitions thin</strong> — Delegate to Page Objects or service classes; don't put Selenium code directly in steps.</li>
+<li><strong>One responsibility</strong> — Each step definition method should do one thing.</li>
+<li><strong>Consistent phrasing</strong> — Agree on step wording across the team and document in a step catalog.</li>
+<li><strong>Use DI for state</strong> — PicoContainer or ScenarioContext, never static variables.</li>
+<li><strong>Avoid assertions in When steps</strong> — When steps perform actions; Then steps perform assertions.</li>
+<li><strong>Parameter types over regex</strong> — Prefer Cucumber Expressions for readability.</li>
+</ul>
+
+<h3>Common Errors</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Error</th><th>Cause</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Undefined step</strong></td><td>No matching step definition for a Gherkin step</td><td>Implement the missing step or run with dryRun=true to find all undefined steps</td></tr>
+<tr><td><strong>Duplicate step definition</strong></td><td>Two methods match the same Gherkin pattern</td><td>Remove or rename the duplicate; check across all glue packages</td></tr>
+<tr><td><strong>Ambiguous step</strong></td><td>Multiple methods match with overlapping patterns</td><td>Make patterns more specific; e.g., use {string} instead of (.*)</td></tr>
+<tr><td><strong>Pending step</strong></td><td>Step definition throws PendingException</td><td>Implement the step or remove the scenario from execution with @wip tag</td></tr>
+<tr><td><strong>Parameter mismatch</strong></td><td>Method parameter count/types don't match captured groups</td><td>Verify Cucumber Expression parameter types match Gherkin data</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A — Step Definitions</h3>
+
+<h4>Q1. What are step definitions?</h4>
+<p><strong>Answer:</strong> Java methods annotated with @Given, @When, @Then that map Gherkin steps to executable code. They form the glue between feature files and the automation framework.</p>
+
+<h4>Q2. What is glue code?</h4>
+<p><strong>Answer:</strong> Another name for step definitions. The glue package (specified in @CucumberOptions) contains all step definition and hook classes that Cucumber scans for matching step patterns.</p>
+
+<h4>Q3. Cucumber Expressions vs Regex — which do you prefer?</h4>
+<p><strong>Answer:</strong> Cucumber Expressions ({string}, {int}, {word}) since Cucumber 4. They are readable, self-documenting, and less error-prone. Regex is legacy but still supported for complex patterns.</p>
+
+<h4>Q4. How do you share data between step definition classes?</h4>
+<p><strong>Answer:</strong> PicoContainer dependency injection — add cucumber-picocontainer, create a TestContext class, inject it via constructor into all step classes. Each scenario gets a fresh instance.</p>
+
+<h4>Q5. How do you handle Data Tables in step definitions?</h4>
+<p><strong>Answer:</strong> Accept DataTable as method parameter. Use asMaps() for header-based rows, asMap() for two-column key-value, asList() for single column, asLists() for raw rows.</p>
+
+<h4>Q6. What causes "Duplicate step definition" error?</h4>
+<p><strong>Answer:</strong> Two or more methods in glue packages match the same Gherkin step pattern. Cucumber cannot determine which to invoke. Remove or differentiate the conflicting patterns.</p>
+
+<h4>Q7. What is dryRun in Cucumber?</h4>
+<p><strong>Answer:</strong> When dryRun=true, Cucumber verifies all Gherkin steps have matching step definitions without executing them. Useful for validating coverage before full test runs.</p>
+
+<h4>Q8. Should step definitions contain Selenium code?</h4>
+<p><strong>Answer:</strong> No. Step definitions should be thin — delegate to Page Object Model classes or service layers. This keeps steps maintainable and reusable across UI changes.</p>
+
+<h4>Q9. How do you handle optional parameters in steps?</h4>
+<p><strong>Answer:</strong> Cucumber Expressions support optional text: <code>the user(s)</code> matches "the user" or "the users". For complex optionality, create separate step definitions.</p>
+
+<h4>Q10. Can one step definition match multiple Gherkin steps?</h4>
+<p><strong>Answer:</strong> Yes, using alternative text in Cucumber Expressions: <code>@When("the user clicks/taps the {string} button")</code>. Or use multiple annotations on the same method.</p>
+
+<h4>Q11. What happens if a step definition throws an exception?</h4>
+<p><strong>Answer:</strong> The scenario fails immediately. Cucumber reports the failing step, exception message, and stack trace in the test report. Subsequent steps in the scenario are skipped.</p>
+
+<h4>Q12. How do you organize step definition classes?</h4>
+<p><strong>Answer:</strong> One class per feature domain: LoginSteps, SearchSteps, CheckoutSteps. All in the glue package. Shared utilities in TestContext or helper classes, not duplicated across step classes.</p>
+</section>
+
+<!-- SECTION 21: CUCUMBER RUNNER FILE -->
+<section id="section-21" class="section-card">
+<h2>Section 21: Cucumber Runner File</h2>
+
+<h3>What is a Runner?</h3>
+<p>The <strong>Runner class</strong> is the entry point for Cucumber test execution. It tells Cucumber where to find feature files, which packages contain step definitions, which tags to filter, and what report formats to generate. Without a runner, Cucumber doesn't know what to execute.</p>
+
+<h3>TestNG Runner vs JUnit Runner</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Criteria</th><th>TestNG Runner</th><th>JUnit Runner</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Base Class</strong></td><td><code>AbstractTestNGCucumberTests</code></td><td><code>@RunWith(Cucumber.class)</code> or JUnit Platform</td></tr>
+<tr><td><strong>Dependency</strong></td><td><code>cucumber-testng</code></td><td><code>cucumber-junit</code> or <code>cucumber-junit-platform-engine</code></td></tr>
+<tr><td><strong>Parallel Execution</strong></td><td>Override scenarios() DataProvider with parallel=true</td><td>JUnit 5 parallel config or surefire parallel settings</td></tr>
+<tr><td><strong>Test Groups</strong></td><td>TestNG groups integration via tags</td><td>JUnit tags (@Tag) with cucumber filter</td></tr>
+<tr><td><strong>Reporting</strong></td><td>TestNG HTML + Cucumber plugins</td><td>JUnit reports + Cucumber plugins</td></tr>
+<tr><td><strong>CI Integration</strong></td><td>mvn test with TestNG suite XML</td><td>mvn test with JUnit runner</td></tr>
+<tr><td><strong>Industry Usage</strong></td><td>More common in Selenium/TestNG projects</td><td>Common in Spring Boot and modern Java projects</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>@CucumberOptions Annotation Attributes</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Attribute</th><th>Purpose</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>features</strong></td><td>Path to feature files or directories</td><td><code>"src/test/resources/features"</code></td></tr>
+<tr><td><strong>glue</strong></td><td>Packages containing step definitions and hooks</td><td><code>{"stepdefinitions", "hooks"}</code></td></tr>
+<tr><td><strong>tags</strong></td><td>Tag expression for selective execution</td><td><code>"@smoke and not @skip"</code></td></tr>
+<tr><td><strong>plugin</strong></td><td>Report format and output location</td><td><code>{"pretty", "html:target/cucumber-reports"}</code></td></tr>
+<tr><td><strong>monochrome</strong></td><td>Simplified console output (no ANSI colors)</td><td><code>true</code></td></tr>
+<tr><td><strong>dryRun</strong></td><td>Verify step definitions without executing</td><td><code>true</code></td></tr>
+<tr><td><strong>strict</strong></td><td>Fail on undefined or pending steps (deprecated in v7)</td><td><code>true</code></td></tr>
+<tr><td><strong>stepNotifications</strong></td><td>Emit events for each step (CI integration)</td><td><code>true</code></td></tr>
+<tr><td><strong>publish</strong></td><td>Publish results to Cucumber Reports cloud</td><td><code>true</code></td></tr>
+<tr><td><strong>snippets</strong></td><td>Undefined step snippet format</td><td><code>CucumberOptions.SnippetType.CAMELCASE</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Plugin Options</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Plugin</th><th>Output</th><th>Usage</th></tr>
+</thead>
+<tbody>
+<tr><td><code>pretty</code></td><td>Colored console output</td><td>Development and debugging</td></tr>
+<tr><td><code>html:target/cucumber-reports</code></td><td>HTML report</td><td>Stakeholder review, CI artifacts</td></tr>
+<tr><td><code>json:target/cucumber.json</code></td><td>JSON report</td><td>Input for Allure, custom dashboards</td></tr>
+<tr><td><code>junit:target/cucumber-junit.xml</code></td><td>JUnit XML</td><td>Jenkins, Azure DevOps test result parsing</td></tr>
+<tr><td><code>io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm</code></td><td>Allure report</td><td>Rich reporting with screenshots and history</td></tr>
+<tr><td><code>timeline:target/timeline</code></td><td>Timeline HTML report</td><td>Parallel execution analysis</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Complete TestNG Runner Class</h3>
+<pre><code>package runners;
+
+import io.cucumber.testng.AbstractTestNGCucumberTests;
+import io.cucumber.testng.CucumberOptions;
+import org.testng.annotations.DataProvider;
+
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = {"stepdefinitions", "hooks"},
+    tags = "@smoke and not @skip",
+    plugin = {
+        "pretty",
+        "html:target/cucumber-reports/cucumber.html",
+        "json:target/cucumber-reports/cucumber.json",
+        "junit:target/cucumber-reports/cucumber-junit.xml",
+        "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"
+    },
+    monochrome = true,
+    publish = false
+)
+public class TestRunner extends AbstractTestNGCucumberTests {
+
+    @Override
+    @DataProvider(parallel = true)
+    public Object[][] scenarios() {
+        return super.scenarios();
+    }
+}</code></pre>
+
+<h3>Multiple Runner Files for Different Suites</h3>
+<pre><code>// SmokeTestRunner.java — fast feedback on every commit
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = {"stepdefinitions", "hooks"},
+    tags = "@smoke and not @skip",
+    plugin = {"pretty", "html:target/smoke-report"}
+)
+public class SmokeTestRunner extends AbstractTestNGCucumberTests { }
+
+// RegressionTestRunner.java — full suite nightly
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = {"stepdefinitions", "hooks"},
+    tags = "@regression and not @skip and not @wip",
+    plugin = {"pretty", "html:target/regression-report", "json:target/regression.json"}
+)
+public class RegressionTestRunner extends AbstractTestNGCucumberTests {
+    @Override
+    @DataProvider(parallel = true)
+    public Object[][] scenarios() { return super.scenarios(); }
+}
+
+// LoginTestRunner.java — feature-specific runner
+@CucumberOptions(
+    features = "src/test/resources/features/login",
+    glue = {"stepdefinitions", "hooks"},
+    tags = "@login",
+    plugin = {"pretty", "html:target/login-report"}
+)
+public class LoginTestRunner extends AbstractTestNGCucumberTests { }</code></pre>
+
+<h3>Running from Command Line</h3>
+<pre><code># Run all tests via default runner
+mvn test
+
+# Run with specific tag filter (overrides runner tags)
+mvn test -Dcucumber.filter.tags="@smoke"
+
+# Run smoke excluding skip and wip
+mvn test -Dcucumber.filter.tags="@smoke and not @skip and not @wip"
+
+# Run specific runner class
+mvn test -Dtest=SmokeTestRunner
+
+# Run with parallel threads
+mvn test -Dtest=RegressionTestRunner -Dsurefire.parallel=methods -Dsurefire.threadCount=4
+
+# Dry run to verify step definitions
+mvn test -Dtest=TestRunner -Dcucumber.execution.dry-run=true</code></pre>
+
+<h3>Tag Expressions: AND, OR, NOT Logic</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Expression</th><th>Meaning</th><th>Scenarios Executed</th></tr>
+</thead>
+<tbody>
+<tr><td><code>@smoke</code></td><td>Scenarios tagged @smoke</td><td>Only @smoke scenarios</td></tr>
+<tr><td><code>@smoke and @login</code></td><td>Both tags required</td><td>Scenarios with BOTH @smoke AND @login</td></tr>
+<tr><td><code>@smoke or @critical</code></td><td>Either tag</td><td>Scenarios with @smoke OR @critical (or both)</td></tr>
+<tr><td><code>not @skip</code></td><td>Exclusion</td><td>All scenarios EXCEPT those tagged @skip</td></tr>
+<tr><td><code>@regression and not @broken</code></td><td>Complex filter</td><td>Regression scenarios excluding broken ones</td></tr>
+<tr><td><code>(@smoke or @sanity) and not @wip</code></td><td>Grouped logic</td><td>Smoke or sanity, excluding work-in-progress</td></tr>
+<tr><td><code>@api and @JIRA-1234</code></td><td>Traceability filter</td><td>API tests for specific Jira ticket</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Precedence:</strong> <code>not</code> has highest precedence, then <code>and</code>, then <code>or</code>. Use parentheses for explicit grouping: <code>(@smoke or @sanity) and not @skip</code>.
+</div>
+
+<h3>TestNG Suite XML Integration</h3>
+<pre><code>&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="Cucumber BDD Suite" parallel="methods" thread-count="4"&gt;
+    &lt;test name="Smoke Tests"&gt;
+        &lt;classes&gt;
+            &lt;class name="runners.SmokeTestRunner"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+    &lt;test name="Regression Tests"&gt;
+        &lt;classes&gt;
+            &lt;class name="runners.RegressionTestRunner"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>Interview Q&amp;A — Cucumber Runner</h3>
+
+<h4>Q1. What is the purpose of the Cucumber runner class?</h4>
+<p><strong>Answer:</strong> Entry point that configures Cucumber execution — feature file paths, glue packages, tag filters, report plugins, and integration with TestNG/JUnit test engines.</p>
+
+<h4>Q2. How do you run Cucumber tests in parallel with TestNG?</h4>
+<p><strong>Answer:</strong> Override the scenarios() method with @DataProvider(parallel = true) in a class extending AbstractTestNGCucumberTests. Configure thread count in TestNG suite XML or Maven surefire plugin.</p>
+
+<h4>Q3. What does dryRun=true do?</h4>
+<p><strong>Answer:</strong> Cucumber parses feature files and verifies every Gherkin step has a matching step definition without executing any test code. Reports undefined and ambiguous steps.</p>
+
+<h4>Q4. How do you override tags at runtime?</h4>
+<p><strong>Answer:</strong> Pass <code>-Dcucumber.filter.tags="@smoke"</code> on the Maven command line. Runtime tag filter overrides the tags attribute in @CucumberOptions.</p>
+
+<h4>Q5. What plugins do you use for reporting?</h4>
+<p><strong>Answer:</strong> pretty for console, html for stakeholder reports, json for Allure/custom dashboards, junit for CI parsing. Allure plugin (io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm) for rich reports with screenshots.</p>
+
+<h4>Q6. Can you have multiple runner classes?</h4>
+<p><strong>Answer:</strong> Yes. Common pattern: SmokeTestRunner, RegressionTestRunner, and feature-specific runners. Each with different tags and plugin outputs. Run selectively via -Dtest=ClassName.</p>
+
+<h4>Q7. What is the glue attribute?</h4>
+<p><strong>Answer:</strong> Specifies package(s) where Cucumber scans for step definitions and hooks. Multiple packages as array: glue = {"stepdefinitions", "hooks", "utils"}.</p>
+
+<h4>Q8. How do you integrate Cucumber with Jenkins?</h4>
+<p><strong>Answer:</strong> Maven command with tag filter parameter, publish HTML report as Jenkins artifact, parse JUnit XML for test results trend, optionally use Cucumber Reports plugin for cucumber.json.</p>
+
+<h4>Q9. What is monochrome=true?</h4>
+<p><strong>Answer:</strong> Disables ANSI color codes in console output. Useful for CI environments that don't render colors properly, producing cleaner log files.</p>
+
+<h4>Q10. What happens when strict mode finds undefined steps?</h4>
+<p><strong>Answer:</strong> In Cucumber 6 and earlier, strict=true caused build failure on undefined/pending steps. In Cucumber 7+, undefined steps always fail by default; strict is deprecated.</p>
+
+<h4>Q11. How do you run only failed scenarios?</h4>
+<p><strong>Answer:</strong> Cucumber doesn't natively support rerun of failures. Workarounds: use @rerun tag manually, third-party plugins, or TestNG retry analyzer on the runner class.</p>
+
+<h4>Q12. What is the difference between features path as file vs directory?</h4>
+<p><strong>Answer:</strong> Directory path runs all .feature files recursively. File path runs only that file. Use directory for full suite, file path for focused testing during development.</p>
+</section>
+
+<!-- SECTION 22: SCENARIO OUTLINE & DATA-DRIVEN BDD -->
+<section id="section-22" class="section-card">
+<h2>Section 22: Scenario Outline &amp; Data-Driven BDD</h2>
+
+<h3>What is Scenario Outline?</h3>
+<p>A <strong>Scenario Outline</strong> is a template for data-driven scenarios. Instead of writing separate scenarios for each data combination, you write one template with placeholders and provide data in an Examples table. Cucumber executes one scenario per row in the Examples table.</p>
+
+<div class="callout">
+<strong>Key Concept:</strong> Scenario Outline = Scenario + Examples table. The outline defines steps with <code>&lt;placeholder&gt;</code> variables. The Examples table provides values for each execution.
+</div>
+
+<h3>Syntax: Scenario Outline + Examples Table</h3>
+<pre><code>Scenario Outline: &lt;title with placeholders&gt;
+  Given ...
+  When ... "&lt;placeholder&gt;" ...
+  Then ... "&lt;expected&gt;" ...
+
+  Examples:
+    | placeholder | expected |
+    | value1      | result1  |
+    | value2      | result2  |</code></pre>
+
+<h3>Complete Examples</h3>
+
+<h4>1. Login with Multiple Credentials</h4>
+<pre><code>@login @data-driven
+Scenario Outline: Login attempt with various credentials
+  Given the user is on the login page
+  When the user enters email "&lt;email&gt;"
+  And the user enters password "&lt;password&gt;"
+  And the user clicks the "Login" button
+  Then the user should see "&lt;expected_result&gt;"
+  And the page URL should contain "&lt;expected_url&gt;"
+
+  Examples: Valid and invalid credentials
+    | email              | password       | expected_result       | expected_url |
+    | john@example.com   | SecurePass@123 | Welcome dashboard     | /dashboard   |
+    | wrong@test.com     | anypassword    | Invalid credentials   | /login       |
+    | john@example.com   | wrongpass      | Invalid credentials   | /login       |
+    |                    | SecurePass@123 | Email is required     | /login       |
+
+  Examples: Locked and expired accounts
+    | email              | password       | expected_result              | expected_url |
+    | locked@example.com | AnyPass@123    | Account locked               | /login       |
+    | expired@example.com| OldPass@123    | Password expired             | /reset       |</code></pre>
+
+<h4>2. Registration with Various Data Combinations</h4>
+<pre><code>@registration @data-driven
+Scenario Outline: Registration form validation
+  Given the user is on the registration page
+  When the user enters first name "&lt;first_name&gt;"
+  And the user enters email "&lt;email&gt;"
+  And the user enters password "&lt;password&gt;"
+  And the user enters confirm password "&lt;confirm_password&gt;"
+  And the user clicks "Register"
+  Then the registration result should be "&lt;result&gt;"
+  And the message should contain "&lt;message&gt;"
+
+  Examples:
+    | first_name | email              | password       | confirm_password | result  | message                    |
+    | John       | john@test.com      | SecurePass@123 | SecurePass@123   | success | Verification email sent    |
+    | J          | john@test.com      | SecurePass@123 | SecurePass@123   | failure | Name must be 2+ characters |
+    | John       | invalid-email      | SecurePass@123 | SecurePass@123   | failure | Valid email required       |
+    | John       | john@test.com      | short          | short            | failure | Password min 8 characters  |
+    | John       | john@test.com      | SecurePass@123 | DifferentPass    | failure | Passwords do not match     |</code></pre>
+
+<h4>3. Search with Different Keywords and Expected Results</h4>
+<pre><code>@search @data-driven
+Scenario Outline: Product search returns expected results
+  Given the product catalog is loaded
+  When the user searches for "&lt;keyword&gt;"
+  Then the result count should be &lt;min_results&gt;
+  And the top result should contain "&lt;expected_in_title&gt;"
+
+  Examples:
+    | keyword              | min_results | expected_in_title    |
+    | laptop               | 5           | laptop               |
+    | wireless mouse       | 3           | mouse                |
+    | USB-C cable          | 1           | USB                  |
+    | xyznonexistent999    | 0           | No results           |</code></pre>
+
+<h4>4. Price Calculation with Quantities and Discounts</h4>
+<pre><code>@checkout @pricing @data-driven
+Scenario Outline: Order total calculation with discounts
+  Given the product "&lt;product&gt;" is priced at $&lt;unit_price&gt;
+  And a coupon "&lt;coupon&gt;" provides &lt;discount_pct&gt;% discount
+  When the user adds &lt;quantity&gt; items to the cart
+  And the user applies coupon "&lt;coupon&gt;"
+  Then the subtotal should be $&lt;subtotal&gt;
+  And the discount should be $&lt;discount&gt;
+  And the order total should be $&lt;total&gt;
+
+  Examples:
+    | product  | unit_price | quantity | coupon  | discount_pct | subtotal | discount | total  |
+    | Widget   | 50         | 2        | SAVE10  | 10           | 100.00   | 10.00    | 90.00  |
+    | Widget   | 50         | 1        | NONE    | 0            | 50.00    | 0.00     | 50.00  |
+    | Gadget   | 200        | 3        | SAVE20  | 20           | 600.00   | 120.00   | 480.00 |
+    | Gadget   | 200        | 5        | BULK15  | 15           | 1000.00  | 150.00   | 850.00 |</code></pre>
+
+<h3>Examples Table: Column Headers as Placeholders</h3>
+<p>Column headers in the Examples table (without angle brackets) map directly to placeholders in the Scenario Outline (with angle brackets):</p>
+<pre><code>Scenario Outline: Placeholder mapping
+  When the user enters "&lt;username&gt;"     ← placeholder
+  Then the result is "&lt;expected&gt;"       ← placeholder
+
+  Examples:
+    | username | expected  |            ← column headers = placeholder names
+    | john     | success   |
+    | jane     | success   |</code></pre>
+
+<h3>Multiple Examples Tables in One Scenario Outline</h3>
+<pre><code>Scenario Outline: Cross-browser login verification
+  Given the user opens the app in &lt;browser&gt;
+  When the user logs in with valid credentials
+  Then the dashboard should load within &lt;timeout&gt; seconds
+
+  @chrome
+  Examples: Chrome browser
+    | browser | timeout |
+    | chrome  | 5       |
+    | chrome  | 3       |
+
+  @firefox
+  Examples: Firefox browser
+    | browser | timeout |
+    | firefox | 8       |
+    | firefox | 5       |
+
+  @edge
+  Examples: Edge browser
+    | browser | timeout |
+    | edge    | 6       |</code></pre>
+
+<h3>Scenario Outline vs Data Tables Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Criteria</th><th>Scenario Outline + Examples</th><th>Data Tables in Steps</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Scope</strong></td><td>Entire scenario executed per row</td><td>Data passed to a single step</td></tr>
+<tr><td><strong>Placeholders</strong></td><td><code>&lt;name&gt;</code> in any step in the outline</td><td>Table rows passed as DataTable parameter</td></tr>
+<tr><td><strong>Report granularity</strong></td><td>Each row = separate scenario in reports</td><td>One scenario regardless of table size</td></tr>
+<tr><td><strong>Use case</strong></td><td>Same behavior, different input/output pairs</td><td>Structured data for one action (form fill, list selection)</td></tr>
+<tr><td><strong>Step definition</strong></td><td>Standard parameters from placeholders</td><td>DataTable parameter with asMaps()/asList()</td></tr>
+<tr><td><strong>Multiple tables</strong></td><td>Multiple Examples sections per outline</td><td>Multiple Data Tables in different steps</td></tr>
+<tr><td><strong>Readability</strong></td><td>High for business — data visible in feature file</td><td>High for complex form data within a step</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>When to Use Scenario Outline vs DataProvider</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Use Scenario Outline When</th><th>Use TestNG DataProvider When</th></tr>
+</thead>
+<tbody>
+<tr><td>Data is business-meaningful and PO should review it</td><td>Data is technical (API payloads, binary inputs)</td></tr>
+<tr><td>Same Gherkin steps apply to all data rows</td><td>Test logic varies significantly per data set</td></tr>
+<tr><td>Living documentation needs to show data examples</td><td>Large datasets (100+ rows) from Excel/CSV/DB</td></tr>
+<tr><td>Small to medium datasets (&lt; 50 rows)</td><td>Performance-critical execution needing fine control</td></tr>
+<tr><td>BDD workflow with Three Amigos review</td><td>Non-BDD TestNG tests without Gherkin layer</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Performance Considerations with Many Examples</h3>
+<ul>
+<li><strong>Each Examples row = one full scenario execution</strong> — 100 rows means 100 browser startups if not optimized.</li>
+<li><strong>Use Background wisely</strong> — heavy Background steps multiply across all rows.</li>
+<li><strong>Tag subsets</strong> — Run full Examples only in regression; use @smoke with fewer rows for CI.</li>
+<li><strong>Parallel execution</strong> — TestNG parallel DataProvider runs outline rows concurrently.</li>
+<li><strong>Large datasets</strong> — For 100+ combinations, consider TestNG DataProvider reading from CSV instead of inline Examples.</li>
+<li><strong>Session reuse</strong> — Use @Before hooks to reuse browser sessions where safe, reducing startup overhead.</li>
+</ul>
+
+<h3>Interview Q&amp;A — Scenario Outline &amp; Data-Driven BDD</h3>
+
+<h4>Q1. What is Scenario Outline?</h4>
+<p><strong>Answer:</strong> A parameterized scenario template with placeholders (&lt;name&gt;) filled by an Examples table. Cucumber runs one scenario execution per row, enabling data-driven BDD testing.</p>
+
+<h4>Q2. How do placeholders work?</h4>
+<p><strong>Answer:</strong> Placeholders in angle brackets in the Scenario Outline match column headers in the Examples table. Each row provides values substituted into all steps before execution.</p>
+
+<h4>Q3. Can a Scenario Outline have multiple Examples tables?</h4>
+<p><strong>Answer:</strong> Yes. Each named Examples section adds rows. Useful for grouping data by browser, environment, or test category. All rows execute as separate scenarios.</p>
+
+<h4>Q4. Scenario Outline vs Data Tables — when to use which?</h4>
+<p><strong>Answer:</strong> Scenario Outline when the entire scenario repeats with different data (login attempts). Data Tables when structured data is passed to a single step (form fields, product lists).</p>
+
+<h4>Q5. How many Examples rows is too many?</h4>
+<p><strong>Answer:</strong> Beyond 50 rows, consider external data sources (CSV, database) with TestNG DataProvider. Inline Examples are best for 5–30 business-meaningful combinations reviewable by PO.</p>
+
+<h4>Q6. Do Examples table values support expressions?</h4>
+<p><strong>Answer:</strong> No. Examples values are literal strings substituted into steps. Calculations and dynamic data should happen in step definitions, not in the Examples table.</p>
+
+<h4>Q7. How are Scenario Outline rows reported?</h4>
+<p><strong>Answer:</strong> Each row appears as a separate scenario in Cucumber reports: "Login attempt with various credentials — Example #1.1". Failures pinpoint the exact data row.</p>
+
+<h4>Q8. Can placeholders appear in Scenario Outline title?</h4>
+<p><strong>Answer:</strong> Yes. <code>Scenario Outline: Login with &lt;email&gt;</code> substitutes the value in reports, making failures easier to identify.</p>
+
+<h4>Q9. How do you skip specific Examples rows?</h4>
+<p><strong>Answer:</strong> Tag individual Examples sections (not rows). To skip rows, remove them or comment out. Cucumber doesn't support row-level tags within Examples.</p>
+
+<h4>Q10. Scenario Outline with TestNG parallel execution?</h4>
+<p><strong>Answer:</strong> Override scenarios() with @DataProvider(parallel = true). Each Examples row runs as an independent parallel test. Configure thread count in suite XML or surefire plugin.</p>
+
+<h4>Q11. What is the difference between Scenario Outline and repeating Scenarios?</h4>
+<p><strong>Answer:</strong> Scenario Outline avoids duplication — one step template, multiple data rows. Separate scenarios duplicate steps, increasing maintenance when steps change. Outline is DRY; separate scenarios are more readable for vastly different flows.</p>
+
+<h4>Q12. Can Examples data come from external files?</h4>
+<p><strong>Answer:</strong> Not natively in Gherkin. Examples must be inline in the feature file. For external data, use TestNG DataProvider or custom Cucumber plugins. Some teams generate feature files from CSV in build pipelines.</p>
+</section>
+
+<!-- SECTION 23: CUCUMBER TAGS -->
+<section id="section-23" class="section-card">
+<h2>Section 23: Cucumber Tags</h2>
+
+<h3>What are Tags?</h3>
+<p><strong>Tags</strong> are labels attached to Feature files and Scenarios that serve as metadata for organizing, filtering, and controlling test execution. Tags enable selective running of test subsets without modifying feature files or step definitions.</p>
+
+<div class="callout">
+<strong>Syntax:</strong> Tags start with <code>@</code> and appear on the line immediately before Feature, Scenario, or Scenario Outline. Multiple tags are space-separated: <code>@smoke @login @JIRA-1234</code>.
+</div>
+
+<h3>Tag Syntax</h3>
+<pre><code>@smoke @login @JIRA-5678
+Feature: User Login
+  ...
+
+  @negative
+  Scenario: Invalid password login
+    ...
+
+  @positive @critical
+  Scenario: Successful login
+    ...</code></pre>
+
+<h3>Common Tag Conventions</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Category</th><th>Tags</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Test Suite</strong></td><td>@smoke, @regression, @sanity, @critical</td><td>Define which suite a scenario belongs to</td></tr>
+<tr><td><strong>Test Layer</strong></td><td>@api, @ui, @db, @e2e</td><td>Indicate the testing layer or technology</td></tr>
+<tr><td><strong>Status</strong></td><td>@wip, @skip, @broken, @manual</td><td>Control execution status and track work</td></tr>
+<tr><td><strong>Traceability</strong></td><td>@sprint-42, @JIRA-1234, @US-567</td><td>Link scenarios to sprint, ticket, or user story</td></tr>
+<tr><td><strong>Feature Area</strong></td><td>@login, @checkout, @search, @payment</td><td>Group by functional area</td></tr>
+<tr><td><strong>Environment</strong></td><td>@staging-only, @prod-safe, @local</td><td>Environment-specific execution control</td></tr>
+<tr><td><strong>Speed</strong></td><td>@fast, @slow</td><td>Identify scenarios by execution time for CI optimization</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Tag Expressions in Runner</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Expression</th><th>Description</th><th>Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td><code>tags = "@smoke"</code></td><td>Run only @smoke scenarios</td><td>CI pipeline on every commit</td></tr>
+<tr><td><code>tags = "@smoke and @login"</code></td><td>Intersection — both tags required</td><td>Smoke test login functionality only</td></tr>
+<tr><td><code>tags = "@smoke or @critical"</code></td><td>Union — either tag matches</td><td>Priority tests for pre-release</td></tr>
+<tr><td><code>tags = "not @skip"</code></td><td>Exclusion — skip tagged scenarios</td><td>Run everything except skipped</td></tr>
+<tr><td><code>tags = "@regression and not @broken"</code></td><td>Complex — regression minus broken</td><td>Nightly regression excluding known failures</td></tr>
+<tr><td><code>tags = "(@smoke or @sanity) and not @wip"</code></td><td>Grouped with parentheses</td><td>Quick validation excluding WIP</td></tr>
+<tr><td><code>tags = "@api and @JIRA-1234"</code></td><td>Feature + ticket filter</td><td>Run tests for specific bug fix</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Tag Inheritance</h3>
+<p>Tags at the Feature level are <strong>inherited</strong> by all scenarios and scenario outlines within that feature. Scenario-level tags are added to (not replacing) inherited tags.</p>
+
+<pre><code>@regression @checkout          ← Feature-level tags (inherited)
+Feature: E-Commerce Checkout
+
+  @smoke                         ← Scenario inherits: @regression @checkout @smoke
+  Scenario: Complete purchase
+    ...
+
+  @negative @payment             ← Inherits: @regression @checkout @negative @payment
+  Scenario: Declined payment
+    ...</code></pre>
+
+<div class="callout">
+<strong>Filtering:</strong> <code>tags = "@smoke and @regression"</code> matches the first scenario above because it inherits @regression from the Feature and has its own @smoke tag.
+</div>
+
+<h3>Jenkins Parameter Integration</h3>
+<pre><code># Jenkinsfile — parameterized tag execution
+pipeline {
+    parameters {
+        choice(name: 'TEST_TAGS', choices: ['@smoke', '@regression', '@sanity'], description: 'Tag to run')
+    }
+    stages {
+        stage('Test') {
+            steps {
+                sh "mvn test -Dcucumber.filter.tags=${params.TEST_TAGS}"
+            }
+        }
+    }
+}
+
+# Command line override
+mvn test -Dcucumber.filter.tags="@smoke and not @skip"
+mvn test -Dcucumber.filter.tags="@regression and @checkout"
+mvn test -Dcucumber.filter.tags="not @wip and not @broken"</code></pre>
+
+<h3>Tag-Based Hooks</h3>
+<p>Hooks can be conditional on tags, running only for scenarios matching the tag expression:</p>
+<pre><code>public class Hooks {
+
+    @Before("@ui")
+    public void setUpBrowser() {
+        DriverFactory.initBrowser("chrome");
+    }
+
+    @Before("@api")
+    public void setUpApiContext() {
+        RestAssured.baseURI = Config.getBaseUrl();
+    }
+
+    @After("@ui")
+    public void tearDownBrowser(Scenario scenario) {
+        if (scenario.isFailed()) {
+            Screenshots.capture(scenario);
+        }
+        DriverFactory.quitDriver();
+    }
+
+    @Before("@db")
+    public void setUpDatabase() {
+        DatabaseHelper.resetTestData();
+    }
+
+    @Before("@login")
+    public void ensureLoginPageReady() {
+        // Runs only for scenarios tagged @login
+        loginPage.navigateTo("/login");
+    }
+}</code></pre>
+
+<h3>Tag Strategy for a Real Project</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Tag</th><th>Purpose</th><th>When Added</th><th>Who Uses</th></tr>
+</thead>
+<tbody>
+<tr><td><code>@smoke</code></td><td>Critical path tests for CI gate</td><td>During Three Amigos — identified as must-pass</td><td>DevOps (CI), QA Lead</td></tr>
+<tr><td><code>@regression</code></td><td>Full regression suite for nightly runs</td><td>When scenario is stable and approved</td><td>QA Team, CI (nightly)</td></tr>
+<tr><td><code>@wip</code></td><td>Work in progress — not ready for CI</td><td>During development of new scenario</td><td>SDET (removed when done)</td></tr>
+<tr><td><code>@skip</code></td><td>Temporarily disabled scenario</td><td>When feature is deprecated or blocked</td><td>QA Lead (with Jira link)</td></tr>
+<tr><td><code>@broken</code></td><td>Known failure — bug logged</td><td>When a bug is found but not yet fixed</td><td>SDET, QA Lead</td></tr>
+<tr><td><code>@JIRA-1234</code></td><td>Traceability to specific ticket</td><td>During sprint planning with user story</td><td>PO, QA, Dev</td></tr>
+<tr><td><code>@api</code></td><td>API-level test (no browser)</td><td>When scenario tests REST/GraphQL endpoints</td><td>SDET, Dev</td></tr>
+<tr><td><code>@ui</code></td><td>Browser-based UI test</td><td>When scenario requires Selenium/Playwright</td><td>SDET</td></tr>
+<tr><td><code>@critical</code></td><td>Business-critical functionality</td><td>PO identifies as revenue/compliance critical</td><td>PO, QA Lead</td></tr>
+<tr><td><code>@sprint-42</code></td><td>Sprint-specific new tests</td><td>Sprint planning for new features</td><td>Scrum Team</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Tag Best Practices</h3>
+<ul>
+<li><strong>Define a tag catalog</strong> — Document all approved tags and their meanings in the project wiki or README.</li>
+<li><strong>Every scenario gets a suite tag</strong> — At minimum @smoke or @regression on every scenario.</li>
+<li><strong>Don't over-tag</strong> — 2–4 tags per scenario is sufficient. Too many tags make filtering confusing.</li>
+<li><strong>Remove @wip promptly</strong> — WIP tags left after completion cause scenarios to be excluded from CI.</li>
+<li><strong>@broken requires a Jira ticket</strong> — Never tag as broken without a linked defect.</li>
+<li><strong>Consistent naming</strong> — lowercase, hyphen-separated: @user-login not @UserLogin or @user_login.</li>
+<li><strong>Feature tags for broad filtering</strong> — @checkout on Feature level avoids tagging every scenario individually.</li>
+</ul>
+
+<h3>Interview Q&amp;A — Cucumber Tags</h3>
+
+<h4>Q1. What are Cucumber tags?</h4>
+<p><strong>Answer:</strong> Metadata labels (@tagname) attached to features and scenarios for organizing, filtering, and controlling test execution. They enable selective running of test subsets via tag expressions in the runner or command line.</p>
+
+<h4>Q2. How does tag inheritance work?</h4>
+<p><strong>Answer:</strong> Tags on a Feature are inherited by all scenarios within that feature. Scenario-level tags are additive. A scenario tagged @smoke in a Feature tagged @regression effectively has both tags.</p>
+
+<h4>Q3. Explain tag expression operators.</h4>
+<p><strong>Answer:</strong> AND (intersection — both tags required), OR (union — either tag), NOT (exclusion). Precedence: not > and > or. Parentheses for grouping: (@smoke or @sanity) and not @skip.</p>
+
+<h4>Q4. How do you run specific tags from the command line?</h4>
+<p><strong>Answer:</strong> <code>mvn test -Dcucumber.filter.tags="@smoke and not @skip"</code>. This overrides the tags attribute in @CucumberOptions at runtime.</p>
+
+<h4>Q5. What is the difference between @skip and @wip?</h4>
+<p><strong>Answer:</strong> @wip marks scenarios under active development — not yet ready. @skip marks stable scenarios temporarily disabled (deprecated feature, blocked dependency). Both exclude from default CI runs via not @skip and not @wip filters.</p>
+
+<h4>Q6. How do tag-based hooks work?</h4>
+<p><strong>Answer:</strong> @Before("@ui") runs before scenarios tagged @ui. @After("@api") runs after API scenarios. Enables conditional setup/teardown without affecting all scenarios.</p>
+
+<h4>Q7. Can you tag individual rows in Examples tables?</h4>
+<p><strong>Answer:</strong> No. Tags apply to Feature, Scenario, or Scenario Outline level. Individual Examples sections can be named but not tagged separately. To skip rows, remove them from the table.</p>
+
+<h4>Q8. How do you design a tag strategy for CI/CD?</h4>
+<p><strong>Answer:</strong> @smoke on every commit (5–15 min), @regression nightly (full suite), @critical before release, not @skip and not @wip and not @broken on all CI runs. Jenkins parameterized with tag choice for on-demand runs.</p>
+
+<h4>Q9. What tags do you use for traceability?</h4>
+<p><strong>Answer:</strong> @JIRA-XXXX linking to tickets, @sprint-XX for sprint tracking, @US-XXX for user story IDs. Enables filtering tests by requirement and verifying coverage per story.</p>
+
+<h4>Q10. How many tags should a scenario have?</h4>
+<p><strong>Answer:</strong> 2–4 tags typically: one suite tag (@smoke/@regression), one feature tag (@login), one traceability tag (@JIRA-XXX), optionally one layer tag (@ui/@api). More tags create filtering complexity without added value.</p>
+</section>

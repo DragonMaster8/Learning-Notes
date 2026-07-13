@@ -1,0 +1,2380 @@
+<!-- TestNG Sections 8-15: Parameterization through Interview Questions -->
+
+<section id="section-8" class="section-card">
+<h2>Section 8: Parameterization</h2>
+
+<h3>8.1 @Parameters Annotation — Reading from testng.xml</h3>
+
+<p>TestNG's <code>@Parameters</code> annotation injects values defined in <code>testng.xml</code> directly into test method parameters at runtime. This is ideal for environment-specific configuration such as browser name, base URL, or credentials that change per suite but remain static for a given run.</p>
+
+<h4>Syntax</h4>
+<pre><code>@Test
+@Parameters({"paramName1", "paramName2"})
+public void myTest(String param1, int param2) {
+    // use param1, param2
+}</code></pre>
+
+<h4>Single Parameter</h4>
+<pre><code>// testng.xml
+&lt;parameter name="browser" value="chrome"/&gt;
+
+// Test class
+@Test
+@Parameters("browser")
+public void launchBrowser(String browser) {
+    System.out.println("Running on: " + browser);
+}</code></pre>
+
+<h4>Multiple Parameters</h4>
+<pre><code>// testng.xml
+&lt;parameter name="username" value="admin"/&gt;
+&lt;parameter name="password" value="secret123"/&gt;
+
+// Test class
+@Test
+@Parameters({"username", "password"})
+public void testLogin(String username, String password) {
+    loginPage.login(username, password);
+    Assert.assertTrue(dashboardPage.isDisplayed());
+}</code></pre>
+
+<h4>testng.xml &lt;parameter&gt; Tag</h4>
+<p>Parameters can be declared at <strong>suite level</strong> (inherited by all tests) or <strong>test level</strong> (overrides suite-level values for that test block).</p>
+<pre><code>&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="Login Suite"&gt;
+    &lt;parameter name="baseUrl" value="https://qa.example.com"/&gt;
+    &lt;test name="Login Tests"&gt;
+        &lt;parameter name="username" value="testuser"/&gt;
+        &lt;parameter name="password" value="Pass@123"/&gt;
+        &lt;classes&gt;
+            &lt;class name="com.example.tests.LoginTest"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h4>Complete Code Example</h4>
+<pre><code>// LoginTest.java
+package com.example.tests;
+
+import org.testng.Assert;
+import org.testng.annotations.Parameters;
+import org.testng.annotations.Test;
+
+public class LoginTest {
+
+    @Test
+    @Parameters({"baseUrl", "username", "password"})
+    public void verifyLogin(String baseUrl, String username, String password) {
+        driver.get(baseUrl + "/login");
+        driver.findElement(By.id("username")).sendKeys(username);
+        driver.findElement(By.id("password")).sendKeys(password);
+        driver.findElement(By.id("submit")).click();
+        Assert.assertTrue(driver.getCurrentUrl().contains("dashboard"));
+    }
+}</code></pre>
+
+<div class="callout">
+<strong>Limitations of @Parameters:</strong> Values are static strings defined in XML — no dynamic computation. Cannot easily read from Excel, JSON, or databases. Parameter count and order must exactly match the method signature. Not suitable for data-driven testing with multiple data sets per method.
+</div>
+
+<h3>8.2 @DataProvider — Method-Level Data Injection</h3>
+
+<p><code>@DataProvider</code> supplies two-dimensional arrays of objects to test methods, enabling true data-driven testing with multiple iterations per test method.</p>
+
+<h4>Return Type: Object[][]</h4>
+<pre><code>@DataProvider(name = "loginData")
+public Object[][] getLoginData() {
+    return new Object[][] {
+        {"validUser",   "Pass@123", true},
+        {"invalidUser", "wrong",    false},
+        {"",            "Pass@123", false},
+        {"validUser",   "",         false}
+    };
+}</code></pre>
+
+<h4>Linking DataProvider to Test Method</h4>
+<pre><code>@Test(dataProvider = "loginData")
+public void testLogin(String username, String password, boolean expectedResult) {
+    boolean actual = loginPage.login(username, password);
+    Assert.assertEquals(actual, expectedResult);
+}</code></pre>
+
+<h4>Complete Code: DataProvider + Test Method</h4>
+<pre><code>package com.example.tests;
+
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+public class LoginDataDrivenTest {
+
+    @DataProvider(name = "loginData")
+    public Object[][] loginDataProvider() {
+        return new Object[][] {
+            {"admin",    "admin123",  true},
+            {"guest",    "guest123",  true},
+            {"hacker",   "badpass",   false},
+            {"locked",   "locked123", false}
+        };
+    }
+
+    @Test(dataProvider = "loginData")
+    public void testLoginScenarios(String user, String pass, boolean shouldSucceed) {
+        LoginPage page = new LoginPage(driver);
+        page.enterCredentials(user, pass);
+        page.clickLogin();
+        if (shouldSucceed) {
+            Assert.assertTrue(page.isDashboardVisible(), "Expected success for: " + user);
+        } else {
+            Assert.assertTrue(page.isErrorDisplayed(), "Expected failure for: " + user);
+        }
+    }
+}</code></pre>
+
+<h4>DataProvider from External Sources</h4>
+<pre><code>// Reading from Excel
+@DataProvider(name = "excelData")
+public Object[][] readFromExcel() throws IOException {
+    ExcelReader reader = new ExcelReader("testdata/login.xlsx", "Sheet1");
+    return reader.getSheetData();
+}
+
+// Reading from JSON
+@DataProvider(name = "jsonData")
+public Object[][] readFromJson() throws IOException {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode root = mapper.readTree(new File("testdata/users.json"));
+    Object[][] data = new Object[root.size()][2];
+    for (int i = 0; i &lt; root.size(); i++) {
+        data[i][0] = root.get(i).get("username").asText();
+        data[i][1] = root.get(i).get("password").asText();
+    }
+    return data;
+}
+
+// Reading from CSV
+@DataProvider(name = "csvData")
+public Object[][] readFromCsv() throws IOException {
+    List&lt;String[]&gt; rows = Files.readAllLines(Paths.get("testdata/data.csv"))
+        .stream().skip(1).map(l -&gt; l.split(",")).collect(Collectors.toList());
+    return rows.toArray(new Object[0][]);
+}
+
+// Reading from Database
+@DataProvider(name = "dbData")
+public Object[][] readFromDB() throws SQLException {
+    Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+    Statement stmt = conn.createStatement();
+    ResultSet rs = stmt.executeQuery("SELECT username, password FROM test_users");
+    List&lt;Object[]&gt; list = new ArrayList&lt;&gt;();
+    while (rs.next()) {
+        list.add(new Object[]{rs.getString("username"), rs.getString("password")});
+    }
+    conn.close();
+    return list.toArray(new Object[0][]);
+}</code></pre>
+
+<h4>DataProvider in a Separate Class</h4>
+<pre><code>// LoginDataProvider.java
+public class LoginDataProvider {
+    @DataProvider(name = "loginData")
+    public static Object[][] getData() {
+        return new Object[][] {{"user1", "pass1"}, {"user2", "pass2"}};
+    }
+}
+
+// LoginTest.java — use dataProviderClass attribute
+@Test(dataProvider = "loginData", dataProviderClass = LoginDataProvider.class)
+public void testLogin(String user, String pass) { /* ... */ }</code></pre>
+
+<h3>8.3 @DataProvider vs @Parameters Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>@Parameters</th><th>@DataProvider</th></tr>
+</thead>
+<tbody>
+<tr><td>Data source</td><td>testng.xml &lt;parameter&gt; tags</td><td>Java method returning Object[][]</td></tr>
+<tr><td>Data type</td><td>String only (auto-converted to primitives)</td><td>Any Java object type</td></tr>
+<tr><td>Multiple iterations</td><td>No — one value set per test run</td><td>Yes — runs test once per row</td></tr>
+<tr><td>Dynamic data</td><td>Static XML values only</td><td>Can read Excel, JSON, DB, APIs at runtime</td></tr>
+<tr><td>Scope</td><td>Suite/test level in XML</td><td>Method level in Java code</td></tr>
+<tr><td>Reusability</td><td>Shared via XML across classes</td><td>Shared via dataProviderClass attribute</td></tr>
+<tr><td>Complexity</td><td>Simple — good for config values</td><td>More code — ideal for data-driven tests</td></tr>
+<tr><td>Parallel execution</td><td>Same parameter for all threads</td><td>Each iteration can run in parallel</td></tr>
+<tr><td>Best use case</td><td>Environment URL, browser name</td><td>Login credentials matrix, form validation</td></tr>
+<tr><td>External file support</td><td>Not natively supported</td><td>Fully supported via custom reader utilities</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>8.4 Real Framework Pattern: Excel DataProvider Utility</h3>
+<pre><code>// ExcelDataProvider.java
+package com.example.dataproviders;
+
+import com.example.utils.ExcelReader;
+import org.testng.annotations.DataProvider;
+
+public class ExcelDataProvider {
+
+    private static final String FILE = "src/test/resources/testdata/TestData.xlsx";
+
+    @DataProvider(name = "loginExcel")
+    public static Object[][] loginExcelData() {
+        ExcelReader reader = new ExcelReader(FILE, "Login");
+        int rowCount = reader.getRowCount();
+        Object[][] data = new Object[rowCount - 1][3];
+        for (int i = 1; i &lt; rowCount; i++) {
+            data[i - 1][0] = reader.getCellData(i, 0); // username
+            data[i - 1][1] = reader.getCellData(i, 1); // password
+            data[i - 1][2] = reader.getCellData(i, 2); // expected
+        }
+        return data;
+    }
+}
+
+// Usage in test class
+@Test(dataProvider = "loginExcel", dataProviderClass = ExcelDataProvider.class)
+public void testLoginFromExcel(String user, String pass, String expected) {
+    // test logic
+}</code></pre>
+
+<h3>8.5 Dynamic Test Data Generation with Faker</h3>
+<pre><code>// pom.xml dependency
+// &lt;dependency&gt;
+//   &lt;groupId&gt;com.github.javafaker&lt;/groupId&gt;
+//   &lt;artifactId&gt;javafaker&lt;/artifactId&gt;
+//   &lt;version&gt;1.0.2&lt;/version&gt;
+// &lt;/dependency&gt;
+
+import com.github.javafaker.Faker;
+
+@DataProvider(name = "randomUsers")
+public Object[][] generateRandomUsers() {
+    Faker faker = new Faker();
+    Object[][] data = new Object[5][3];
+    for (int i = 0; i &lt; 5; i++) {
+        data[i][0] = faker.name().fullName();
+        data[i][1] = faker.internet().emailAddress();
+        data[i][2] = faker.phoneNumber().cellPhone();
+    }
+    return data;
+}
+
+@Test(dataProvider = "randomUsers")
+public void testRegistration(String name, String email, String phone) {
+    registrationPage.fillForm(name, email, phone);
+    Assert.assertTrue(registrationPage.isSuccessMessageDisplayed());
+}</code></pre>
+
+<h3>8.6 Interview Q&amp;A — Parameterization</h3>
+
+<h4>Q1: What is the difference between @Parameters and @DataProvider?</h4>
+<p><strong>Answer:</strong> @Parameters reads static string values from testng.xml and injects them as method arguments — one execution per test. @DataProvider is a Java method returning Object[][] that supplies multiple data sets, causing the test to run once per row. @Parameters suits configuration; @DataProvider suits data-driven testing.</p>
+<p><em>Interviewer expects:</em> Clear distinction between static XML config and dynamic Java-based data injection.</p>
+
+<h4>Q2: Can @Parameters pass non-String values?</h4>
+<p><strong>Answer:</strong> XML values are always strings, but TestNG auto-converts them to matching parameter types (int, boolean, etc.) if the conversion is supported. Complex objects cannot be passed via @Parameters — use @DataProvider instead.</p>
+<p><em>Interviewer expects:</em> Awareness of type conversion limits and when to switch approaches.</p>
+
+<h4>Q3: What is the return type of a DataProvider method?</h4>
+<p><strong>Answer:</strong> Object[][] — a two-dimensional array where each inner array represents one iteration's arguments. Alternatively, Iterator&lt;Object[]&gt; can be used for lazy/large data sets to avoid loading everything into memory at once.</p>
+<p><em>Interviewer expects:</em> Knowledge of Iterator alternative for memory efficiency.</p>
+
+<h4>Q4: How do you use a DataProvider from another class?</h4>
+<p><strong>Answer:</strong> Define the @DataProvider in a separate class and reference it with <code>dataProviderClass</code>: <code>@Test(dataProvider = "name", dataProviderClass = OtherClass.class)</code>. The DataProvider method can be static or instance method in the other class.</p>
+<p><em>Interviewer expects:</em> Practical knowledge of separating data from test logic.</p>
+
+<h4>Q5: Can a DataProvider method depend on another DataProvider?</h4>
+<p><strong>Answer:</strong> Not directly via annotation chaining, but a DataProvider method can call another method or utility to build its data. You can also use @Factory with DataProvider for dynamic test class instantiation.</p>
+<p><em>Interviewer expects:</em> Understanding of @Factory as an advanced alternative.</p>
+
+<h4>Q6: How does TestNG match DataProvider columns to test method parameters?</h4>
+<p><strong>Answer:</strong> By position — the first element in each Object[] maps to the first method parameter, second to second, and so on. The number of elements per row must match the number of test method parameters or TestNG throws an exception.</p>
+<p><em>Interviewer expects:</em> Positional mapping awareness and error handling knowledge.</p>
+
+<h4>Q7: Can you run DataProvider iterations in parallel?</h4>
+<p><strong>Answer:</strong> Yes. Set <code>parallel="methods"</code> in testng.xml with an appropriate thread-count. Each DataProvider iteration is treated as a separate method invocation and can run concurrently if thread-safe.</p>
+<p><em>Interviewer expects:</em> Connection to parallel execution and thread safety concerns.</p>
+
+<h4>Q8: What happens if a DataProvider throws an exception?</h4>
+<p><strong>Answer:</strong> TestNG marks all dependent tests as SKIPPED and reports the DataProvider failure in the test results. The test method itself never executes. Fix the data source or exception in the provider method.</p>
+<p><em>Interviewer expects:</em> Understanding of TestNG failure propagation from providers.</p>
+
+<h4>Q9: How do you pass parameters at suite level vs test level?</h4>
+<p><strong>Answer:</strong> Declare &lt;parameter&gt; inside &lt;suite&gt; for global values inherited by all tests. Declare inside &lt;test&gt; to override or scope values to that test block only. Test-level parameters take precedence over suite-level.</p>
+<p><em>Interviewer expects:</em> XML hierarchy and override behavior knowledge.</p>
+
+<h4>Q10: Can one test method use multiple DataProviders?</h4>
+<p><strong>Answer:</strong> No — a test method can reference only one DataProvider via the dataProvider attribute. To combine data sources, merge them inside a single DataProvider method or use a utility that aggregates multiple sources into one Object[][].</p>
+<p><em>Interviewer expects:</em> Practical workaround for combining data sources.</p>
+
+<h4>Q11: What is the purpose of the name attribute in @DataProvider?</h4>
+<p><strong>Answer:</strong> It assigns a logical name used by @Test(dataProvider = "name") to link the provider to the test. If omitted, the method name becomes the default provider name. Explicit naming improves readability in large frameworks.</p>
+<p><em>Interviewer expects:</em> Naming conventions in enterprise frameworks.</p>
+
+<h4>Q12: How do you read test data from Excel in a DataProvider?</h4>
+<p><strong>Answer:</strong> Use Apache POI to open the workbook, iterate rows/columns, and populate Object[][]. Encapsulate reading logic in an ExcelReader utility class. Keep the DataProvider thin — delegate file I/O to the utility for maintainability.</p>
+<p><em>Interviewer expects:</em> Apache POI familiarity and separation of concerns.</p>
+
+<h4>Q13: What is Java Faker and why use it in test automation?</h4>
+<p><strong>Answer:</strong> Java Faker generates realistic random data (names, emails, addresses) programmatically. It eliminates hardcoded test data, prevents data collisions in parallel runs, and supports testing with varied inputs without maintaining large static data files.</p>
+<p><em>Interviewer expects:</em> Modern dynamic data generation approach.</p>
+
+<h4>Q14: Can @Parameters and @DataProvider be used together on the same test?</h4>
+<p><strong>Answer:</strong> Yes. @Parameters values are injected first, followed by DataProvider values. The combined parameter list must match the test method signature order: @Parameters args first, then DataProvider columns.</p>
+<p><em>Interviewer expects:</em> Parameter ordering when combining both mechanisms.</p>
+</section>
+
+<section id="section-9" class="section-card">
+<h2>Section 9: TestNG XML Configuration</h2>
+
+<h3>9.1 testng.xml Structure Overview</h3>
+<p>The TestNG suite XML file is the central configuration hub for test execution. It defines which tests run, execution order, parallelism, parameters, listeners, and group filters.</p>
+
+<div class="ascii-diagram">
+testng.xml hierarchy:
+&lt;!DOCTYPE suite&gt;
+  └── &lt;suite&gt;
+        ├── &lt;parameter&gt;          (suite-level params)
+        ├── &lt;listeners&gt;          (global listeners)
+        ├── &lt;test&gt;               (test block)
+        │     ├── &lt;parameter&gt;    (test-level params)
+        │     ├── &lt;groups&gt;       (include/exclude groups)
+        │     └── &lt;classes&gt;
+        │           └── &lt;class&gt;
+        │                 └── &lt;methods&gt;
+        │                       ├── &lt;include name="..."/&gt;
+        │                       └── &lt;exclude name="..."/&gt;
+        └── &lt;test&gt; ... (more test blocks)
+</div>
+
+<h3>9.2 Complete testng.xml Anatomy (Annotated Example)</h3>
+<pre><code>&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;!-- Suite: top-level container for all tests --&gt;
+&lt;suite name="E-Commerce Regression Suite"
+       parallel="tests"
+       thread-count="3"
+       verbose="2"
+       preserve-order="true"&gt;
+
+    &lt;!-- Suite-level parameter: inherited by all tests --&gt;
+    &lt;parameter name="environment" value="QA"/&gt;
+    &lt;parameter name="baseUrl" value="https://qa.shop.example.com"/&gt;
+
+    &lt;!-- Register listeners globally --&gt;
+    &lt;listeners&gt;
+        &lt;listener class-name="com.example.listeners.ExtentReportListener"/&gt;
+        &lt;listener class-name="com.example.listeners.ScreenshotListener"/&gt;
+    &lt;/listeners&gt;
+
+    &lt;!-- Test block 1: Smoke tests --&gt;
+    &lt;test name="Smoke Tests" parallel="methods" thread-count="2"&gt;
+        &lt;parameter name="browser" value="chrome"/&gt;
+        &lt;groups&gt;
+            &lt;run&gt;
+                &lt;include name="smoke"/&gt;
+            &lt;/run&gt;
+        &lt;/groups&gt;
+        &lt;classes&gt;
+            &lt;class name="com.example.tests.LoginTest"&gt;
+                &lt;methods&gt;
+                    &lt;include name="testValidLogin"/&gt;
+                    &lt;include name="testLogout"/&gt;
+                &lt;/methods&gt;
+            &lt;/class&gt;
+            &lt;class name="com.example.tests.HomePageTest"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+
+    &lt;!-- Test block 2: Full regression --&gt;
+    &lt;test name="Regression Tests"&gt;
+        &lt;groups&gt;
+            &lt;run&gt;
+                &lt;include name="regression"/&gt;
+                &lt;exclude name="wip"/&gt;
+            &lt;/run&gt;
+        &lt;/groups&gt;
+        &lt;packages&gt;
+            &lt;package name="com.example.tests"/&gt;
+        &lt;/packages&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>9.3 Suite-Level Attributes</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Attribute</th><th>Values</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>name</td><td>String</td><td>Suite name displayed in reports</td></tr>
+<tr><td>parallel</td><td>tests | classes | methods | instances | none</td><td>Parallel execution mode</td></tr>
+<tr><td>thread-count</td><td>Integer</td><td>Max threads for parallel execution</td></tr>
+<tr><td>verbose</td><td>0–10</td><td>Logging verbosity (2 = standard)</td></tr>
+<tr><td>preserve-order</td><td>true | false</td><td>Maintain test order within classes</td></tr>
+<tr><td>configfailurepolicy</td><td>skip | continue</td><td>Behavior when @Before* config fails</td></tr>
+<tr><td>data-provider-thread-count</td><td>Integer</td><td>Threads for DataProvider iterations</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>9.4 Test-Level Attributes</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Attribute</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>name</td><td>Test block name in reports</td></tr>
+<tr><td>parallel</td><td>Overrides suite parallel mode for this test block</td></tr>
+<tr><td>thread-count</td><td>Thread pool size for this test block</td></tr>
+<tr><td>preserve-order</td><td>Order preservation within this test block</td></tr>
+<tr><td>junit</td><td>true to run JUnit tests</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>9.5 Including/Excluding Methods</h3>
+<pre><code>&lt;class name="com.example.tests.CheckoutTest"&gt;
+    &lt;methods&gt;
+        &lt;include name="testAddToCart"/&gt;
+        &lt;include name="testCheckout"/&gt;
+        &lt;exclude name="testPaymentGateway"/&gt;  &lt;!-- temporarily disabled --&gt;
+    &lt;/methods&gt;
+&lt;/class&gt;</code></pre>
+
+<h3>9.6 Including/Excluding Groups</h3>
+<pre><code>&lt;test name="Sanity Run"&gt;
+    &lt;groups&gt;
+        &lt;run&gt;
+            &lt;include name="sanity"/&gt;
+            &lt;include name="smoke"/&gt;
+            &lt;exclude name="broken"/&gt;
+            &lt;exclude name="wip"/&gt;
+        &lt;/run&gt;
+    &lt;/groups&gt;
+    &lt;packages&gt;
+        &lt;package name="com.example.tests.*"/&gt;
+    &lt;/packages&gt;
+&lt;/test&gt;</code></pre>
+
+<h3>9.7 Passing Parameters at Suite/Test Level</h3>
+<pre><code>&lt;suite name="Multi-Env Suite"&gt;
+    &lt;parameter name="dbHost" value="qa-db.example.com"/&gt;
+    &lt;test name="QA Tests"&gt;
+        &lt;parameter name="baseUrl" value="https://qa.example.com"/&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.ApiTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+    &lt;test name="Staging Tests"&gt;
+        &lt;parameter name="baseUrl" value="https://staging.example.com"/&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.ApiTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>9.8 Multiple testng.xml Strategy</h3>
+
+<h4>smoke-suite.xml</h4>
+<pre><code>&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="Smoke Suite" parallel="classes" thread-count="2" verbose="1"&gt;
+    &lt;parameter name="environment" value="QA"/&gt;
+    &lt;listeners&gt;
+        &lt;listener class-name="com.example.listeners.ExtentReportListener"/&gt;
+    &lt;/listeners&gt;
+    &lt;test name="Smoke"&gt;
+        &lt;groups&gt;&lt;run&gt;&lt;include name="smoke"/&gt;&lt;/run&gt;&lt;/groups&gt;
+        &lt;packages&gt;&lt;package name="com.example.tests"/&gt;&lt;/packages&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h4>regression-suite.xml</h4>
+<pre><code>&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="Regression Suite" parallel="methods" thread-count="5" verbose="2"&gt;
+    &lt;parameter name="environment" value="Staging"/&gt;
+    &lt;listeners&gt;
+        &lt;listener class-name="com.example.listeners.ExtentReportListener"/&gt;
+        &lt;listener class-name="com.example.listeners.RetryListener"/&gt;
+    &lt;/listeners&gt;
+    &lt;test name="Regression"&gt;
+        &lt;groups&gt;
+            &lt;run&gt;
+                &lt;include name="regression"/&gt;
+                &lt;exclude name="wip"/&gt;
+            &lt;/run&gt;
+        &lt;/groups&gt;
+        &lt;packages&gt;&lt;package name="com.example.tests"/&gt;&lt;/packages&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h4>cross-browser-suite.xml</h4>
+<pre><code>&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="Cross Browser Suite" parallel="tests" thread-count="3" verbose="2"&gt;
+    &lt;parameter name="environment" value="QA"/&gt;
+    &lt;test name="Chrome Tests" parallel="methods" thread-count="2"&gt;
+        &lt;parameter name="browser" value="chrome"/&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.LoginTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+    &lt;test name="Firefox Tests" parallel="methods" thread-count="2"&gt;
+        &lt;parameter name="browser" value="firefox"/&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.LoginTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+    &lt;test name="Edge Tests" parallel="methods" thread-count="2"&gt;
+        &lt;parameter name="browser" value="edge"/&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.LoginTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>9.9 Environment-Specific XML Files</h3>
+<pre><code>&lt;!-- qa-suite.xml --&gt;
+&lt;suite name="QA Suite"&gt;
+    &lt;parameter name="env" value="QA"/&gt;
+    &lt;parameter name="baseUrl" value="https://qa.example.com"/&gt;
+    &lt;parameter name="dbUrl" value="jdbc:mysql://qa-db:3306/testdb"/&gt;
+&lt;/suite&gt;
+
+&lt;!-- staging-suite.xml --&gt;
+&lt;suite name="Staging Suite"&gt;
+    &lt;parameter name="env" value="Staging"/&gt;
+    &lt;parameter name="baseUrl" value="https://staging.example.com"/&gt;
+    &lt;parameter name="dbUrl" value="jdbc:mysql://staging-db:3306/testdb"/&gt;
+&lt;/suite&gt;
+
+&lt;!-- prod-suite.xml (read-only smoke only!) --&gt;
+&lt;suite name="Prod Smoke Suite"&gt;
+    &lt;parameter name="env" value="Production"/&gt;
+    &lt;parameter name="baseUrl" value="https://www.example.com"/&gt;
+    &lt;test name="Prod Smoke"&gt;
+        &lt;groups&gt;&lt;run&gt;&lt;include name="prod-smoke"/&gt;&lt;/run&gt;&lt;/groups&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.HealthCheckTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>9.10 Maven Surefire Plugin — Specifying Suite XML</h3>
+<pre><code>&lt;!-- pom.xml --&gt;
+&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.2.5&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;suiteXmlFiles&gt;
+                    &lt;suiteXmlFile&gt;testng-suites/smoke-suite.xml&lt;/suiteXmlFile&gt;
+                &lt;/suiteXmlFiles&gt;
+                &lt;parallel&gt;methods&lt;/parallel&gt;
+                &lt;threadCount&gt;4&lt;/threadCount&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;
+
+&lt;!-- Run with profile for different suites --&gt;
+&lt;profiles&gt;
+    &lt;profile&gt;
+        &lt;id&gt;regression&lt;/id&gt;
+        &lt;build&gt;
+            &lt;plugins&gt;
+                &lt;plugin&gt;
+                    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                    &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+                    &lt;configuration&gt;
+                        &lt;suiteXmlFiles&gt;
+                            &lt;suiteXmlFile&gt;testng-suites/regression-suite.xml&lt;/suiteXmlFile&gt;
+                        &lt;/suiteXmlFiles&gt;
+                    &lt;/configuration&gt;
+                &lt;/plugin&gt;
+            &lt;/plugins&gt;
+        &lt;/build&gt;
+    &lt;/profile&gt;
+&lt;/profiles&gt;
+
+&lt;!-- Command: mvn test -Pregression --&gt;</code></pre>
+
+<h3>9.11 Interview Q&amp;A — TestNG XML</h3>
+
+<h4>Q1: What is the purpose of testng.xml?</h4>
+<p><strong>Answer:</strong> testng.xml is the TestNG suite configuration file that defines which test classes/methods execute, execution order, parallelism settings, parameters, group filters, and listeners. It decouples test code from execution configuration, enabling different runs without code changes.</p>
+<p><em>Interviewer expects:</em> Configuration vs code separation principle.</p>
+
+<h4>Q2: Difference between &lt;suite&gt; and &lt;test&gt; tags?</h4>
+<p><strong>Answer:</strong> &lt;suite&gt; is the root container holding all configuration and one or more &lt;test&gt; blocks. Each &lt;test&gt; represents a logical test unit with its own classes, groups, and parameters. A suite can have multiple test blocks for different scenarios (smoke, regression, cross-browser).</p>
+<p><em>Interviewer expects:</em> Hierarchical XML structure understanding.</p>
+
+<h4>Q3: How do you run a specific test method from testng.xml?</h4>
+<p><strong>Answer:</strong> Use &lt;methods&gt;&lt;include name="methodName"/&gt;&lt;/methods&gt; inside the &lt;class&gt; tag. Only listed methods execute. Use &lt;exclude&gt; to run all except specified methods. Method names are case-sensitive and must match exactly.</p>
+<p><em>Interviewer expects:</em> Practical selective execution knowledge.</p>
+
+<h4>Q4: Can you have multiple testng.xml files in one project?</h4>
+<p><strong>Answer:</strong> Yes — common pattern: smoke-suite.xml, regression-suite.xml, cross-browser-suite.xml. Maven Surefire plugin accepts suiteXmlFile configuration. CI pipelines select the appropriate XML per job/stage.</p>
+<p><em>Interviewer expects:</em> CI/CD integration with multiple suite files.</p>
+
+<h4>Q5: What does preserve-order="true" do?</h4>
+<p><strong>Answer:</strong> When true, TestNG maintains the order of test methods as defined in the class or XML. When false (default in parallel mode), methods may execute out of order. Important for dependent tests or ordered workflows.</p>
+<p><em>Interviewer expects:</em> Interaction with parallel execution settings.</p>
+
+<h4>Q6: How do you exclude a group in testng.xml?</h4>
+<p><strong>Answer:</strong> Inside &lt;groups&gt;&lt;run&gt;, add &lt;exclude name="groupName"/&gt;. Tests annotated with @Test(groups = "groupName") are skipped. Combine with &lt;include&gt; to run specific groups while excluding others like "wip" or "broken".</p>
+<p><em>Interviewer expects:</em> Group filtering for CI pipeline stages.</p>
+
+<h4>Q7: What is the verbose attribute?</h4>
+<p><strong>Answer:</strong> Controls TestNG logging detail on console. 0 = silent, 1 = failures only, 2 = standard (recommended), 10 = maximum debug output. Higher values help diagnose configuration and listener issues during development.</p>
+<p><em>Interviewer expects:</em> Debugging configuration knowledge.</p>
+
+<h4>Q8: How do suite-level parameters differ from test-level?</h4>
+<p><strong>Answer:</strong> Suite-level parameters apply to all test blocks unless overridden. Test-level parameters scope values to that specific &lt;test&gt; block. Test-level takes precedence when both define the same parameter name.</p>
+<p><em>Interviewer expects:</em> Parameter inheritance and override behavior.</p>
+
+<h4>Q9: Can you reference packages instead of individual classes?</h4>
+<p><strong>Answer:</strong> Yes — use &lt;packages&gt;&lt;package name="com.example.tests"/&gt;&lt;/packages&gt;. TestNG discovers all @Test classes in that package. More maintainable than listing each class individually as the suite grows.</p>
+<p><em>Interviewer expects:</em> Scalable suite configuration approach.</p>
+
+<h4>Q10: How do you configure Maven to run TestNG with a specific XML?</h4>
+<p><strong>Answer:</strong> Configure maven-surefire-plugin with &lt;suiteXmlFiles&gt;&lt;suiteXmlFile&gt;path/to/suite.xml&lt;/suiteXmlFile&gt;&lt;/suiteXmlFiles&gt;. Use Maven profiles for different suites. Command: mvn test or mvn test -PprofileName.</p>
+<p><em>Interviewer expects:</em> Maven + TestNG integration hands-on experience.</p>
+
+<h4>Q11: What is configfailurepolicy?</h4>
+<p><strong>Answer:</strong> Determines behavior when a @BeforeSuite, @BeforeTest, or @BeforeClass configuration method fails. "skip" (default) skips all tests in that scope. "continue" attempts to run remaining tests despite config failure.</p>
+<p><em>Interviewer expects:</em> Failure handling strategy awareness.</p>
+
+<h4>Q12: Can testng.xml run JUnit tests?</h4>
+<p><strong>Answer:</strong> Yes — set junit="true" on the &lt;test&gt; tag. TestNG acts as a JUnit runner, allowing mixed JUnit and TestNG tests in one suite. Useful during migration from JUnit to TestNG.</p>
+<p><em>Interviewer expects:</em> Migration and interoperability knowledge.</p>
+</section>
+
+<section id="section-10" class="section-card">
+<h2>Section 10: Parallel Execution</h2>
+
+<h3>10.1 Why Parallel Execution?</h3>
+<p>Sequential execution of a 500-test suite at 15 seconds per test takes ~2 hours. With parallel="methods" and thread-count="10", the same suite completes in ~20–30 minutes — a 4–6x speedup. Parallel execution is essential for CI/CD pipelines with tight feedback loops.</p>
+
+<div class="callout">
+<strong>Real-world impact:</strong> A regression suite running sequentially for 2 hours blocks the CI pipeline. Parallel execution with 8 threads reduces this to ~25 minutes, enabling faster deployments and quicker defect detection.
+</div>
+
+<h3>10.2 Parallel Modes</h3>
+
+<h4>parallel="methods" — Methods Run in Parallel</h4>
+<p>Each @Test method runs in its own thread. Best for large test classes with independent methods. DataProvider iterations also run as separate parallel invocations.</p>
+<pre><code>&lt;suite name="Method Parallel Suite" parallel="methods" thread-count="5"&gt;
+    &lt;test name="All Tests"&gt;
+        &lt;classes&gt;
+            &lt;class name="com.example.tests.LoginTest"/&gt;
+            &lt;class name="com.example.tests.SearchTest"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h4>parallel="classes" — Classes Run in Parallel</h4>
+<p>Each test class runs in its own thread; methods within a class run sequentially. Good when methods in a class share setup state.</p>
+<pre><code>&lt;suite name="Class Parallel Suite" parallel="classes" thread-count="3"&gt;
+    &lt;test name="Regression"&gt;
+        &lt;packages&gt;&lt;package name="com.example.tests"/&gt;&lt;/packages&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h4>parallel="tests" — &lt;test&gt; Tags Run in Parallel</h4>
+<p>Each &lt;test&gt; block in XML runs concurrently. Ideal for cross-browser testing where each browser is a separate test block.</p>
+<pre><code>&lt;suite name="Test Parallel Suite" parallel="tests" thread-count="3"&gt;
+    &lt;test name="Chrome"&gt;&lt;parameter name="browser" value="chrome"/&gt;...&lt;/test&gt;
+    &lt;test name="Firefox"&gt;&lt;parameter name="browser" value="firefox"/&gt;...&lt;/test&gt;
+    &lt;test name="Edge"&gt;&lt;parameter name="browser" value="edge"/&gt;...&lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h4>parallel="instances" — Instances Run in Parallel</h4>
+<p>When @Factory creates multiple instances of a test class, each instance runs in parallel. Used with data-driven class instantiation.</p>
+<pre><code>&lt;suite name="Instance Parallel Suite" parallel="instances" thread-count="4"&gt;
+    &lt;test name="Factory Tests"&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.BrowserFactoryTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>10.3 thread-count Attribute</h3>
+<p>Controls the maximum number of concurrent threads. Set at suite or test level. Rule of thumb: thread-count = number of CPU cores for CPU-bound tests; 2x cores for I/O-bound Selenium tests. Monitor for resource exhaustion.</p>
+
+<h3>10.4 Thread Safety Issues</h3>
+
+<h4>WebDriver Sharing Problem</h4>
+<pre><code>// DANGEROUS — shared static WebDriver
+public class BaseTest {
+    protected static WebDriver driver; // ALL threads share ONE browser!
+
+    @BeforeMethod
+    public void setup() {
+        driver = new ChromeDriver(); // Race condition!
+    }
+}</code></pre>
+
+<h4>ThreadLocal&lt;WebDriver&gt; Solution</h4>
+<pre><code>public class DriverManager {
+    private static ThreadLocal&lt;WebDriver&gt; driver = new ThreadLocal&lt;&gt;();
+
+    public static WebDriver getDriver() {
+        if (driver.get() == null) {
+            String browser = System.getProperty("browser", "chrome");
+            switch (browser.toLowerCase()) {
+                case "firefox":
+                    driver.set(new FirefoxDriver());
+                    break;
+                case "edge":
+                    driver.set(new EdgeDriver());
+                    break;
+                default:
+                    driver.set(new ChromeDriver());
+            }
+            driver.get().manage().window().maximize();
+            driver.get().manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        }
+        return driver.get();
+    }
+
+    public static void quitDriver() {
+        if (driver.get() != null) {
+            driver.get().quit();
+            driver.remove(); // critical: prevent memory leaks
+        }
+    }
+}
+
+public class BaseTest {
+    protected WebDriver driver;
+
+    @BeforeMethod
+    public void setUp() {
+        driver = DriverManager.getDriver();
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        DriverManager.quitDriver();
+    }
+}</code></pre>
+
+<div class="callout">
+<strong>Why static WebDriver is dangerous:</strong> Static fields are shared across all threads. In parallel execution, Thread A may quit the driver while Thread B is mid-test, causing random failures, stale element exceptions, and session not found errors.
+</div>
+
+<h3>10.5 Selenium Grid + Parallel Execution</h3>
+
+<h4>Hub-Node Architecture</h4>
+<div class="ascii-diagram">
+Selenium Grid Architecture:
+                    ┌─────────────┐
+                    │   Hub       │
+                    │  (Router)   │
+                    └──────┬──────┘
+           ┌───────────────┼───────────────┐
+           ▼               ▼               ▼
+    ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+    │  Node 1     │ │  Node 2     │ │  Node 3     │
+    │  Chrome     │ │  Firefox    │ │  Edge       │
+    └─────────────┘ └─────────────┘ └─────────────┘
+</div>
+
+<h4>RemoteWebDriver Configuration</h4>
+<pre><code>public static WebDriver getRemoteDriver(String browser) throws MalformedURLException {
+    DesiredCapabilities caps = new DesiredCapabilities();
+    caps.setBrowserName(browser);
+    caps.setPlatform(Platform.ANY);
+    return new RemoteWebDriver(new URL("http://localhost:4444/wd/hub"), caps);
+}</code></pre>
+
+<h4>Docker Grid Setup</h4>
+<pre><code># docker-compose.yml for Selenium Grid
+version: "3"
+services:
+  selenium-hub:
+    image: selenium/hub:4.15.0
+    ports: ["4444:4444"]
+  chrome:
+    image: selenium/node-chrome:4.15.0
+    depends_on: [selenium-hub]
+    environment: [SE_EVENT_BUS_HOST=selenium-hub]
+  firefox:
+    image: selenium/node-firefox:4.15.0
+    depends_on: [selenium-hub]
+    environment: [SE_EVENT_BUS_HOST=selenium-hub]</code></pre>
+
+<h3>10.6 Cross-Browser Parallel Testing</h3>
+<pre><code>&lt;!-- cross-browser-suite.xml --&gt;
+&lt;suite name="Cross Browser" parallel="tests" thread-count="3"&gt;
+    &lt;test name="Chrome"&gt;
+        &lt;parameter name="browser" value="chrome"/&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.LoginTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+    &lt;test name="Firefox"&gt;
+        &lt;parameter name="browser" value="firefox"/&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.LoginTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+    &lt;test name="Edge"&gt;
+        &lt;parameter name="browser" value="edge"/&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.LoginTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<pre><code>// BrowserFactory.java
+public class BrowserFactory {
+    public static WebDriver createDriver(String browser) {
+        switch (browser.toLowerCase()) {
+            case "firefox":
+                WebDriverManager.firefoxdriver().setup();
+                return new FirefoxDriver();
+            case "edge":
+                WebDriverManager.edgedriver().setup();
+                return new EdgeDriver();
+            case "chrome-headless":
+                ChromeOptions opts = new ChromeOptions();
+                opts.addArguments("--headless");
+                return new ChromeDriver(opts);
+            default:
+                WebDriverManager.chromedriver().setup();
+                return new ChromeDriver();
+        }
+    }
+}</code></pre>
+
+<h3>10.7 Performance Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Mode</th><th>Tests</th><th>Threads</th><th>Duration</th><th>Speedup</th></tr></thead>
+<tbody>
+<tr><td>Sequential</td><td>200</td><td>1</td><td>~120 min</td><td>1x</td></tr>
+<tr><td>parallel=methods</td><td>200</td><td>5</td><td>~28 min</td><td>4.3x</td></tr>
+<tr><td>parallel=methods</td><td>200</td><td>10</td><td>~15 min</td><td>8x</td></tr>
+<tr><td>parallel=classes</td><td>200 (20 classes)</td><td>5</td><td>~35 min</td><td>3.4x</td></tr>
+<tr><td>parallel=tests (3 browsers)</td><td>200 × 3</td><td>3</td><td>~45 min</td><td>8x vs sequential all browsers</td></tr>
+<tr><td>Grid (5 nodes)</td><td>200</td><td>5</td><td>~18 min</td><td>6.7x</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>10.8 Best Practices for Parallel Execution</h3>
+<ol>
+<li>Always use ThreadLocal for WebDriver — never static shared drivers</li>
+<li>Make tests independent — no shared mutable state between tests</li>
+<li>Use unique test data per thread to avoid data collision</li>
+<li>Set realistic thread-count (CPU cores × 2 for I/O-bound tests)</li>
+<li>Avoid @DependsOnMethods in parallel suites — dependencies break parallelism</li>
+<li>Use parallel="tests" for cross-browser; parallel="methods" for speed</li>
+<li>Implement proper @AfterMethod cleanup even on failure</li>
+<li>Monitor Grid node health and session limits</li>
+<li>Use CI pipeline parallelism matching your thread-count</li>
+<li>Profile and tune — too many threads cause contention and flaky results</li>
+</ol>
+
+<h3>10.9 Interview Q&amp;A — Parallel Execution</h3>
+
+<h4>Q1: What parallel modes does TestNG support?</h4>
+<p><strong>Answer:</strong> Four modes: methods (each @Test in its own thread), classes (each class in its own thread), tests (each &lt;test&gt; XML block in parallel), and instances (each @Factory-created instance in parallel). Configured via parallel attribute in testng.xml.</p>
+<p><em>Interviewer expects:</em> All four modes with use cases.</p>
+
+<h4>Q2: Why is static WebDriver dangerous in parallel tests?</h4>
+<p><strong>Answer:</strong> Static fields are shared across all threads. One thread quitting or navigating the shared driver affects all other threads simultaneously, causing random failures, session errors, and unpredictable test behavior.</p>
+<p><em>Interviewer expects:</em> ThreadLocal solution knowledge.</p>
+
+<h4>Q3: Explain ThreadLocal WebDriver pattern.</h4>
+<p><strong>Answer:</strong> ThreadLocal creates a per-thread copy of WebDriver. Each thread gets its own browser instance via driver.get(). Always call driver.remove() in @AfterMethod to prevent memory leaks in thread pools.</p>
+<p><em>Interviewer expects:</em> Complete implementation with cleanup.</p>
+
+<h4>Q4: What is the optimal thread-count?</h4>
+<p><strong>Answer:</strong> Depends on test type. CPU-bound: match CPU core count. I/O-bound (Selenium): 2× cores. Grid: match available node capacity. Start conservative (4–5), monitor, and increase until failures or resource exhaustion appear.</p>
+<p><em>Interviewer expects:</em> Practical tuning approach, not a fixed number.</p>
+
+<h4>Q5: Can @DependsOnMethods work with parallel execution?</h4>
+<p><strong>Answer:</strong> Technically yes with preserve-order="true", but it largely defeats parallelism because dependent methods must wait. Best practice: design independent tests and avoid dependencies in parallel suites.</p>
+<p><em>Interviewer expects:</em> Design recommendation against dependencies in parallel.</p>
+
+<h4>Q6: Difference between parallel="tests" and parallel="classes"?</h4>
+<p><strong>Answer:</strong> parallel="tests" runs each &lt;test&gt; XML block concurrently — ideal for cross-browser where each browser is a test block. parallel="classes" runs each Java test class concurrently — methods within a class remain sequential.</p>
+<p><em>Interviewer expects:</em> XML structure mapping to parallel behavior.</p>
+
+<h4>Q7: How does Selenium Grid help parallel execution?</h4>
+<p><strong>Answer:</strong> Grid distributes browser sessions across multiple nodes (machines/containers). Tests send commands to the Hub, which routes them to available Nodes. Enables scaling beyond local machine capacity.</p>
+<p><em>Interviewer expects:</em> Hub-Node architecture understanding.</p>
+
+<h4>Q8: What thread safety issues exist beyond WebDriver?</h4>
+<p><strong>Answer:</strong> Shared test data (same user login), static counters/flags, shared file writes, non-thread-safe collections, and shared database records. Each thread needs isolated data and resources.</p>
+<p><em>Interviewer expects:</em> Comprehensive thread safety awareness.</p>
+
+<h4>Q9: How do DataProvider iterations behave in parallel mode?</h4>
+<p><strong>Answer:</strong> Each DataProvider row creates a separate method invocation that can run in parallel when parallel="methods" is set. Ensure each iteration uses independent data and WebDriver instances.</p>
+<p><em>Interviewer expects:</em> Data isolation per iteration.</p>
+
+<h4>Q10: Can you mix parallel modes?</h4>
+<p><strong>Answer:</strong> Yes — suite can have parallel="tests" while individual &lt;test&gt; blocks override with parallel="methods". The more specific (test-level) setting takes precedence over suite-level for that test block.</p>
+<p><em>Interviewer expects:</em> Override hierarchy knowledge.</p>
+
+<h4>Q11: What is data-provider-thread-count?</h4>
+<p><strong>Answer:</strong> A suite-level attribute controlling how many threads run DataProvider-fed test invocations concurrently. Separate from thread-count which controls overall parallelism. Useful for limiting DataProvider concurrency independently.</p>
+<p><em>Interviewer expects:</em> Fine-grained thread control awareness.</p>
+
+<h4>Q12: How do you debug flaky parallel tests?</h4>
+<p><strong>Answer:</strong> Run failing tests sequentially first to isolate parallelism issues. Check for shared state, static variables, and data collisions. Add thread name logging. Reduce thread-count to identify resource contention. Use ThreadLocal consistently.</p>
+<p><em>Interviewer expects:</em> Systematic debugging methodology.</p>
+</section>
+
+<section id="section-11" class="section-card">
+<h2>Section 11: TestNG Listeners</h2>
+
+<h3>11.1 What Are Listeners?</h3>
+<p>TestNG listeners are event-driven hooks that intercept test lifecycle events — start, success, failure, skip — without modifying test code. They enable cross-cutting concerns: logging, screenshots, custom reporting, and retry logic.</p>
+
+<h3>11.2 ITestListener Interface</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Method</th><th>Trigger</th></tr></thead>
+<tbody>
+<tr><td>onTestStart(ITestResult)</td><td>Before each @Test method executes</td></tr>
+<tr><td>onTestSuccess(ITestResult)</td><td>Test passed</td></tr>
+<tr><td>onTestFailure(ITestResult)</td><td>Test failed (assertion or exception)</td></tr>
+<tr><td>onTestSkipped(ITestResult)</td><td>Test skipped (depends on failed method, etc.)</td></tr>
+<tr><td>onTestFailedButWithinSuccessPercentage</td><td>Failed but within configured success %</td></tr>
+<tr><td>onStart(ITestContext)</td><td>Before test tag starts</td></tr>
+<tr><td>onFinish(ITestContext)</td><td>After test tag finishes</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Complete ITestListener Implementation</h4>
+<pre><code>package com.example.listeners;
+
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class TestListener implements ITestListener {
+    private static final Logger log = LoggerFactory.getLogger(TestListener.class);
+
+    @Override
+    public void onTestStart(ITestResult result) {
+        log.info("STARTED: {}.{}",
+            result.getTestClass().getName(),
+            result.getMethod().getMethodName());
+    }
+
+    @Override
+    public void onTestSuccess(ITestResult result) {
+        log.info("PASSED: {} ({}ms)",
+            result.getMethod().getMethodName(),
+            result.getEndMillis() - result.getStartMillis());
+    }
+
+    @Override
+    public void onTestFailure(ITestResult result) {
+        log.error("FAILED: {} — {}",
+            result.getMethod().getMethodName(),
+            result.getThrowable().getMessage());
+        ScreenshotUtil.capture(result.getMethod().getMethodName());
+    }
+
+    @Override
+    public void onTestSkipped(ITestResult result) {
+        log.warn("SKIPPED: {} — {}",
+            result.getMethod().getMethodName(),
+            result.getSkipCausedBy());
+    }
+}</code></pre>
+
+<h3>11.3 ISuiteListener — Suite-Level Actions</h3>
+<pre><code>public class SuiteListener implements ISuiteListener {
+    @Override
+    public void onStart(ISuite suite) {
+        System.out.println("Suite starting: " + suite.getName());
+        // Initialize report, clean old results, load config
+        ExtentReportManager.initReport(suite.getName());
+    }
+
+    @Override
+    public void onFinish(ISuite suite) {
+        System.out.println("Suite finished: " + suite.getName());
+        ExtentReportManager.flushReport();
+        EmailUtil.sendReport(suite.getName());
+    }
+}</code></pre>
+
+<h3>11.4 IExecutionListener</h3>
+<pre><code>public class ExecutionListener implements IExecutionListener {
+    @Override
+    public void onExecutionStart() {
+        System.out.println("TestNG execution started at: " + new Date());
+    }
+
+    @Override
+    public void onExecutionFinish() {
+        System.out.println("TestNG execution finished at: " + new Date());
+    }
+}</code></pre>
+
+<h3>11.5 IReporter — Custom Report Generation</h3>
+<pre><code>public class CustomReporter implements IReporter {
+    @Override
+    public void generateReport(List&lt;ISuite&gt; suites, String outputDir,
+                               XmlSuite xmlSuite) {
+        PrintWriter writer = null;
+        try {
+            writer = new PrintWriter(new File(outputDir, "custom-report.html"));
+            writer.println("&lt;html&gt;&lt;body&gt;&lt;h1&gt;Custom Test Report&lt;/h1&gt;");
+            for (ISuite suite : suites) {
+                writer.println("&lt;h2&gt;" + suite.getName() + "&lt;/h2&gt;");
+                for (ISuiteResult result : suite.getResults().values()) {
+                    ITestContext ctx = result.getTestContext();
+                    writer.println("&lt;p&gt;Passed: " + ctx.getPassedTests().size() + "&lt;/p&gt;");
+                    writer.println("&lt;p&gt;Failed: " + ctx.getFailedTests().size() + "&lt;/p&gt;");
+                    writer.println("&lt;p&gt;Skipped: " + ctx.getSkippedTests().size() + "&lt;/p&gt;");
+                }
+            }
+            writer.println("&lt;/body&gt;&lt;/html&gt;");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (writer != null) writer.close();
+        }
+    }
+}</code></pre>
+
+<h3>11.6 IMethodInterceptor — Reorder Tests at Runtime</h3>
+<pre><code>public class PriorityInterceptor implements IMethodInterceptor {
+    @Override
+    public List&lt;IMethodInstance&gt; intercept(List&lt;IMethodInstance&gt; methods,
+                                            ITestContext context) {
+        methods.sort(Comparator.comparingInt(m -&gt;
+            m.getMethod().getPriority()));
+        return methods;
+    }
+}</code></pre>
+
+<h3>11.7 IAnnotationTransformer — Modify Annotations at Runtime</h3>
+<pre><code>public class AnnotationTransformer implements IAnnotationTransformer {
+    @Override
+    public void transform(ITestAnnotation annotation, Class testClass,
+                          Constructor testConstructor, Method testMethod) {
+        annotation.setRetryAnalyzer(RetryAnalyzer.class);
+        // Enable/disable tests dynamically
+        if (testMethod != null &amp;&amp; testMethod.getName().contains("wip")) {
+            annotation.setEnabled(false);
+        }
+    }
+}</code></pre>
+
+<h3>11.8 Registering Listeners</h3>
+
+<h4>Method 1: @Listeners Annotation</h4>
+<pre><code>@Listeners({TestListener.class, SuiteListener.class})
+public class LoginTest { /* test methods */ }</code></pre>
+
+<h4>Method 2: testng.xml &lt;listeners&gt; Tag</h4>
+<pre><code>&lt;suite name="My Suite"&gt;
+    &lt;listeners&gt;
+        &lt;listener class-name="com.example.listeners.TestListener"/&gt;
+        &lt;listener class-name="com.example.listeners.ExtentReportListener"/&gt;
+    &lt;/listeners&gt;
+    &lt;test name="Tests"&gt;...&lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h4>Method 3: ServiceLoader (META-INF)</h4>
+<pre><code>// File: src/test/resources/META-INF/services/org.testng.ITestNGListener
+com.example.listeners.TestListener
+com.example.listeners.ExtentReportListener</code></pre>
+
+<h3>11.9 Screenshot-on-Failure Listener (Complete)</h3>
+<pre><code>package com.example.listeners;
+
+import com.example.utils.DriverManager;
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class ScreenshotListener implements ITestListener {
+
+    private static final String SCREENSHOT_DIR = "reports/screenshots/";
+
+    @Override
+    public void onTestFailure(ITestResult result) {
+        captureScreenshot(result);
+    }
+
+    private void captureScreenshot(ITestResult result) {
+        WebDriver driver = DriverManager.getDriver();
+        if (driver instanceof TakesScreenshot) {
+            File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+            String methodName = result.getMethod().getMethodName();
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            String dest = SCREENSHOT_DIR + methodName + "_" + timestamp + ".png";
+            try {
+                FileUtils.copyFile(src, new File(dest));
+                result.setAttribute("screenshot", dest);
+                System.out.println("Screenshot saved: " + dest);
+            } catch (IOException e) {
+                System.err.println("Screenshot capture failed: " + e.getMessage());
+            }
+        }
+    }
+}</code></pre>
+
+<h3>11.10 Custom HTML Report Listener</h3>
+<pre><code>public class HTMLReportListener implements ITestListener {
+    private List&lt;TestResult&gt; results = new ArrayList&lt;&gt;();
+    private long suiteStartTime;
+
+    @Override
+    public void onStart(ITestContext context) { suiteStartTime = System.currentTimeMillis(); }
+
+    @Override
+    public void onTestSuccess(ITestResult r) { results.add(new TestResult(r, "PASS")); }
+    @Override
+    public void onTestFailure(ITestResult r) { results.add(new TestResult(r, "FAIL")); }
+    @Override
+    public void onTestSkipped(ITestResult r) { results.add(new TestResult(r, "SKIP")); }
+
+    @Override
+    public void onFinish(ITestContext context) {
+        generateHTMLReport(context.getSuite().getName());
+    }
+
+    private void generateHTMLReport(String suiteName) {
+        long duration = System.currentTimeMillis() - suiteStartTime;
+        StringBuilder html = new StringBuilder();
+        html.append("&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;title&gt;").append(suiteName)
+            .append(" Report&lt;/title&gt;&lt;style&gt;")
+            .append(".pass{color:green}.fail{color:red}.skip{color:orange}")
+            .append("table{border-collapse:collapse;width:100%}")
+            .append("td,th{border:1px solid #ddd;padding:8px}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;");
+        html.append("&lt;h1&gt;").append(suiteName).append("&lt;/h1&gt;");
+        html.append("&lt;p&gt;Duration: ").append(duration / 1000).append("s&lt;/p&gt;");
+        html.append("&lt;table&gt;&lt;tr&gt;&lt;th&gt;Test&lt;/th&gt;&lt;th&gt;Status&lt;/th&gt;&lt;th&gt;Duration&lt;/th&gt;&lt;/tr&gt;");
+        for (TestResult tr : results) {
+            html.append("&lt;tr class='").append(tr.status.toLowerCase())
+                .append("'&gt;&lt;td&gt;").append(tr.name).append("&lt;/td&gt;")
+                .append("&lt;td&gt;").append(tr.status).append("&lt;/td&gt;")
+                .append("&lt;td&gt;").append(tr.duration).append("ms&lt;/td&gt;&lt;/tr&gt;");
+        }
+        html.append("&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;");
+        try (PrintWriter pw = new PrintWriter("reports/custom-report.html")) {
+            pw.write(html.toString());
+        } catch (IOException e) { e.printStackTrace(); }
+    }
+}</code></pre>
+
+<h3>11.11 Listener Execution Order</h3>
+<p>When multiple listeners are registered, TestNG invokes them in registration order for each event. ISuiteListener.onStart fires before ITestListener.onStart. IExecutionListener wraps the entire run. If one listener throws an exception, subsequent listeners for that event may not execute.</p>
+
+<h3>11.12 Interview Q&amp;A — Listeners</h3>
+
+<h4>Q1: What are TestNG listeners?</h4>
+<p><strong>Answer:</strong> Event-driven interfaces that hook into TestNG lifecycle events (test start, pass, fail, skip, suite start/finish). They implement cross-cutting concerns like logging, screenshots, and reporting without modifying test code.</p>
+<p><em>Interviewer expects:</em> Separation of concerns and AOP-like pattern.</p>
+
+<h4>Q2: Name the main TestNG listener interfaces.</h4>
+<p><strong>Answer:</strong> ITestListener (test events), ISuiteListener (suite start/finish), IExecutionListener (entire run), IReporter (custom reports), IMethodInterceptor (reorder methods), IAnnotationTransformer (modify annotations at runtime).</p>
+<p><em>Interviewer expects:</em> At least four interfaces with purposes.</p>
+
+<h4>Q3: How do you register a listener?</h4>
+<p><strong>Answer:</strong> Three ways: @Listeners annotation on test class, &lt;listeners&gt; tag in testng.xml (preferred for global registration), or ServiceLoader via META-INF/services file for automatic discovery.</p>
+<p><em>Interviewer expects:</em> XML registration as the enterprise standard.</p>
+
+<h4>Q4: How do you capture screenshots on test failure?</h4>
+<p><strong>Answer:</strong> Implement ITestListener, override onTestFailure, cast WebDriver to TakesScreenshot, save the file with a timestamped name, and attach the path to ITestResult attributes for report integration.</p>
+<p><em>Interviewer expects:</em> Complete working implementation.</p>
+
+<h4>Q5: What is IAnnotationTransformer used for?</h4>
+<p><strong>Answer:</strong> Modifies test annotations at runtime before execution. Common uses: apply RetryAnalyzer globally to all tests, enable/disable tests based on conditions, override timeout or description values dynamically.</p>
+<p><em>Interviewer expects:</em> Global retry registration use case.</p>
+
+<h4>Q6: Difference between ISuiteListener and ITestListener?</h4>
+<p><strong>Answer:</strong> ISuiteListener operates at suite level (onStart/onFinish of entire suite) — ideal for report initialization and cleanup. ITestListener operates at individual test method level — ideal for per-test logging and screenshots.</p>
+<p><em>Interviewer expects:</em> Scope distinction and appropriate use cases.</p>
+
+<h4>Q7: Can listeners access WebDriver?</h4>
+<p><strong>Answer:</strong> Yes — retrieve it from ThreadLocal in onTestFailure. The listener must use the same DriverManager utility as tests. Never store WebDriver as an instance variable in the listener — use ThreadLocal for parallel safety.</p>
+<p><em>Interviewer expects:</em> ThreadLocal access pattern in listeners.</p>
+
+<h4>Q8: What happens if a listener throws an exception?</h4>
+<p><strong>Answer:</strong> TestNG logs the exception and may skip remaining listeners for that event. The test result itself is not affected — a listener failure does not fail the test. Always handle exceptions inside listener methods.</p>
+<p><em>Interviewer expects:</em> Defensive coding in listeners.</p>
+
+<h4>Q9: How do listeners integrate with ExtentReports?</h4>
+<p><strong>Answer:</strong> Create an ExtentReportListener implementing ITestListener. Initialize ExtentReports in onStart, create ExtentTest in onTestStart, log pass/fail in onTestSuccess/onTestFailure with screenshots, and flush in onFinish.</p>
+<p><em>Interviewer expects:</em> Practical ExtentReports integration pattern.</p>
+
+<h4>Q10: What is IMethodInterceptor?</h4>
+<p><strong>Answer:</strong> Allows reordering or filtering test methods at runtime before execution. Receive the list of IMethodInstance, modify order (e.g., by priority or custom logic), and return the modified list. Useful for dynamic test ordering.</p>
+<p><em>Interviewer expects:</em> Runtime test ordering capability.</p>
+
+<h4>Q11: Can you have multiple listeners of the same type?</h4>
+<p><strong>Answer:</strong> Yes — register multiple ITestListener implementations. They execute in registration order for each event. Ensure they don't conflict (e.g., two listeners both trying to quit the same WebDriver).</p>
+<p><em>Interviewer expects:</em> Execution order and conflict awareness.</p>
+
+<h4>Q12: ServiceLoader vs testng.xml for listener registration?</h4>
+<p><strong>Answer:</strong> ServiceLoader auto-discovers listeners via META-INF/services — no XML needed, works across all suites automatically. testng.xml gives explicit control per suite. Enterprise frameworks typically use testng.xml for visibility and flexibility.</p>
+<p><em>Interviewer expects:</em> Trade-offs between automatic and explicit registration.</p>
+</section>
+
+<section id="section-12" class="section-card">
+<h2>Section 12: Retry Mechanism</h2>
+
+<h3>12.1 Why Retry?</h3>
+<p>Flaky tests fail intermittently due to network latency, environment instability, timing issues, or resource contention — not actual defects. Retry mechanisms re-execute failed tests automatically, reducing false negatives in CI/CD pipelines and improving suite reliability metrics.</p>
+
+<div class="callout">
+<strong>When retry helps:</strong> Transient network timeouts, slow page loads, Grid node restarts, and environment warmup delays. <strong>When retry hurts:</strong> Genuine application bugs that pass on retry mask real failures and erode trust in test results.
+</div>
+
+<h3>12.2 IRetryAnalyzer Interface</h3>
+<pre><code>package com.example.utils;
+
+import org.testng.IRetryAnalyzer;
+import org.testng.ITestResult;
+
+public class RetryAnalyzer implements IRetryAnalyzer {
+    private int retryCount = 0;
+    private static final int MAX_RETRY = 2; // total attempts = MAX_RETRY + 1
+
+    @Override
+    public boolean retry(ITestResult result) {
+        if (retryCount &lt; MAX_RETRY) {
+            retryCount++;
+            System.out.println("Retrying " + result.getName()
+                + " — attempt " + (retryCount + 1));
+            return true;  // retry the test
+        }
+        return false; // no more retries
+    }
+}</code></pre>
+
+<h3>12.3 Registering Retry</h3>
+
+<h4>Method 1: @Test(retryAnalyzer)</h4>
+<pre><code>@Test(retryAnalyzer = RetryAnalyzer.class)
+public void testFlakyNetworkCall() {
+    Response response = apiClient.get("/health");
+    Assert.assertEquals(response.getStatusCode(), 200);
+}</code></pre>
+
+<h4>Method 2: IAnnotationTransformer (Global)</h4>
+<pre><code>package com.example.listeners;
+
+import org.testng.IAnnotationTransformer;
+import org.testng.annotations.ITestAnnotation;
+import com.example.utils.RetryAnalyzer;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+
+public class RetryAnnotationTransformer implements IAnnotationTransformer {
+    @Override
+    public void transform(ITestAnnotation annotation, Class testClass,
+                          Constructor testConstructor, Method testMethod) {
+        annotation.setRetryAnalyzer(RetryAnalyzer.class);
+    }
+}
+
+// Register in testng.xml:
+// &lt;listener class-name="com.example.listeners.RetryAnnotationTransformer"/&gt;</code></pre>
+
+<h3>12.4 Configurable Retry from Properties</h3>
+<pre><code>public class ConfigurableRetryAnalyzer implements IRetryAnalyzer {
+    private int retryCount = 0;
+    private int maxRetry;
+
+    public ConfigurableRetryAnalyzer() {
+        Properties props = new Properties();
+        try (InputStream is = getClass().getClassLoader()
+                .getResourceAsStream("config.properties")) {
+            props.load(is);
+            maxRetry = Integer.parseInt(props.getProperty("retry.count", "2"));
+        } catch (IOException e) {
+            maxRetry = 2;
+        }
+    }
+
+    @Override
+    public boolean retry(ITestResult result) {
+        if (retryCount &lt; maxRetry) {
+            retryCount++;
+            return true;
+        }
+        return false;
+    }
+}
+
+// config.properties
+// retry.count=3</code></pre>
+
+<h3>12.5 Retry with Screenshot on Each Attempt</h3>
+<pre><code>public class RetryWithScreenshotListener implements ITestListener {
+    @Override
+    public void onTestFailure(ITestResult result) {
+        int attempt = getAttemptNumber(result);
+        String name = result.getMethod().getMethodName() + "_attempt" + attempt;
+        ScreenshotUtil.capture(name);
+        result.setAttribute("screenshot_attempt_" + attempt, name);
+    }
+
+    private int getAttemptNumber(ITestResult result) {
+        return result.getMethod().getCurrentInvocationCount();
+    }
+}</code></pre>
+
+<h3>12.6 RetryAnalyzer + Listener Combination Pattern</h3>
+<pre><code>// RetryAnalyzer handles re-execution logic
+// Listener handles logging/screenshots on each attempt
+// IAnnotationTransformer applies retry globally
+
+// testng.xml
+&lt;suite name="Retry Suite"&gt;
+    &lt;listeners&gt;
+        &lt;listener class-name="com.example.listeners.RetryAnnotationTransformer"/&gt;
+        &lt;listener class-name="com.example.listeners.RetryWithScreenshotListener"/&gt;
+        &lt;listener class-name="com.example.listeners.ExtentReportListener"/&gt;
+    &lt;/listeners&gt;
+    &lt;test name="Tests"&gt;
+        &lt;classes&gt;&lt;class name="com.example.tests.LoginTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>12.7 Pros and Cons</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Pros</th><th>Cons</th></tr></thead>
+<tbody>
+<tr><td>Reduces false failures from transient issues</td><td>Masks genuine bugs if overused</td></tr>
+<tr><td>Improves CI pipeline stability</td><td>Increases total execution time</td></tr>
+<tr><td>Better suite pass rate metrics</td><td>Creates false confidence in quality</td></tr>
+<tr><td>Handles environment warmup delays</td><td>RetryAnalyzer instance state must be managed per test</td></tr>
+<tr><td>Configurable per test or globally</td><td>Can hide performance degradation trends</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>12.8 When NOT to Use Retry</h3>
+<ul>
+<li>Assertion failures indicating real bugs (wrong text, missing elements)</li>
+<li>Tests with side effects (order creation, payment processing)</li>
+<li>Performance tests where retry skews timing metrics</li>
+<li>When failure rate exceeds 10% — fix root cause instead</li>
+<li>Data setup/teardown failures — retry won't help</li>
+</ul>
+
+<h3>12.9 Interview Q&amp;A — Retry Mechanism</h3>
+
+<h4>Q1: What is IRetryAnalyzer in TestNG?</h4>
+<p><strong>Answer:</strong> An interface with a single retry(ITestResult) method returning boolean. Return true to re-execute the failed test, false to stop. Controls how many times a failed test is retried before final failure is reported.</p>
+<p><em>Interviewer expects:</em> Interface method signature and return logic.</p>
+
+<h4>Q2: How do you apply retry to all tests globally?</h4>
+<p><strong>Answer:</strong> Implement IAnnotationTransformer, set RetryAnalyzer class on every ITestAnnotation in the transform method, and register the transformer as a listener in testng.xml. Avoids annotating each test individually.</p>
+<p><em>Interviewer expects:</em> IAnnotationTransformer global pattern.</p>
+
+<h4>Q3: Why must RetryAnalyzer manage instance state carefully?</h4>
+<p><strong>Answer:</strong> TestNG may reuse the same RetryAnalyzer instance across tests. The retryCount field must reset per test or use ITestResult to track attempts. Otherwise, retry count from one test affects another.</p>
+<p><em>Interviewer expects:</em> Instance state isolation awareness.</p>
+
+<h4>Q4: What is the difference between retry and @Test(invocationCount)?</h4>
+<p><strong>Answer:</strong> invocationCount runs the test N times regardless of pass/fail — used for load testing. Retry re-executes only on failure up to a limit — used for handling flakiness. Completely different purposes.</p>
+<p><em>Interviewer expects:</em> Clear distinction between the two mechanisms.</p>
+
+<h4>Q5: How do you configure retry count externally?</h4>
+<p><strong>Answer:</strong> Read retry.count from config.properties or system properties inside the RetryAnalyzer constructor. Allows CI pipelines to adjust retry behavior without code changes via -Dretry.count=3.</p>
+<p><em>Interviewer expects:</em> Externalized configuration approach.</p>
+
+<h4>Q6: Can retry mask real bugs?</h4>
+<p><strong>Answer:</strong> Yes — if a test fails due to an actual defect but passes on retry (e.g., race condition in the app), retry hides the bug. Monitor retry success rates; high retry-then-pass rates indicate instability needing investigation.</p>
+<p><em>Interviewer expects:</em> Critical thinking about retry misuse.</p>
+
+<h4>Q7: How does TestNG report retried tests?</h4>
+<p><strong>Answer:</strong> TestNG shows the final result after all retry attempts. Intermediate failures appear in verbose logs. ExtentReports and Allure can log each attempt separately if the listener tracks invocation count via getCurrentInvocationCount().</p>
+<p><em>Interviewer expects:</em> Reporting integration for retry attempts.</p>
+
+<h4>Q8: Should you retry data setup failures?</h4>
+<p><strong>Answer:</strong> No — if @BeforeMethod or DataProvider fails, the root cause is infrastructure or data issue. Retrying the test won't fix it. Fix the setup logic or data source instead of applying retry.</p>
+<p><em>Interviewer expects:</em> Judgment on appropriate retry scope.</p>
+
+<h4>Q9: How do retry and listeners interact?</h4>
+<p><strong>Answer:</strong> onTestFailure fires on each failed attempt including intermediate retries. onTestSuccess fires when retry eventually passes. Listeners should use getCurrentInvocationCount() to distinguish attempts and avoid duplicate actions.</p>
+<p><em>Interviewer expects:</em> Event firing behavior across retry attempts.</p>
+</section>
+
+<section id="section-13" class="section-card">
+<h2>Section 13: Reporting</h2>
+
+<h3>13.1 TestNG Default Reports</h3>
+<p>After execution, TestNG generates reports in the <code>test-output</code> folder:</p>
+<ul>
+<li><strong>index.html</strong> — Main report with suite summary, pass/fail/skip counts</li>
+<li><strong>emailable-report.html</strong> — Lightweight report suitable for email distribution</li>
+<li><strong>testng-results.xml</strong> — XML format for CI tool integration</li>
+<li><strong>junitreports/</strong> — JUnit-compatible XML reports</li>
+</ul>
+
+<h3>13.2 Extent Reports</h3>
+
+<h4>Dependencies (pom.xml)</h4>
+<pre><code>&lt;dependency&gt;
+    &lt;groupId&gt;com.aventstack&lt;/groupId&gt;
+    &lt;artifactId&gt;extentreports&lt;/artifactId&gt;
+    &lt;version&gt;5.1.1&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+
+<h4>ExtentSparkReporter Setup</h4>
+<pre><code>ExtentSparkReporter spark = new ExtentSparkReporter("reports/ExtentReport.html");
+spark.config().setDocumentTitle("Automation Report");
+spark.config().setReportName("Regression Test Results");
+spark.config().setTheme(Theme.STANDARD);
+spark.config().setTimeStampFormat("MMM dd, yyyy HH:mm:ss");
+
+ExtentReports extent = new ExtentReports();
+extent.attachReporter(spark);
+extent.setSystemInfo("OS", System.getProperty("os.name"));
+extent.setSystemInfo("Java", System.getProperty("java.version"));
+extent.setSystemInfo("Environment", "QA");</code></pre>
+
+<h4>Complete ExtentReportListener</h4>
+<pre><code>package com.example.listeners;
+
+import com.aventstack.extentreports.*;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+import com.aventstack.extentreports.reporter.configuration.Theme;
+import org.testng.*;
+
+public class ExtentReportListener implements ITestListener, ISuiteListener {
+    private static ExtentReports extent;
+    private static ThreadLocal&lt;ExtentTest&gt; test = new ThreadLocal&lt;&gt;();
+
+    @Override
+    public void onStart(ISuite suite) {
+        ExtentSparkReporter spark = new ExtentSparkReporter("reports/ExtentReport.html");
+        spark.config().setTheme(Theme.STANDARD);
+        spark.config().setDocumentTitle("Test Report");
+        spark.config().setReportName(suite.getName());
+        extent = new ExtentReports();
+        extent.attachReporter(spark);
+        extent.setSystemInfo("Tester", System.getProperty("user.name"));
+    }
+
+    @Override
+    public void onTestStart(ITestResult result) {
+        ExtentTest extentTest = extent.createTest(
+            result.getMethod().getMethodName(),
+            result.getMethod().getDescription());
+        test.set(extentTest);
+    }
+
+    @Override
+    public void onTestSuccess(ITestResult result) {
+        test.get().pass("Test passed");
+    }
+
+    @Override
+    public void onTestFailure(ITestResult result) {
+        test.get().fail(result.getThrowable());
+        String screenshot = (String) result.getAttribute("screenshot");
+        if (screenshot != null) {
+            test.get().addScreenCaptureFromPath(screenshot);
+        }
+    }
+
+    @Override
+    public void onTestSkipped(ITestResult result) {
+        test.get().skip(result.getThrowable());
+    }
+
+    @Override
+    public void onFinish(ISuite suite) {
+        if (extent != null) extent.flush();
+    }
+}</code></pre>
+
+<h3>13.3 Allure Reports</h3>
+
+<h4>Dependencies and Plugins (pom.xml)</h4>
+<pre><code>&lt;properties&gt;
+    &lt;allure.version&gt;2.25.0&lt;/allure.version&gt;
+    &lt;aspectj.version&gt;1.9.21&lt;/aspectj.version&gt;
+&lt;/properties&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+    &lt;artifactId&gt;allure-testng&lt;/artifactId&gt;
+    &lt;version&gt;${allure.version}&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;plugin&gt;
+    &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+    &lt;artifactId&gt;allure-maven&lt;/artifactId&gt;
+    &lt;version&gt;2.12.0&lt;/version&gt;
+&lt;/plugin&gt;
+
+&lt;!-- Surefire with AspectJ for @Step --&gt;
+&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+    &lt;configuration&gt;
+        &lt;argLine&gt;-javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"&lt;/argLine&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+
+<h4>Allure Annotations</h4>
+<pre><code>@Epic("E-Commerce")
+@Feature("Checkout")
+public class CheckoutTest {
+
+    @Test
+    @Story("Payment Processing")
+    @Description("Verify credit card payment completes successfully")
+    @Severity(SeverityLevel.CRITICAL)
+    public void testCreditCardPayment() {
+        openCheckoutPage();
+        enterPaymentDetails();
+        verifyConfirmation();
+    }
+
+    @Step("Open checkout page")
+    private void openCheckoutPage() { driver.get(baseUrl + "/checkout"); }
+
+    @Step("Enter payment details for card: {cardNumber}")
+    private void enterPaymentDetails() { /* ... */ }
+
+    @Attachment(value = "Screenshot", type = "image/png")
+    public byte[] captureScreenshot() {
+        return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+    }
+}
+
+// Generate report: mvn allure:serve</code></pre>
+
+<h4>Jenkins Allure Plugin</h4>
+<pre><code>// Jenkinsfile
+post {
+    always {
+        allure([
+            includeProperties: false,
+            jdk: '',
+            properties: [],
+            reportBuildPolicy: 'ALWAYS',
+            results: [[path: 'target/allure-results']]
+        ])
+    }
+}</code></pre>
+
+<h3>13.4 ExtentReports vs Allure Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Feature</th><th>ExtentReports</th><th>Allure</th></tr></thead>
+<tbody>
+<tr><td>Setup complexity</td><td>Simple — listener + reporter</td><td>Moderate — AspectJ agent, annotations</td></tr>
+<tr><td>Report UI</td><td>Clean dashboard, charts</td><td>Rich interactive dashboard with history</td></tr>
+<tr><td>Step-level logging</td><td>Manual log() calls</td><td>@Step annotation auto-capture</td></tr>
+<tr><td>Screenshot support</td><td>addScreenCaptureFromPath()</td><td>@Attachment annotation</td></tr>
+<tr><td>CI integration</td><td>HTML file — open directly</td><td>Allure Jenkins plugin, history trends</td></tr>
+<tr><td>Categories/Tags</td><td>assignCategory()</td><td>@Epic, @Feature, @Story hierarchy</td></tr>
+<tr><td>History/Trends</td><td>Not built-in</td><td>Built-in trend graphs across builds</td></tr>
+<tr><td>Community</td><td>Large, mature</td><td>Very large, industry standard</td></tr>
+<tr><td>Best for</td><td>Quick setup, small teams</td><td>Enterprise CI/CD, detailed analysis</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>13.5 Custom HTML Reporting</h3>
+<p>Build custom reports using IReporter or ITestListener to collect results and generate HTML with pass/fail charts, execution timelines, and environment info. Useful when Extent/Allure overhead is unnecessary for small projects.</p>
+
+<h3>13.6 Interview Q&amp;A — Reporting</h3>
+
+<h4>Q1: Where does TestNG store default reports?</h4>
+<p><strong>Answer:</strong> In the test-output folder at project root. Key files: index.html (main report), emailable-report.html (for email), and testng-results.xml (for CI parsing). Generated automatically after every TestNG run.</p>
+<p><em>Interviewer expects:</em> Default report location and file names.</p>
+
+<h4>Q2: How do you integrate ExtentReports with TestNG?</h4>
+<p><strong>Answer:</strong> Create a listener implementing ITestListener and ISuiteListener. Initialize ExtentReports with ExtentSparkReporter in onStart, create ExtentTest per method in onTestStart, log results in onTestSuccess/Failure/Skipped, and flush in onFinish.</p>
+<p><em>Interviewer expects:</em> Complete listener lifecycle integration.</p>
+
+<h4>Q3: What is the @Step annotation in Allure?</h4>
+<p><strong>Answer:</strong> Marks methods as report steps. Allure automatically captures method name, parameters, and execution time in the report hierarchy. Requires AspectJ weaver agent configured in Surefire plugin argLine.</p>
+<p><em>Interviewer expects:</em> AspectJ dependency and step hierarchy.</p>
+
+<h4>Q4: How do you add screenshots to ExtentReports?</h4>
+<p><strong>Answer:</strong> In onTestFailure, capture screenshot via TakesScreenshot, save to disk, then call test.get().addScreenCaptureFromPath(path) on the ExtentTest instance. Relative paths from report location work best.</p>
+<p><em>Interviewer expects:</em> Failure-only screenshot pattern.</p>
+
+<h4>Q5: How do you generate Allure report locally?</h4>
+<p><strong>Answer:</strong> Run tests normally (results go to target/allure-results), then execute mvn allure:serve which starts a local server and opens the report in browser. allure:report generates static HTML without server.</p>
+<p><em>Interviewer expects:</em> Maven plugin commands.</p>
+
+<h4>Q6: ExtentReports vs Allure — which do you prefer?</h4>
+<p><strong>Answer:</strong> ExtentReports for quick setup and standalone HTML reports. Allure for CI/CD pipelines needing history trends, step-level detail, and Jenkins integration. Many enterprises use Allure for its rich analytics.</p>
+<p><em>Interviewer expects:</em> Justified preference with trade-offs.</p>
+
+<h4>Q7: How do you customize ExtentReports theme?</h4>
+<p><strong>Answer:</strong> Via spark.config(): setTheme(STANDARD or DARK), setDocumentTitle, setReportName, setTimeStampFormat. Custom CSS can be injected via spark.config().setCss() for branding.</p>
+<p><em>Interviewer expects:</em> Configuration API knowledge.</p>
+
+<h4>Q8: What Allure annotations define report hierarchy?</h4>
+<p><strong>Answer:</strong> @Epic (highest level, e.g., "E-Commerce"), @Feature (module, e.g., "Checkout"), @Story (user story, e.g., "Payment"), @Description (test detail), @Severity (CRITICAL, NORMAL, MINOR).</p>
+<p><em>Interviewer expects:</em> Full annotation hierarchy.</p>
+
+<h4>Q9: How do you integrate Allure with Jenkins?</h4>
+<p><strong>Answer:</strong> Install Allure Jenkins plugin, configure allure-results path in Jenkinsfile post-always block using allure step. Plugin generates trend graphs, history, and categories across builds automatically.</p>
+<p><em>Interviewer expects:</em> CI pipeline integration steps.</p>
+
+<h4>Q10: Can you use both ExtentReports and Allure together?</h4>
+<p><strong>Answer:</strong> Yes — register both listeners in testng.xml. ExtentReports provides immediate HTML report; Allure provides detailed CI-integrated reporting. Slight overhead from dual listeners but common in transition periods.</p>
+<p><em>Interviewer expects:</em> Multi-reporter setup feasibility.</p>
+
+<h4>Q11: How do you attach logs to Allure report?</h4>
+<p><strong>Answer:</strong> Use @Attachment annotation on methods returning byte[] or String. AllureTestNg listener auto-captures stdout/stderr. Manual attachment: Allure.addAttachment("name", "text/plain", content).</p>
+<p><em>Interviewer expects:</em> Multiple attachment methods.</p>
+</section>
+
+<section id="section-14" class="section-card">
+<h2>Section 14: TestNG Framework Architecture</h2>
+
+<h3>14.1 Hybrid Framework Design (POM + Data-Driven + TestNG)</h3>
+
+<div class="ascii-diagram">
+project-root/
+├── pom.xml
+├── testng-suites/
+│   ├── smoke-suite.xml
+│   ├── regression-suite.xml
+│   └── cross-browser-suite.xml
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   ├── pages/
+│   │   │   │   ├── BasePage.java
+│   │   │   │   ├── LoginPage.java
+│   │   │   │   ├── DashboardPage.java
+│   │   │   │   └── CheckoutPage.java
+│   │   │   ├── utils/
+│   │   │   │   ├── DriverManager.java
+│   │   │   │   ├── ExcelReader.java
+│   │   │   │   ├── ConfigReader.java
+│   │   │   │   ├── ScreenshotUtil.java
+│   │   │   │   └── WaitUtils.java
+│   │   │   └── config/
+│   │   │       └── ConfigLoader.java
+│   │   └── resources/
+│   │       ├── config.properties
+│   │       ├── config-qa.properties
+│   │       └── config-staging.properties
+│   └── test/
+│       ├── java/
+│       │   ├── base/
+│       │   │   └── BaseTest.java
+│       │   ├── tests/
+│       │   │   ├── LoginTest.java
+│       │   │   ├── SearchTest.java
+│       │   │   └── CheckoutTest.java
+│       │   ├── listeners/
+│       │   │   ├── ExtentReportListener.java
+│       │   │   ├── ScreenshotListener.java
+│       │   │   └── RetryAnnotationTransformer.java
+│       │   └── dataproviders/
+│       │       └── ExcelDataProvider.java
+│       └── resources/
+│           └── testdata/
+│               ├── login_data.xlsx
+│               └── search_data.json
+└── reports/
+    ├── ExtentReport.html
+    ├── screenshots/
+    └── allure-results/
+</div>
+
+<h3>14.2 Layer Explanations</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Layer</th><th>Path</th><th>Responsibility</th></tr></thead>
+<tbody>
+<tr><td>Page Objects</td><td>src/main/java/pages/</td><td>UI element locators and page actions via PageFactory</td></tr>
+<tr><td>Utilities</td><td>src/main/java/utils/</td><td>WebDriver management, Excel/Config readers, waits, screenshots</td></tr>
+<tr><td>Config</td><td>src/main/java/config/</td><td>Environment-specific properties loading</td></tr>
+<tr><td>Base Test</td><td>src/test/java/base/</td><td>WebDriver init/teardown, suite setup hooks</td></tr>
+<tr><td>Tests</td><td>src/test/java/tests/</td><td>Test scenarios using pages + data providers</td></tr>
+<tr><td>Listeners</td><td>src/test/java/listeners/</td><td>Reporting, screenshots, retry transformers</td></tr>
+<tr><td>Data Providers</td><td>src/test/java/dataproviders/</td><td>External test data feeding test methods</td></tr>
+<tr><td>Suite XML</td><td>testng-suites/</td><td>Execution configuration per run type</td></tr>
+<tr><td>Reports</td><td>reports/</td><td>Extent, Allure, screenshot output</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>14.3 BaseTest Class — Complete Code</h3>
+<pre><code>package com.example.base;
+
+import com.example.utils.ConfigReader;
+import com.example.utils.DriverManager;
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.*;
+
+public class BaseTest {
+    protected WebDriver driver;
+    protected ConfigReader config;
+
+    @BeforeSuite
+    public void beforeSuite() {
+        config = new ConfigReader();
+        System.out.println("Suite starting — Environment: " + config.get("environment"));
+    }
+
+    @BeforeMethod
+    @Parameters({"browser"})
+    public void setUp(@Optional("chrome") String browser) {
+        driver = DriverManager.initDriver(browser);
+        driver.get(config.get("baseUrl"));
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        DriverManager.quitDriver();
+    }
+
+    @AfterSuite
+    public void afterSuite() {
+        System.out.println("Suite completed.");
+    }
+}</code></pre>
+
+<h3>14.4 Page Object — LoginPage with PageFactory</h3>
+<pre><code>package com.example.pages;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
+
+public class LoginPage {
+    private WebDriver driver;
+
+    @FindBy(id = "username")
+    private WebElement usernameField;
+
+    @FindBy(id = "password")
+    private WebElement passwordField;
+
+    @FindBy(id = "loginBtn")
+    private WebElement loginButton;
+
+    @FindBy(css = ".error-message")
+    private WebElement errorMessage;
+
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+        PageFactory.initElements(driver, this);
+    }
+
+    public DashboardPage login(String username, String password) {
+        usernameField.clear();
+        usernameField.sendKeys(username);
+        passwordField.clear();
+        passwordField.sendKeys(password);
+        loginButton.click();
+        return new DashboardPage(driver);
+    }
+
+    public String getErrorMessage() {
+        return errorMessage.getText();
+    }
+
+    public boolean isLoginPageDisplayed() {
+        return loginButton.isDisplayed();
+    }
+}</code></pre>
+
+<h3>14.5 Test Class — Page Object + DataProvider</h3>
+<pre><code>package com.example.tests;
+
+import com.example.base.BaseTest;
+import com.example.dataproviders.ExcelDataProvider;
+import com.example.pages.LoginPage;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+public class LoginTest extends BaseTest {
+
+    @Test(dataProvider = "loginExcel", dataProviderClass = ExcelDataProvider.class,
+          groups = {"smoke", "regression"})
+    public void testLogin(String username, String password, String expected) {
+        LoginPage loginPage = new LoginPage(driver);
+        Assert.assertTrue(loginPage.isLoginPageDisplayed(), "Login page not loaded");
+
+        if ("success".equals(expected)) {
+            loginPage.login(username, password);
+            Assert.assertTrue(driver.getCurrentUrl().contains("dashboard"),
+                "Dashboard not displayed after login");
+        } else {
+            loginPage.login(username, password);
+            Assert.assertFalse(driver.getCurrentUrl().contains("dashboard"),
+                "Should not reach dashboard with invalid credentials");
+        }
+    }
+
+    @Test(groups = {"smoke"})
+    public void testLogout() {
+        LoginPage loginPage = new LoginPage(driver);
+        loginPage.login("admin", "admin123");
+        // logout logic
+        Assert.assertTrue(loginPage.isLoginPageDisplayed());
+    }
+}</code></pre>
+
+<h3>14.6 ConfigReader Utility</h3>
+<pre><code>package com.example.utils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+public class ConfigReader {
+    private Properties properties = new Properties();
+
+    public ConfigReader() {
+        String env = System.getProperty("env", "qa");
+        String fileName = "config-" + env + ".properties";
+        try (InputStream is = getClass().getClassLoader()
+                .getResourceAsStream(fileName)) {
+            if (is == null) {
+                is = getClass().getClassLoader().getResourceAsStream("config.properties");
+            }
+            properties.load(is);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load config: " + fileName, e);
+        }
+    }
+
+    public String get(String key) {
+        String sysProp = System.getProperty(key);
+        return sysProp != null ? sysProp : properties.getProperty(key);
+    }
+
+    public int getInt(String key) {
+        return Integer.parseInt(get(key));
+    }
+
+    public boolean getBoolean(String key) {
+        return Boolean.parseBoolean(get(key));
+    }
+}</code></pre>
+
+<h3>14.7 WebDriver Factory — Complete Code</h3>
+<pre><code>package com.example.utils;
+
+import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
+import java.time.Duration;
+
+public class DriverManager {
+    private static ThreadLocal&lt;WebDriver&gt; tlDriver = new ThreadLocal&lt;&gt;();
+
+    public static WebDriver initDriver(String browser) {
+        WebDriver driver;
+        switch (browser.toLowerCase()) {
+            case "firefox":
+                WebDriverManager.firefoxdriver().setup();
+                driver = new FirefoxDriver();
+                break;
+            case "firefox-headless":
+                WebDriverManager.firefoxdriver().setup();
+                FirefoxOptions fOpts = new FirefoxOptions();
+                fOpts.addArguments("-headless");
+                driver = new FirefoxDriver(fOpts);
+                break;
+            case "edge":
+                WebDriverManager.edgedriver().setup();
+                driver = new EdgeDriver();
+                break;
+            case "chrome-headless":
+                WebDriverManager.chromedriver().setup();
+                ChromeOptions cOpts = new ChromeOptions();
+                cOpts.addArguments("--headless=new", "--window-size=1920,1080");
+                driver = new ChromeDriver(cOpts);
+                break;
+            default:
+                WebDriverManager.chromedriver().setup();
+                driver = new ChromeDriver();
+        }
+        driver.manage().window().maximize();
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
+        tlDriver.set(driver);
+        return driver;
+    }
+
+    public static WebDriver getDriver() { return tlDriver.get(); }
+
+    public static void quitDriver() {
+        if (tlDriver.get() != null) {
+            tlDriver.get().quit();
+            tlDriver.remove();
+        }
+    }
+}</code></pre>
+
+<h3>14.8 Framework Design Principles</h3>
+<ul>
+<li><strong>DRY (Don't Repeat Yourself):</strong> Common logic in utilities and base classes — never duplicate WebDriver setup or config reading</li>
+<li><strong>Single Responsibility:</strong> Pages handle UI, tests handle assertions, utils handle infrastructure</li>
+<li><strong>Loose Coupling:</strong> Tests depend on page interfaces, not Selenium internals — swap WebDriver without changing tests</li>
+<li><strong>Configuration Externalization:</strong> URLs, credentials, browser in properties — not hardcoded in tests</li>
+<li><strong>Data Separation:</strong> Test data in Excel/JSON files via DataProviders — not embedded in test methods</li>
+</ul>
+
+<h3>14.9 Interview Q&amp;A — Framework Architecture</h3>
+
+<h4>Q1: Describe your TestNG framework architecture.</h4>
+<p><strong>Answer:</strong> Hybrid framework combining Page Object Model, data-driven testing via DataProviders, and TestNG for execution control. Layers: pages (UI), utils (infrastructure), config (environment), tests (scenarios), listeners (reporting), and testng-suites (execution config).</p>
+<p><em>Interviewer expects:</em> Clear layered architecture with technology choices justified.</p>
+
+<h4>Q2: Why use PageFactory over direct findElement?</h4>
+<p><strong>Answer:</strong> PageFactory initializes elements lazily via @FindBy annotations, reducing boilerplate. It supports @CacheLookup for static elements and integrates with AjaxElementLocatorFactory for automatic waits. Cleaner, more maintainable page classes.</p>
+<p><em>Interviewer expects:</em> Lazy initialization and maintainability benefits.</p>
+
+<h4>Q3: Why place pages in main and tests in test?</h4>
+<p><strong>Answer:</strong> Maven convention: src/main for production/reusable code, src/test for test-specific code. Page objects are reusable across test types (UI, API validation). This separation enables clean packaging and dependency management.</p>
+<p><em>Interviewer expects:</em> Maven structure understanding.</p>
+
+<h4>Q4: How does BaseTest support multiple browsers?</h4>
+<p><strong>Answer:</strong> BaseTest @BeforeMethod accepts browser via @Parameters or @Optional default. DriverManager factory creates the appropriate WebDriver based on browser string. testng.xml passes different browser parameters per test block for cross-browser runs.</p>
+<p><em>Interviewer expects:</em> Parameter injection + factory pattern.</p>
+
+<h4>Q5: How do you handle different environments?</h4>
+<p><strong>Answer:</strong> Separate config files (config-qa.properties, config-staging.properties). ConfigReader loads based on -Denv system property. Maven profiles or CI variables select environment. Same test code runs against any environment.</p>
+<p><em>Interviewer expects:</em> Externalized environment configuration.</p>
+
+<h4>Q6: What is the role of listeners in your framework?</h4>
+<p><strong>Answer:</strong> Listeners handle cross-cutting concerns: ExtentReportListener for HTML reports, ScreenshotListener for failure captures, RetryAnnotationTransformer for global retry. Registered in testng.xml — tests remain clean without reporting boilerplate.</p>
+<p><em>Interviewer expects:</em> Separation of test logic from infrastructure.</p>
+
+<h4>Q7: How do you organize testng.xml files?</h4>
+<p><strong>Answer:</strong> Separate files per run type in testng-suites/: smoke-suite.xml (fast critical tests), regression-suite.xml (full coverage), cross-browser-suite.xml (parallel browsers). Maven Surefire or CI selects the appropriate file per pipeline stage.</p>
+<p><em>Interviewer expects:</em> Multi-suite CI/CD strategy.</p>
+
+<h4>Q8: How do you ensure thread safety in the framework?</h4>
+<p><strong>Answer:</strong> ThreadLocal WebDriver in DriverManager ensures each thread gets its own browser. No static shared state in page objects or tests. Unique test data per DataProvider iteration. Independent test design with no @DependsOnMethods in parallel suites.</p>
+<p><em>Interviewer expects:</em> Comprehensive thread safety strategy.</p>
+
+<h4>Q9: How do you add a new test to the framework?</h4>
+<p><strong>Answer:</strong> Create page object if new page needed, add test data to Excel/JSON, create test class extending BaseTest with @Test methods, add DataProvider reference if data-driven, assign groups, and include class in appropriate testng.xml suite.</p>
+<p><em>Interviewer expects:</em> Step-by-step onboarding process.</p>
+
+<h4>Q10: How do you scale the framework for 500+ tests?</h4>
+<p><strong>Answer:</strong> Package-based testng.xml inclusion, parallel execution with Grid, separate DataProvider classes per module, modular page objects, CI pipeline splitting (smoke/regression/nightly), and consistent naming conventions for discoverability.</p>
+<p><em>Interviewer expects:</em> Scalability patterns and CI strategy.</p>
+</section>
+
+<section id="section-15" class="section-card">
+<h2>Section 15: TestNG Interview Questions</h2>
+<p>Top 100 TestNG interview questions organized by difficulty level. Each includes a concise answer and what the interviewer expects.</p>
+
+<h3>15.1 Basic Level (30 Questions)</h3>
+
+<h4>Q1: What is TestNG?</h4>
+<p><strong>Answer:</strong> TestNG (Test Next Generation) is a Java testing framework inspired by JUnit and NUnit. It provides annotations, flexible test configuration via XML, parallel execution, data-driven testing, grouping, dependencies, and rich reporting — designed for all test levels from unit to integration.</p>
+<p><em>Interviewer expects:</em> Beyond "testing framework" — mention key differentiators from JUnit.</p>
+
+<h4>Q2: How do you install TestNG?</h4>
+<p><strong>Answer:</strong> Maven: add org.testng:testng dependency in pom.xml. Eclipse/IntelliJ: install TestNG plugin from marketplace. Standalone: download testng.jar and add to classpath. Maven is the standard for enterprise projects.</p>
+<p><em>Interviewer expects:</em> Maven dependency approach as primary.</p>
+
+<h4>Q3: What annotations does TestNG provide?</h4>
+<p><strong>Answer:</strong> Core annotations: @Test, @BeforeSuite, @AfterSuite, @BeforeTest, @AfterTest, @BeforeClass, @AfterClass, @BeforeMethod, @AfterMethod, @BeforeGroups, @AfterGroups, @DataProvider, @Parameters, @Factory, @Listeners. Each controls test lifecycle or data injection.</p>
+<p><em>Interviewer expects:</em> At least 8-10 annotations with purposes.</p>
+
+<h4>Q4: What is the difference between @BeforeClass and @BeforeMethod?</h4>
+<p><strong>Answer:</strong> @BeforeClass runs once before all methods in a class — used for expensive setup like DB connection. @BeforeMethod runs before each @Test method — used for per-test setup like browser launch. @BeforeClass is more efficient but shared state risks exist.</p>
+<p><em>Interviewer expects:</em> Execution frequency and use case distinction.</p>
+
+<h4>Q5: What is the TestNG test execution order?</h4>
+<p><strong>Answer:</strong> @BeforeSuite → @BeforeTest → @BeforeClass → @BeforeMethod → @Test → @AfterMethod → @AfterClass → @AfterTest → @AfterSuite. @BeforeGroups/@AfterGroups run before/after groups. Multiple classes follow alphabetical order unless prioritized.</p>
+<p><em>Interviewer expects:</em> Complete lifecycle sequence.</p>
+
+<h4>Q6: How do you skip a test in TestNG?</h4>
+<p><strong>Answer:</strong> Set enabled=false on @Test annotation: @Test(enabled = false). Or use IAnnotationTransformer to disable dynamically. Or exclude via testng.xml groups/methods. Disabled tests appear as SKIPPED in reports.</p>
+<p><em>Interviewer expects:</em> Multiple skip mechanisms.</p>
+
+<h4>Q7: What is the purpose of @Test(priority)?</h4>
+<p><strong>Answer:</strong> Controls execution order of test methods within a class. Lower priority number runs first (priority=1 before priority=2). Default priority is 0. Only affects order within same class in non-parallel mode.</p>
+<p><em>Interviewer expects:</em> Lower number = higher priority.</p>
+
+<h4>Q8: What assertions does TestNG provide?</h4>
+<p><strong>Answer:</strong> org.testng.Assert class: assertTrue, assertFalse, assertEquals, assertNotEquals, assertNull, assertNotNull, assertSame, assertNotSame, fail. SoftAssert (org.testng.asserts.SoftAssert) collects all failures before reporting.</p>
+<p><em>Interviewer expects:</em> SoftAssert awareness for multiple checks.</p>
+
+<h4>Q9: What is SoftAssert?</h4>
+<p><strong>Answer:</strong> SoftAssert collects assertion failures without stopping execution. Call assertAll() at the end to report all failures together. Useful when validating multiple fields on a page — one failure doesn't prevent checking others.</p>
+<p><em>Interviewer expects:</em> assertAll() requirement understanding.</p>
+
+<h4>Q10: What are TestNG groups?</h4>
+<p><strong>Answer:</strong> Tags assigned to tests via @Test(groups = {"smoke", "regression"}). Enable selective execution in testng.xml using include/exclude. A test can belong to multiple groups. Groups organize tests by type, feature, or pipeline stage.</p>
+<p><em>Interviewer expects:</em> XML group filtering knowledge.</p>
+
+<h4>Q11: How do you run tests belonging to a specific group?</h4>
+<p><strong>Answer:</strong> In testng.xml: &lt;groups&gt;&lt;run&gt;&lt;include name="smoke"/&gt;&lt;/run&gt;&lt;/groups&gt;. Or via Maven: mvn test -Dgroups=smoke. Tests not in the included group are skipped.</p>
+<p><em>Interviewer expects:</em> Both XML and Maven approaches.</p>
+
+<h4>Q12: Can a test belong to multiple groups?</h4>
+<p><strong>Answer:</strong> Yes — @Test(groups = {"smoke", "regression", "login"}). The test runs if ANY included group matches. Useful when a login test is both smoke and part of login feature group.</p>
+<p><em>Interviewer expects:</em> Multi-group assignment pattern.</p>
+
+<h4>Q13: What is @BeforeGroups used for?</h4>
+<p><strong>Answer:</strong> Runs once before the first test method in the specified group executes. Used for group-specific setup like preparing test data for "database" group tests. @AfterGroups runs after the last test in that group.</p>
+<p><em>Interviewer expects:</em> Group-scoped setup/teardown.</p>
+
+<h4>Q14: What is the difference between @BeforeTest and @BeforeClass?</h4>
+<p><strong>Answer:</strong> @BeforeTest runs once per &lt;test&gt; tag in XML before any classes in that test block. @BeforeClass runs once per test class. A suite with two &lt;test&gt; tags triggers @BeforeTest twice but @BeforeClass once per class.</p>
+<p><em>Interviewer expects:</em> XML test tag vs Java class scope.</p>
+
+<h4>Q15: What is @AfterMethod alwaysRun?</h4>
+<p><strong>Answer:</strong> @AfterMethod(alwaysRun = true) executes even when the test fails or is skipped. Without it, @AfterMethod may not run if @BeforeMethod fails. Critical for cleanup like WebDriver.quit() and resource release.</p>
+<p><em>Interviewer expects:</em> Cleanup reliability importance.</p>
+
+<h4>Q16: How do you set test timeout in TestNG?</h4>
+<p><strong>Answer:</strong> @Test(timeOut = 5000) sets max milliseconds for the test. Exceeding timeout marks test as FAILED with TimeoutException. Useful for detecting hung tests or performance regressions.</p>
+<p><em>Interviewer expects:</em> Milliseconds unit and failure behavior.</p>
+
+<h4>Q17: What is @Test(expectedExceptions)?</h4>
+<p><strong>Answer:</strong> @Test(expectedExceptions = IllegalArgumentException.class) passes the test if the specified exception is thrown. Tests negative scenarios without try-catch blocks. Can specify multiple: expectedExceptions = {Ex1.class, Ex2.class}.</p>
+<p><em>Interviewer expects:</em> Negative testing use case.</p>
+
+<h4>Q18: What is @Test(invocationCount)?</h4>
+<p><strong>Answer:</strong> Runs the test method N times: @Test(invocationCount = 5). Combined with threadPoolSize for parallel invocations. Used for load/stress testing, not for retry on failure.</p>
+<p><em>Interviewer expects:</em> Distinction from retry mechanism.</p>
+
+<h4>Q19: What is the default test name in reports?</h4>
+<p><strong>Answer:</strong> By default, the method name appears in reports. Override with @Test(testName = "Verify User Login") for readable report names. Description via @Test(description = "...") adds detail in reports.</p>
+<p><em>Interviewer expects:</em> testName and description attributes.</p>
+
+<h4>Q20: How do you run TestNG tests from command line?</h4>
+<p><strong>Answer:</strong> java -cp "testng.jar:classes" org.testng.TestNG testng.xml. Or via Maven: mvn test. Or IDE right-click Run. Maven with specific suite: mvn test -DsuiteXmlFile=smoke-suite.xml.</p>
+<p><em>Interviewer expects:</em> Maven as primary execution method.</p>
+
+<h4>Q21: What is the difference between TestNG and JUnit?</h4>
+<p><strong>Answer:</strong> TestNG offers: XML configuration, parallel execution, DataProvider, groups, dependencies, @Before/After Suite/Test, richer reporting, and ITestListener. JUnit is simpler, annotation-only, widely used for unit tests. TestNG dominates integration/UI automation.</p>
+<p><em>Interviewer expects:</em> Feature-by-feature comparison.</p>
+
+<h4>Q22: What is @Factory annotation?</h4>
+<p><strong>Answer:</strong> @Factory marks a method returning Object[] of test class instances. TestNG creates and runs each instance as a separate test. Used with DataProvider for dynamic test class creation with different constructor parameters.</p>
+<p><em>Interviewer expects:</em> Dynamic test class instantiation.</p>
+
+<h4>Q23: What happens when an assertion fails in TestNG?</h4>
+<p><strong>Answer:</strong> TestNG catches the AssertionError, marks the test as FAILED, executes @AfterMethod (if alwaysRun=true), and continues with remaining tests. The failure details appear in reports with stack trace and line number.</p>
+<p><em>Interviewer expects:</em> Test continues after failure.</p>
+
+<h4>Q24: What is testng.xml?</h4>
+<p><strong>Answer:</strong> TestNG suite configuration XML file defining which tests run, execution order, parallelism, parameters, groups, listeners, and method/class inclusion/exclusion. Decouples test code from execution configuration.</p>
+<p><em>Interviewer expects:</em> Configuration vs code separation.</p>
+
+<h4>Q25: How do you pass command-line parameters to TestNG?</h4>
+<p><strong>Answer:</strong> Maven system properties: mvn test -Dbrowser=firefox -Denv=staging. Access via System.getProperty("browser") in code or @Parameters if mapped in testng.xml. ConfigReader typically wraps System.getProperty with properties file fallback.</p>
+<p><em>Interviewer expects:</em> -D flag and System.getProperty usage.</p>
+
+<h4>Q26: What is the purpose of @Optional annotation?</h4>
+<p><strong>Answer:</strong> Provides a default value when @Parameters parameter is not defined in testng.xml: @Optional("chrome") String browser. Prevents TestNG exception when parameter is missing. Useful for local development without full XML config.</p>
+<p><em>Interviewer expects:</em> Default parameter fallback pattern.</p>
+
+<h4>Q27: Can TestNG run JUnit tests?</h4>
+<p><strong>Answer:</strong> Yes — set junit="true" on the &lt;test&gt; tag in testng.xml. TestNG discovers and runs JUnit 3 and JUnit 4 tests. Useful during migration or mixed-framework projects.</p>
+<p><em>Interviewer expects:</em> Migration scenario awareness.</p>
+
+<h4>Q28: What is the test-output folder?</h4>
+<p><strong>Answer:</strong> Default TestNG report directory created after execution. Contains index.html, emailable-report.html, testng-results.xml, and per-suite/class HTML reports. Can be changed via -d outputDirectory flag.</p>
+<p><em>Interviewer expects:</em> Default report artifacts knowledge.</p>
+
+<h4>Q29: How do you ignore a test temporarily?</h4>
+<p><strong>Answer:</strong> @Test(enabled = false) — quickest for individual tests. Or add to "wip" group and exclude in testng.xml — better for bulk exclusion. Or comment out the @Test annotation. Disabled tests show as SKIPPED.</p>
+<p><em>Interviewer expects:</em> Group-based exclusion for CI.</p>
+
+<h4>Q30: What is the @Test(singleThreaded) attribute?</h4>
+<p><strong>Answer:</strong> @Test(singleThreaded = true) forces all methods in the class to run sequentially even when parallel execution is enabled globally. Used for tests that must not run concurrently due to shared resources.</p>
+<p><em>Interviewer expects:</em> Override parallel for specific classes.</p>
+
+<h3>15.2 Intermediate Level (35 Questions)</h3>
+
+<h4>Q31: Explain @DataProvider in detail.</h4>
+<p><strong>Answer:</strong> @DataProvider marks a method returning Object[][] or Iterator&lt;Object[]&gt;. Each inner array supplies arguments for one test invocation. Linked via @Test(dataProvider = "name"). Enables data-driven testing with multiple data sets per test method.</p>
+<p><em>Interviewer expects:</em> Return type and invocation model.</p>
+
+<h4>Q32: @Parameters vs @DataProvider?</h4>
+<p><strong>Answer:</strong> @Parameters reads static strings from testng.xml — one execution, config values. @DataProvider is a Java method returning Object[][] — multiple executions, any object type, can read external files. Parameters for config, DataProvider for test data.</p>
+<p><em>Interviewer expects:</em> Clear use case for each.</p>
+
+<h4>Q33: How do you read Excel data in DataProvider?</h4>
+<p><strong>Answer:</strong> Use Apache POI: open workbook, select sheet, iterate rows/columns into Object[][]. Encapsulate in ExcelReader utility. DataProvider calls the utility. Keep file path in config.properties for environment flexibility.</p>
+<p><em>Interviewer expects:</em> Apache POI and utility pattern.</p>
+
+<h4>Q34: What is parallel="methods"?</h4>
+<p><strong>Answer:</strong> TestNG parallel mode where each @Test method runs in its own thread. Configured in testng.xml: parallel="methods" thread-count="5". DataProvider iterations also run as separate parallel invocations. Requires thread-safe test design.</p>
+<p><em>Interviewer expects:</em> Thread safety implications.</p>
+
+<h4>Q35: Explain all parallel modes in TestNG.</h4>
+<p><strong>Answer:</strong> methods (each @Test in own thread), classes (each class in own thread), tests (each &lt;test&gt; XML block in parallel), instances (each @Factory instance in parallel). Choose based on granularity needed — methods for speed, tests for cross-browser.</p>
+<p><em>Interviewer expects:</em> All four with use cases.</p>
+
+<h4>Q36: What is thread-count in testng.xml?</h4>
+<p><strong>Answer:</strong> Maximum concurrent threads for parallel execution. Set at suite or test level. Rule of thumb: CPU cores for CPU-bound, 2× cores for I/O-bound Selenium tests. Too high causes resource contention and flakiness.</p>
+<p><em>Interviewer expects:</em> Tuning guidance.</p>
+
+<h4>Q37: How do you configure TestNG in Maven?</h4>
+<p><strong>Answer:</strong> maven-surefire-plugin with suiteXmlFiles pointing to testng.xml. Add testng dependency. Configure parallel and threadCount in plugin config. Use profiles for different suites: mvn test -Pregression.</p>
+<p><em>Interviewer expects:</em> Surefire plugin configuration.</p>
+
+<h4>Q38: What are TestNG listeners?</h4>
+<p><strong>Answer:</strong> Event-driven interfaces hooking into test lifecycle: ITestListener (test events), ISuiteListener (suite events), IReporter (custom reports), IAnnotationTransformer (modify annotations). Enable logging, screenshots, and reporting without changing test code.</p>
+<p><em>Interviewer expects:</em> Cross-cutting concern pattern.</p>
+
+<h4>Q39: How do you register listeners?</h4>
+<p><strong>Answer:</strong> Three ways: @Listeners on test class, &lt;listeners&gt; in testng.xml (preferred for global), ServiceLoader via META-INF/services. XML registration is most visible and maintainable in enterprise frameworks.</p>
+<p><em>Interviewer expects:</em> XML as enterprise standard.</p>
+
+<h4>Q40: What is @Test(dependsOnMethods)?</h4>
+<p><strong>Answer:</strong> @Test(dependsOnMethods = {"testLogin"}) runs only if testLogin passes. Failed dependency skips the dependent test. Can depend on multiple methods. Avoid in parallel suites — breaks parallelism and creates fragile test chains.</p>
+<p><em>Interviewer expects:</em> Parallel incompatibility warning.</p>
+
+<h4>Q41: What is @Test(dependsOnGroups)?</h4>
+<p><strong>Answer:</strong> Depends on all tests in a group completing successfully: dependsOnGroups = {"setup"}. The dependent test runs only if every test in the "setup" group passed. Broader dependency than dependsOnMethods.</p>
+<p><em>Interviewer expects:</em> Group-level dependency scope.</p>
+
+<h4>Q42: What happens when a dependent test's dependency fails?</h4>
+<p><strong>Answer:</strong> TestNG marks the dependent test as SKIPPED with reason "Dependant methods not run." Skipped tests appear in reports separately from failures. Fix the root dependency failure first.</p>
+<p><em>Interviewer expects:</em> SKIP status and reporting.</p>
+
+<h4>Q43: How do you include/exclude methods in testng.xml?</h4>
+<p><strong>Answer:</strong> Inside &lt;class&gt;: &lt;methods&gt;&lt;include name="testLogin"/&gt;&lt;exclude name="testPayment"/&gt;&lt;/methods&gt;. Include runs only listed methods. Exclude runs all except listed. Method names are case-sensitive.</p>
+<p><em>Interviewer expects:</em> Selective execution for CI stages.</p>
+
+<h4>Q44: How do you run tests from multiple packages?</h4>
+<p><strong>Answer:</strong> Use &lt;packages&gt;&lt;package name="com.example.tests"/&gt;&lt;package name="com.example.api"/&gt;&lt;/packages&gt; in testng.xml. TestNG auto-discovers all @Test classes. More scalable than listing individual classes.</p>
+<p><em>Interviewer expects:</em> Package-based discovery.</p>
+
+<h4>Q45: What is preserve-order in testng.xml?</h4>
+<p><strong>Answer:</strong> preserve-order="true" maintains test method order as defined in class or XML. Default false in parallel mode. Required for dependent tests or ordered workflows. Conflicts with maximum parallelism.</p>
+<p><em>Interviewer expects:</em> Order vs speed trade-off.</p>
+
+<h4>Q46: Explain ITestListener methods.</h4>
+<p><strong>Answer:</strong> onTestStart (before test), onTestSuccess (passed), onTestFailure (failed), onTestSkipped (skipped), onTestFailedButWithinSuccessPercentage, onStart/onFinish (test context). Used for logging, screenshots, and custom reporting hooks.</p>
+<p><em>Interviewer expects:</em> All key methods with triggers.</p>
+
+<h4>Q47: How do you capture screenshots on failure?</h4>
+<p><strong>Answer:</strong> Implement ITestListener.onTestFailure, get WebDriver from ThreadLocal, cast to TakesScreenshot, save file with timestamp, attach path to ITestResult attributes for report integration.</p>
+<p><em>Interviewer expects:</em> Complete implementation flow.</p>
+
+<h4>Q48: What is ISuiteListener?</h4>
+<p><strong>Answer:</strong> Interface with onStart(ISuite) and onFinish(ISuite). Fires once per suite. Used for report initialization (ExtentReports setup), environment validation, cleanup, and sending email notifications after suite completion.</p>
+<p><em>Interviewer expects:</em> Suite-level setup/teardown use cases.</p>
+
+<h4>Q49: What is IReporter?</h4>
+<p><strong>Answer:</strong> generateReport(List&lt;ISuite&gt;, String outputDirectory, XmlSuite) creates custom reports after execution. Receives all suite results for custom HTML, CSV, or database report generation beyond TestNG defaults.</p>
+<p><em>Interviewer expects:</em> Custom report generation capability.</p>
+
+<h4>Q50: What is IAnnotationTransformer?</h4>
+<p><strong>Answer:</strong> transform(ITestAnnotation, Class, Constructor, Method) modifies annotations at runtime before execution. Apply RetryAnalyzer globally, enable/disable tests dynamically, override timeout or description based on conditions.</p>
+<p><em>Interviewer expects:</em> Global retry registration example.</p>
+
+<h4>Q51: How do you implement cross-browser testing?</h4>
+<p><strong>Answer:</strong> Separate &lt;test&gt; blocks per browser in testng.xml with parallel="tests". Each test block passes browser parameter. DriverManager factory creates appropriate WebDriver. Same test class runs against all browsers.</p>
+<p><em>Interviewer expects:</em> XML structure + factory pattern.</p>
+
+<h4>Q52: What is ThreadLocal WebDriver?</h4>
+<p><strong>Answer:</strong> ThreadLocal&lt;WebDriver&gt; provides each thread its own browser instance. get() returns thread-specific driver. remove() in cleanup prevents memory leaks. Essential for parallel test execution safety.</p>
+<p><em>Interviewer expects:</em> Why static WebDriver fails.</p>
+
+<h4>Q53: Why is static WebDriver dangerous?</h4>
+<p><strong>Answer:</strong> Static fields are shared across all threads. One thread quitting the driver kills sessions for all threads. Causes random failures, stale elements, and session not found errors in parallel execution.</p>
+<p><em>Interviewer expects:</em> ThreadLocal as the solution.</p>
+
+<h4>Q54: How do you handle test data in parallel execution?</h4>
+<p><strong>Answer:</strong> Unique data per thread: separate user accounts, unique order IDs, Faker-generated data. Never share mutable test data. Use thread-specific data from DataProvider or thread-ID-based data selection.</p>
+<p><em>Interviewer expects:</em> Data isolation strategy.</p>
+
+<h4>Q55: What is @Test(successPercentage)?</h4>
+<p><strong>Answer:</strong> @Test(invocationCount = 10, successPercentage = 80) passes if at least 80% of 10 invocations succeed. Used for flaky API tests where occasional failures are acceptable. Failed-but-within-percentage triggers special listener callback.</p>
+<p><em>Interviewer expects:</em> Load testing tolerance pattern.</p>
+
+<h4>Q56: How do you integrate TestNG with Selenium Grid?</h4>
+<p><strong>Answer:</strong> Configure RemoteWebDriver pointing to Grid Hub URL. testng.xml with parallel="methods" distributes tests across Grid nodes. Each node runs a browser instance. Docker Compose for local Grid setup.</p>
+<p><em>Interviewer expects:</em> Hub-Node + parallel config.</p>
+
+<h4>Q57: What is verbose in testng.xml?</h4>
+<p><strong>Answer:</strong> Logging verbosity: 0=silent, 1=failures, 2=standard, 10=debug. Higher values help diagnose configuration issues, listener problems, and parallel execution behavior during development.</p>
+<p><em>Interviewer expects:</em> Debugging use case.</p>
+
+<h4>Q58: How do you run a single test method?</h4>
+<p><strong>Answer:</strong> testng.xml with &lt;include name="methodName"/&gt; inside &lt;methods&gt;. IDE: right-click method → Run. Maven: limited — use XML include or @Test groups with group filter.</p>
+<p><em>Interviewer expects:</em> XML include as CI-compatible approach.</p>
+
+<h4>Q59: What is dataProviderClass attribute?</h4>
+<p><strong>Answer:</strong> @Test(dataProvider = "name", dataProviderClass = ExternalClass.class) references a DataProvider in a different class. Keeps test classes clean and enables data reuse across multiple test classes.</p>
+<p><em>Interviewer expects:</em> Separation of data and tests.</p>
+
+<h4>Q60: Can DataProvider return Iterator?</h4>
+<p><strong>Answer:</strong> Yes — Iterator&lt;Object[]&gt; enables lazy loading for large data sets. TestNG calls hasNext()/next() incrementally instead of loading all data into memory. Better for thousands of rows from database or files.</p>
+<p><em>Interviewer expects:</em> Memory efficiency for large data.</p>
+
+<h4>Q61: How do you share data between test methods?</h4>
+<p><strong>Answer:</strong> Return value from @Test method captured via ITestContext or instance variables set in @BeforeMethod. Or use ThreadLocal shared context. Avoid static shared mutable state in parallel runs.</p>
+<p><em>Interviewer expects:</em> ITestContext or ThreadLocal approach.</p>
+
+<h4>Q62: What is IMethodInterceptor?</h4>
+<p><strong>Answer:</strong> intercept(List&lt;IMethodInstance&gt;, ITestContext) reorders or filters test methods before execution. Sort by priority, custom logic, or runtime conditions. Returns modified method list.</p>
+<p><em>Interviewer expects:</em> Dynamic test ordering.</p>
+
+<h4>Q63: How do you disable tests based on environment?</h4>
+<p><strong>Answer:</strong> IAnnotationTransformer checks environment property and sets annotation.setEnabled(false) for tests not applicable to current env. Or use group exclusion in environment-specific testng.xml files.</p>
+<p><em>Interviewer expects:</em> Dynamic enable/disable pattern.</p>
+
+<h4>Q64: What is configfailurepolicy?</h4>
+<p><strong>Answer:</strong> Suite attribute: "skip" (default) skips all tests when @BeforeSuite/@BeforeTest fails. "continue" attempts remaining tests despite config failure. Choose based on whether config failure makes tests meaningless.</p>
+<p><em>Interviewer expects:</em> Failure propagation control.</p>
+
+<h4>Q65: How do you integrate ExtentReports?</h4>
+<p><strong>Answer:</strong> Create ExtentReportListener implementing ITestListener + ISuiteListener. Init ExtentReports in onStart, create ExtentTest per method, log pass/fail with screenshots, flush in onFinish. Register in testng.xml.</p>
+<p><em>Interviewer expects:</em> Full listener lifecycle.</p>
+
+<h3>15.3 Advanced Level (35 Questions)</h3>
+
+<h4>Q66: Explain IRetryAnalyzer implementation.</h4>
+<p><strong>Answer:</strong> Implement retry(ITestResult) returning boolean. Track attempt count, return true to retry, false to stop. Register via @Test(retryAnalyzer) or IAnnotationTransformer for global application. Manage instance state per test carefully.</p>
+<p><em>Interviewer expects:</em> Complete implementation with state management.</p>
+
+<h4>Q67: How do you apply retry globally?</h4>
+<p><strong>Answer:</strong> IAnnotationTransformer sets RetryAnalyzer class on every ITestAnnotation in transform(). Register transformer as listener in testng.xml. All tests get retry without individual annotation.</p>
+<p><em>Interviewer expects:</em> Transformer + listener registration.</p>
+
+<h4>Q68: When should you NOT use retry?</h4>
+<p><strong>Answer:</strong> Real assertion failures (bugs), tests with side effects (payments), performance tests, when failure rate exceeds 10%, data setup failures. Retry masks bugs and increases execution time without fixing root cause.</p>
+<p><em>Interviewer expects:</em> Critical judgment on retry misuse.</p>
+
+<h4>Q69: Explain IAnnotationTransformer for retry.</h4>
+<p><strong>Answer:</strong> transform() method receives ITestAnnotation and sets setRetryAnalyzer(RetryAnalyzer.class). Called once per test method before execution. Enables centralized retry config, environment-based retry count, and conditional retry application.</p>
+<p><em>Interviewer expects:</em> Runtime annotation modification.</p>
+
+<h4>Q70: How do you ensure thread safety in framework?</h4>
+<p><strong>Answer:</strong> ThreadLocal WebDriver, no static mutable state, unique test data per thread, independent tests (no dependsOnMethods in parallel), synchronized access to shared resources, separate Grid sessions per thread.</p>
+<p><em>Interviewer expects:</em> Comprehensive multi-point strategy.</p>
+
+<h4>Q71: Design a TestNG Selenium framework from scratch.</h4>
+<p><strong>Answer:</strong> Maven project with TestNG + Selenium. Layers: BaseTest (driver lifecycle), Page Objects (PageFactory), Utils (DriverManager, ConfigReader, ExcelReader), DataProviders (external data), Listeners (ExtentReports, screenshots), testng-suites (smoke/regression). ThreadLocal driver, properties-based config, parallel XML.</p>
+<p><em>Interviewer expects:</em> Complete architecture with justification.</p>
+
+<h4>Q72: How do you handle dynamic elements in Page Objects?</h4>
+<p><strong>Answer:</strong> AjaxElementLocatorFactory with timeout in PageFactory.initElements(). Explicit WebDriverWait in page methods. @FindBy with dynamic XPath/CSS. Avoid @CacheLookup for dynamic elements. Retry in wait utilities.</p>
+<p><em>Interviewer expects:</em> Wait strategy integration.</p>
+
+<h4>Q73: How do you implement custom HTML reporting?</h4>
+<p><strong>Answer:</strong> Implement IReporter or ITestListener, collect ITestResult objects in a list during execution, generate HTML with pass/fail/skip counts, execution time, and screenshots in onFinish. Write to reports/ directory.</p>
+<p><em>Interviewer expects:</em> Result collection and HTML generation.</p>
+
+<h4>Q74: How do you integrate TestNG with Jenkins CI/CD?</h4>
+<p><strong>Answer:</strong> Jenkinsfile with Maven test stage, testng.xml selection via profile, Allure/Extent report publishing in post-always, parallel stages for cross-browser, email notification on failure, artifact archiving of reports and screenshots.</p>
+<p><em>Interviewer expects:</em> Pipeline stages and report publishing.</p>
+
+<h4>Q75: What is @Factory with DataProvider?</h4>
+<p><strong>Answer:</strong> @Factory method uses @DataProvider to return Object[] of test class instances with different constructor args. Each instance runs as separate test. Enables data-driven test class creation — e.g., different browsers or environments per instance.</p>
+<p><em>Interviewer expects:</em> Class-level data-driven pattern.</p>
+
+<h4>Q76: How do you handle stale element exceptions?</h4>
+<p><strong>Answer:</strong> Re-find elements instead of caching. Use explicit waits with expected_conditions. Avoid @CacheLookup for dynamic pages. Implement retry wrapper in page methods. PageFactory re-locates on each access by default (without CacheLookup).</p>
+<p><em>Interviewer expects:</em> Re-locate strategy, not just retry.</p>
+
+<h4>Q77: Explain listener execution order.</h4>
+<p><strong>Answer:</strong> Listeners execute in registration order for each event. IExecutionListener wraps entire run. ISuiteListener.onStart before ITestListener.onStart. Multiple ITestListeners fire sequentially. Exception in one listener may skip subsequent listeners for that event.</p>
+<p><em>Interviewer expects:</em> Event hierarchy and ordering.</p>
+
+<h4>Q78: How do you implement Page Object Model with TestNG?</h4>
+<p><strong>Answer:</strong> Page classes with @FindBy elements and PageFactory.initElements(). Page methods return next page object (fluent navigation). Tests extend BaseTest, instantiate pages with driver, call page methods, assert in test class. No assertions in page objects.</p>
+<p><em>Interviewer expects:</em> Clean separation — pages act, tests assert.</p>
+
+<h4>Q79: How do you run tests in Docker containers?</h4>
+<p><strong>Answer:</strong> Dockerfile with Maven + Java + Chrome. docker-compose with Selenium Grid (Hub + Nodes). CI builds image, runs mvn test with Grid URL. Parallel tests distribute across containerized browser nodes.</p>
+<p><em>Interviewer expects:</em> Container + Grid integration.</p>
+
+<h4>Q80: What is the difference between parallel="tests" and "classes"?</h4>
+<p><strong>Answer:</strong> parallel="tests" runs each &lt;test&gt; XML block concurrently — ideal for cross-browser (each browser is a test block). parallel="classes" runs each Java test class concurrently — methods within a class remain sequential.</p>
+<p><em>Interviewer expects:</em> XML structure mapping to behavior.</p>
+
+<h4>Q81: How do you debug flaky tests in parallel?</h4>
+<p><strong>Answer:</strong> Run sequentially first to isolate parallelism issues. Add thread-name logging. Check static variables and shared data. Reduce thread-count. Verify ThreadLocal cleanup. Use retry temporarily while investigating root cause.</p>
+<p><em>Interviewer expects:</em> Systematic isolation methodology.</p>
+
+<h4>Q82: How do you implement environment-specific testng.xml?</h4>
+<p><strong>Answer:</strong> Separate XML files per environment with different parameters (URLs, credentials). Maven profiles select the file. CI passes -Denv=qa. Same test classes, different configuration — no code changes between environments.</p>
+<p><em>Interviewer expects:</em> Config externalization strategy.</p>
+
+<h4>Q83: Explain Allure @Step annotation.</h4>
+<p><strong>Answer:</strong> @Step marks methods as report steps with auto-captured parameters and timing. Creates hierarchical report structure. Requires AspectJ weaver in Surefire argLine. Steps appear nested under test in Allure dashboard.</p>
+<p><em>Interviewer expects:</em> AspectJ dependency requirement.</p>
+
+<h4>Q84: How do you handle authentication in test framework?</h4>
+<p><strong>Answer:</strong> Login once in @BeforeClass, store session cookie/token in ThreadLocal. Or API-based auth setup in @BeforeMethod. ConfigReader for credentials per environment. Never hardcode credentials in test code.</p>
+<p><em>Interviewer expects:</em> Session reuse and security awareness.</p>
+
+<h4>Q85: What is data-provider-thread-count?</h4>
+<p><strong>Answer:</strong> Suite-level attribute limiting concurrent DataProvider iterations independently from thread-count. Useful when DataProvider has many rows but you want to limit browser instances to avoid Grid overload.</p>
+<p><em>Interviewer expects:</em> Fine-grained concurrency control.</p>
+
+<h4>Q86: How do you implement test retry with screenshot?</h4>
+<p><strong>Answer:</strong> RetryAnalyzer for re-execution + ITestListener.onTestFailure for screenshot on each attempt. Track attempt via getCurrentInvocationCount(). Attach screenshots to ExtentReports/Allure with attempt number in filename.</p>
+<p><em>Interviewer expects:</em> Combined retry + listener pattern.</p>
+
+<h4>Q87: How do you measure test execution time?</h4>
+<p><strong>Answer:</strong> ITestResult.getStartMillis()/getEndMillis() in listener. ExtentReports logs duration automatically. Allure captures timing per step. Custom listener can build execution time report. @Test(timeOut) enforces maximum duration.</p>
+<p><em>Interviewer expects:</em> Listener-based timing collection.</p>
+
+<h4>Q88: How do you handle file uploads in parallel tests?</h4>
+<p><strong>Answer:</strong> Each thread uses its own test file copy (unique filename with thread ID). sendKeys with absolute file path. Clean up uploaded files in @AfterMethod. Avoid shared upload directory conflicts.</p>
+<p><em>Interviewer expects:</em> Thread-specific file isolation.</p>
+
+<h4>Q89: Explain ServiceLoader listener registration.</h4>
+<p><strong>Answer:</strong> Create file src/test/resources/META-INF/services/org.testng.ITestNGListener containing fully qualified listener class names. TestNG auto-discovers and registers them. No XML or annotation needed — works across all suites automatically.</p>
+<p><em>Interviewer expects:</em> META-INF file format.</p>
+
+<h4>Q90: How do you implement database validation in TestNG?</h4>
+<p><strong>Answer:</strong> DB utility class with connection from config.properties. @AfterMethod or test method queries DB to verify data changes. Use @BeforeSuite for connection pool. Clean test data in @AfterMethod. Thread-safe connection management.</p>
+<p><em>Interviewer expects:</em> DB utility + cleanup pattern.</p>
+
+<h4>Q91: How do you handle popup windows in framework?</h4>
+<p><strong>Answer:</strong> Window handle utility: getWindowHandles(), switchTo().window(handle). BasePage method waitForNewWindow(expectedCount). Store original handle in ThreadLocal for return. Page objects encapsulate switch logic.</p>
+<p><em>Interviewer expects:</em> Utility-based window management.</p>
+
+<h4>Q92: What is the role of WebDriverManager?</h4>
+<p><strong>Answer:</strong> io.github.bonigarcia.wdm automatically downloads and configures browser drivers matching installed browser version. Eliminates manual driver binary management. Called before WebDriver instantiation: WebDriverManager.chromedriver().setup().</p>
+<p><em>Interviewer expects:</em> Auto driver management benefit.</p>
+
+<h4>Q93: How do you implement API + UI hybrid testing?</h4>
+<p><strong>Answer:</strong> REST Assured for API setup (create test data via API), Selenium for UI validation. @BeforeMethod creates data via API, test validates in UI, @AfterMethod cleans via API. Separate API utility class, shared config.</p>
+<p><em>Interviewer expects:</em> API setup + UI verify pattern.</p>
+
+<h4>Q94: How do you version-control testng.xml files?</h4>
+<p><strong>Answer:</strong> Store in testng-suites/ directory in Git. Separate files per run type. Environment-specific parameters via Maven profiles or CI variables, not separate XML per env. Code review XML changes like code changes.</p>
+<p><em>Interviewer expects:</em> Git-managed suite configuration.</p>
+
+<h4>Q95: Explain TestNG XML suite file merging.</h4>
+<p><strong>Answer:</strong> TestNG supports &lt;suite-files&gt; to include other XML files: &lt;suite-files&gt;&lt;suite-file path="smoke.xml"/&gt;&lt;/suite-files&gt;. Combines multiple suites into one run. Useful for master suite orchestrating sub-suites.</p>
+<p><em>Interviewer expects:</em> Suite composition pattern.</p>
+
+<h4>Q96: How do you implement test prioritization in CI?</h4>
+<p><strong>Answer:</strong> Group-based stages: smoke (5 min) → sanity (15 min) → regression (60 min). Fail-fast: smoke failure stops pipeline. IMethodInterceptor for runtime reordering. Maven profiles per stage with different testng.xml.</p>
+<p><em>Interviewer expects:</em> Pipeline stage strategy.</p>
+
+<h4>Q97: How do you handle TestNG with Spring Boot?</h4>
+<p><strong>Answer:</strong> Use @SpringBootTest for integration tests with TestNG via spring-test dependency. @Autowired beans in test classes. @BeforeClass loads ApplicationContext. Combine Spring's DI with TestNG's execution control and reporting.</p>
+<p><em>Interviewer expects:</em> Spring-TestNG integration awareness.</p>
+
+<h4>Q98: What are common TestNG anti-patterns?</h4>
+<p><strong>Answer:</strong> Static WebDriver, dependsOnMethods chains, hardcoded test data, assertions in page objects, shared mutable state, excessive retry masking bugs, one giant test class, no group organization, ignoring @AfterMethod cleanup, mixing unit and UI tests in same suite.</p>
+<p><em>Interviewer expects:</em> Recognition and alternatives for each.</p>
+
+<h4>Q99: How do you migrate from JUnit to TestNG?</h4>
+<p><strong>Answer:</strong> Replace @Before/@After with TestNG equivalents. @Test import change. Convert @RunWith to testng.xml. Use TestNG assertions. Set junit="true" temporarily for coexistence. Migrate gradually — one module at a time.</p>
+<p><em>Interviewer expects:</em> Phased migration strategy.</p>
+
+<h4>Q100: How do you optimize a slow TestNG suite?</h4>
+<p><strong>Answer:</strong> Enable parallel execution (methods or tests), use Selenium Grid for distribution, remove unnecessary waits, optimize @BeforeMethod (don't launch browser if not needed), group-based selective runs, headless browsers, retry only for known flaky tests, profile with listener timing data.</p>
+<p><em>Interviewer expects:</em> Multi-pronged optimization approach.</p>
+</section>

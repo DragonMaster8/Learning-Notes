@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CI/CD for Automation Engineers — Sections 8–14</title>
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; max-width: 960px; margin: 0 auto; padding: 2rem; color: #1a1a2e; background: #f8f9fa; }
+  .section-card { background: #fff; border-radius: 8px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); border-left: 4px solid #2563eb; }
+  .section-card h2 { color: #1e40af; margin-top: 0; border-bottom: 2px solid #e5e7eb; padding-bottom: .5rem; }
+  .section-card h3 { color: #374151; margin-top: 1.5rem; }
+  .section-card h4 { color: #4b5563; margin-top: 1rem; }
+  .callout { background: #eff6ff; border-left: 4px solid #2563eb; padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+  .callout.warning { background: #fffbeb; border-color: #f59e0b; }
+  .callout.tip { background: #ecfdf5; border-color: #10b981; }
+  .table-wrap { overflow-x: auto; margin: 1rem 0; }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th, td { border: 1px solid #d1d5db; padding: .6rem .8rem; text-align: left; }
+  th { background: #f3f4f6; font-weight: 600; }
+  tr:nth-child(even) { background: #f9fafb; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: .85rem; }
+  code { font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
+  p code, li code { background: #f1f5f9; color: #be185d; padding: .15rem .4rem; border-radius: 3px; font-size: .9em; }
+  .ascii-diagram { background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; font-family: 'Cascadia Code', Consolas, monospace; font-size: .85rem; white-space: pre; overflow-x: auto; border-radius: 6px; }
+  ul, ol { padding-left: 1.5rem; }
+  li { margin-bottom: .4rem; }
+</style>
+</head>
+<body>
+
+<section id="section-8" class="section-card">
+<h2>Section 8: Jenkins Jobs</h2>
+
+<p>As an automation engineer, Jenkins jobs are the entry point where your TestNG suites, Cucumber features, and Selenium/Playwright tests get scheduled and executed. Understanding job types helps you choose the right approach for test automation—not just "how to deploy apps."</p>
+
+<h3>Freestyle Project</h3>
+
+<p>A Freestyle job is the classic Jenkins job type configured entirely through the UI. Most automation teams start here before migrating to Pipeline as Code.</p>
+
+<h4>Configuration Areas</h4>
+
+<ul>
+  <li><strong>Source Code Management (Git):</strong> Connect your automation repo URL, credentials, and branch (e.g., <code>develop</code> or <code>main</code>).</li>
+  <li><strong>Build Triggers:</strong>
+    <ul>
+      <li><em>SCM polling</em> — Jenkins checks Git every N minutes for changes (<code>H/5 * * * *</code> = every 5 min).</li>
+      <li><em>Webhook</em> — GitHub/GitLab/Bitbucket pushes trigger builds instantly (preferred for PR validation).</li>
+      <li><em>Cron</em> — Schedule nightly regression (<code>0 2 * * *</code> = 2 AM daily).</li>
+    </ul>
+  </li>
+  <li><strong>Build Steps (Maven):</strong> Execute <code>mvn clean test -Dsurefire.suiteXmlFiles=smoke.xml</code> or invoke a batch/shell script.</li>
+  <li><strong>Post-build Actions:</strong> Publish TestNG/HTML reports, archive screenshots, send email on failure, mark build unstable on test failure.</li>
+</ul>
+
+<h4>Step-by-Step: Create Freestyle Job for TestNG Suite</h4>
+
+<ol>
+  <li>Jenkins Dashboard → <strong>New Item</strong> → enter name <code>automation-smoke-tests</code> → select <strong>Freestyle project</strong> → OK.</li>
+  <li><strong>General:</strong> Add description: "Runs smoke TestNG suite on every push to develop."</li>
+  <li><strong>Source Code Management:</strong> Select Git → Repository URL → add credentials → Branch Specifier: <code>*/develop</code>.</li>
+  <li><strong>Build Triggers:</strong> Check "GitHub hook trigger for GITScm polling" (after configuring webhook in GitHub).</li>
+  <li><strong>Build Environment:</strong> Optionally add environment variables: <code>BROWSER=chrome</code>, <code>ENV=qa</code>.</li>
+  <li><strong>Build Steps:</strong> Add "Invoke top-level Maven targets" → Goals: <code>clean test -Dsurefire.suiteXmlFiles=src/test/resources/smoke.xml -Dbrowser=chrome</code>.</li>
+  <li><strong>Post-build Actions:</strong>
+    <ul>
+      <li>Publish JUnit test result report → <code>target/surefire-reports/*.xml</code></li>
+      <li>Publish HTML reports (HTML Publisher Plugin) → report dir: <code>target/surefire-reports</code></li>
+      <li>Editable Email Notification → send on failure to <code>qa-team@company.com</code></li>
+    </ul>
+  </li>
+  <li>Save → <strong>Build Now</strong> → verify console output shows TestNG execution.</li>
+</ol>
+
+<div class="callout tip">
+<strong>Automation Engineer Tip:</strong> Freestyle jobs are fine for a single smoke suite on one branch. Once you need parameterized browser selection, parallel stages, or different suites per branch, move to Pipeline.
+</div>
+
+<h4>Advantages</h4>
+<ul>
+  <li>Easy setup—no Groovy knowledge required</li>
+  <li>UI-based configuration; quick for POC and demos</li>
+  <li>Works well for one-off scheduled regression runs</li>
+</ul>
+
+<h4>Limitations</h4>
+<ul>
+  <li>Configuration is <strong>not version-controlled</strong>—changes live only in Jenkins</li>
+  <li>Hard to maintain across multiple environments (QA, staging, prod)</li>
+  <li>No pipeline logic: no parallel browser runs, conditional stages, or approval gates</li>
+  <li>Difficult to replicate across Jenkins instances (dev Jenkins vs prod Jenkins)</li>
+</ul>
+
+<h3>Pipeline Project</h3>
+
+<p>Pipeline projects use a <strong>Jenkinsfile</strong> stored in your automation Git repo. The Jenkinsfile defines checkout, build, test execution, reporting, and notifications as code.</p>
+
+<h4>Why Pipeline for Test Automation?</h4>
+<ul>
+  <li><strong>Version-controlled:</strong> Jenkinsfile changes go through PR review like test code</li>
+  <li><strong>Scriptable:</strong> Parameterized browser, environment, suite selection</li>
+  <li><strong>Reusable:</strong> Shared libraries for common test steps</li>
+  <li><strong>Auditable:</strong> Git history shows who changed the pipeline and when</li>
+</ul>
+
+<h4>Declarative vs Scripted Pipeline</h4>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Aspect</th><th>Declarative Pipeline</th><th>Scripted Pipeline</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Syntax</td><td>Structured <code>pipeline { }</code> block with mandatory sections</td><td>Free-form Groovy inside <code>node { }</code></td></tr>
+    <tr><td>Learning Curve</td><td>Lower—opinionated, predictable</td><td>Higher—full Groovy flexibility</td></tr>
+    <tr><td>Error Handling</td><td>Built-in <code>post { }</code> blocks</td><td>Manual try/catch required</td></tr>
+    <tr><td>Validation</td><td>Jenkins validates structure at start</td><td>Runtime errors possible</td></tr>
+    <tr><td>Best For</td><td>Standard test pipelines (checkout → test → report)</td><td>Dynamic stages, complex conditional logic</td></tr>
+    <tr><td>Automation Use</td><td>90% of test automation pipelines</td><td>Custom matrix builds, dynamic suite discovery</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>When to Use Pipeline Over Freestyle</h4>
+<ul>
+  <li>Multiple test stages (smoke → regression → report)</li>
+  <li>Parameterized execution (browser, environment, suite)</li>
+  <li>Parallel browser execution (Chrome + Firefox simultaneously)</li>
+  <li>PR validation with branch-specific behavior</li>
+  <li>Team needs pipeline config reviewed in Git PRs</li>
+</ul>
+
+<h3>Multibranch Pipeline</h3>
+
+<p>Multibranch Pipeline automatically discovers branches and PRs in your Git repo and creates a Jenkins job for each one. Each branch uses its own Jenkinsfile.</p>
+
+<h4>Key Features for QA</h4>
+<ul>
+  <li><strong>Auto-discovers branches</strong> — feature branches get their own pipeline runs</li>
+  <li><strong>Jenkinsfile per branch</strong> — feature branch can run smoke only; <code>develop</code> runs regression</li>
+  <li><strong>PR validation:</strong> Auto-trigger on PR creation/update; block merge if smoke fails</li>
+  <li><strong>Branch-specific suites:</strong>
+    <ul>
+      <li><code>feature/*</code> → smoke suite (~5 min)</li>
+      <li><code>develop</code> → smoke + API regression (~20 min)</li>
+      <li><code>release/*</code> → full regression + cross-browser (~2 hrs)</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="callout">
+<strong>Setup:</strong> New Item → Multibranch Pipeline → Branch Sources → add Git repo → Build Configuration: "by Jenkinsfile" → Scan Multibranch Pipeline Triggers: "Periodically if not otherwise run" or webhook.
+</div>
+
+<h3>Job Types Comparison</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Type</th><th>Config</th><th>Version Control</th><th>Pipeline Logic</th><th>Best For</th><th>Complexity</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Freestyle</td><td>Jenkins UI</td><td>No</td><td>None</td><td>Single scheduled test run, POC</td><td>Low</td></tr>
+    <tr><td>Pipeline</td><td>Jenkinsfile in Git</td><td>Yes</td><td>Full (stages, parallel, params)</td><td>Parameterized test automation</td><td>Medium</td></tr>
+    <tr><td>Multibranch Pipeline</td><td>Jenkinsfile per branch</td><td>Yes</td><td>Full + branch-aware</td><td>PR validation, branch-specific suites</td><td>Medium-High</td></tr>
+    <tr><td>Folder</td><td>Organizational container</td><td>N/A</td><td>Groups related jobs</td><td>Organizing smoke/regression/nightly jobs</td><td>Low</td></tr>
+    <tr><td>Organization Folder</td><td>Auto-scan Git org</td><td>Yes</td><td>Full + multi-repo</td><td>Multiple automation repos in one org</td><td>High</td></tr>
+    <tr><td>External Job</td><td>Monitors external process</td><td>No</td><td>None</td><td>Legacy; rarely used for automation</td><td>Low</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+  <li><strong>Q: What is the difference between Freestyle and Pipeline jobs?</strong><br>
+  A: Freestyle is UI-configured with no version control; Pipeline uses a Jenkinsfile in Git with stages, parameters, and parallel execution. Pipeline is preferred for maintainable test automation.</li>
+  <li><strong>Q: How do you trigger a Jenkins job on Git push?</strong><br>
+  A: Configure a webhook in Git (GitHub/GitLab) pointing to Jenkins, enable "GitHub hook trigger" in the job, or use SCM polling as fallback.</li>
+  <li><strong>Q: What is a Multibranch Pipeline and why use it for QA?</strong><br>
+  A: It auto-creates jobs per branch/PR. QA uses it to run smoke on feature branches and full regression on develop/release without manual job creation.</li>
+  <li><strong>Q: How do you run a specific TestNG suite in a Freestyle job?</strong><br>
+  A: Maven build step: <code>mvn test -Dsurefire.suiteXmlFiles=smoke.xml</code>. Post-build: publish JUnit results from <code>target/surefire-reports/*.xml</code>.</li>
+  <li><strong>Q: What are limitations of Freestyle jobs for automation teams?</strong><br>
+  A: Not version-controlled, no parallel stages, hard to parameterize, difficult to replicate across environments, no PR branch auto-discovery.</li>
+  <li><strong>Q: When would you choose Scripted over Declarative Pipeline?</strong><br>
+  A: When you need dynamic stage generation (e.g., loop over 10 environments), complex Groovy logic, or non-standard flow that Declarative syntax cannot express.</li>
+  <li><strong>Q: How do you organize multiple test jobs in Jenkins?</strong><br>
+  A: Use Folders (Smoke, Regression, Nightly) or a single Pipeline with parameters for suite selection. Multibranch for branch-based execution.</li>
+  <li><strong>Q: What post-build actions are essential for test jobs?</strong><br>
+  A: Publish JUnit/TestNG results, archive HTML reports and failure screenshots, email notification on failure, optionally mark unstable vs failed.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>An e-commerce automation team started with 3 Freestyle jobs (smoke, regression, nightly). Maintenance became painful when they added 4 environments and 3 browsers. They migrated to a Multibranch Pipeline: PRs triggered smoke (10 tests, 3 min), merges to <code>develop</code> ran API + UI regression (150 tests, 25 min), and nightly cron ran full cross-browser suite. Jenkinsfile lived in the automation repo; QA reviewed pipeline changes alongside test code.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+  <li>Hardcoding credentials in Freestyle job config instead of Jenkins Credentials</li>
+  <li>Using SCM polling (every minute) instead of webhooks—wastes resources and delays feedback</li>
+  <li>Not publishing test results—team only sees "BUILD FAILURE" without knowing which tests failed</li>
+  <li>Creating separate Freestyle jobs per browser instead of parameterized Pipeline</li>
+  <li>Forgetting to archive screenshots/logs on failure—impossible to debug CI-only failures</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+  <li><strong>Job not triggering on push:</strong> Verify webhook delivery in GitHub → Settings → Webhooks; check Jenkins URL is reachable from Git server.</li>
+  <li><strong>Git checkout fails:</strong> Verify credentials ID in job matches Jenkins Credentials; check branch name pattern.</li>
+  <li><strong>Maven not found:</strong> Configure Maven in Global Tool Configuration; reference in Pipeline with <code>tools { maven 'Maven-3.9' }</code>.</li>
+  <li><strong>Tests pass locally but fail in Jenkins:</strong> Check env vars, headless browser config, and different JDK/Maven versions.</li>
+  <li><strong>Multibranch not discovering branches:</strong> Run "Scan Multibranch Pipeline Now"; verify Jenkinsfile exists on branch root.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+  <li>Freestyle = UI config, no version control, good for POC</li>
+  <li>Pipeline = Jenkinsfile in Git, parameterized, parallel, reusable</li>
+  <li>Multibranch = auto branch/PR jobs, ideal for PR smoke validation</li>
+  <li>Triggers: webhook (best) &gt; SCM polling &gt; cron (nightly)</li>
+  <li>Always publish JUnit results + archive reports/screenshots</li>
+</ul>
+</section>
+<section id="section-9" class="section-card">
+<h2>Section 9: Jenkins Pipelines — Deep Dive</h2>
+
+<p>Pipelines are how automation engineers define test execution as code. Your Jenkinsfile is as important as your Page Object Model—it's the orchestration layer for every test run in CI/CD.</p>
+
+<h3>Pipeline as Code</h3>
+<p>Store the Jenkinsfile in your project root (same repo as tests). Jenkins checks out the repo and executes the Jenkinsfile. Changes to pipeline logic go through the same PR review process as test code.</p>
+
+<div class="callout">
+<strong>Convention:</strong> Place <code>Jenkinsfile</code> at repo root. For Multibranch, Jenkins auto-detects it. For standalone Pipeline job, specify "Pipeline script from SCM."
+</div>
+
+<h3>Declarative Pipeline — Full Example</h3>
+
+<pre><code class="language-groovy">pipeline {
+    agent any
+    tools { maven 'Maven-3.9' }
+    parameters {
+        choice(name: 'BROWSER', choices: ['chrome', 'firefox', 'edge'], description: 'Browser')
+        choice(name: 'ENV', choices: ['qa', 'staging', 'prod'], description: 'Environment')
+        choice(name: 'SUITE', choices: ['smoke', 'regression', 'full'], description: 'Test Suite')
+    }
+    stages {
+        stage('Checkout') {
+            steps { git branch: 'main', url: 'https://github.com/team/automation.git' }
+        }
+        stage('Build') {
+            steps { bat 'mvn clean compile' }
+        }
+        stage('Execute Tests') {
+            steps {
+                bat "mvn test -Dbrowser=${params.BROWSER} -Denv=${params.ENV} -Dsurefire.suiteXmlFiles=${params.SUITE}.xml"
+            }
+        }
+        stage('Generate Reports') {
+            steps {
+                publishHTML([
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'target/surefire-reports',
+                    reportFiles: 'index.html',
+                    reportName: 'Test Report'
+                ])
+            }
+        }
+    }
+    post {
+        always {
+            archiveArtifacts artifacts: 'target/**', allowEmptyArchive: true
+        }
+        success {
+            emailext subject: 'Build Passed',
+                     body: 'All tests passed for ${params.SUITE} on ${params.ENV}.',
+                     to: 'team@company.com'
+        }
+        failure {
+            emailext subject: 'Build Failed',
+                     body: 'Tests failed. Check Jenkins: ${BUILD_URL}',
+                     to: 'team@company.com'
+        }
+    }
+}</code></pre>
+
+<h3>Keyword Reference — Declarative Pipeline</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Keyword</th><th>Purpose</th><th>Automation Example</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>pipeline</code></td><td>Root block; declares Declarative Pipeline</td><td>Wraps entire test job definition</td></tr>
+    <tr><td><code>agent</code></td><td>Where pipeline runs (any, label, docker, none)</td><td><code>agent any</code> runs on any available Jenkins agent</td></tr>
+    <tr><td><code>tools</code></td><td>Auto-install/config tools from Global Tool Configuration</td><td><code>maven 'Maven-3.9'</code>, <code>nodejs 'Node-18'</code></td></tr>
+    <tr><td><code>parameters</code></td><td>User inputs at build time</td><td>Browser, environment, suite selection dropdowns</td></tr>
+    <tr><td><code>stages</code></td><td>Container for all pipeline stages</td><td>Groups Checkout, Build, Test, Report stages</td></tr>
+    <tr><td><code>stage</code></td><td>Single logical phase with a name</td><td><code>stage('Execute Tests')</code></td></tr>
+    <tr><td><code>steps</code></td><td>Actual commands inside a stage</td><td><code>bat 'mvn test'</code>, <code>sh 'npm test'</code></td></tr>
+    <tr><td><code>post</code></td><td>Actions after all stages complete</td><td>Archive artifacts, send emails regardless of outcome</td></tr>
+    <tr><td><code>always</code></td><td>Runs every time (pass, fail, abort)</td><td>Archive test reports even on failure</td></tr>
+    <tr><td><code>success</code></td><td>Runs only when all stages pass</td><td>Send "all green" email to team</td></tr>
+    <tr><td><code>failure</code></td><td>Runs when any stage fails</td><td>Send failure alert with build URL</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Scripted Pipeline</h3>
+
+<pre><code class="language-groovy">node {
+    stage('Checkout') { checkout scm }
+    stage('Build')     { sh 'mvn clean compile' }
+    stage('Test')      { sh 'mvn test -Dsurefire.suiteXmlFiles=smoke.xml' }
+}</code></pre>
+
+<p>Scripted Pipeline uses imperative Groovy. Use it when:</p>
+<ul>
+  <li>Dynamic stage generation (loop over environments or test modules)</li>
+  <li>Complex conditional logic that Declarative <code>when</code> cannot express</li>
+  <li>Shared libraries with advanced Groovy functions</li>
+  <li>Legacy pipelines migrated from Scripted before Declarative existed</li>
+</ul>
+
+<div class="callout warning">
+<strong>Recommendation:</strong> Start with Declarative. Only switch to Scripted when you hit a genuine limitation. Most test automation pipelines never need Scripted.
+</div>
+
+<h3>Pipeline Syntax Elements</h3>
+
+<h4>agent</h4>
+<pre><code class="language-groovy">agent any                              // any available node
+agent { label 'windows-selenium' }     // specific agent with browsers installed
+agent { docker { image 'maven:3.9-eclipse-temurin-17' } }  // containerized
+agent none                             // no global agent; set per stage</code></pre>
+
+<h4>environment</h4>
+<pre><code class="language-groovy">environment {
+    TEST_ENV = 'qa'
+    BASE_URL = 'https://qa.example.com'
+    BROWSER  = "${params.BROWSER}"
+}</code></pre>
+
+<h4>when — Conditional Stage Execution</h4>
+<pre><code class="language-groovy">stage('Regression') {
+    when {
+        expression { params.SUITE == 'regression' }
+    }
+    steps { bat 'mvn test -Dsurefire.suiteXmlFiles=regression.xml' }
+}
+
+stage('Prod Tests') {
+    when { branch 'release/*' }
+    steps { bat 'mvn test -Denv=prod' }
+}</code></pre>
+
+<h4>parallel — Simultaneous Stages</h4>
+<pre><code class="language-groovy">stage('Cross-Browser') {
+    parallel {
+        stage('Chrome') {
+            steps { bat 'mvn test -Dbrowser=chrome -Dsurefire.suiteXmlFiles=smoke.xml' }
+        }
+        stage('Firefox') {
+            steps { bat 'mvn test -Dbrowser=firefox -Dsurefire.suiteXmlFiles=smoke.xml' }
+        }
+    }
+}</code></pre>
+
+<h4>input — Manual Approval Gate</h4>
+<pre><code class="language-groovy">stage('Deploy to Staging') {
+    steps {
+        input message: 'Smoke passed. Deploy to staging and run regression?', ok: 'Deploy'
+        bat 'mvn test -Denv=staging -Dsurefire.suiteXmlFiles=regression.xml'
+    }
+}</code></pre>
+
+<h4>timeout — Stage Timeout</h4>
+<pre><code class="language-groovy">stage('Regression') {
+    options { timeout(time: 60, unit: 'MINUTES') }
+    steps { bat 'mvn test -Dsurefire.suiteXmlFiles=regression.xml' }
+}</code></pre>
+
+<h4>retry — Retry Failed Stage</h4>
+<pre><code class="language-groovy">stage('Smoke') {
+    options { retry(2) }
+    steps { bat 'mvn test -Dsurefire.suiteXmlFiles=smoke.xml' }
+}</code></pre>
+
+<h3>Complete Automation Pipeline Example</h3>
+<p>Checkout → Build → Smoke (parallel Chrome+Firefox) → Regression → Report → Email → Deploy</p>
+
+<pre><code class="language-groovy">pipeline {
+    agent any
+    tools { maven 'Maven-3.9' }
+    parameters {
+        choice(name: 'ENV', choices: ['qa', 'staging'], description: 'Target Environment')
+        booleanParam(name: 'RUN_REGRESSION', defaultValue: true, description: 'Run full regression?')
+    }
+    environment {
+        BASE_URL = "${params.ENV == 'qa' ? 'https://qa.example.com' : 'https://staging.example.com'}"
+    }
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Build') {
+            steps { bat 'mvn clean compile -DskipTests' }
+        }
+        stage('Smoke Tests') {
+            parallel {
+                stage('Smoke - Chrome') {
+                    steps {
+                        bat 'mvn test -Dbrowser=chrome -Dheadless=true -Dsurefire.suiteXmlFiles=smoke.xml'
+                    }
+                }
+                stage('Smoke - Firefox') {
+                    steps {
+                        bat 'mvn test -Dbrowser=firefox -Dheadless=true -Dsurefire.suiteXmlFiles=smoke.xml'
+                    }
+                }
+            }
+        }
+        stage('Regression') {
+            when { expression { params.RUN_REGRESSION } }
+            options { timeout(time: 90, unit: 'MINUTES') }
+            steps {
+                bat "mvn test -Denv=${params.ENV} -Dsurefire.suiteXmlFiles=regression.xml"
+            }
+        }
+        stage('Generate Reports') {
+            steps {
+                junit 'target/surefire-reports/*.xml'
+                publishHTML([
+                    reportDir: 'target/surefire-reports',
+                    reportFiles: 'emailable-report.html',
+                    reportName: 'TestNG Report',
+                    keepAll: true
+                ])
+            }
+        }
+        stage('Deploy to QA') {
+            when { branch 'develop' }
+            steps {
+                input message: 'Tests passed. Proceed with QA deployment?', ok: 'Deploy'
+                bat 'echo Deploying build to QA environment...'
+            }
+        }
+    }
+    post {
+        always {
+            archiveArtifacts artifacts: 'target/surefire-reports/**, screenshots/**',
+                               allowEmptyArchive: true
+        }
+        success {
+            emailext subject: "PASS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                     body: "All stages passed.\nBuild: ${env.BUILD_URL}",
+                     to: 'qa-automation@company.com'
+        }
+        failure {
+            emailext subject: "FAIL: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                     body: "Pipeline failed. Check: ${env.BUILD_URL}",
+                     to: 'qa-automation@company.com',
+                     attachLog: true
+        }
+    }
+}</code></pre>
+
+<h3>Pipeline Best Practices (10 Points)</h3>
+<ol>
+  <li><strong>Keep Jenkinsfile in Git</strong> — never edit pipeline in Jenkins UI (Cheat option breaks version control).</li>
+  <li><strong>Use parameters</strong> for browser, environment, suite — avoid hardcoding values.</li>
+  <li><strong>Always publish test results</strong> — <code>junit 'target/surefire-reports/*.xml'</code> in a dedicated Report stage or <code>post { always }</code>.</li>
+  <li><strong>Archive artifacts on failure</strong> — screenshots, logs, HTML reports for debugging CI-only failures.</li>
+  <li><strong>Set stage timeouts</strong> — prevent hung browser sessions from blocking agents for hours.</li>
+  <li><strong>Use parallel for independent suites</strong> — cross-browser smoke, API + UI simultaneously.</li>
+  <li><strong>Separate smoke from regression</strong> — fast feedback on PR; heavy suite on merge/nightly.</li>
+  <li><strong>Use credentials binding</strong> — <code>withCredentials</code> for passwords/tokens, never plain text in Jenkinsfile.</li>
+  <li><strong>Add retry for flaky smoke</strong> — <code>options { retry(1) }</code> on smoke stage only, not regression.</li>
+  <li><strong>Keep stages focused</strong> — one responsibility per stage; easier to identify failure point in Blue Ocean/graph.</li>
+</ol>
+
+<h3>Interview Questions</h3>
+<ol>
+  <li><strong>Q: What is Pipeline as Code?</strong><br>
+  A: Defining CI/CD pipeline in a Jenkinsfile stored in Git. Benefits: version control, code review, reproducibility across Jenkins instances.</li>
+  <li><strong>Q: Explain Declarative vs Scripted Pipeline.</strong><br>
+  A: Declarative uses structured syntax (<code>pipeline { stages { } }</code>) with built-in validation and post conditions. Scripted uses free Groovy in <code>node { }</code> for maximum flexibility.</li>
+  <li><strong>Q: What does <code>agent any</code> mean?</strong><br>
+  A: Run the pipeline on any available Jenkins agent/node. Use <code>agent { label 'windows' }</code> when tests need a specific OS or installed browsers.</li>
+  <li><strong>Q: How do you run Chrome and Firefox tests in parallel?</strong><br>
+  A: Use <code>parallel { stage('Chrome'){...} stage('Firefox'){...} }</code> inside a parent stage. Each parallel branch needs its own workspace or isolated execution.</li>
+  <li><strong>Q: What is the <code>post</code> block?</strong><br>
+  A: Runs after all stages complete. Conditions: <code>always</code>, <code>success</code>, <code>failure</code>, <code>unstable</code>, <code>changed</code>. Used for archiving, notifications, cleanup.</li>
+  <li><strong>Q: How do you add a manual approval before regression?</strong><br>
+  A: Use <code>input message: 'Approve regression run?', ok: 'Proceed'</code> as a step before the regression stage.</li>
+  <li><strong>Q: What is <code>when</code> directive?</strong><br>
+  A: Conditionally executes a stage based on branch, parameter value, environment, or custom expression. E.g., run regression only when <code>params.SUITE == 'regression'</code>.</li>
+  <li><strong>Q: How do you pass Maven properties from Jenkins parameters?</strong><br>
+  A: Interpolate in shell step: <code>bat "mvn test -Dbrowser=${params.BROWSER}"</code>. Parameters are available via <code>params.PARAM_NAME</code>.</li>
+  <li><strong>Q: What happens if a stage times out?</strong><br>
+  A: Jenkins aborts the stage and marks the build as failed. Configure with <code>options { timeout(time: 30, unit: 'MINUTES') }</code>.</li>
+  <li><strong>Q: How do you skip a stage based on a boolean parameter?</strong><br>
+  A: <code>when { expression { params.RUN_REGRESSION } }</code> on the stage block.</li>
+  <li><strong>Q: Difference between <code>bat</code> and <code>sh</code>?</strong><br>
+  A: <code>bat</code> for Windows agents (cmd.exe); <code>sh</code> for Linux/Mac agents (bash). Match your Jenkins agent OS.</li>
+  <li><strong>Q: How do you publish TestNG HTML report in Pipeline?</strong><br>
+  A: Use HTML Publisher Plugin: <code>publishHTML([reportDir: '...', reportFiles: 'index.html', reportName: '...'])</code> plus <code>junit</code> for trend graphs.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>A banking QA team replaced 6 Freestyle jobs with one Declarative Pipeline. Parameters: ENV (dev/qa/staging), BROWSER, SUITE (smoke/regression). PR builds ran smoke in parallel on Chrome+Firefox (4 min). Merge to develop triggered regression (45 min) with 90-min timeout. Post block archived ExtentReports and emailed team with pass/fail counts. Pipeline changes required PR approval—eliminating "someone changed the Jenkins job and broke nightly" incidents.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+  <li>Editing pipeline via "Replay" or UI instead of committing Jenkinsfile changes to Git</li>
+  <li>Not setting timeouts— hung WebDriver sessions block agents indefinitely</li>
+  <li>Running regression on every PR (slow feedback); should be smoke only on PR</li>
+  <li>Using <code>sh</code> on Windows agents or <code>bat</code> on Linux agents</li>
+  <li>Hardcoding URLs/credentials instead of parameters and credentials binding</li>
+  <li>Parallel stages writing to same workspace without isolation—causes test interference</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+  <li><strong>Pipeline syntax error:</strong> Use Declarative Pipeline Linter (Workflow CPS plugin) or "Pipeline Syntax" generator in job config.</li>
+  <li><strong>Parameter not recognized:</strong> Run job once after adding parameters (Jenkins needs initial build to register them).</li>
+  <li><strong>Parallel stage fails randomly:</strong> Ensure ThreadLocal WebDriver and separate test data per thread.</li>
+  <li><strong>post block not running:</strong> Check for uncaught exception before stages complete; use <code>post { always }</code>.</li>
+  <li><strong>Maven command works in console but not pipeline:</strong> Add <code>tools { maven '...' }</code> or use full path to mvn.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+  <li>Declarative = structured, validated, preferred for test pipelines</li>
+  <li>Key blocks: pipeline → agent → parameters → stages → post</li>
+  <li>parallel = cross-browser; when = conditional; input = approval gate</li>
+  <li>timeout + retry = control flaky/hung test runs</li>
+  <li>Always: junit + archiveArtifacts + email in post block</li>
+</ul>
+</section>
+<section id="section-10" class="section-card">
+<h2>Section 10: Jenkins + TestNG Integration</h2>
+
+<p>TestNG is the most common test framework integrated with Jenkins in Java/Selenium automation projects. This section covers Maven execution, suite XML design, pipeline integration, parallel runs, and failure handling—from an automation engineer's workflow perspective.</p>
+
+<h3>TestNG Execution via Maven</h3>
+
+<p>Run TestNG suites through Maven Surefire plugin:</p>
+
+<pre><code class="language-bash">mvn test -Dsurefire.suiteXmlFiles=src/test/resources/testng/smoke.xml
+mvn test -Dsurefire.suiteXmlFiles=smoke.xml -Dbrowser=chrome -Denv=qa</code></pre>
+
+<h4>Surefire Plugin Configuration in pom.xml</h4>
+
+<pre><code class="language-xml">&lt;build&gt;
+  &lt;plugins&gt;
+    &lt;plugin&gt;
+      &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+      &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+      &lt;version&gt;3.2.5&lt;/version&gt;
+      &lt;configuration&gt;
+        &lt;suiteXmlFiles&gt;
+          &lt;suiteXmlFile&gt;${suiteXmlFile}&lt;/suiteXmlFile&gt;
+        &lt;/suiteXmlFiles&gt;
+        &lt;systemPropertyVariables&gt;
+          &lt;browser&gt;${browser}&lt;/browser&gt;
+          &lt;env&gt;${env}&lt;/env&gt;
+        &lt;/systemPropertyVariables&gt;
+        &lt;testFailureIgnore&gt;false&lt;/testFailureIgnore&gt;
+      &lt;/configuration&gt;
+    &lt;/plugin&gt;
+  &lt;/plugins&gt;
+&lt;/build&gt;</code></pre>
+
+<div class="callout">
+Pass suite at runtime: <code>-Dsurefire.suiteXmlFiles=smoke.xml</code> overrides pom.xml default. Pass browser/env as Maven properties consumed by your framework's config reader.
+</div>
+
+<h3>TestNG XML Files for Different Suites</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Suite File</th><th>Purpose</th><th>Tests</th><th>Duration</th><th>When to Run</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>smoke.xml</code></td><td>Critical path validation</td><td>~10 tests</td><td>~2 min</td><td>Every PR, post-commit</td></tr>
+    <tr><td><code>regression.xml</code></td><td>Full functional coverage</td><td>~200 tests</td><td>~45 min</td><td>Nightly, pre-release</td></tr>
+    <tr><td><code>sanity.xml</code></td><td>Module-specific checks</td><td>~30 tests</td><td>~10 min</td><td>Post-deployment, hotfix validation</td></tr>
+    <tr><td><code>crossbrowser.xml</code></td><td>Chrome + Firefox parallel</td><td>~50 tests × 2 browsers</td><td>~15 min</td><td>Weekly, release candidate</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Example: smoke.xml</h4>
+<pre><code class="language-xml">&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="Smoke Suite" parallel="false"&gt;
+  &lt;test name="Login and Checkout"&gt;
+    &lt;classes&gt;
+      &lt;class name="com.app.tests.LoginTest"/&gt;
+      &lt;class name="com.app.tests.CheckoutTest"/&gt;
+    &lt;/classes&gt;
+  &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h4>Example: crossbrowser.xml (parallel methods)</h4>
+<pre><code class="language-xml">&lt;suite name="Cross Browser" parallel="methods" thread-count="4"&gt;
+  &lt;parameter name="browser" value="chrome"/&gt;
+  &lt;test name="UI Tests"&gt;
+    &lt;classes&gt;
+      &lt;class name="com.app.tests.SearchTest"/&gt;
+      &lt;class name="com.app.tests.CartTest"/&gt;
+    &lt;/classes&gt;
+  &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>Jenkins Pipeline for TestNG</h3>
+
+<pre><code class="language-groovy">pipeline {
+    agent any
+    tools { maven 'Maven-3.9' }
+    parameters {
+        choice(name: 'SUITE', choices: ['smoke', 'regression', 'sanity', 'crossbrowser'],
+               description: 'TestNG Suite')
+        choice(name: 'BROWSER', choices: ['chrome', 'firefox', 'edge'], description: 'Browser')
+        choice(name: 'ENV', choices: ['qa', 'staging'], description: 'Environment')
+    }
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Run TestNG') {
+            steps {
+                bat """
+                    mvn clean test \
+                      -Dsurefire.suiteXmlFiles=src/test/resources/testng/${params.SUITE}.xml \
+                      -Dbrowser=${params.BROWSER} \
+                      -Denv=${params.ENV}
+                """
+            }
+        }
+        stage('Publish Results') {
+            steps {
+                junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: false
+                publishHTML([
+                    reportDir: 'target/surefire-reports',
+                    reportFiles: 'emailable-report.html',
+                    reportName: 'TestNG HTML Report',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true
+                ])
+            }
+        }
+    }
+    post {
+        failure {
+            archiveArtifacts artifacts: 'screenshots/**, target/surefire-reports/**',
+                               allowEmptyArchive: true
+            emailext subject: "TestNG FAILED: ${params.SUITE} on ${params.ENV}",
+                     body: "Build ${env.BUILD_URL}\nCheck surefire reports for failed tests.",
+                     to: 'qa-team@company.com'
+        }
+        always {
+            archiveArtifacts artifacts: 'target/surefire-reports/*.xml', allowEmptyArchive: true
+        }
+    }
+}</code></pre>
+
+<h3>TestNG Results Plugin</h3>
+<ul>
+  <li><strong>JUnit plugin</strong> (<code>junit</code> step) reads TestNG XML output from <code>target/surefire-reports/</code></li>
+  <li>Displays pass/fail/skip counts on build page</li>
+  <li><strong>Trend graph:</strong> "Test Result Trend" shows test count and failures over last N builds</li>
+  <li>Click failed test name to see stack trace without opening console log</li>
+</ul>
+
+<h3>Parallel Execution Setup</h3>
+
+<h4>testng.xml Configuration</h4>
+<pre><code class="language-xml">&lt;suite name="Parallel Suite" parallel="methods" thread-count="5"&gt;
+  &lt;test name="Parallel Tests"&gt;
+    &lt;classes&gt;
+      &lt;class name="com.app.tests.AccountTests"/&gt;
+    &lt;/classes&gt;
+  &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h4>Requirements</h4>
+<ul>
+  <li><strong>Jenkins agent executors:</strong> Set # executors ≥ thread-count on the agent label</li>
+  <li><strong>ThreadLocal WebDriver:</strong> Each thread must have its own driver instance—never share static WebDriver across parallel tests</li>
+  <li><strong>Independent test data:</strong> Use unique user accounts or data factories per thread to avoid collisions</li>
+  <li><strong>Grid for heavy parallel:</strong> Local machine may handle 5 threads; 20+ threads need Selenium Grid</li>
+</ul>
+
+<h3>TestNG + Jenkins Workflow</h3>
+
+<div class="ascii-diagram">Git Push → Webhook → Jenkins Job Triggered
+                              ↓
+                    Checkout automation repo
+                              ↓
+                    mvn test (Surefire → TestNG)
+                              ↓
+              target/surefire-reports/*.xml generated
+                              ↓
+              Jenkins JUnit Plugin parses results
+                              ↓
+              Trend graph updated + Email sent
+                              ↓
+              (Pass) Merge allowed / (Fail) Block PR</div>
+
+<h3>Handling TestNG Failures in Pipeline</h3>
+
+<h4>Failed Build vs Unstable Build</h4>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Setting</th><th>Build Status</th><th>Use Case</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>testFailureIgnore=false</code> (default)</td><td>FAILURE</td><td>Smoke on PR—must block merge</td></tr>
+    <tr><td><code>testFailureIgnore=true</code></td><td>SUCCESS (tests still reported)</td><td>Informational nightly run (not recommended for gates)</td></tr>
+    <tr><td>Cucumber/TestNG plugin <code>buildStatus: 'UNSTABLE'</code></td><td>UNSTABLE</td><td>Non-blocking regression; team notified but deploy continues</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Post-Action on Failure</h4>
+<pre><code class="language-groovy">post {
+    failure {
+        junit 'target/surefire-reports/*.xml'
+        archiveArtifacts artifacts: 'screenshots/**, logs/**'
+        emailext subject: 'Test Failures Detected',
+                 body: '${FAILED_TESTS, showStackTrace=true}',
+                 to: 'qa-team@company.com'
+    }
+}</code></pre>
+
+<div class="callout warning">
+<strong>Automation Engineer Note:</strong> Prefer fixing flaky tests over setting <code>testFailureIgnore=true</code>. Unstable builds erode trust in CI signal.
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+  <li><strong>Q: How do you run a specific TestNG XML suite via Maven?</strong><br>
+  A: <code>mvn test -Dsurefire.suiteXmlFiles=smoke.xml</code>. Configure Surefire plugin in pom.xml to accept the property.</li>
+  <li><strong>Q: Where does TestNG write results for Jenkins?</strong><br>
+  A: <code>target/surefire-reports/TEST-*.xml</code>. Jenkins JUnit plugin parses these files.</li>
+  <li><strong>Q: How do you parameterize browser and environment from Jenkins?</strong><br>
+  A: Pass as Maven system properties: <code>-Dbrowser=${params.BROWSER} -Denv=${params.ENV}</code>. Framework reads via <code>System.getProperty()</code>.</li>
+  <li><strong>Q: What is parallel="methods" in TestNG?</strong><br>
+  A: Runs @Test methods concurrently across threads. Requires ThreadLocal WebDriver and thread-safe test data.</li>
+  <li><strong>Q: Difference between failed and unstable build for tests?</strong><br>
+  A: FAILURE blocks pipeline/deploy; UNSTABLE indicates test failures but allows pipeline to continue (use for non-gating suites).</li>
+  <li><strong>Q: How do you show TestNG trend graph in Jenkins?</strong><br>
+  A: Publish JUnit results consistently every build. Jenkins auto-generates "Test Result Trend" on job page.</li>
+  <li><strong>Q: What happens if surefire reports directory is empty?</strong><br>
+  A: Build may fail at junit step. Use <code>allowEmptyResults: true</code> only when tests might legitimately not run.</li>
+  <li><strong>Q: How to run different suites on different branches?</strong><br>
+  A: Multibranch Pipeline with <code>when { branch 'feature/*' }</code> for smoke and <code>when { branch 'develop' }</code> for regression.</li>
+  <li><strong>Q: Can you run multiple suite XML files in one Maven command?</strong><br>
+  A: Yes: <code>-Dsurefire.suiteXmlFiles=smoke.xml,api.xml</code> or define multiple suites in pom.xml.</li>
+  <li><strong>Q: How do you archive TestNG emailable report?</strong><br>
+  A: HTML Publisher Plugin pointing to <code>target/surefire-reports/emailable-report.html</code> plus <code>archiveArtifacts</code> in post block.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>A SaaS company ran 180 TestNG tests across 4 suite files. PR pipeline: smoke.xml (12 tests, 3 min). Nightly: regression.xml (180 tests, 40 min) with parallel="methods" thread-count=5. Jenkins published JUnit trends—when failures spiked after a release, QA caught a regression within hours. Failure emails included <code>${FAILED_TESTS}</code> token listing exact test names and stack traces.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+  <li>Static shared WebDriver with parallel="methods"—causes random failures and session conflicts</li>
+  <li>Wrong path to suite XML—use repo-relative path matching pom.xml structure</li>
+  <li>Not publishing JUnit results—team cannot see which @Test methods failed</li>
+  <li>Running full regression on every commit—kills developer feedback loop</li>
+  <li>Setting testFailureIgnore=true to "make pipeline green"—hides real failures</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+  <li><strong>0 tests run:</strong> Check suite XML class names match package; verify Surefire includes <code>**/*Test.java</code>.</li>
+  <li><strong>Tests pass locally, fail in Jenkins:</strong> Compare JDK version, env properties, headless mode, test data availability.</li>
+  <li><strong>Parallel tests flaky only in CI:</strong> Reduce thread-count; verify ThreadLocal driver; check for shared test accounts.</li>
+  <li><strong>No trend graph:</strong> Ensure junit step runs every build with same report path pattern.</li>
+  <li><strong>Maven property not reaching TestNG:</strong> Define in surefire <code>systemPropertyVariables</code> or pass via -D flag.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+  <li>Execute: <code>mvn test -Dsurefire.suiteXmlFiles=&lt;suite&gt;.xml</code></li>
+  <li>Suites: smoke (PR), regression (nightly), sanity (post-deploy), crossbrowser (weekly)</li>
+  <li>Jenkins: junit step + publishHTML + archiveArtifacts on failure</li>
+  <li>Parallel: thread-count in XML + ThreadLocal WebDriver + enough executors</li>
+  <li>Failure handling: FAILURE blocks merge; UNSTABLE for non-gating runs</li>
+</ul>
+</section>
+<section id="section-11" class="section-card">
+<h2>Section 11: Jenkins + Cucumber Integration</h2>
+
+<p>Cucumber BDD tests integrate with Jenkins through Maven, tag-based filtering, and dedicated reporting plugins. As an automation engineer, you control which scenarios run on PR vs nightly through tags and pipeline parameters.</p>
+
+<h3>Cucumber Execution via Maven</h3>
+
+<pre><code class="language-bash">mvn test -Dcucumber.filter.tags="@smoke"
+mvn test -Dcucumber.filter.tags="@regression and not @wip"
+mvn test -Dcucumber.filter.tags="@sanity and @api"</code></pre>
+
+<h4>Runner Class</h4>
+<pre><code class="language-java">@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = "com.app.stepdefinitions",
+    tags = "@smoke",
+    plugin = {"pretty", "html:target/cucumber-report.html",
+              "json:target/cucumber-report.json"}
+)
+public class TestRunner extends AbstractTestNGCucumberTests { }</code></pre>
+
+<div class="callout">
+<strong>Cucumber 7+:</strong> Use <code>cucumber.filter.tags</code> Maven property to override runner tags at runtime without changing code.
+</div>
+
+<h3>Tag-Based Execution Strategy</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Tag</th><th>Trigger</th><th>Duration</th><th>Pipeline Behavior</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>@smoke</code></td><td>PR validation</td><td>~5 min</td><td>Blocks merge on failure</td></tr>
+    <tr><td><code>@regression</code></td><td>Nightly cron</td><td>~1 hr</td><td>Email on failure; non-blocking for deploy</td></tr>
+    <tr><td><code>@sanity</code></td><td>Post-deployment</td><td>~10 min</td><td>Validates critical flows after release</td></tr>
+    <tr><td><code>@api</code></td><td>API-only suite</td><td>~15 min</td><td>Fast backend validation without UI</td></tr>
+    <tr><td><code>@wip</code></td><td>Excluded always</td><td>N/A</td><td><code>not @wip</code> in every CI run</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Jenkins Pipeline for Cucumber</h3>
+
+<pre><code class="language-groovy">pipeline {
+    agent any
+    tools { maven 'Maven-3.9' }
+    parameters {
+        choice(name: 'TAGS',
+               choices: ['@smoke', '@regression', '@sanity', '@api'],
+               description: 'Cucumber Tags')
+        choice(name: 'ENV', choices: ['qa', 'staging'], description: 'Environment')
+    }
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Test') {
+            steps {
+                bat "mvn clean test -Dcucumber.filter.tags=\"${params.TAGS}\" -Denv=${params.ENV}"
+            }
+        }
+        stage('Report') {
+            steps {
+                cucumber buildStatus: 'UNSTABLE',
+                         jsonReportDirectory: 'target',
+                         fileIncludePattern: '**/*.json'
+                publishHTML([
+                    reportDir: 'target',
+                    reportFiles: 'cucumber-report.html',
+                    reportName: 'Cucumber HTML Report',
+                    keepAll: true
+                ])
+            }
+        }
+    }
+    post {
+        failure {
+            archiveArtifacts artifacts: 'target/cucumber-report.json, screenshots/**'
+            emailext subject: "Cucumber ${params.TAGS} FAILED",
+                     body: "Check report at ${env.BUILD_URL}",
+                     to: 'qa-team@company.com'
+        }
+    }
+}</code></pre>
+
+<h3>Cucumber Reports Plugin</h3>
+<ul>
+  <li>Reads JSON reports from <code>target/**/*.json</code></li>
+  <li>Displays feature/scenario breakdown with pass/fail/skip/undefined</li>
+  <li>Click scenario to see step-level results and error messages</li>
+  <li><code>buildStatus: 'UNSTABLE'</code> — marks build unstable (not failed) when scenarios fail</li>
+  <li><code>buildStatus: 'FAILURE'</code> — use for @smoke PR gates that must block merge</li>
+</ul>
+
+<h3>Parallel Cucumber Execution</h3>
+
+<p>Use TestNG DataProvider with parallel execution in the runner:</p>
+
+<pre><code class="language-java">@DataProvider(parallel = true)
+@Override
+public Object[][] scenarios() {
+    return super.scenarios();
+}</code></pre>
+
+<p>Combined with TestNG suite XML:</p>
+<pre><code class="language-xml">&lt;suite name="Cucumber Parallel" parallel="methods" thread-count="4"&gt;
+  &lt;test name="Cucumber Tests"&gt;
+    &lt;classes&gt;
+      &lt;class name="com.app.runners.ParallelTestRunner"/&gt;
+    &lt;/classes&gt;
+  &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<div class="callout tip">
+Each parallel scenario needs isolated WebDriver (ThreadLocal) and independent test data. Feature files tagged <code>@serial</code> should run in a separate non-parallel job.
+</div>
+
+<h3>Cucumber + Allure Integration in Jenkins</h3>
+
+<h4>pom.xml — Allure Cucumber Plugin</h4>
+<pre><code class="language-xml">&lt;plugin&gt;
+  &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+  &lt;artifactId&gt;allure-maven&lt;/artifactId&gt;
+  &lt;version&gt;2.12.0&lt;/version&gt;
+&lt;/plugin&gt;</code></pre>
+
+<h4>Pipeline — Generate and Publish Allure</h4>
+<pre><code class="language-groovy">stage('Allure Report') {
+    steps {
+        bat 'mvn allure:report'
+        allure includeProperties: false,
+               jdk: '',
+               results: [[path: 'target/allure-results']]
+    }
+}</code></pre>
+
+<p>Allure shows scenario steps, attachments (screenshots on failure), and trend history across builds.</p>
+
+<h3>Interview Questions</h3>
+<ol>
+  <li><strong>Q: How do you run Cucumber scenarios by tag in Jenkins?</strong><br>
+  A: Pass Maven property: <code>-Dcucumber.filter.tags="@smoke"</code>. Jenkins parameter lets QA select tag at build time.</li>
+  <li><strong>Q: What is AbstractTestNGCucumberTests?</strong><br>
+  A: Base class that integrates Cucumber with TestNG, enabling TestNG features (parallel, listeners, reporting) with Cucumber scenarios.</li>
+  <li><strong>Q: How does Cucumber Reports Plugin work?</strong><br>
+  A: Parses JSON output from Cucumber runs, displays feature/scenario results in Jenkins UI, can set build status to UNSTABLE or FAILURE.</li>
+  <li><strong>Q: How to exclude WIP scenarios from CI?</strong><br>
+  A: Use tag expression: <code>@regression and not @wip</code> in Maven command or runner config.</li>
+  <li><strong>Q: Difference between @smoke and @sanity tags?</strong><br>
+  A: @smoke = minimal critical paths for fast PR feedback. @sanity = broader post-deployment validation of key modules after release.</li>
+  <li><strong>Q: How to run @smoke on PR and @regression nightly in one repo?</strong><br>
+  A: Multibranch Pipeline with different tag parameters, or two pipeline jobs with different cron/webhook triggers and TAGS parameter defaults.</li>
+  <li><strong>Q: How do you parallelize Cucumber scenarios?</strong><br>
+  A: Override <code>scenarios()</code> DataProvider with <code>parallel=true</code> in runner extending AbstractTestNGCucumberTests; set thread-count in testng.xml.</li>
+  <li><strong>Q: What JSON path does Cucumber Reports Plugin expect?</strong><br>
+  A: Configure <code>jsonReportDirectory</code> and <code>fileIncludePattern: '**/*.json'</code>—typically <code>target/cucumber-report.json</code>.</li>
+  <li><strong>Q: When to use buildStatus UNSTABLE vs FAILURE?</strong><br>
+  A: FAILURE for merge-blocking smoke; UNSTABLE for informational nightly regression where deploy should continue.</li>
+  <li><strong>Q: How to integrate Allure with Cucumber in Jenkins?</strong><br>
+  A: Add allure-cucumber7-jvm dependency, configure allure-maven plugin, use <code>allure</code> step in pipeline pointing to <code>target/allure-results</code>.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>An insurance portal had 320 Cucumber scenarios across 45 feature files. Tags: @smoke (18 scenarios), @regression (all), @api (backend only). PR webhook triggered Jenkins Multibranch with <code>@smoke and not @wip</code> (4 min). Nightly cron ran <code>@regression and not @wip</code> with parallel DataProvider (thread-count=4, 55 min). Cucumber Reports Plugin showed failing scenario steps; product owners reviewed Allure reports linked from Jenkins email.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+  <li>Forgetting <code>not @wip</code>—half-written scenarios fail CI</li>
+  <li>Not generating JSON report—Cucumber Reports Plugin has nothing to parse</li>
+  <li>Same tag on too many scenarios—@smoke suite grows to 30 min, defeating PR fast feedback</li>
+  <li>Parallel scenarios sharing browser session—use ThreadLocal WebDriver</li>
+  <li>Hardcoding tags in runner instead of Maven property—requires code change to switch suites</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+  <li><strong>0 scenarios run:</strong> Verify tag spelling matches feature files; check tag expression syntax (and/or/not).</li>
+  <li><strong>Undefined steps in CI only:</strong> Glue path mismatch; ensure all step definition packages are on classpath.</li>
+  <li><strong>Cucumber plugin shows no data:</strong> Confirm JSON file exists in configured directory after test stage.</li>
+  <li><strong>Parallel failures:</strong> Reduce thread-count; isolate @serial tagged features into separate job.</li>
+  <li><strong>Allure empty:</strong> Verify allure-cucumber dependency version matches Cucumber 7.x.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+  <li>Run by tag: <code>mvn test -Dcucumber.filter.tags="@smoke"</code></li>
+  <li>Runner extends AbstractTestNGCucumberTests for TestNG integration</li>
+  <li>PR=@smoke, Nightly=@regression, Post-deploy=@sanity, Backend=@api</li>
+  <li>Cucumber Reports Plugin reads JSON; set buildStatus appropriately</li>
+  <li>Parallel via DataProvider(parallel=true) + ThreadLocal driver</li>
+</ul>
+</section>
+<section id="section-12" class="section-card">
+<h2>Section 12: Jenkins + Selenium</h2>
+
+<p>Running Selenium in Jenkins requires understanding local vs headless vs Grid execution, browser driver management, and artifact collection on failure. This section focuses on what automation engineers configure—not server administration.</p>
+
+<h3>Local Execution</h3>
+<p>Jenkins agent runs on the same machine where ChromeDriver/GeckoDriver are installed. Suitable for small teams or dedicated automation VMs with browsers pre-installed.</p>
+<ul>
+  <li>Install browsers and matching driver versions on the Jenkins agent</li>
+  <li>Set driver path via system property or WebDriverManager in framework</li>
+  <li>Limitation: single machine resources; cannot scale parallel browsers easily</li>
+</ul>
+
+<h3>Headless Execution</h3>
+
+<p>CI servers typically have no display (GUI). Headless mode runs browsers without a visible window.</p>
+
+<h4>Why Headless in CI</h4>
+<ul>
+  <li>No GUI/display server required on Linux CI agents</li>
+  <li>Faster execution—no rendering overhead</li>
+  <li>Standard approach for Jenkins, GitHub Actions, Azure DevOps agents</li>
+</ul>
+
+<h4>Configuration Code</h4>
+<pre><code class="language-java">ChromeOptions options = new ChromeOptions();
+if (Boolean.parseBoolean(System.getProperty("headless", "true"))) {
+    options.addArguments("--headless=new");
+    options.addArguments("--window-size=1920,1080");
+    options.addArguments("--disable-gpu");
+    options.addArguments("--no-sandbox");
+    options.addArguments("--disable-dev-shm-usage");
+}
+WebDriver driver = new ChromeDriver(options);</code></pre>
+
+<div class="callout">
+Pass from Jenkins: <code>mvn test -Dheadless=true -Dbrowser=chrome</code>. Always set window-size in headless—default 800×600 causes element visibility failures.
+</div>
+
+<h3>Remote Execution with Selenium Grid</h3>
+
+<h4>Hub-Node Architecture</h4>
+<ul>
+  <li><strong>Hub:</strong> Central router receiving test requests (port 4444)</li>
+  <li><strong>Nodes:</strong> Worker machines/containers with browsers; hub assigns sessions</li>
+  <li>Tests use <code>RemoteWebDriver</code> pointing to hub URL</li>
+</ul>
+
+<pre><code class="language-java">DesiredCapabilities caps = new DesiredCapabilities();
+caps.setBrowserName("chrome");
+WebDriver driver = new RemoteWebDriver(
+    new URL("http://selenium-grid:4444/wd/hub"), caps);</code></pre>
+
+<h4>Docker Grid — docker-compose.yml</h4>
+<pre><code class="language-yaml">version: "3.8"
+services:
+  selenium-hub:
+    image: selenium/hub:4.21.0
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"
+    environment:
+      - SE_NODE_MAX_SESSIONS=4
+
+  chrome-node:
+    image: selenium/node-chrome:4.21.0
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=4
+    shm_size: 2gb
+
+  firefox-node:
+    image: selenium/node-firefox:4.21.0
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=4
+    shm_size: 2gb</code></pre>
+
+<p>Start Grid before tests: <code>docker-compose up -d</code>. Jenkins pipeline passes <code>-Dgrid.url=http://localhost:4444/wd/hub</code>.</p>
+
+<h3>Complete Selenium Pipeline</h3>
+
+<pre><code class="language-groovy">pipeline {
+    agent any
+    tools { maven 'Maven-3.9' }
+    parameters {
+        choice(name: 'BROWSER', choices: ['chrome', 'firefox', 'edge'])
+        booleanParam(name: 'HEADLESS', defaultValue: true, description: 'Headless mode')
+        string(name: 'GRID_URL', defaultValue: 'http://localhost:4444/wd/hub',
+               description: 'Selenium Grid URL (empty for local)')
+    }
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Build') {
+            steps { bat 'mvn clean compile -DskipTests' }
+        }
+        stage('Selenium Tests') {
+            steps {
+                bat """
+                    mvn test \
+                      -Dbrowser=${params.BROWSER} \
+                      -Dheadless=${params.HEADLESS} \
+                      -Dgrid.url=${params.GRID_URL} \
+                      -Dsurefire.suiteXmlFiles=smoke.xml
+                """
+            }
+        }
+        stage('Report') {
+            steps {
+                junit 'target/surefire-reports/*.xml'
+                publishHTML([
+                    reportDir: 'target/surefire-reports',
+                    reportFiles: 'index.html',
+                    reportName: 'Selenium Test Report',
+                    keepAll: true
+                ])
+            }
+        }
+    }
+    post {
+        failure {
+            archiveArtifacts artifacts: 'screenshots/**, target/surefire-reports/**',
+                               allowEmptyArchive: true
+            emailext subject: "Selenium Tests FAILED - ${params.BROWSER}",
+                     body: "Screenshots archived. ${env.BUILD_URL}",
+                     to: 'qa-team@company.com'
+        }
+        always {
+            junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+        }
+    }
+}</code></pre>
+
+<h3>Screenshot Archiving on Failure</h3>
+
+<pre><code class="language-java">@AfterMethod
+public void captureScreenshot(ITestResult result) {
+    if (result.getStatus() == ITestResult.FAILURE) {
+        File src = ((TakesScreenshot) driver.get())
+                     .getScreenshotAs(OutputType.FILE);
+        Files.copy(src.toPath(),
+            Paths.get("screenshots/" + result.getName() + ".png"),
+            StandardCopyOption.REPLACE_EXISTING);
+    }
+}</code></pre>
+
+<p>Jenkins <code>post { failure { archiveArtifacts 'screenshots/**' } }</code> makes screenshots downloadable from build page.</p>
+
+<h3>Selenium Grid 4 with Docker in Jenkins</h3>
+<ol>
+  <li>Install Docker on Jenkins agent (or use dedicated Grid server)</li>
+  <li>Add stage to start Grid: <code>sh 'docker-compose -f docker/grid-compose.yml up -d'</code></li>
+  <li>Wait for hub ready: <code>sh 'curl --retry 10 --retry-delay 5 http://localhost:4444/status'</code></li>
+  <li>Run tests pointing to Grid URL</li>
+  <li>Post always: <code>sh 'docker-compose down'</code> to free resources</li>
+</ol>
+
+<h3>Interview Questions</h3>
+<ol>
+  <li><strong>Q: Why run Selenium headless in Jenkins?</strong><br>
+  A: CI agents lack display/GUI. Headless runs Chrome/Firefox without a visible window, faster and no Xvfb needed (with --headless=new).</li>
+  <li><strong>Q: What ChromeOptions are essential for CI?</strong><br>
+  A: <code>--headless=new</code>, <code>--window-size=1920,1080</code>, <code>--no-sandbox</code>, <code>--disable-dev-shm-usage</code> (Docker).</li>
+  <li><strong>Q: Explain Selenium Grid hub-node architecture.</strong><br>
+  A: Hub routes test requests; nodes execute browsers. Enables parallel cross-browser execution across machines/containers.</li>
+  <li><strong>Q: How do tests connect to Grid from Jenkins?</strong><br>
+  A: RemoteWebDriver with hub URL passed as Maven property: <code>-Dgrid.url=http://grid:4444/wd/hub</code>.</li>
+  <li><strong>Q: Why is shm_size: 2gb needed in Docker Grid?</strong><br>
+  A: Default /dev/shm (64MB) is too small for Chrome; causes crashes. Increase shared memory in docker-compose.</li>
+  <li><strong>Q: How to archive failure screenshots in Jenkins?</strong><br>
+  A: Test listener saves to <code>screenshots/</code> on @AfterMethod failure; pipeline <code>archiveArtifacts 'screenshots/**'</code> in post failure block.</li>
+  <li><strong>Q: Local vs Grid execution—when to use each?</strong><br>
+  A: Local for dev/single-browser smoke. Grid when parallel sessions exceed agent capacity or cross-browser scaling needed.</li>
+  <li><strong>Q: Tests pass headless locally but fail in Jenkins—common causes?</strong><br>
+  A: Different screen resolution, missing --no-sandbox in Docker, driver/browser version mismatch, timing issues (need explicit waits).</li>
+  <li><strong>Q: How to run Chrome and Firefox in parallel on Grid?</strong><br>
+  A: Jenkins parallel stages each invoking mvn test with different -Dbrowser value, both pointing to same Grid hub.</li>
+  <li><strong>Q: What is WebDriverManager role in CI?</strong><br>
+  A: Auto-downloads matching driver for installed browser version—reduces "driver version mismatch" failures on agents.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>A fintech team ran 80 Selenium tests on Jenkins Windows agent initially (sequential, 50 min). Migrated to Docker Grid 4 on a Linux VM: 4 Chrome + 2 Firefox nodes. Pipeline started Grid, ran smoke in parallel stages (Chrome + Firefox, 8 min total), archived screenshots on 3 failing tests—QA downloaded PNGs directly from Jenkins without reproducing locally. Headless + Grid cut nightly regression from 50 min to 18 min.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+  <li>Missing <code>--window-size</code> in headless—elements reported as not visible/interactable</li>
+  <li>Not increasing Docker shm_size—Chrome crashes with "session deleted" errors</li>
+  <li>Forgetting to tear down Grid containers—memory exhaustion on agent over time</li>
+  <li>Hardcoding Grid URL instead of Jenkins parameter—breaks when Grid moves</li>
+  <li>Not archiving screenshots—CI-only failures impossible to debug</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+  <li><strong>Session not created:</strong> Browser/driver version mismatch—use WebDriverManager or Selenium 4 built-in driver management.</li>
+  <li><strong>Timeout connecting to Grid:</strong> Verify hub is up (<code>/status</code> endpoint); check firewall between Jenkins agent and Grid.</li>
+  <li><strong>Chrome crashed in Docker:</strong> Add <code>--no-sandbox</code>, increase <code>shm_size</code>, ensure enough RAM for node containers.</li>
+  <li><strong>Tests slower in CI:</strong> Normal—add explicit waits; avoid Thread.sleep; consider Grid scaling.</li>
+  <li><strong>Screenshots empty/black:</strong> Headless screenshot timing—take screenshot after page load complete.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+  <li>CI = headless + window-size + no-sandbox (Docker)</li>
+  <li>Grid = hub routes, nodes execute; scale parallel browsers</li>
+  <li>Pipeline params: BROWSER, HEADLESS, GRID_URL</li>
+  <li>Always archive screenshots/** on failure</li>
+  <li>Docker Grid: shm_size 2gb, tear down in post always</li>
+</ul>
+</section>
+<section id="section-13" class="section-card">
+<h2>Section 13: Jenkins + Playwright</h2>
+
+<p>Playwright is increasingly chosen for CI/CD due to built-in auto-waiting, native parallelism, and multi-browser support. Automation engineers using TypeScript/JavaScript/Python can integrate Playwright into Jenkins with Node.js tooling.</p>
+
+<h3>Why Playwright in CI/CD</h3>
+<ul>
+  <li><strong>Fast:</strong> Auto-wait eliminates most flaky timing issues</li>
+  <li><strong>Reliable:</strong> Built-in retry, trace viewer for debugging CI failures</li>
+  <li><strong>Built-in parallelism:</strong> <code>--workers=N</code> without Grid setup</li>
+  <li><strong>Multi-browser:</strong> Chromium, Firefox, WebKit from single test code</li>
+  <li><strong>Headless by default</strong> in CI—no extra configuration needed</li>
+</ul>
+
+<h3>Playwright Setup in Jenkins</h3>
+<ol>
+  <li>Install <strong>NodeJS Plugin</strong> in Jenkins → Global Tool Configuration → add Node.js 18+</li>
+  <li>Pipeline references: <code>tools { nodejs 'Node-18' }</code></li>
+  <li>Install dependencies: <code>npm ci</code> (uses package-lock.json—reproducible)</li>
+  <li>Install browsers: <code>npx playwright install --with-deps</code></li>
+  <li>Run tests: <code>npx playwright test</code></li>
+</ol>
+
+<h3>Jenkins Pipeline for Playwright</h3>
+
+<pre><code class="language-groovy">pipeline {
+    agent any
+    tools { nodejs 'Node-18' }
+    parameters {
+        choice(name: 'PROJECT', choices: ['chromium', 'firefox', 'webkit', 'all'],
+               description: 'Browser project')
+        string(name: 'WORKERS', defaultValue: '4', description: 'Parallel workers')
+    }
+    stages {
+        stage('Install') {
+            steps {
+                bat 'npm ci'
+                bat 'npx playwright install --with-deps'
+            }
+        }
+        stage('Test') {
+            steps {
+                script {
+                    if (params.PROJECT == 'all') {
+                        bat "npx playwright test --workers=${params.WORKERS} --reporter=html,list"
+                    } else {
+                        bat "npx playwright test --project=${params.PROJECT} --workers=${params.WORKERS} --reporter=html,list"
+                    }
+                }
+            }
+        }
+        stage('Report') {
+            steps {
+                publishHTML([
+                    reportDir: 'playwright-report',
+                    reportFiles: 'index.html',
+                    reportName: 'Playwright HTML Report',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true
+                ])
+            }
+        }
+    }
+    post {
+        failure {
+            archiveArtifacts artifacts: 'playwright-report/**, test-results/**',
+                               allowEmptyArchive: true
+            bat 'npx playwright show-report --host 0.0.0.0 || echo Report archived'
+        }
+        always {
+            junit allowEmptyResults: true,
+                  testResults: 'test-results/junit.xml'
+        }
+    }
+}</code></pre>
+
+<div class="callout">
+Add JUnit reporter in <code>playwright.config.ts</code>: <code>reporter: [['html'], ['junit', { outputFile: 'test-results/junit.xml' }]]</code> for Jenkins trend graphs.
+</div>
+
+<h3>Parallel and Cross-Browser Execution</h3>
+
+<pre><code class="language-bash"># Parallel workers (same browser)
+npx playwright test --workers=4
+
+# Cross-browser via projects in playwright.config.ts
+npx playwright test --project=chromium --project=firefox --project=webkit
+
+# Run specific tag
+npx playwright test --grep @smoke</code></pre>
+
+<h4>playwright.config.ts — Multi-Project</h4>
+<pre><code class="language-typescript">export default defineConfig({
+  workers: process.env.CI ? 4 : 2,
+  retries: process.env.CI ? 1 : 0,
+  reporter: [['html'], ['junit', { outputFile: 'test-results/junit.xml' }]],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox',  use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit',   use: { ...devices['Desktop Safari'] } },
+  ],
+});</code></pre>
+
+<h3>Playwright vs Selenium in CI/CD</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Aspect</th><th>Playwright</th><th>Selenium</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Setup in Jenkins</td><td>Node.js + npm ci + playwright install</td><td>Java/Maven + browser drivers or Grid</td></tr>
+    <tr><td>Parallel Execution</td><td>Built-in workers, no Grid needed</td><td>Requires Grid or TestNG parallel + ThreadLocal</td></tr>
+    <tr><td>Headless</td><td>Default in CI</td><td>Manual ChromeOptions configuration</td></tr>
+    <tr><td>Flakiness</td><td>Auto-wait reduces timing issues</td><td>Requires explicit waits; more flaky in CI</td></tr>
+    <tr><td>Debugging CI Failures</td><td>Trace viewer, screenshot/video on failure</td><td>Manual screenshot listener setup</td></tr>
+    <tr><td>Cross-Browser</td><td>Chromium, Firefox, WebKit native</td><td>Chrome, Firefox, Edge (WebKit limited)</td></tr>
+    <tr><td>Report in Jenkins</td><td>HTML report + JUnit XML</td><td>TestNG/Extent + JUnit XML</td></tr>
+    <tr><td>Best For</td><td>Modern JS/TS automation teams</td><td>Java teams with existing Selenium frameworks</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Report Publishing</h3>
+<ul>
+  <li><strong>HTML Reporter:</strong> Default <code>playwright-report/index.html</code> — publish via HTML Publisher Plugin</li>
+  <li><strong>JUnit XML:</strong> Enables Jenkins test trend graphs</li>
+  <li><strong>Allure:</strong> <code>@playwright/test</code> + allure-playwright reporter for rich CI reports</li>
+  <li><strong>Traces:</strong> Enable <code>trace: 'on-first-retry'</code> — archive <code>test-results/</code> for offline trace analysis</li>
+</ul>
+
+<h3>Containerized Playwright Execution</h3>
+
+<pre><code class="language-groovy">stage('Test in Container') {
+    agent {
+        docker {
+            image 'mcr.microsoft.com/playwright:v1.44.0-jammy'
+            args '-u root:root'
+        }
+    }
+    steps {
+        sh 'npm ci'
+        sh 'npx playwright test --workers=4'
+    }
+}</code></pre>
+
+<p>Microsoft's Playwright Docker image includes browsers and dependencies—no separate <code>playwright install</code> needed. Ideal for consistent CI environments.</p>
+
+<h3>Interview Questions</h3>
+<ol>
+  <li><strong>Q: How do you set up Playwright in Jenkins?</strong><br>
+  A: NodeJS plugin → tools { nodejs } → npm ci → npx playwright install --with-deps → npx playwright test.</li>
+  <li><strong>Q: Why use npm ci instead of npm install in CI?</strong><br>
+  A: npm ci installs exact versions from package-lock.json—reproducible builds; faster and stricter than npm install.</li>
+  <li><strong>Q: How to run Playwright tests in parallel?</strong><br>
+  A: <code>--workers=4</code> or set <code>workers</code> in playwright.config.ts. Playwright manages browser contexts internally.</li>
+  <li><strong>Q: How to publish Playwright report in Jenkins?</strong><br>
+  A: HTML Publisher Plugin on <code>playwright-report/index.html</code>; add JUnit reporter for trend graphs.</li>
+  <li><strong>Q: Playwright vs Selenium for CI/CD?</strong><br>
+  A: Playwright has built-in parallelism, auto-wait, trace debugging—less infrastructure (no Grid). Selenium suits existing Java/TestNG investments.</li>
+  <li><strong>Q: What is mcr.microsoft.com/playwright Docker image?</strong><br>
+  A: Official image with browsers and OS deps pre-installed—consistent CI without manual browser setup on agents.</li>
+  <li><strong>Q: How to debug Playwright CI failures?</strong><br>
+  A: Enable trace/video/screenshot on failure; archive test-results/ folder; use Playwright trace viewer locally.</li>
+  <li><strong>Q: How to run cross-browser in one Jenkins build?</strong><br>
+  A: Define projects in config; run <code>npx playwright test --project=chromium --project=firefox --project=webkit</code>.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>A startup migrated 60 UI tests from Selenium+Grid to Playwright. Jenkins pipeline: Node-18 agent, npm ci, playwright install, test with --workers=4 (8 min vs previous 25 min on Grid). HTML report published per build; on failure, archived traces let developers replay exact CI steps locally in trace viewer—reduced "cannot reproduce" tickets by 70%.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+  <li>Using npm install instead of npm ci—non-reproducible dependency versions</li>
+  <li>Skipping <code>playwright install --with-deps</code> on fresh agents—browser binary not found</li>
+  <li>Not configuring JUnit reporter—no test trend in Jenkins</li>
+  <li>Running all browser projects sequentially without parallel projects config</li>
+  <li>Not archiving test-results/ on failure—lose traces and screenshots</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+  <li><strong>Browser not found:</strong> Run <code>npx playwright install --with-deps</code> or use official Docker image.</li>
+  <li><strong>Tests pass locally, fail in Jenkins:</strong> Check baseURL env var, CI retries setting, viewport size differences.</li>
+  <li><strong>HTML report empty:</strong> Ensure --reporter=html and report generated before publishHTML step.</li>
+  <li><strong>Out of memory with workers=8:</strong> Reduce workers or use agent with more RAM; each worker launches browser context.</li>
+  <li><strong>Permission denied on Linux agent:</strong> Use Playwright Docker image or install system deps via --with-deps.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+  <li>Setup: NodeJS plugin → npm ci → playwright install → playwright test</li>
+  <li>Parallel: --workers=N; cross-browser: --project flags</li>
+  <li>Reports: HTML (publishHTML) + JUnit XML (trend graph)</li>
+  <li>Docker: mcr.microsoft.com/playwright for consistent CI</li>
+  <li>Debug: trace on failure, archive test-results/</li>
+</ul>
+</section>
+<section id="section-14" class="section-card">
+<h2>Section 14: Test Execution Strategy in CI/CD</h2>
+
+<p>Test execution strategy defines <em>what</em> runs, <em>when</em>, and <em>what happens on failure</em>. As an automation engineer, you design suite tiers and pipeline gates—not just write tests. This section covers categorization, suite design, promotion, quality gates, flaky management, and test data.</p>
+
+<h3>Test Categorization for CI/CD</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Category</th><th>Tests</th><th>Duration</th><th>Trigger</th><th>Fail Action</th><th>Priority</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>PR Validation (Smoke)</td><td>~20 critical path</td><td>~5 min</td><td>Every PR / push</td><td>Block merge</td><td>P0</td></tr>
+    <tr><td>Post-Merge</td><td>Smoke + API (~70)</td><td>~15 min</td><td>Merge to develop</td><td>Notify team; flag build</td><td>P1</td></tr>
+    <tr><td>Nightly Regression</td><td>Full suite (~500)</td><td>1–2 hrs</td><td>Cron 2 AM</td><td>Email; create defect tickets</td><td>P1</td></tr>
+    <tr><td>Weekly Cross-Browser</td><td>UI × 3 browsers</td><td>2–3 hrs</td><td>Weekly Sunday</td><td>Report to QA lead</td><td>P2</td></tr>
+    <tr><td>Release / UAT</td><td>Sanity + UAT scenarios</td><td>~30 min</td><td>Release branch cut</td><td>Block release</td><td>P0</td></tr>
+    <tr><td>Performance</td><td>Load/stress subset</td><td>~1 hr</td><td>Weekly / pre-release</td><td>Review with devops</td><td>P2</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout tip">
+<strong>Golden Rule:</strong> PR feedback under 10 minutes. If smoke exceeds that, split into slimmer smoke + move checks to post-merge tier.
+</div>
+
+<h3>Test Suite Design for Pipelines</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Suite File</th><th>Scope</th><th>Test Count</th><th>Pipeline Stage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>smoke.xml</code></td><td>Login, checkout, payment—critical paths only</td><td>~20</td><td>PR validation</td></tr>
+    <tr><td><code>api.xml</code></td><td>REST/GraphQL endpoints, no UI</td><td>~50</td><td>Post-merge, parallel with smoke</td></tr>
+    <tr><td><code>regression.xml</code></td><td>All functional tests</td><td>~500</td><td>Nightly cron</td></tr>
+    <tr><td><code>crossbrowser.xml</code></td><td>UI tests × Chrome, Firefox, Edge</td><td>~50 × 3</td><td>Weekly, release candidate</td></tr>
+    <tr><td><code>sanity.xml</code></td><td>Post-deploy health checks</td><td>~30</td><td>After QA/staging deploy</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Build Promotion Strategy</h3>
+
+<div class="ascii-diagram">  Developer Push / PR
+         │
+         ▼
+   ┌─────────────┐     Fail ──→ Block Merge
+   │ Smoke Tests │                    │
+   └──────┬──────┘                    │
+          │ Pass                      │
+          ▼                             │
+   ┌─────────────┐                     │
+   │ Merge to    │                     │
+   │  develop    │                     │
+   └──────┬──────┘                     │
+          ▼                             │
+   ┌─────────────┐     Fail ──→ Notify Team
+   │ Deploy QA   │                    │
+   └──────┬──────┘                    │
+          ▼                             │
+   ┌─────────────┐     Fail ──→ Hold Promotion
+   │ Regression  │                    │
+   │   (QA)      │                    │
+   └──────┬──────┘                    │
+          │ Pass                      │
+          ▼                             │
+   ┌─────────────┐                     │
+   │Deploy Staging│                    │
+   └──────┬──────┘                    │
+          ▼                             │
+   ┌─────────────┐     Fail ──→ Block Release
+   │  UAT/Sanity │                    │
+   └──────┬──────┘                    │
+          │ Pass                      │
+          ▼                             │
+   ┌─────────────┐                     │
+   │ Production  │◄───────────────────┘
+   │  Deploy     │   (fix & re-run)
+   └─────────────┘</div>
+
+<h3>Quality Gates</h3>
+
+<p>Quality gates are automated pass/fail criteria before promotion to the next environment.</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Gate</th><th>Threshold</th><th>Enforced At</th><th>Implementation</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Pass Rate</td><td>&gt; 95%</td><td>Nightly, release</td><td>Jenkins checks JUnit results count; fail if below threshold</td></tr>
+    <tr><td>No P1/P2 Failures</td><td>0 critical failures</td><td>Release</td><td>Tag tests @P1/@P2; pipeline fails if any tagged test fails</td></tr>
+    <tr><td>All Smoke Pass</td><td>100% smoke pass</td><td>PR, every deploy</td><td>Hard gate—no testFailureIgnore</td></tr>
+    <tr><td>Code Coverage</td><td>&gt; 80%</td><td>PR (optional)</td><td>JaCoCo report; SonarQube quality gate</td></tr>
+    <tr><td>No New Flaky Tests</td><td>Flaky rate &lt; 2%</td><td>Weekly review</td><td>Track retry-pass tests in dashboard</td></tr>
+  </tbody>
+</table>
+</div>
+
+<pre><code class="language-groovy">stage('Quality Gate') {
+    steps {
+        script {
+            def testResults = junit testResults: 'target/surefire-reports/*.xml'
+            def passRate = (testResults.passCount / testResults.totalCount) * 100
+            if (passRate &lt; 95) {
+                error("Pass rate ${passRate}% below 95% threshold")
+            }
+        }
+    }
+}</code></pre>
+
+<h3>Flaky Test Management</h3>
+
+<h4>RetryAnalyzer in TestNG</h4>
+<pre><code class="language-java">public class RetryAnalyzer implements IRetryAnalyzer {
+    private int count = 0;
+    private static final int MAX_RETRY = 2;
+
+    @Override
+    public boolean retry(ITestResult result) {
+        if (count &lt; MAX_RETRY) { count++; return true; }
+        return false;
+    }
+}
+
+// Usage: @Test(retryAnalyzer = RetryAnalyzer.class)</code></pre>
+
+<h4>Quarantine Strategy</h4>
+<ul>
+  <li>Tag flaky tests: <code>@Tag("flaky")</code> or TestNG group <code>flaky</code></li>
+  <li>Exclude from blocking suites: <code>@smoke and not @flaky</code></li>
+  <li>Run quarantined tests in separate non-blocking nightly job</li>
+  <li>Track fix progress—flaky tests must have assigned owner and deadline</li>
+</ul>
+
+<h4>Monitoring</h4>
+<ul>
+  <li>Track flaky rate: (tests that passed on retry) / (total tests) per build</li>
+  <li>Jenkins test trend + custom dashboard (Grafana, ReportPortal)</li>
+  <li>Alert when flaky rate exceeds 2%—indicates infrastructure or test design problem</li>
+</ul>
+
+<div class="callout warning">
+<strong>Never</strong> permanently leave retry on smoke tests to "keep CI green." Fix root cause or quarantine.
+</div>
+
+<h3>Test Data Management in CI/CD</h3>
+
+<h4>Data Seeding Before Tests</h4>
+<pre><code class="language-groovy">stage('Seed Test Data') {
+    steps {
+        bat 'mvn exec:java -Dexec.mainClass=com.app.utils.TestDataSeeder -Denv=qa'
+    }
+}</code></pre>
+
+<h4>Database Reset Between Runs</h4>
+<ul>
+  <li>Run SQL reset script in pre-test stage</li>
+  <li>Use Docker compose to spin fresh DB container per pipeline run</li>
+  <li>Call API setup endpoint: <code>POST /api/test/reset</code> (test env only)</li>
+</ul>
+
+<h4>Environment-Specific Data Files</h4>
+<pre><code class="language-bash"># Jenkins passes env; framework loads matching config
+src/test/resources/testdata/qa/users.json
+src/test/resources/testdata/staging/users.json
+
+# Maven: -Denv=qa → framework loads testdata/qa/*.json</code></pre>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Strategy</th><th>Pros</th><th>Cons</th><th>Best For</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Static JSON/CSV files</td><td>Simple, version-controlled</td><td>Stale data, collisions in parallel</td><td>Smoke, API tests</td></tr>
+    <tr><td>Dynamic seeding (API/DB)</td><td>Fresh data every run</td><td>Slower setup stage</td><td>Regression, data-dependent flows</td></tr>
+    <tr><td>Data factory (Faker)</td><td>Unique data per test</td><td>Harder to assert specific states</td><td>Parallel UI tests</td></tr>
+    <tr><td>Dedicated CI test accounts</td><td>Predictable login states</td><td>Account lockout risk</td><td>Auth flows, role-based tests</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Pipeline Strategy Summary</h3>
+
+<div class="ascii-diagram">┌──────────────────────────────────────────────────────────────┐
+│                    CI/CD TEST PYRAMID                          │
+├──────────────────────────────────────────────────────────────┤
+│  PR (5 min)      │ smoke.xml          │ BLOCK on fail        │
+│  Post-Merge (15m)│ smoke + api.xml    │ NOTIFY on fail         │
+│  Nightly (2 hr)  │ regression.xml     │ TICKET on fail         │
+│  Weekly (3 hr)   │ crossbrowser.xml   │ REPORT on fail         │
+│  Release (30 m)  │ sanity + UAT       │ BLOCK release          │
+└──────────────────────────────────────────────────────────────┘</div>
+
+<h3>Interview Questions</h3>
+<ol>
+  <li><strong>Q: What tests should run on every PR?</strong><br>
+  A: Smoke suite only—critical paths, under 10 min, blocks merge on failure. Never full regression on PR.</li>
+  <li><strong>Q: Explain build promotion with quality gates.</strong><br>
+  A: Dev → smoke pass → deploy QA → regression pass → staging → UAT pass → production. Each gate has pass criteria.</li>
+  <li><strong>Q: What is a quality gate?</strong><br>
+  A: Automated checkpoint (e.g., 95% pass rate, all smoke pass, 80% coverage) that must pass before promoting build.</li>
+  <li><strong>Q: How do you handle flaky tests in CI?</strong><br>
+  A: Quarantine with @flaky tag, exclude from blocking suites, run in separate job, track flaky rate, fix root cause—never permanently retry on smoke.</li>
+  <li><strong>Q: Difference between smoke, sanity, and regression?</strong><br>
+  A: Smoke = minimal critical paths (PR). Sanity = module/post-deploy checks. Regression = full coverage (nightly).</li>
+  <li><strong>Q: How to manage test data in parallel CI runs?</strong><br>
+  A: Dynamic data factories (Faker), unique accounts per thread, DB reset before suite, or isolated Docker DB per pipeline.</li>
+  <li><strong>Q: When should CI block vs notify on test failure?</strong><br>
+  A: Block: PR smoke, release UAT. Notify: nightly regression, weekly cross-browser—still important but not merge/release blocking.</li>
+  <li><strong>Q: How to design suites for fast feedback?</strong><br>
+  A: Tier tests: smoke (20 tests, 5 min) → API (50 tests, 10 min) → regression (500 tests, 2 hr). Match trigger to tier.</li>
+  <li><strong>Q: What is test quarantine?</strong><br>
+  A: Moving flaky tests to a separate non-blocking suite until fixed; excluded from smoke/regression gates via tags.</li>
+  <li><strong>Q: How do you enforce 95% pass rate in Jenkins?</strong><br>
+  A: Parse JUnit results in pipeline script; calculate passCount/totalCount; call error() if below threshold.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>An ERP product team implemented a 5-tier strategy: PR smoke (15 tests, 4 min, blocks merge), post-merge API+smoke (15 min), nightly regression (420 tests, 90 min), weekly cross-browser (3 browsers), release sanity (30 tests before prod). Flaky tests tagged @flaky moved to quarantine job—flaky rate dropped from 8% to 1.5% in 6 weeks. Test data seeded via API before regression; static JSON for smoke. Quality gate: 100% smoke + 95% regression pass rate required for staging promotion.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+  <li>Running full regression on every PR—developers ignore CI due to 1-hour wait</li>
+  <li>No test tier differentiation—same suite for PR and nightly</li>
+  <li>Ignoring flaky tests by adding retries everywhere—masks real issues</li>
+  <li>Shared test accounts across parallel runs—random login failures</li>
+  <li>No quality gates on staging/production promotion—bugs reach users</li>
+  <li>Static test data never refreshed—tests pass but validate outdated behavior</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+  <li><strong>Smoke suite too slow:</strong> Audit test count; move non-critical tests to post-merge or API suite.</li>
+  <li><strong>High flaky rate:</strong> Identify top 10 flaky tests from retry logs; quarantine and assign owners.</li>
+  <li><strong>Data collisions in parallel:</strong> Switch to dynamic data factory; never share user accounts across threads.</li>
+  <li><strong>Quality gate false positives:</strong> Exclude quarantined @flaky tests from pass rate calculation.</li>
+  <li><strong>Nightly always red:</strong> Team stops caring—fix top failures first; split environment issues from real bugs.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+  <li>PR = smoke (5 min, block) | Nightly = regression (2 hr, notify)</li>
+  <li>Suites: smoke.xml, api.xml, regression.xml, crossbrowser.xml, sanity.xml</li>
+  <li>Promotion: smoke → QA → regression → staging → UAT → prod</li>
+  <li>Gates: 100% smoke, 95% pass rate, 80% coverage, 0 P1/P2 failures</li>
+  <li>Flaky: quarantine @flaky, separate job, track rate, fix root cause</li>
+  <li>Test data: seed before run, reset DB, env-specific files, dynamic factories for parallel</li>
+</ul>
+</section>
+
+</body>
+</html>

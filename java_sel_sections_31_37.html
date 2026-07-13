@@ -1,0 +1,1833 @@
+<!-- SECTION 31: SELENIUM + CUCUMBER BDD -->
+<section id="section-31" class="section-card">
+<h2>Section 31: Selenium + Cucumber BDD</h2>
+
+<h3>Why Cucumber with Selenium?</h3>
+<p>Behavior-Driven Development (BDD) bridges the gap between business stakeholders and automation engineers. Cucumber reads plain-English Gherkin scenarios and maps them to Selenium step definitions, making tests readable by product owners, BA, and QA alike.</p>
+<ul>
+<li><strong>Business-readable:</strong> Scenarios describe user behavior, not Java syntax.</li>
+<li><strong>Collaboration:</strong> Three Amigos (BA, Dev, QA) define acceptance criteria together.</li>
+<li><strong>Living documentation:</strong> Feature files stay in sync with the application and serve as executable specs.</li>
+</ul>
+
+<div class="callout">
+<strong>Key Idea:</strong> Gherkin describes <em>what</em> the user does; step definitions describe <em>how</em> Selenium performs it.
+</div>
+
+<h3>BDD Framework Architecture</h3>
+<pre class="ascii-diagram">Feature File (.feature)
+        │
+        ▼
+Step Definitions (Java + Selenium)
+        │
+        ▼
+Test Runner (TestNG / JUnit)
+        │
+        ▼
+HTML / JSON Report (Cucumber Reports / Extent / Allure)</pre>
+
+<h3>Framework Folder Structure</h3>
+<pre><code>automation-framework/
+├── src/test/java/
+│   ├── features/              # .feature files (Gherkin)
+│   │   └── login.feature
+│   ├── stepdefinitions/
+│   │   └── LoginSteps.java
+│   ├── hooks/
+│   │   └── Hooks.java
+│   ├── pages/
+│   │   └── LoginPage.java
+│   ├── runners/
+│   │   └── TestRunner.java
+│   └── context/
+│       └── TestContext.java
+├── src/test/resources/
+│   └── config.properties
+└── pom.xml</code></pre>
+
+<h3>Complete Working Example</h3>
+
+<h4>1. login.feature — 4 Scenarios</h4>
+<pre><code class="language-gherkin">Feature: User Login
+  As a registered user
+  I want to log in to the application
+  So that I can access my dashboard
+
+  Background:
+    Given the user is on the login page
+
+  @smoke @positive
+  Scenario: Successful login with valid credentials
+    When the user enters username "john.doe@example.com" and password "SecurePass123"
+    And clicks the login button
+    Then the user should see the dashboard
+    And the welcome message should contain "Welcome, John"
+
+  @negative
+  Scenario: Login fails with invalid password
+    When the user enters username "john.doe@example.com" and password "wrongpass"
+    And clicks the login button
+    Then an error message "Invalid credentials" should be displayed
+
+  @negative
+  Scenario Outline: Login fails with invalid data
+    When the user enters username "&lt;username&gt;" and password "&lt;password&gt;"
+    And clicks the login button
+    Then an error message "&lt;error&gt;" should be displayed
+
+    Examples:
+      | username              | password    | error                  |
+      |                       | SecurePass  | Username is required   |
+      | john.doe@example.com  |             | Password is required   |
+      | invalid-email         | SecurePass  | Invalid email format   |
+
+  @regression
+  Scenario: Remember me checkbox persists session
+    When the user enters username "john.doe@example.com" and password "SecurePass123"
+    And checks the remember me checkbox
+    And clicks the login button
+    Then the user should see the dashboard
+    And the session cookie should be present</code></pre>
+
+<h4>2. LoginPage.java — Page Object</h4>
+<pre><code class="language-java">package pages;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
+
+public class LoginPage {
+    private WebDriver driver;
+
+    @FindBy(id = "username")
+    private WebElement usernameField;
+
+    @FindBy(id = "password")
+    private WebElement passwordField;
+
+    @FindBy(id = "login-btn")
+    private WebElement loginButton;
+
+    @FindBy(id = "remember-me")
+    private WebElement rememberMeCheckbox;
+
+    @FindBy(css = ".error-message")
+    private WebElement errorMessage;
+
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+        PageFactory.initElements(driver, this);
+    }
+
+    public void navigateTo(String url) {
+        driver.get(url);
+    }
+
+    public void enterUsername(String username) {
+        usernameField.clear();
+        usernameField.sendKeys(username);
+    }
+
+    public void enterPassword(String password) {
+        passwordField.clear();
+        passwordField.sendKeys(password);
+    }
+
+    public void clickLogin() {
+        loginButton.click();
+    }
+
+    public void checkRememberMe() {
+        if (!rememberMeCheckbox.isSelected()) {
+            rememberMeCheckbox.click();
+        }
+    }
+
+    public String getErrorMessage() {
+        return errorMessage.getText();
+    }
+
+    public boolean isErrorDisplayed() {
+        return errorMessage.isDisplayed();
+    }
+}</code></pre>
+
+<h4>3. LoginSteps.java — Step Definitions</h4>
+<pre><code class="language-java">package stepdefinitions;
+
+import context.TestContext;
+import io.cucumber.java.en.*;
+import org.testng.Assert;
+import pages.DashboardPage;
+import pages.LoginPage;
+
+public class LoginSteps {
+    private TestContext context;
+    private LoginPage loginPage;
+    private DashboardPage dashboardPage;
+
+    public LoginSteps(TestContext context) {
+        this.context = context;
+    }
+
+    @Given("the user is on the login page")
+    public void userIsOnLoginPage() {
+        loginPage = new LoginPage(context.getDriver());
+        loginPage.navigateTo(context.getBaseUrl() + "/login");
+    }
+
+    @When("the user enters username {string} and password {string}")
+    public void enterCredentials(String username, String password) {
+        loginPage.enterUsername(username);
+        loginPage.enterPassword(password);
+    }
+
+    @When("clicks the login button")
+    public void clickLoginButton() {
+        loginPage.clickLogin();
+    }
+
+    @When("checks the remember me checkbox")
+    public void checkRememberMe() {
+        loginPage.checkRememberMe();
+    }
+
+    @Then("the user should see the dashboard")
+    public void verifyDashboard() {
+        dashboardPage = new DashboardPage(context.getDriver());
+        Assert.assertTrue(dashboardPage.isDashboardDisplayed());
+    }
+
+    @Then("the welcome message should contain {string}")
+    public void verifyWelcomeMessage(String expected) {
+        Assert.assertTrue(dashboardPage.getWelcomeMessage().contains(expected));
+    }
+
+    @Then("an error message {string} should be displayed")
+    public void verifyErrorMessage(String expected) {
+        Assert.assertTrue(loginPage.isErrorDisplayed());
+        Assert.assertEquals(loginPage.getErrorMessage(), expected);
+    }
+
+    @Then("the session cookie should be present")
+    public void verifySessionCookie() {
+        Assert.assertNotNull(context.getDriver().manage().getCookieNamed("SESSIONID"));
+    }
+}</code></pre>
+
+<h4>4. Hooks.java — @Before / @After</h4>
+<pre><code class="language-java">package hooks;
+
+import context.TestContext;
+import io.cucumber.java.After;
+import io.cucumber.java.Before;
+import io.cucumber.java.Scenario;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import java.time.Duration;
+
+public class Hooks {
+    private TestContext context;
+
+    public Hooks(TestContext context) {
+        this.context = context;
+    }
+
+    @Before
+    public void setUp(Scenario scenario) {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--start-maximized");
+        WebDriver driver = new ChromeDriver(options);
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        context.setDriver(driver);
+        context.setBaseUrl("https://app.example.com");
+    }
+
+    @After
+    public void tearDown(Scenario scenario) {
+        if (scenario.isFailed()) {
+            byte[] screenshot = ((TakesScreenshot) context.getDriver())
+                .getScreenshotAs(OutputType.BYTES);
+            scenario.attach(screenshot, "image/png", scenario.getName());
+        }
+        if (context.getDriver() != null) {
+            context.getDriver().quit();
+        }
+    }
+}</code></pre>
+
+<h4>5. TestRunner.java — TestNG Runner</h4>
+<pre><code class="language-java">package runners;
+
+import io.cucumber.testng.AbstractTestNGCucumberTests;
+import io.cucumber.testng.CucumberOptions;
+import org.testng.annotations.DataProvider;
+
+@CucumberOptions(
+    features = "src/test/java/features",
+    glue = {"stepdefinitions", "hooks"},
+    plugin = {
+        "pretty",
+        "html:target/cucumber-report.html",
+        "json:target/cucumber-report.json",
+        "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+    },
+    tags = "@smoke or @regression",
+    monochrome = true
+)
+public class TestRunner extends AbstractTestNGCucumberTests {
+
+    @Override
+    @DataProvider(parallel = true)
+    public Object[][] scenarios() {
+        return super.scenarios();
+    }
+}</code></pre>
+
+<h3>Sharing State: TestContext / ScenarioContext Pattern</h3>
+<p>Cucumber creates a new step definition instance per scenario by default. Use a shared context object injected via PicoContainer or manual constructor injection to pass WebDriver and test data between steps.</p>
+<pre><code class="language-java">package context;
+
+import org.openqa.selenium.WebDriver;
+
+public class TestContext {
+    private WebDriver driver;
+    private String baseUrl;
+
+    public WebDriver getDriver() { return driver; }
+    public void setDriver(WebDriver driver) { this.driver = driver; }
+    public String getBaseUrl() { return baseUrl; }
+    public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+}</code></pre>
+
+<div class="callout">
+<strong>Dependency Injection:</strong> Add <code>cucumber-picocontainer</code> to pom.xml. Cucumber auto-wires classes with shared constructor parameters.
+</div>
+
+<h3>Cucumber + Selenium Best Practices</h3>
+<ol>
+<li><strong>Keep steps reusable:</strong> One step = one action. Avoid scenario-specific step text.</li>
+<li><strong>Use Page Objects:</strong> Step definitions should delegate to POM, not contain locators.</li>
+<li><strong>Tag strategically:</strong> @smoke, @regression, @wip for selective execution.</li>
+<li><strong>Avoid technical language in Gherkin:</strong> Write "clicks login" not "clicks element by id login-btn".</li>
+<li><strong>One scenario = one behavior:</strong> Do not chain unrelated validations in a single scenario.</li>
+<li><strong>Use Background for common setup:</strong> Reduce duplication across scenarios in a feature.</li>
+<li><strong>Attach screenshots on failure:</strong> Use @After hook with scenario.attach().</li>
+<li><strong>Parallel execution carefully:</strong> Use ThreadLocal WebDriver with PicoContainer scoped per scenario.</li>
+</ol>
+
+<h3>BDD Anti-Patterns with Selenium</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Anti-Pattern</th><th>Problem</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td>Imperative Gherkin</td><td>"Given I open Chrome, When I find element by xpath..."</td><td>Describe behavior, not implementation</td></tr>
+<tr><td>God Step Definitions</td><td>One step does login + navigation + assertion</td><td>Split into atomic reusable steps</td></tr>
+<tr><td>Duplicate step text</td><td>Same action with 5 different step phrases</td><td>Consolidate to one canonical step</td></tr>
+<tr><td>Locators in feature files</td><td>XPath in Gherkin</td><td>Keep locators in Page Objects only</td></tr>
+<tr><td>Testing through UI only</td><td>UI setup for data that API can create</td><td>Use API for test data, UI for validation</td></tr>
+<tr><td>Overloaded Examples tables</td><td>50-row Scenario Outline</td><td>Use DataProvider or external CSV for bulk data</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions &amp; Answers</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>What is Cucumber?</td><td>A BDD tool that executes Gherkin scenarios mapped to step definition methods.</td></tr>
+<tr><td>2</td><td>What is Gherkin?</td><td>Plain-text language with Given/When/Then keywords for describing behavior.</td></tr>
+<tr><td>3</td><td>How does Cucumber find step definitions?</td><td>Via the <code>glue</code> package in @CucumberOptions — scans for annotation-matched methods.</td></tr>
+<tr><td>4</td><td>Background vs Before hook?</td><td>Background is Gherkin-level shared steps; @Before is Java setup before each scenario.</td></tr>
+<tr><td>5</td><td>Scenario vs Scenario Outline?</td><td>Scenario is single flow; Outline runs multiple times with Examples table.</td></tr>
+<tr><td>6</td><td>How to share WebDriver between steps?</td><td>TestContext with dependency injection (PicoContainer) or static ThreadLocal.</td></tr>
+<tr><td>7</td><td>How to run specific tags?</td><td><code>tags = "@smoke"</code> in runner or <code>-Dcucumber.filter.tags="@smoke"</code> via Maven.</td></tr>
+<tr><td>8</td><td>Cucumber with TestNG or JUnit?</td><td>Both supported; extend AbstractTestNGCucumberTests for TestNG integration.</td></tr>
+<tr><td>9</td><td>What is dry-run?</td><td>Validates feature-to-step mapping without executing browser actions.</td></tr>
+<tr><td>10</td><td>How to attach screenshot on failure?</td><td>In @After hook: check scenario.isFailed(), call scenario.attach(bytes, mime, name).</td></tr>
+<tr><td>11</td><td>What is PicoContainer in Cucumber?</td><td>DI library enabling shared state between step definition classes.</td></tr>
+<tr><td>12</td><td>Can one step match multiple annotations?</td><td>Yes, but avoid ambiguity — each Gherkin phrase must map to exactly one method.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 32: SELENIUM + MAVEN -->
+<section id="section-32" class="section-card">
+<h2>Section 32: Selenium + Maven</h2>
+
+<h3>What Is Maven?</h3>
+<p>Apache Maven is a build automation and dependency management tool for Java projects. It uses a Project Object Model (POM) to define project structure, libraries, plugins, and build lifecycle — eliminating manual JAR management.</p>
+<ul>
+<li><strong>Build automation:</strong> Compile, test, package, and deploy with standardized commands.</li>
+<li><strong>Dependency management:</strong> Auto-downloads transitive dependencies from Maven Central.</li>
+<li><strong>Convention over configuration:</strong> Standard directory layout (<code>src/main/java</code>, <code>src/test/java</code>).</li>
+</ul>
+
+<h3>Standard Project Structure</h3>
+<pre><code>selenium-framework/
+├── pom.xml
+├── src/
+│   ├── main/java/          # Framework utilities (optional)
+│   └── test/
+│       ├── java/           # Test classes, Page Objects, listeners
+│       └── resources/      # config files, testng.xml, log4j2.xml
+└── target/                 # Compiled classes, reports (auto-generated)</code></pre>
+
+<h3>pom.xml Anatomy</h3>
+<h4>Coordinates: groupId, artifactId, version</h4>
+<pre><code class="language-xml">&lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+&lt;artifactId&gt;selenium-automation&lt;/artifactId&gt;
+&lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
+&lt;packaging&gt;jar&lt;/packaging&gt;</code></pre>
+
+<h4>Properties — Java Version &amp; Compiler</h4>
+<pre><code class="language-xml">&lt;properties&gt;
+    &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
+    &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
+    &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+    &lt;selenium.version&gt;4.18.1&lt;/selenium.version&gt;
+    &lt;testng.version&gt;7.9.0&lt;/testng.version&gt;
+&lt;/properties&gt;</code></pre>
+
+<h3>Complete pom.xml for Automation Framework</h3>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;selenium-framework&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
+
+    &lt;properties&gt;
+        &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
+        &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
+        &lt;selenium.version&gt;4.18.1&lt;/selenium.version&gt;
+        &lt;testng.version&gt;7.9.0&lt;/testng.version&gt;
+        &lt;webdrivermanager.version&gt;5.7.0&lt;/webdrivermanager.version&gt;
+        &lt;extentreports.version&gt;5.1.1&lt;/extentreports.version&gt;
+        &lt;poi.version&gt;5.2.5&lt;/poi.version&gt;
+        &lt;log4j.version&gt;2.22.1&lt;/log4j.version&gt;
+    &lt;/properties&gt;
+
+    &lt;dependencies&gt;
+        &lt;!-- Selenium --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.seleniumhq.selenium&lt;/groupId&gt;
+            &lt;artifactId&gt;selenium-java&lt;/artifactId&gt;
+            &lt;version&gt;${selenium.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- TestNG --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.testng&lt;/groupId&gt;
+            &lt;artifactId&gt;testng&lt;/artifactId&gt;
+            &lt;version&gt;${testng.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- WebDriverManager --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.github.bonigarcia&lt;/groupId&gt;
+            &lt;artifactId&gt;webdrivermanager&lt;/artifactId&gt;
+            &lt;version&gt;${webdrivermanager.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- Extent Reports --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.aventstack&lt;/groupId&gt;
+            &lt;artifactId&gt;extentreports&lt;/artifactId&gt;
+            &lt;version&gt;${extentreports.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- Apache POI (Excel) --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.poi&lt;/groupId&gt;
+            &lt;artifactId&gt;poi-ooxml&lt;/artifactId&gt;
+            &lt;version&gt;${poi.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- Log4j2 --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;
+            &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;
+            &lt;version&gt;${log4j.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;
+            &lt;artifactId&gt;log4j-api&lt;/artifactId&gt;
+            &lt;version&gt;${log4j.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.12.1&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;source&gt;17&lt;/source&gt;
+                    &lt;target&gt;17&lt;/target&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.2.5&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;suiteXmlFiles&gt;
+                        &lt;suiteXmlFile&gt;src/test/resources/testng.xml&lt;/suiteXmlFile&gt;
+                    &lt;/suiteXmlFiles&gt;
+                    &lt;parallel&gt;methods&lt;/parallel&gt;
+                    &lt;threadCount&gt;3&lt;/threadCount&gt;
+                    &lt;systemPropertyVariables&gt;
+                        &lt;browser&gt;${browser}&lt;/browser&gt;
+                        &lt;env&gt;${env}&lt;/env&gt;
+                    &lt;/systemPropertyVariables&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+
+    &lt;profiles&gt;
+        &lt;profile&gt;
+            &lt;id&gt;dev&lt;/id&gt;
+            &lt;properties&gt;&lt;env&gt;dev&lt;/env&gt;&lt;base.url&gt;https://dev.example.com&lt;/base.url&gt;&lt;/properties&gt;
+        &lt;/profile&gt;
+        &lt;profile&gt;
+            &lt;id&gt;qa&lt;/id&gt;
+            &lt;activation&gt;&lt;activeByDefault&gt;true&lt;/activeByDefault&gt;&lt;/activation&gt;
+            &lt;properties&gt;&lt;env&gt;qa&lt;/env&gt;&lt;base.url&gt;https://qa.example.com&lt;/base.url&gt;&lt;/properties&gt;
+        &lt;/profile&gt;
+        &lt;profile&gt;
+            &lt;id&gt;staging&lt;/id&gt;
+            &lt;properties&gt;&lt;env&gt;staging&lt;/env&gt;&lt;base.url&gt;https://staging.example.com&lt;/base.url&gt;&lt;/properties&gt;
+        &lt;/profile&gt;
+        &lt;profile&gt;
+            &lt;id&gt;prod&lt;/id&gt;
+            &lt;properties&gt;&lt;env&gt;prod&lt;/env&gt;&lt;base.url&gt;https://example.com&lt;/base.url&gt;&lt;/properties&gt;
+        &lt;/profile&gt;
+    &lt;/profiles&gt;
+&lt;/project&gt;</code></pre>
+
+<h3>Maven Lifecycle</h3>
+<pre class="ascii-diagram">validate → compile → test → package → verify → install → deploy
+   │          │         │        │                    │
+   │          │         │        │                    └─ Deploy to remote repo
+   │          │         │        └─ Create JAR/WAR
+   │          │         └─ Run tests (Surefire)
+   │          └─ Compile source code
+   └─ Validate POM structure</pre>
+
+<h3>Essential Maven Commands</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Command</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>mvn clean</code></td><td>Deletes the <code>target/</code> directory</td></tr>
+<tr><td><code>mvn compile</code></td><td>Compiles main source code</td></tr>
+<tr><td><code>mvn test</code></td><td>Compiles test code and runs all tests</td></tr>
+<tr><td><code>mvn clean test</code></td><td>Clean build + run all tests</td></tr>
+<tr><td><code>mvn test -Dtest=LoginTest</code></td><td>Run a specific test class</td></tr>
+<tr><td><code>mvn test -Dsurefire.suiteXmlFiles=smoke.xml</code></td><td>Run a specific TestNG suite</td></tr>
+<tr><td><code>mvn test -Dbrowser=chrome -Denv=qa</code></td><td>Pass system properties to tests</td></tr>
+<tr><td><code>mvn install</code></td><td>Package and install to local .m2 repository</td></tr>
+<tr><td><code>mvn dependency:tree</code></td><td>Display dependency hierarchy</td></tr>
+<tr><td><code>mvn test -Pstaging</code></td><td>Activate staging profile</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Maven Surefire Plugin</h3>
+<p>Surefire executes unit and integration tests during the <code>test</code> phase. Key configurations:</p>
+<ul>
+<li><strong>testng.xml integration:</strong> <code>&lt;suiteXmlFiles&gt;</code> points to TestNG suite</li>
+<li><strong>Parallel execution:</strong> <code>&lt;parallel&gt;methods&lt;/parallel&gt;</code> with <code>&lt;threadCount&gt;3&lt;/threadCount&gt;</code></li>
+<li><strong>Includes/excludes:</strong> <code>&lt;includes&gt;&lt;include&gt;**/*Test.java&lt;/include&gt;&lt;/includes&gt;</code></li>
+</ul>
+
+<h3>.m2 Repository &amp; settings.xml</h3>
+<p>Maven stores downloaded dependencies in <code>~/.m2/repository</code>. Customize mirrors, credentials, and proxy in <code>~/.m2/settings.xml</code>:</p>
+<pre><code class="language-xml">&lt;settings&gt;
+    &lt;mirrors&gt;
+        &lt;mirror&gt;
+            &lt;id&gt;corporate-nexus&lt;/id&gt;
+            &lt;mirrorOf&gt;central&lt;/mirrorOf&gt;
+            &lt;url&gt;https://nexus.company.com/repository/maven-public&lt;/url&gt;
+        &lt;/mirror&gt;
+    &lt;/mirrors&gt;
+    &lt;profiles&gt;
+        &lt;profile&gt;
+            &lt;id&gt;corporate&lt;/id&gt;
+            &lt;repositories&gt;
+                &lt;repository&gt;
+                    &lt;id&gt;central&lt;/id&gt;
+                    &lt;url&gt;https://nexus.company.com/repository/maven-public&lt;/url&gt;
+                &lt;/repository&gt;
+            &lt;/repositories&gt;
+        &lt;/profile&gt;
+    &lt;/profiles&gt;
+    &lt;activeProfiles&gt;
+        &lt;activeProfile&gt;corporate&lt;/activeProfile&gt;
+    &lt;/activeProfiles&gt;
+&lt;/settings&gt;</code></pre>
+
+<h3>Interview Questions &amp; Answers</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>What is pom.xml?</td><td>Project Object Model — XML file defining project metadata, dependencies, and build config.</td></tr>
+<tr><td>2</td><td>groupId vs artifactId?</td><td>groupId = organization (com.company); artifactId = project name (selenium-tests).</td></tr>
+<tr><td>3</td><td>What is Maven Central?</td><td>Default public repository hosting Java libraries at repo.maven.apache.org.</td></tr>
+<tr><td>4</td><td>How to pass parameters to tests?</td><td><code>-Dproperty=value</code> read via System.getProperty() or @Parameters.</td></tr>
+<tr><td>5</td><td>What is Surefire plugin?</td><td>Runs tests during Maven test phase; integrates with TestNG/JUnit.</td></tr>
+<tr><td>6</td><td>What are Maven profiles?</td><td>Environment-specific config blocks activated by -P flag or conditions.</td></tr>
+<tr><td>7</td><td>clean vs clean install?</td><td>clean deletes target; install also packages and copies to local .m2 repo.</td></tr>
+<tr><td>8</td><td>How to skip tests?</td><td><code>mvn install -DskipTests</code> (compile tests) or <code>-Dmaven.test.skip=true</code> (skip compilation).</td></tr>
+<tr><td>9</td><td>What is dependency:tree?</td><td>Shows transitive dependency hierarchy to debug version conflicts.</td></tr>
+<tr><td>10</td><td>SNAPSHOT vs RELEASE version?</td><td>SNAPSHOT is development (auto-updated); RELEASE is immutable production version.</td></tr>
+<tr><td>11</td><td>How to run parallel tests via Maven?</td><td>Configure surefire-plugin with parallel and threadCount properties.</td></tr>
+<tr><td>12</td><td>Where are JARs stored locally?</td><td><code>~/.m2/repository/&lt;groupId&gt;/&lt;artifactId&gt;/&lt;version&gt;/</code></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 33: SELENIUM + JENKINS CI/CD -->
+<section id="section-33" class="section-card">
+<h2>Section 33: Selenium + Jenkins CI/CD</h2>
+
+<h3>CI/CD Pipeline for Selenium</h3>
+<p>Continuous Integration automatically builds and tests code on every commit. Continuous Delivery extends this to deploy validated builds. For Selenium, CI/CD ensures regression runs on schedule and after every push.</p>
+
+<pre class="ascii-diagram">Developer Push
+      │
+      ▼
+   GitHub (Webhook)
+      │
+      ▼
+   Jenkins Job Triggered
+      │
+      ├── Checkout Code
+      ├── Maven Build (mvn clean compile)
+      ├── Run Tests (mvn test -Dsuite=smoke.xml)
+      ├── Generate Reports (Extent / Allure / TestNG)
+      └── Notification (Email / Slack)
+            │
+            ▼
+      Pass ✅  or  Fail ❌</pre>
+
+<h3>Jenkins Job Configuration</h3>
+
+<h4>1. Freestyle Project — Step-by-Step</h4>
+<ol>
+<li>Create New Item → Freestyle project → name: <code>Selenium-Regression</code></li>
+<li>Source Code Management → Git → Repository URL + credentials</li>
+<li>Build Triggers → Poll SCM or GitHub hook trigger</li>
+<li>Build Environment → Delete workspace before build (optional)</li>
+<li>Build Steps → Invoke top-level Maven targets: <code>clean test -Dbrowser=chrome -Denv=qa</code></li>
+<li>Post-build Actions → Publish TestNG Results, Publish HTML reports, Email notification</li>
+</ol>
+
+<h4>2. Pipeline Project — Jenkinsfile (Preferred)</h4>
+<p>Pipeline-as-Code version-controls the entire CI/CD definition alongside test code. Supports parameters, parallel stages, and conditional logic.</p>
+
+<h3>Complete Jenkinsfile</h3>
+<pre><code class="language-groovy">pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'BROWSER', choices: ['chrome', 'firefox', 'edge'], description: 'Browser to run tests')
+        choice(name: 'ENVIRONMENT', choices: ['qa', 'staging', 'prod'], description: 'Target environment')
+        choice(name: 'SUITE', choices: ['smoke', 'regression', 'full'], description: 'Test suite to execute')
+    }
+
+    environment {
+        MAVEN_HOME = tool 'Maven-3.9'
+        JAVA_HOME = tool 'JDK-17'
+        PATH = "${MAVEN_HOME}/bin:${JAVA_HOME}/bin:${PATH}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/myorg/selenium-framework.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                bat 'mvn clean compile -DskipTests'
+            }
+        }
+        stage('Test') {
+            steps {
+                bat "mvn test -Dbrowser=${params.BROWSER} -Denv=${params.ENVIRONMENT} -Dsurefire.suiteXmlFiles=src/test/resources/${params.SUITE}.xml"
+            }
+        }
+        stage('Report') {
+            steps {
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'target/extent-reports',
+                    reportFiles: 'index.html',
+                    reportName: 'Extent Report'
+                ])
+                junit 'target/surefire-reports/*.xml'
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'target/**/*-report*.html, target/screenshots/**', allowEmptyArchive: true
+            emailext(
+                subject: "Build ${env.BUILD_NUMBER} - ${currentBuild.currentResult}",
+                body: "Test run on ${params.ENVIRONMENT} with ${params.BROWSER}. See ${env.BUILD_URL}",
+                to: 'qa-team@company.com'
+            )
+        }
+        failure {
+            slackSend(channel: '#automation-alerts',
+                color: 'danger',
+                message: "❌ Selenium build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}")
+        }
+        success {
+            slackSend(channel: '#automation-alerts',
+                color: 'good',
+                message: "✅ Selenium build PASSED: ${env.JOB_NAME} #${env.BUILD_NUMBER}")
+        }
+    }
+}</code></pre>
+
+<h3>Essential Jenkins Plugins for Selenium</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Plugin</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>Git Plugin</td><td>Clone repository from GitHub/GitLab/Bitbucket</td></tr>
+<tr><td>Maven Integration</td><td>Configure Maven installations and run mvn targets</td></tr>
+<tr><td>TestNG Results</td><td>Parse and display TestNG XML results in Jenkins UI</td></tr>
+<tr><td>HTML Publisher</td><td>Publish Extent/custom HTML reports as build artifacts</td></tr>
+<tr><td>Allure Plugin</td><td>Generate and display Allure report from allure-results</td></tr>
+<tr><td>Email Extension</td><td>Customizable email notifications with templates</td></tr>
+<tr><td>Slack Notification</td><td>Send build status to Slack channels</td></tr>
+<tr><td>Pipeline</td><td>Enable Jenkinsfile-based pipeline jobs</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Scheduled Builds — Cron Syntax</h3>
+<pre><code class="language-groovy">triggers {
+    cron('H 2 * * 1-5')  // Nightly at ~2 AM, Mon-Fri
+    cron('0 6 * * 0')    // Full regression every Sunday 6 AM
+}</code></pre>
+<div class="callout">
+<strong>Cron format:</strong> MINUTE HOUR DOM MONTH DOW. Use <code>H</code> for hash-based distribution to avoid load spikes.
+</div>
+
+<h3>Parameterized Builds</h3>
+<p>Allow QA to select browser, environment, and suite at build time without editing code. Parameters appear on the Build with Parameters page.</p>
+
+<h3>Jenkins + Docker — Containerized Execution</h3>
+<pre><code class="language-groovy">stage('Test in Docker') {
+    agent {
+        docker {
+            image 'selenium/standalone-chrome:4.18.1'
+            args '-v /dev/shm:/dev/shm --network host'
+        }
+    }
+    steps {
+        sh 'mvn test -Dbrowser=remote -Dgrid.url=http://localhost:4444'
+    }
+}</code></pre>
+
+<h3>Email Notification Template</h3>
+<pre><code class="language-groovy">emailext(
+    subject: '${PROJECT_NAME} - Build #${BUILD_NUMBER} - ${BUILD_STATUS}',
+    body: '''
+        &lt;h2&gt;Selenium Test Results&lt;/h2&gt;
+        &lt;p&gt;Job: ${PROJECT_NAME}&lt;/p&gt;
+        &lt;p&gt;Build: #${BUILD_NUMBER}&lt;/p&gt;
+        &lt;p&gt;Status: ${BUILD_STATUS}&lt;/p&gt;
+        &lt;p&gt;Browser: ${BROWSER} | Environment: ${ENVIRONMENT}&lt;/p&gt;
+        &lt;p&gt;&lt;a href="${BUILD_URL}"&gt;View Build&lt;/a&gt;&lt;/p&gt;
+        &lt;p&gt;&lt;a href="${BUILD_URL}Extent_20Report/"&gt;View Report&lt;/a&gt;&lt;/p&gt;
+    ''',
+    to: 'qa-team@company.com',
+    mimeType: 'text/html'
+)</code></pre>
+
+<h3>Webhook Triggers — GitHub Push → Auto Build</h3>
+<ol>
+<li>GitHub repo → Settings → Webhooks → Add webhook</li>
+<li>Payload URL: <code>http://jenkins-server:8080/github-webhook/</code></li>
+<li>Content type: application/json; Events: Push, Pull Request</li>
+<li>Jenkins job → Build Triggers → GitHub hook trigger for GITScm polling</li>
+</ol>
+
+<h3>Interview Questions &amp; Answers</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>What is CI/CD?</td><td>CI automates build/test on commit; CD automates deployment to environments.</td></tr>
+<tr><td>2</td><td>Freestyle vs Pipeline?</td><td>Freestyle is UI-configured; Pipeline uses Jenkinsfile as code (version-controlled).</td></tr>
+<tr><td>3</td><td>How to pass Maven params in Jenkins?</td><td>Build step: <code>mvn test -Dbrowser=chrome</code> or use parameterized pipeline.</td></tr>
+<tr><td>4</td><td>How to publish TestNG results?</td><td>Post-build: Publish TestNG Results → target/surefire-reports/*.xml</td></tr>
+<tr><td>5</td><td>What is Jenkins agent?</td><td>Execution node (master or slave) where pipeline stages run.</td></tr>
+<tr><td>6</td><td>How to schedule nightly builds?</td><td>Pipeline triggers { cron('H 2 * * *') } or Poll SCM in freestyle.</td></tr>
+<tr><td>7</td><td>How to archive test reports?</td><td>post { always { archiveArtifacts 'target/reports/**' } }</td></tr>
+<tr><td>8</td><td>Can Jenkins run tests in Docker?</td><td>Yes — use docker agent in pipeline stage with Selenium image.</td></tr>
+<tr><td>9</td><td>What is Blue Ocean?</td><td>Jenkins modern UI for visualizing pipeline stages and logs.</td></tr>
+<tr><td>10</td><td>How to trigger build on PR merge?</td><td>GitHub webhook + multibranch pipeline detecting branch changes.</td></tr>
+<tr><td>11</td><td>How to handle test failures in pipeline?</td><td>post { failure { ... } } block for notifications; junit step marks build unstable.</td></tr>
+<tr><td>12</td><td>What is credentials binding?</td><td>Securely inject secrets (passwords, tokens) via Jenkins Credentials plugin.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 34: REPORTING IN SELENIUM -->
+<section id="section-34" class="section-card">
+<h2>Section 34: Reporting in Selenium</h2>
+
+<h3>TestNG Default Reports</h3>
+<p>TestNG auto-generates reports in <code>test-output/</code> after every run:</p>
+<ul>
+<li><code>test-output/index.html</code> — Full suite results with pass/fail/skip counts</li>
+<li><code>test-output/emailable-report.html</code> — Lightweight summary for email sharing</li>
+</ul>
+<div class="callout">
+<strong>Limitations:</strong> Basic styling, no screenshots, no step-level logging, limited customization without listeners.
+</div>
+
+<h3>Extent Reports</h3>
+<p>ExtentReports is the most popular custom reporting library for Selenium. ExtentSparkReporter generates rich HTML reports with charts, screenshots, and categories.</p>
+
+<h4>Setup: ExtentReports + ExtentSparkReporter</h4>
+<pre><code class="language-java">import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+
+ExtentSparkReporter spark = new ExtentSparkReporter("target/extent-reports/index.html");
+ExtentReports extent = new ExtentReports();
+extent.attachReporter(spark);
+ExtentTest test = extent.createTest("Login Test");
+test.pass("Login successful");
+extent.flush();</code></pre>
+
+<h4>Complete ExtentReportManager Class</h4>
+<pre><code class="language-java">package reports;
+
+import com.aventstack.extentreports.*;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+import com.aventstack.extentreports.reporter.configuration.Theme;
+
+public class ExtentReportManager {
+    private static ExtentReports extent;
+    private static ThreadLocal&lt;ExtentTest&gt; test = new ThreadLocal&lt;&gt;();
+
+    public static ExtentReports getInstance() {
+        if (extent == null) {
+            ExtentSparkReporter spark = new ExtentSparkReporter("target/extent-reports/index.html");
+            spark.config().setTheme(Theme.STANDARD);
+            spark.config().setDocumentTitle("Automation Report");
+            spark.config().setReportName("Selenium Test Results");
+            spark.config().setTimeStampFormat("dd-MM-yyyy HH:mm:ss");
+
+            extent = new ExtentReports();
+            extent.attachReporter(spark);
+            extent.setSystemInfo("OS", System.getProperty("os.name"));
+            extent.setSystemInfo("Java", System.getProperty("java.version"));
+            extent.setSystemInfo("Browser", System.getProperty("browser", "chrome"));
+        }
+        return extent;
+    }
+
+    public static void startTest(String name, String description) {
+        ExtentTest extentTest = getInstance().createTest(name, description);
+        test.set(extentTest);
+    }
+
+    public static ExtentTest getTest() { return test.get(); }
+
+    public static void flush() { getInstance().flush(); }
+}</code></pre>
+
+<h4>Logging Methods</h4>
+<pre><code class="language-java">ExtentTest test = ExtentReportManager.getTest();
+test.info("Navigated to login page");
+test.pass("Credentials entered successfully");
+test.warning("Slow page load detected");
+test.fail("Login failed - element not found");
+test.skip("Test skipped due to dependency failure");</code></pre>
+
+<h4>Screenshots in Extent</h4>
+<pre><code class="language-java">public static String captureScreenshot(WebDriver driver, String name) {
+    String path = "target/screenshots/" + name + ".png";
+    File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+    FileUtils.copyFile(src, new File(path));
+    return path;
+}
+
+// In listener on test failure:
+ExtentReportManager.getTest()
+    .fail("Test failed")
+    .addScreenCaptureFromPath(captureScreenshot(driver, testName));</code></pre>
+
+<h4>TestNG ITestListener Integration</h4>
+<pre><code class="language-java">public class ExtentTestListener implements ITestListener {
+    @Override
+    public void onTestStart(ITestResult result) {
+        ExtentReportManager.startTest(
+            result.getMethod().getMethodName(),
+            result.getMethod().getDescription()
+        );
+    }
+    @Override
+    public void onTestSuccess(ITestResult result) {
+        ExtentReportManager.getTest().pass("Test passed");
+    }
+    @Override
+    public void onTestFailure(ITestResult result) {
+        ExtentReportManager.getTest().fail(result.getThrowable());
+    }
+    @Override
+    public void onFinish(ITestContext context) {
+        ExtentReportManager.flush();
+    }
+}</code></pre>
+
+<h4>spark-config.xml</h4>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;configuration&gt;
+    &lt;theme&gt;standard&lt;/theme&gt;
+    &lt;documentTitle&gt;Automation Report&lt;/documentTitle&gt;
+    &lt;reportName&gt;Selenium Framework&lt;/reportName&gt;
+    &lt;encoding&gt;utf-8&lt;/encoding&gt;
+    &lt;protocol&gt;https&lt;/protocol&gt;
+    &lt;timelineEnabled&gt;true&lt;/timelineEnabled&gt;
+    &lt;offlineMode&gt;true&lt;/offlineMode&gt;
+    &lt;js&gt;custom.js&lt;/js&gt;
+    &lt;css&gt;custom.css&lt;/css&gt;
+&lt;/configuration&gt;</code></pre>
+
+<h3>Allure Reports</h3>
+<h4>Dependencies</h4>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+    &lt;artifactId&gt;allure-testng&lt;/artifactId&gt;
+    &lt;version&gt;2.25.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+
+<h4>Annotations</h4>
+<pre><code class="language-java">@Epic("Authentication")
+@Feature("Login")
+@Story("Valid credentials login")
+@Description("Verify user can login with valid email and password")
+@Severity(SeverityLevel.CRITICAL)
+@Test
+public void testValidLogin() {
+    loginPage.enterCredentials("user@test.com", "pass123");
+    loginPage.clickLogin();
+    Assert.assertTrue(dashboardPage.isDisplayed());
+}
+
+@Step("Enter credentials: {username}")
+public void enterCredentials(String username, String password) { ... }
+
+@Attachment(value = "Screenshot", type = "image/png")
+public byte[] captureScreenshot() {
+    return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+}</code></pre>
+
+<p>Generate report: <code>allure serve target/allure-results</code>. Jenkins: install Allure plugin, configure results path.</p>
+
+<h3>Log4j2 Integration</h3>
+<pre><code class="language-xml">&lt;!-- log4j2.xml --&gt;
+&lt;Configuration status="WARN"&gt;
+    &lt;Appenders&gt;
+        &lt;Console name="Console" target="SYSTEM_OUT"&gt;
+            &lt;PatternLayout pattern="%d{HH:mm:ss} [%t] %-5level %logger{36} - %msg%n"/&gt;
+        &lt;/Console&gt;
+        &lt;File name="File" fileName="target/logs/automation.log"&gt;
+            &lt;PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger - %msg%n"/&gt;
+        &lt;/File&gt;
+    &lt;/Appenders&gt;
+    &lt;Loggers&gt;
+        &lt;Root level="info"&gt;
+            &lt;AppenderRef ref="Console"/&gt;
+            &lt;AppenderRef ref="File"/&gt;
+        &lt;/Root&gt;
+    &lt;/Loggers&gt;
+&lt;/Configuration&gt;</code></pre>
+<pre><code class="language-java">import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class LoginTest {
+    private static final Logger log = LogManager.getLogger(LoginTest.class);
+
+    @Test
+    public void testLogin() {
+        log.info("Starting login test");
+        log.debug("Entering credentials for user: {}", username);
+        log.warn("Retry attempt #2");
+        log.error("Login failed", exception);
+    }
+}</code></pre>
+
+<h3>Report Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>TestNG Default</th><th>Extent Reports</th><th>Allure Reports</th></tr>
+</thead>
+<tbody>
+<tr><td>HTML Output</td><td>Basic</td><td>Rich with charts</td><td>Interactive dashboard</td></tr>
+<tr><td>Screenshots</td><td>No</td><td>Yes (addScreenCaptureFromPath)</td><td>Yes (@Attachment)</td></tr>
+<tr><td>Step-level logging</td><td>No</td><td>Yes (test.info/pass/fail)</td><td>Yes (@Step annotation)</td></tr>
+<tr><td>Categories/Tags</td><td>No</td><td>Yes (assignCategory)</td><td>Yes (@Epic, @Feature, @Story)</td></tr>
+<tr><td>History/Trends</td><td>No</td><td>Limited</td><td>Yes (with CI integration)</td></tr>
+<tr><td>Customization</td><td>Minimal</td><td>spark-config.xml, CSS/JS</td><td>allure.properties, categories.json</td></tr>
+<tr><td>CI Integration</td><td>JUnit plugin</td><td>HTML Publisher</td><td>Allure Jenkins plugin</td></tr>
+<tr><td>Setup Complexity</td><td>Zero (built-in)</td><td>Moderate (listener + manager)</td><td>Moderate (annotations + plugin)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions &amp; Answers</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Where are TestNG reports generated?</td><td><code>test-output/index.html</code> and <code>emailable-report.html</code></td></tr>
+<tr><td>2</td><td>What is ExtentSparkReporter?</td><td>HTML reporter for ExtentReports 5.x generating interactive reports.</td></tr>
+<tr><td>3</td><td>How to add screenshot to Extent report?</td><td><code>test.fail().addScreenCaptureFromPath(path)</code> in ITestListener on failure.</td></tr>
+<tr><td>4</td><td>What is ITestListener?</td><td>TestNG interface with callbacks: onTestStart, onTestSuccess, onTestFailure, onFinish.</td></tr>
+<tr><td>5</td><td>How to generate Allure report?</td><td>Run tests → <code>allure serve target/allure-results</code></td></tr>
+<tr><td>6</td><td>@Step vs test.info()?</td><td>@Step auto-logs method calls in Allure; test.info() is manual Extent logging.</td></tr>
+<tr><td>7</td><td>Why ThreadLocal for ExtentTest?</td><td>Parallel execution requires isolated report instances per thread.</td></tr>
+<tr><td>8</td><td>Log4j vs System.out.println?</td><td>Log4j supports levels, file appenders, formatting, and production-grade logging.</td></tr>
+<tr><td>9</td><td>How to customize Extent report theme?</td><td>spark.config().setTheme(Theme.DARK) or spark-config.xml</td></tr>
+<tr><td>10</td><td>Can you combine Extent and Allure?</td><td>Yes, but usually pick one primary HTML reporter to avoid duplication.</td></tr>
+<tr><td>11</td><td>What is extent.flush()?</td><td>Writes buffered report data to disk — call in @AfterSuite or onFinish.</td></tr>
+<tr><td>12</td><td>How to categorize tests in Extent?</td><td><code>test.assignCategory("Smoke", "Login")</code> for filtered report views.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 35: SELENIUM GRID -->
+<section id="section-35" class="section-card">
+<h2>Section 35: Selenium Grid</h2>
+
+<h3>What Is Selenium Grid?</h3>
+<p>Selenium Grid enables distributed test execution across multiple machines and browsers simultaneously. A Hub receives test requests and routes them to registered Nodes that launch browsers — dramatically reducing total execution time for large regression suites.</p>
+
+<h3>Selenium Grid 4 Architecture</h3>
+<pre class="ascii-diagram">                    ┌──────────┐
+   Test Script ────►│  Router  │ (Entry point :4444)
+                    └────┬─────┘
+                         │
+              ┌──────────┼──────────┐
+              ▼          ▼          ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │Session   │ │Distributor│ │Event Bus │
+        │Queue     │ │          │ │ (Redis)  │
+        └──────────┘ └────┬─────┘ └──────────┘
+                          │
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │ Node 1   │ │ Node 2   │ │ Node 3   │
+        │ Chrome   │ │ Firefox  │ │ Edge     │
+        └──────────┘ └──────────┘ └──────────┘</pre>
+
+<h4>Components</h4>
+<ul>
+<li><strong>Router:</strong> Single entry point receiving WebDriver requests</li>
+<li><strong>Distributor:</strong> Matches session requests to available nodes</li>
+<li><strong>Session Map:</strong> Tracks active sessions and their node assignments</li>
+<li><strong>Node:</strong> Machine running browsers; registers capabilities with hub</li>
+<li><strong>Event Bus:</strong> Internal communication channel between components</li>
+</ul>
+
+<h4>Deployment Modes</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Mode</th><th>Description</th><th>Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td>Standalone</td><td>All components in one process</td><td>Local development, small teams</td></tr>
+<tr><td>Hub-Node</td><td>Hub + separate node machines</td><td>Medium-scale parallel execution</td></tr>
+<tr><td>Fully Distributed</td><td>Each component as separate service</td><td>Large enterprise, Kubernetes</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Grid 3 vs Grid 4 Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Grid 3</th><th>Grid 4</th></tr>
+</thead>
+<tbody>
+<tr><td>Architecture</td><td>Hub + Node only</td><td>Router, Distributor, Session Map, Event Bus</td></tr>
+<tr><td>W3C Protocol</td><td>Partial</td><td>Full W3C WebDriver compliance</td></tr>
+<tr><td>Configuration</td><td>JSON config files</td><td>TOML config + CLI flags</td></tr>
+<tr><td>Docker support</td><td>Manual setup</td><td>Official Docker images</td></tr>
+<tr><td>Observability</td><td>Basic logs</td><td>GraphQL API + Web UI dashboard</td></tr>
+<tr><td>Session queue</td><td>Basic</td><td>Advanced queue with retry</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Grid Setup Commands</h3>
+<pre><code class="language-bash"># Download Selenium Server 4.x
+# https://github.com/SeleniumHQ/selenium/releases
+
+# Standalone mode (dev)
+java -jar selenium-server-4.18.1.jar standalone
+
+# Hub mode
+java -jar selenium-server-4.18.1.jar hub --port 4444
+
+# Node mode (register with hub)
+java -jar selenium-server-4.18.1.jar node --hub http://192.168.1.100:4444
+
+# Node with specific browsers
+java -jar selenium-server-4.18.1.jar node --hub http://localhost:4444 \
+  --detect-drivers true</code></pre>
+
+<h3>RemoteWebDriver — Connecting Tests to Grid</h3>
+<pre><code class="language-java">import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import java.net.URL;
+
+public class GridTest {
+    public static void main(String[] args) throws Exception {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--start-maximized");
+
+        WebDriver driver = new RemoteWebDriver(
+            new URL("http://localhost:4444"),
+            options  // Selenium 4: use Options instead of DesiredCapabilities
+        );
+
+        driver.get("https://example.com");
+        System.out.println("Title: " + driver.getTitle());
+        driver.quit();
+    }
+}</code></pre>
+
+<div class="callout">
+<strong>Selenium 4 Change:</strong> Replace <code>DesiredCapabilities</code> with browser-specific <code>Options</code> classes (ChromeOptions, FirefoxOptions, EdgeOptions).
+</div>
+
+<h3>Docker Grid — docker-compose.yml</h3>
+<pre><code class="language-yaml">version: "3.8"
+services:
+  selenium-hub:
+    image: selenium/hub:4.18.1
+    container_name: selenium-hub
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+    environment:
+      - SE_SESSION_REQUEST_TIMEOUT=300
+
+  chrome-node-1:
+    image: selenium/node-chrome:4.18.1
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=2
+    shm_size: 2gb
+
+  chrome-node-2:
+    image: selenium/node-chrome:4.18.1
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    shm_size: 2gb
+
+  firefox-node-1:
+    image: selenium/node-firefox:4.18.1
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    shm_size: 2gb
+
+  firefox-node-2:
+    image: selenium/node-firefox:4.18.1
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    shm_size: 2gb</code></pre>
+
+<p>Start: <code>docker-compose up -d</code>. Scale Chrome nodes: <code>docker-compose up -d --scale chrome-node-1=5</code></p>
+
+<h3>Dynamic Grid</h3>
+<p>Launch browser containers on demand using tools like Selenium Grid Extras, Moon, or Kubernetes operators. Nodes spin up when sessions are requested and terminate when idle — optimizing resource usage in cloud environments.</p>
+
+<h3>Grid Dashboard</h3>
+<p>Access the Grid 4 UI at <code>http://localhost:4444/ui</code> to monitor active sessions, registered nodes, queue status, and slot availability in real time.</p>
+
+<h3>Interview Questions &amp; Answers</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>What is Selenium Grid?</td><td>Distributed test execution system with Hub-Node architecture for parallel cross-browser testing.</td></tr>
+<tr><td>2</td><td>Hub vs Node?</td><td>Hub routes requests; Node executes tests in actual browsers.</td></tr>
+<tr><td>3</td><td>What is RemoteWebDriver?</td><td>WebDriver implementation connecting to Grid hub URL instead of local browser.</td></tr>
+<tr><td>4</td><td>DesiredCapabilities in Selenium 4?</td><td>Deprecated — use ChromeOptions/FirefoxOptions passed to RemoteWebDriver.</td></tr>
+<tr><td>5</td><td>Standalone vs Hub-Node mode?</td><td>Standalone runs all-in-one locally; Hub-Node separates routing from execution.</td></tr>
+<tr><td>6</td><td>Why shm_size: 2gb in Docker?</td><td>Chrome needs shared memory; default 64MB causes crashes in containers.</td></tr>
+<tr><td>7</td><td>How to scale Grid nodes?</td><td>docker-compose --scale or register multiple node machines with same hub URL.</td></tr>
+<tr><td>8</td><td>Grid 4 dashboard URL?</td><td><code>http://&lt;hub-host&gt;:4444/ui</code></td></tr>
+<tr><td>9</td><td>What happens when all nodes are busy?</td><td>Session enters queue; waits until a slot frees or times out.</td></tr>
+<tr><td>10</td><td>Can Grid run mobile browsers?</td><td>Yes via Appium nodes or mobile-specific Docker images registered with Grid.</td></tr>
+<tr><td>11</td><td>How to run Grid in CI?</td><td>Start docker-compose in Jenkins pipeline before test stage; quit after.</td></tr>
+<tr><td>12</td><td>What is Event Bus in Grid 4?</td><td>Internal pub/sub channel for communication between Grid components.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 36: COMMON SELENIUM EXCEPTIONS -->
+<section id="section-36" class="section-card">
+<h2>Section 36: Common Selenium Exceptions</h2>
+
+<p>Understanding Selenium exceptions is critical for debugging flaky tests and building robust frameworks. Each exception below includes cause, failing code, fix, and prevention strategy.</p>
+
+<h3>1. NoSuchElementException</h3>
+<p><strong>What:</strong> Element not found in the DOM. <strong>When:</strong> Wrong locator, element not yet loaded, element inside iframe/shadow DOM.</p>
+<pre><code class="language-java">// Code causing exception
+WebElement btn = driver.findElement(By.id("submit-btn")); // ID doesn't exist
+
+// Fix
+WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+WebElement btn = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("submit-btn")));
+
+// If in iframe:
+driver.switchTo().frame("payment-frame");
+WebElement btn = driver.findElement(By.id("submit-btn"));</code></pre>
+<p><strong>Prevention:</strong> Verify locators in DevTools; use explicit waits; check iframe context.</p>
+
+<h3>2. TimeoutException</h3>
+<p><strong>What:</strong> Wait condition not met within timeout period. <strong>When:</strong> Element never appeared, slow network, AJAX delay.</p>
+<pre><code class="language-java">// Code causing exception
+wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("loader-done"))); // 10s timeout exceeded
+
+// Fix
+WebDriverWait longWait = new WebDriverWait(driver, Duration.ofSeconds(30));
+longWait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("spinner")));
+longWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("content")));</code></pre>
+<p><strong>Prevention:</strong> Wait for loader disappearance first; use appropriate timeout; verify element exists in DOM.</p>
+
+<h3>3. StaleElementReferenceException</h3>
+<p><strong>What:</strong> Element reference is no longer attached to DOM. <strong>When:</strong> Page refresh, DOM update, SPA navigation, AJAX re-render.</p>
+<pre><code class="language-java">// Code causing exception
+WebElement row = driver.findElement(By.xpath("//tr[1]"));
+driver.findElement(By.id("refresh")).click(); // DOM rebuilt
+row.click(); // Stale!
+
+// Fix — re-find element
+driver.findElement(By.id("refresh")).click();
+WebElement row = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//tr[1]")));
+row.click();</code></pre>
+<p><strong>Prevention:</strong> Re-locate elements after page changes; use dynamic locators instead of caching WebElement references.</p>
+
+<h3>4. ElementClickInterceptedException</h3>
+<p><strong>What:</strong> Another element receives the click instead of target. <strong>When:</strong> Overlay, popup, sticky header/footer, loading spinner.</p>
+<pre><code class="language-java">// Code causing exception
+driver.findElement(By.id("checkout-btn")).click(); // Cookie banner overlay blocks click
+
+// Fix options:
+wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("cookie-banner")));
+((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+new Actions(driver).moveToElement(element).click().perform();</code></pre>
+<p><strong>Prevention:</strong> Close overlays before interaction; scroll element into view; wait for blocking elements to disappear.</p>
+
+<h3>5. ElementNotInteractableException</h3>
+<p><strong>What:</strong> Element present in DOM but not visible/enabled. <strong>When:</strong> Hidden (display:none), off-screen, disabled, collapsed accordion.</p>
+<pre><code class="language-java">// Code causing exception
+driver.findElement(By.id("hidden-input")).sendKeys("text"); // display: none
+
+// Fix
+WebElement el = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("hidden-input")));
+((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", el);
+el.sendKeys("text");</code></pre>
+<p><strong>Prevention:</strong> Use visibilityOfElementLocated; scroll into view; expand collapsed sections first.</p>
+
+<h3>6. NoSuchWindowException</h3>
+<p><strong>What:</strong> Target window/tab no longer exists. <strong>When:</strong> Window closed by script, popup auto-closed, wrong handle used.</p>
+<pre><code class="language-java">// Code causing exception
+driver.switchTo().window("invalid-handle-id");
+
+// Fix
+Set&lt;String&gt; handles = driver.getWindowHandles();
+for (String handle : handles) {
+    driver.switchTo().window(handle);
+    if (driver.getTitle().contains("Expected Title")) break;
+}</code></pre>
+<p><strong>Prevention:</strong> Always verify handle exists before switching; store original window handle for return.</p>
+
+<h3>7. NoSuchFrameException</h3>
+<p><strong>What:</strong> Specified frame/iframe not found. <strong>When:</strong> Wrong frame name/index, frame not yet loaded.</p>
+<pre><code class="language-java">// Code causing exception
+driver.switchTo().frame("nonexistent-frame");
+
+// Fix
+wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.id("payment-iframe")));
+// Work inside frame
+driver.switchTo().defaultContent(); // Always switch back</code></pre>
+<p><strong>Prevention:</strong> Wait for frame availability; use ID/name over index; always return to defaultContent().</p>
+
+<h3>8. InvalidSelectorException</h3>
+<p><strong>What:</strong> Malformed CSS or XPath locator syntax. <strong>When:</strong> Unclosed brackets, invalid characters, bad XPath axes.</p>
+<pre><code class="language-java">// Code causing exception
+driver.findElement(By.xpath("//input[@id='email'")); // Missing closing bracket
+
+// Fix — validate in DevTools Console:
+// document.querySelector("input#email")  or  $x("//input[@id='email']")
+driver.findElement(By.xpath("//input[@id='email']"));</code></pre>
+<p><strong>Prevention:</strong> Test locators in browser DevTools before using in code; use Page Object constants.</p>
+
+<h3>9. WebDriverException</h3>
+<p><strong>What:</strong> Generic WebDriver failure — often browser/driver version mismatch. <strong>When:</strong> Incompatible ChromeDriver, driver not in PATH, browser not installed.</p>
+<pre><code class="language-java">// Fix with WebDriverManager
+WebDriverManager.chromedriver().setup();
+WebDriver driver = new ChromeDriver();
+
+// Or rely on Selenium Manager (built into Selenium 4.6+)
+WebDriver driver = new ChromeDriver(); // Auto-downloads matching driver</code></pre>
+<p><strong>Prevention:</strong> Use WebDriverManager or Selenium Manager; pin browser versions in CI Docker images.</p>
+
+<h3>10. SessionNotCreatedException</h3>
+<p><strong>What:</strong> Browser session cannot be created. <strong>When:</strong> Driver/browser version mismatch, browser binary missing, port conflict, insufficient resources.</p>
+<pre><code class="language-java">// Common causes and fixes:
+// 1. Version mismatch → update driver or browser
+WebDriverManager.chromedriver().clearDriverCache().setup();
+
+// 2. Port conflict on Grid
+// Change hub port: java -jar selenium-server.jar hub --port 4445
+
+// 3. Headless in Docker without dependencies
+ChromeOptions options = new ChromeOptions();
+options.addArguments("--no-sandbox", "--disable-dev-shm-usage", "--headless=new");</code></pre>
+<p><strong>Prevention:</strong> Align browser and driver versions; use official Docker images; check system resources.</p>
+
+<h3>Exception Handling Framework Strategy</h3>
+<pre><code class="language-java">public class ElementUtils {
+    private WebDriver driver;
+    private WebDriverWait wait;
+
+    public WebElement findElementSafely(By locator) {
+        try {
+            return wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+        } catch (TimeoutException e) {
+            captureScreenshot("element-not-found");
+            throw new FrameworkException("Element not found: " + locator, e);
+        } catch (NoSuchElementException e) {
+            throw new FrameworkException("Invalid locator: " + locator, e);
+        }
+    }
+
+    public void clickSafely(WebElement element) {
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(element)).click();
+        } catch (ElementClickInterceptedException e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+        } catch (StaleElementReferenceException e) {
+            // Re-find and retry once
+            throw new FrameworkException("Stale element after retry", e);
+        }
+    }
+}
+
+public class FrameworkException extends RuntimeException {
+    public FrameworkException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}</code></pre>
+
+<h3>Interview Questions &amp; Answers</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Most common Selenium exception?</td><td>NoSuchElementException — element not found in DOM.</td></tr>
+<tr><td>2</td><td>NoSuchElement vs TimeoutException?</td><td>NoSuchElement is immediate find failure; TimeoutException is wait condition timeout.</td></tr>
+<tr><td>3</td><td>What causes StaleElementReferenceException?</td><td>DOM refresh after element was found — page reload, AJAX update, SPA navigation.</td></tr>
+<tr><td>4</td><td>ElementClickIntercepted vs ElementNotInteractable?</td><td>Intercepted = another element blocks click; NotInteractable = element itself not usable.</td></tr>
+<tr><td>5</td><td>How to fix ElementClickInterceptedException?</td><td>Close overlay, scroll into view, JavaScript click, or Actions click.</td></tr>
+<tr><td>6</td><td>How to handle StaleElementReferenceException?</td><td>Re-find element with fresh locator; avoid storing WebElement across page changes.</td></tr>
+<tr><td>7</td><td>What is InvalidSelectorException?</td><td>Malformed CSS/XPath syntax — validate locators in DevTools first.</td></tr>
+<tr><td>8</td><td>WebDriverException vs SessionNotCreatedException?</td><td>WebDriverException is generic; SessionNotCreated is specific to browser launch failure.</td></tr>
+<tr><td>9</td><td>How to prevent NoSuchFrameException?</td><td>Wait for frame with frameToBeAvailableAndSwitchToIt; verify frame ID/name.</td></tr>
+<tr><td>10</td><td>Should you catch exceptions in every test?</td><td>No — centralize in utility methods and listeners; let tests fail cleanly with screenshots.</td></tr>
+<tr><td>11</td><td>How to debug TimeoutException?</td><td>Increase timeout temporarily, check network tab, verify element selector, check for iframes.</td></tr>
+<tr><td>12</td><td>Custom exception wrapper benefits?</td><td>Consistent error messages, automatic screenshots, cleaner test code, better reporting.</td></tr>
+<tr><td>13</td><td>Does implicit wait prevent NoSuchElementException?</td><td>It delays the throw but won't help if element truly doesn't exist or is in wrong context.</td></tr>
+<tr><td>14</td><td>How to handle exception in parallel tests?</td><td>ThreadLocal WebDriver; isolated screenshots per thread; don't share WebElement references.</td></tr>
+<tr><td>15</td><td>Retry on StaleElementReferenceException?</td><td>Yes — common pattern: catch, re-find, retry up to 3 times in utility methods.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 37: REAL-TIME PROJECT SCENARIOS -->
+<section id="section-37" class="section-card">
+<h2>Section 37: Real-Time Project Scenarios</h2>
+
+<p>End-to-end project scenarios combining Page Objects, TestNG, data-driven testing, API/DB validation, and CI/CD integration — patterns used in production automation frameworks.</p>
+
+<h3>Scenario 1: Login Automation</h3>
+<p><strong>Requirement:</strong> Automate multi-method login (email/password, SSO, OTP) with data-driven validation of URL, welcome message, and dashboard elements.</p>
+
+<h4>Architecture</h4>
+<pre class="ascii-diagram">LoginTest (DataProvider)
+      │
+      ▼
+LoginPage (POM) ──► DashboardPage
+      │
+      ├── loginWithEmailPassword()
+      ├── loginWithSSO()
+      └── loginWithOTP()</pre>
+
+<h4>LoginPage.java</h4>
+<pre><code class="language-java">package pages;
+
+import org.openqa.selenium.*;
+import org.openqa.selenium.support.*;
+import utils.WaitUtils;
+
+public class LoginPage {
+    @FindBy(id = "email") private WebElement emailField;
+    @FindBy(id = "password") private WebElement passwordField;
+    @FindBy(id = "login-btn") private WebElement loginBtn;
+    @FindBy(id = "sso-login") private WebElement ssoBtn;
+    @FindBy(id = "otp-input") private WebElement otpField;
+    @FindBy(id = "verify-otp") private WebElement verifyOtpBtn;
+
+    private WebDriver driver;
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+        PageFactory.initElements(driver, this);
+    }
+
+    public DashboardPage loginWithEmailPassword(String email, String password) {
+        emailField.sendKeys(email);
+        passwordField.sendKeys(password);
+        loginBtn.click();
+        return new DashboardPage(driver);
+    }
+
+    public DashboardPage loginWithSSO(String provider) {
+        ssoBtn.click();
+        driver.findElement(By.xpath("//button[text()='" + provider + "']")).click();
+        WaitUtils.waitForUrlContains(driver, "dashboard");
+        return new DashboardPage(driver);
+    }
+
+    public DashboardPage loginWithOTP(String email, String password, String otp) {
+        loginWithEmailPassword(email, password);
+        otpField.sendKeys(otp);
+        verifyOtpBtn.click();
+        return new DashboardPage(driver);
+    }
+}</code></pre>
+
+<h4>LoginTest.java with DataProvider</h4>
+<pre><code class="language-java">public class LoginTest extends BaseTest {
+    @DataProvider(name = "loginData")
+    public Object[][] loginData() {
+        return new Object[][] {
+            {"email", "john@test.com", "Pass123!", null, null, true},
+            {"email", "bad@test.com", "wrong", null, null, false},
+            {"sso", null, null, "Google", null, true},
+            {"otp", "john@test.com", "Pass123!", null, "123456", true},
+            {"email", "", "Pass123!", null, null, false},
+            {"email", "invalid", "Pass123!", null, null, false},
+            {"email", "john@test.com", "", null, null, false},
+            {"sso", null, null, "Microsoft", null, true},
+            {"email", "locked@test.com", "Pass123!", null, null, false},
+            {"otp", "john@test.com", "Pass123!", null, "000000", false}
+        };
+    }
+
+    @Test(dataProvider = "loginData")
+    public void testLogin(String method, String email, String pwd,
+                          String ssoProvider, String otp, boolean shouldSucceed) {
+        LoginPage loginPage = new LoginPage(driver);
+        driver.get(baseUrl + "/login");
+
+        DashboardPage dashboard = switch (method) {
+            case "email" -> loginPage.loginWithEmailPassword(email, pwd);
+            case "sso" -> loginPage.loginWithSSO(ssoProvider);
+            case "otp" -> loginPage.loginWithOTP(email, pwd, otp);
+            default -> throw new IllegalArgumentException("Unknown method: " + method);
+        };
+
+        if (shouldSucceed) {
+            Assert.assertTrue(driver.getCurrentUrl().contains("/dashboard"));
+            Assert.assertTrue(dashboard.getWelcomeMessage().contains("Welcome"));
+            Assert.assertTrue(dashboard.isSidebarDisplayed());
+        } else {
+            Assert.assertTrue(loginPage.isErrorDisplayed());
+        }
+    }
+}</code></pre>
+
+<p><strong>Validation:</strong> URL contains /dashboard, welcome message present, sidebar elements visible. <strong>CI/CD:</strong> Run via <code>mvn test -Dtest=LoginTest -Denv=qa</code> in Jenkins smoke stage.</p>
+
+<h3>Scenario 2: E-Commerce Checkout Flow</h3>
+<p><strong>Requirement:</strong> End-to-end flow: search product → add to cart → checkout → payment → order confirmation with DB validation.</p>
+
+<h4>Architecture — 5 Page Objects Chained</h4>
+<pre class="ascii-diagram">CheckoutTest
+  → HomePage.searchProduct()
+  → ProductPage.addToCart()
+  → CartPage.proceedToCheckout()
+  → CheckoutPage.enterShipping()
+  → PaymentPage.completePayment()
+  → ConfirmationPage.getOrderId()
+  → DBUtils.verifyOrder(orderId)</pre>
+
+<h4>CheckoutTest.java</h4>
+<pre><code class="language-java">@Test(dataProvider = "products")
+public void testCheckoutFlow(String product, int qty, String paymentMethod) {
+    HomePage home = new HomePage(driver);
+    home.searchProduct(product);
+
+    ProductPage productPage = new ProductPage(driver);
+    productPage.selectQuantity(qty);
+    productPage.addToCart();
+
+    CartPage cart = new CartPage(driver);
+    Assert.assertEquals(cart.getItemCount(), qty);
+    cart.proceedToCheckout();
+
+    CheckoutPage checkout = new CheckoutPage(driver);
+    checkout.enterShipping("John Doe", "123 Main St", "10001");
+    checkout.selectPaymentMethod(paymentMethod);
+
+    PaymentPage payment = new PaymentPage(driver);
+    payment.enterCardDetails("4111111111111111", "12/28", "123");
+    payment.submitPayment();
+
+    ConfirmationPage confirm = new ConfirmationPage(driver);
+    String orderId = confirm.getOrderId();
+    Assert.assertTrue(confirm.isSuccessMessageDisplayed());
+
+    // Database validation
+    Map&lt;String, Object&gt; dbOrder = DBUtils.getOrderById(orderId);
+    Assert.assertEquals(dbOrder.get("status"), "CONFIRMED");
+    Assert.assertEquals(dbOrder.get("product_name"), product);
+}</code></pre>
+
+<p><strong>CI/CD:</strong> Include in regression suite (<code>regression.xml</code>); DB connection via Jenkins credentials binding.</p>
+
+<h3>Scenario 3: Payment Gateway Testing</h3>
+<p><strong>Requirement:</strong> Test credit card, UPI, and net banking payments including third-party iframe/redirect handling and error scenarios.</p>
+
+<h4>PaymentPage.java</h4>
+<pre><code class="language-java">public class PaymentPage {
+    public void payWithCreditCard(String number, String expiry, String cvv) {
+        driver.switchTo().frame("payment-gateway-iframe");
+        cardNumberField.sendKeys(number);
+        expiryField.sendKeys(expiry);
+        cvvField.sendKeys(cvv);
+        payButton.click();
+        driver.switchTo().defaultContent();
+        wait.until(ExpectedConditions.urlContains("confirmation"));
+    }
+
+    public void payWithUPI(String upiId) {
+        upiOption.click();
+        upiField.sendKeys(upiId);
+        payButton.click();
+        // Handle redirect to UPI app simulation
+        wait.until(ExpectedConditions.numberOfWindowsToBe(2));
+        for (String handle : driver.getWindowHandles()) {
+            driver.switchTo().window(handle);
+            if (driver.getTitle().contains("UPI")) {
+                driver.findElement(By.id("approve")).click();
+                break;
+            }
+        }
+        driver.switchTo().window(originalWindow);
+    }
+
+    public void payWithNetBanking(String bank) {
+        netBankingOption.click();
+        new Select(bankDropdown).selectByVisibleText(bank);
+        payButton.click();
+        wait.until(ExpectedConditions.urlContains("bank-simulator"));
+        driver.findElement(By.id("authorize")).click();
+    }
+
+    public String getTransactionStatus() {
+        return driver.findElement(By.id("txn-status")).getText();
+    }
+
+    public String getReferenceId() {
+        return driver.findElement(By.id("ref-id")).getText();
+    }
+}</code></pre>
+
+<h4>Error Handling Tests</h4>
+<pre><code class="language-java">@Test
+public void testExpiredCard() {
+    paymentPage.payWithCreditCard("4000000000000069", "01/20", "123");
+    Assert.assertEquals(paymentPage.getErrorMessage(), "Card has expired");
+}
+
+@Test
+public void testInsufficientBalance() {
+    paymentPage.payWithCreditCard("4000000000009995", "12/28", "123");
+    Assert.assertEquals(paymentPage.getTransactionStatus(), "DECLINED");
+    Assert.assertTrue(paymentPage.getErrorMessage().contains("Insufficient funds"));
+}</code></pre>
+
+<h3>Scenario 4: API + UI Validation</h3>
+<p><strong>Requirement:</strong> Create user via REST Assured API, login via Selenium UI, verify profile data matches API response.</p>
+
+<h4>Integration Test</h4>
+<pre><code class="language-java">public class ApiUiIntegrationTest {
+    @Test
+    public void testCreateUserAndVerifyProfile() {
+        // Step 1: Create user via API
+        String email = "user_" + System.currentTimeMillis() + "@test.com";
+        Response response = given()
+            .contentType(ContentType.JSON)
+            .body(Map.of("email", email, "password", "Pass123!", "name", "Test User"))
+            .when().post(baseApiUrl + "/users")
+            .then().statusCode(201).extract().response();
+
+        int userId = response.jsonPath().getInt("id");
+        String apiName = response.jsonPath().getString("name");
+
+        // Step 2: Login via UI
+        LoginPage loginPage = new LoginPage(driver);
+        driver.get(baseUrl + "/login");
+        DashboardPage dashboard = loginPage.loginWithEmailPassword(email, "Pass123!");
+        dashboard.navigateToProfile();
+
+        // Step 3: Verify UI matches API
+        ProfilePage profile = new ProfilePage(driver);
+        Assert.assertEquals(profile.getDisplayName(), apiName);
+        Assert.assertEquals(profile.getEmail(), email);
+
+        // Step 4: Cross-verify via GET API
+        Response getUser = given().when().get(baseApiUrl + "/users/" + userId)
+            .then().statusCode(200).extract().response();
+        Assert.assertEquals(getUser.jsonPath().getString("name"), profile.getDisplayName());
+    }
+}</code></pre>
+
+<h3>Scenario 5: Database Validation</h3>
+<p><strong>Requirement:</strong> UI action triggers DB change; verify data integrity across UI, DB, and API layers.</p>
+
+<h4>DBUtils.java — JDBC Connection</h4>
+<pre><code class="language-java">public class DBUtils {
+    private static Connection connection;
+
+    public static Connection getConnection() throws SQLException {
+        if (connection == null || connection.isClosed()) {
+            connection = DriverManager.getConnection(
+                ConfigReader.get("db.url"),
+                ConfigReader.get("db.user"),
+                ConfigReader.get("db.password")
+            );
+        }
+        return connection;
+    }
+
+    public static Map&lt;String, Object&gt; getOrderById(String orderId) throws SQLException {
+        String sql = "SELECT * FROM orders WHERE order_id = ?";
+        PreparedStatement ps = getConnection().prepareStatement(sql);
+        ps.setString(1, orderId);
+        ResultSet rs = ps.executeQuery();
+        Map&lt;String, Object&gt; row = new HashMap&lt;&gt;();
+        if (rs.next()) {
+            ResultSetMetaData meta = rs.getMetaData();
+            for (int i = 1; i &lt;= meta.getColumnCount(); i++) {
+                row.put(meta.getColumnName(i), rs.getObject(i));
+            }
+        }
+        return row;
+    }
+
+    public static int getUserCount() throws SQLException {
+        ResultSet rs = getConnection().createStatement()
+            .executeQuery("SELECT COUNT(*) FROM users");
+        rs.next();
+        return rs.getInt(1);
+    }
+
+    public static void updateOrderStatus(String orderId, String status) throws SQLException {
+        PreparedStatement ps = getConnection().prepareStatement(
+            "UPDATE orders SET status = ? WHERE order_id = ?");
+        ps.setString(1, status);
+        ps.setString(2, orderId);
+        ps.executeUpdate();
+    }
+}</code></pre>
+
+<h4>Data Integrity Test</h4>
+<pre><code class="language-java">@Test
+public void testOrderDataIntegrity() {
+    // UI: place order
+    String orderId = checkoutFlow.placeOrder("Laptop", 1);
+
+    // DB validation
+    Map&lt;String, Object&gt; dbOrder = DBUtils.getOrderById(orderId);
+    Assert.assertEquals(dbOrder.get("status"), "CONFIRMED");
+
+    // UI validation
+    ConfirmationPage confirm = new ConfirmationPage(driver);
+    Assert.assertEquals(confirm.getOrderId(), orderId);
+    Assert.assertEquals(confirm.getTotalAmount(), dbOrder.get("total_amount").toString());
+
+    // API validation
+    Response apiOrder = given().get(baseApiUrl + "/orders/" + orderId);
+    Assert.assertEquals(apiOrder.jsonPath().getString("status"), dbOrder.get("status"));
+}</code></pre>
+
+<h3>Scenario 6: Cross-Browser Framework</h3>
+<p><strong>Requirement:</strong> Run same tests on Chrome, Firefox, and Edge in parallel with ThreadLocal WebDriver and comparison reporting.</p>
+
+<h4>testng-crossbrowser.xml</h4>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="Cross Browser Suite" parallel="tests" thread-count="3"&gt;
+    &lt;test name="Chrome Tests"&gt;
+        &lt;parameter name="browser" value="chrome"/&gt;
+        &lt;classes&gt;&lt;class name="tests.LoginTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+    &lt;test name="Firefox Tests"&gt;
+        &lt;parameter name="browser" value="firefox"/&gt;
+        &lt;classes&gt;&lt;class name="tests.LoginTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+    &lt;test name="Edge Tests"&gt;
+        &lt;parameter name="browser" value="edge"/&gt;
+        &lt;classes&gt;&lt;class name="tests.LoginTest"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+    &lt;listeners&gt;
+        &lt;listener class-name="listeners.ExtentTestListener"/&gt;
+        &lt;listener class-name="listeners.BrowserComparisonListener"/&gt;
+    &lt;/listeners&gt;
+&lt;/suite&gt;</code></pre>
+
+<h4>DriverFactory with ThreadLocal</h4>
+<pre><code class="language-java">public class DriverFactory {
+    private static ThreadLocal&lt;WebDriver&gt; tlDriver = new ThreadLocal&lt;&gt;();
+
+    public static WebDriver getDriver() {
+        if (tlDriver.get() == null) {
+            tlDriver.set(createDriver(System.getProperty("browser", "chrome")));
+        }
+        return tlDriver.get();
+    }
+
+    private static WebDriver createDriver(String browser) {
+        return switch (browser.toLowerCase()) {
+            case "firefox" -> new FirefoxDriver(new FirefoxOptions().addArguments("--start-maximized"));
+            case "edge" -> new EdgeDriver(new EdgeOptions().addArguments("--start-maximized"));
+            default -> new ChromeDriver(new ChromeOptions().addArguments("--start-maximized"));
+        };
+    }
+
+    public static void quitDriver() {
+        if (tlDriver.get() != null) {
+            tlDriver.get().quit();
+            tlDriver.remove();
+        }
+    }
+}</code></pre>
+
+<h4>BaseTest.java</h4>
+<pre><code class="language-java">public class BaseTest {
+    protected WebDriver driver;
+
+    @BeforeMethod
+    @Parameters("browser")
+    public void setUp(@Optional("chrome") String browser) {
+        System.setProperty("browser", browser);
+        driver = DriverFactory.getDriver();
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        DriverFactory.quitDriver();
+    }
+}</code></pre>
+
+<p><strong>CI/CD:</strong> Jenkins matrix build or parameterized pipeline runs <code>testng-crossbrowser.xml</code>; Extent report shows pass/fail per browser with comparison summary.</p>
+
+<h3>Interview Questions &amp; Answers</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>How to test SSO login in Selenium?</td><td>Click SSO button, handle redirect/popup, wait for dashboard URL; may need to mock IdP in test env.</td></tr>
+<tr><td>2</td><td>How to handle OTP in automation?</td><td>Use test API to fetch OTP, mock SMS service, or use fixed OTP in test environment.</td></tr>
+<tr><td>3</td><td>How to validate order in database?</td><td>JDBC query after UI action; compare order ID, status, amount with UI confirmation page.</td></tr>
+<tr><td>4</td><td>How to test payment iframe?</td><td>switchTo().frame("iframe-id"), interact, switchTo().defaultContent() after payment.</td></tr>
+<tr><td>5</td><td>API + UI integration test approach?</td><td>Create data via API (fast setup), validate via UI (user perspective), cross-check via API GET.</td></tr>
+<tr><td>6</td><td>Why ThreadLocal for WebDriver?</td><td>Isolates browser instance per thread in parallel execution — prevents session conflicts.</td></tr>
+<tr><td>7</td><td>How to run cross-browser in TestNG?</td><td>Separate &lt;test&gt; blocks with browser parameter; parallel="tests" in suite XML.</td></tr>
+<tr><td>8</td><td>How to chain Page Objects?</td><td>Each action method returns next page object: loginPage.login() returns new DashboardPage(driver).</td></tr>
+<tr><td>9</td><td>DataProvider vs Excel for test data?</td><td>DataProvider for small sets in code; Excel/CSV via POI for large datasets maintained by QA.</td></tr>
+<tr><td>10</td><td>How to handle UPI redirect in tests?</td><td>Wait for new window, switch handle, click approve in simulator, switch back to original window.</td></tr>
+<tr><td>11</td><td>DB connection in test framework?</td><td>DBUtils singleton with ConfigReader for credentials; use PreparedStatement to prevent SQL injection.</td></tr>
+<tr><td>12</td><td>How to verify data integrity across layers?</td><td>Same entity ID validated in UI text, DB query result, and API JSON response — triangulated assertion.</td></tr>
+</tbody>
+</table>
+</div>
+</section>

@@ -1,0 +1,1688 @@
+<section id="section-1" class="section-card">
+<h2>Section 1: DevOps Fundamentals</h2>
+
+<h3>What is DevOps?</h3>
+<p><strong>DevOps</strong> is a cultural and technical movement that unifies software <strong>Development (Dev)</strong> and IT <strong>Operations (Ops)</strong> to deliver high-quality software faster and more reliably. It is not a single tool, job title, or department — it is a set of practices, principles, and mindsets that break down silos between teams who build software and teams who run it in production.</p>
+
+<h4>Definition</h4>
+<p>DevOps extends Agile principles into the full software lifecycle — from planning and coding through building, testing, releasing, deploying, operating, and monitoring. The goal is to shorten the feedback loop between idea and production while maintaining stability and security.</p>
+
+<h4>Origin</h4>
+<p>The term emerged around <strong>2009</strong>, popularized by Patrick Debois after the "10+ Deploys Per Day" presentation at Velocity Conference (2009) by John Allspaw and Paul Hammond (Flickr). The movement grew from frustration with the "throw it over the wall" model where developers handed code to operations with no shared ownership of outcomes.</p>
+
+<h4>Philosophy</h4>
+<ul>
+<li><strong>Collaboration over silos</strong> — Dev and Ops work as one product team</li>
+<li><strong>Automation over manual toil</strong> — repeatable, version-controlled processes</li>
+<li><strong>Measurement over guesswork</strong> — metrics drive decisions</li>
+<li><strong>Shared responsibility</strong> — everyone owns quality, uptime, and security</li>
+<li><strong>Continuous improvement</strong> — blameless postmortems, iterative refinement</li>
+</ul>
+
+<h3>Why DevOps?</h3>
+<p>Traditional IT organizations split responsibilities rigidly. Developers optimized for feature velocity; operations optimized for stability. This created predictable failure modes:</p>
+<ul>
+<li><strong>Long release cycles</strong> — quarterly or annual releases with massive "big bang" deployments</li>
+<li><strong>Blame culture</strong> — Ops blamed Dev for unstable code; Dev blamed Ops for slow environments</li>
+<li><strong>Manual deployments</strong> — error-prone, undocumented, dependent on tribal knowledge</li>
+<li><strong>Late defect discovery</strong> — bugs found in production because testing happened too late</li>
+<li><strong>Environment drift</strong> — "works on my machine" because dev/staging/prod differed</li>
+<li><strong>Slow incident recovery</strong> — no runbooks, no observability, no automated rollback</li>
+</ul>
+
+<div class="callout">
+<strong>The "Wall of Confusion"</strong>
+<p>In the traditional model, Dev throws compiled artifacts over a wall to Ops. Ops receives something they didn't build, can't easily debug, and must deploy under pressure. DevOps removes the wall by making deployment, monitoring, and feedback part of the development process itself.</p>
+</div>
+
+<h3>Traditional vs DevOps Model</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Dimension</th><th>Traditional Model</th><th>DevOps Model</th></tr>
+</thead>
+<tbody>
+<tr><td>Planning</td><td>Waterfall-style; long upfront specs</td><td>Iterative; backlog-driven; continuous refinement</td></tr>
+<tr><td>Development</td><td>Feature-complete handoff to QA/Ops</td><td>Small increments; trunk-based or short-lived branches</td></tr>
+<tr><td>Testing</td><td>Separate QA phase at end of cycle</td><td>Shift-left; automated tests at every commit</td></tr>
+<tr><td>Deployment</td><td>Manual, scheduled release windows</td><td>Automated pipelines; on-demand or continuous</td></tr>
+<tr><td>Monitoring</td><td>Reactive; ticket-driven after outages</td><td>Proactive; metrics, logs, traces, alerting</td></tr>
+<tr><td>Feedback</td><td>Delayed; post-release surveys</td><td>Real-time; A/B tests, feature flags, user analytics</td></tr>
+<tr><td>Release Cycle</td><td>Weeks to months</td><td>Hours to days (some orgs: multiple deploys/day)</td></tr>
+<tr><td>Team Structure</td><td>Dev / QA / Ops silos</td><td>Cross-functional product teams</td></tr>
+<tr><td>Communication</td><td>Formal change requests, CAB meetings</td><td>ChatOps, shared dashboards, blameless reviews</td></tr>
+<tr><td>Tools</td><td>Disparate, manually integrated</td><td>Integrated toolchain (Git → CI → CD → Monitor)</td></tr>
+<tr><td>Failure Handling</td><td>Root cause often unclear; finger-pointing</td><td>Blameless postmortems; automated rollback</td></tr>
+<tr><td>Documentation</td><td>Wiki pages that go stale</td><td>Pipeline-as-code, IaC, living runbooks</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>DevOps Lifecycle</h3>
+<p>The DevOps lifecycle is an infinite loop — not a linear waterfall. Each phase feeds the next, and monitoring feeds back into planning.</p>
+
+<pre class="ascii-diagram"><code>
+                    ┌──────────┐
+                    │   PLAN   │  ← Requirements, backlog, sprint planning
+                    └────┬─────┘
+                         │
+              ┌──────────▼──────────┐
+              │       CODE        │  ← Feature branches, PRs, code review
+              └──────────┬────────┘
+                         │
+              ┌──────────▼──────────┐
+              │       BUILD         │  ← Compile, dependency resolution
+              └──────────┬────────┘
+                         │
+              ┌──────────▼──────────┐
+              │       TEST          │  ← Unit, integration, E2E, security
+              └──────────┬────────┘
+                         │
+              ┌──────────▼──────────┐
+              │      RELEASE        │  ← Version tagging, changelog, artifact
+              └──────────┬────────┘
+                         │
+              ┌──────────▼──────────┐
+              │      DEPLOY         │  ← Push to QA → Staging → Production
+              └──────────┬────────┘
+                         │
+              ┌──────────▼──────────┐
+              │     OPERATE         │  ← Run, scale, incident response
+              └──────────┬────────┘
+                         │
+              ┌──────────▼──────────┐
+              │     MONITOR         │  ← Metrics, logs, alerts, dashboards
+              └──────────┬────────┘
+                         │
+                         └──────► back to PLAN (feedback loop)
+</code></pre>
+
+<h3>DevOps Culture</h3>
+<h4>Collaboration</h4>
+<p>Developers understand deployment constraints; operators understand application architecture. QA sits in the middle — advocating for quality gates without becoming a bottleneck. Daily standups, shared Slack channels, and joint on-call rotations reinforce this.</p>
+
+<h4>Automation</h4>
+<p>Anything done more than twice should be scripted. Builds, tests, deployments, infrastructure provisioning, and rollback procedures are codified in version control. Manual steps are treated as technical debt.</p>
+
+<h4>Continuous Improvement</h4>
+<p>Teams measure DORA metrics (Deployment Frequency, Lead Time for Changes, Change Failure Rate, Mean Time to Recovery) and set incremental targets. Retrospectives and postmortems drive process changes — not blame.</p>
+
+<h4>Shared Responsibility</h4>
+<p>"You build it, you run it." Developers share on-call duty. QA owns test automation in the pipeline, not just manual test cases in a spreadsheet. Security (DevSecOps) is embedded, not bolted on.</p>
+
+<h3>Benefits of DevOps — Real Metrics</h3>
+<p>The <strong>DORA (DevOps Research and Assessment)</strong> program, now part of Google Cloud, identifies elite performers vs low performers:</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Metric</th><th>Elite Performers</th><th>Low Performers</th></tr>
+</thead>
+<tbody>
+<tr><td>Deployment Frequency</td><td>On-demand (multiple per day)</td><td>Between once per month and once per 6 months</td></tr>
+<tr><td>Lead Time for Changes</td><td>Less than one hour</td><td>Between one month and six months</td></tr>
+<tr><td>Change Failure Rate</td><td>0–15%</td><td>46–60%</td></tr>
+<tr><td>Mean Time to Recovery (MTTR)</td><td>Less than one hour</td><td>Between one week and one month</td></tr>
+</tbody>
+</table>
+</div>
+<ul>
+<li><strong>Faster delivery</strong> — Amazon deploys every 11.7 seconds (2011 stat; still cited as cultural benchmark)</li>
+<li><strong>Fewer failures</strong> — Automated testing and smaller changes reduce defect escape rate</li>
+<li><strong>Quicker recovery</strong> — Feature flags, blue-green deploys, and observability cut MTTR dramatically</li>
+<li><strong>Higher employee satisfaction</strong> — Less firefighting, more building</li>
+<li><strong>Lower cost</strong> — Automation reduces manual ops headcount needs</li>
+</ul>
+
+<h3>QA's Role in DevOps</h3>
+<h4>Shift-Left Testing</h4>
+<p>QA engages during requirements and design — writing testable acceptance criteria, identifying edge cases early, and pairing with developers on testability. Defects found in design cost 10–100× less to fix than in production.</p>
+
+<h4>Continuous Testing</h4>
+<p>Tests run automatically on every commit and pull request. The test pyramid guides what runs where: fast unit tests on every build, integration tests on merge, E2E on deploy to QA/staging.</p>
+
+<h4>Test Automation Ownership</h4>
+<p>Senior QA/SDET engineers own the automation framework, CI integration, flaky test triage, and test data management. Manual testing focuses on exploratory, usability, and new-feature areas not yet automated.</p>
+
+<h4>Environment Management</h4>
+<p>QA validates that test environments mirror production (data masking, config parity). QA defines smoke/regression suites that gate promotions between environments.</p>
+
+<div class="callout">
+<strong>Interview Tip:</strong> Frame QA in DevOps as a <em>quality engineer</em> who enables speed — not a gatekeeper who slows releases. Mention specific metrics you improved: reduced flaky test rate, cut pipeline time, increased coverage.
+</div>
+
+<h3>Key DevOps Tools Ecosystem</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Category</th><th>Tools</th><th>Primary Use</th></tr>
+</thead>
+<tbody>
+<tr><td>SCM (Source Control)</td><td>Git, GitHub, GitLab, Bitbucket</td><td>Version control, PRs, code review</td></tr>
+<tr><td>CI (Continuous Integration)</td><td>Jenkins, GitHub Actions, GitLab CI, CircleCI, TeamCity</td><td>Build and test on every commit</td></tr>
+<tr><td>CD (Continuous Delivery/Deployment)</td><td>ArgoCD, Spinnaker, Octopus Deploy, AWS CodeDeploy</td><td>Automated deployment to environments</td></tr>
+<tr><td>Containers</td><td>Docker, Kubernetes (K8s), Helm, containerd</td><td>Packaging, orchestration, scaling</td></tr>
+<tr><td>Monitoring &amp; Observability</td><td>Grafana, Prometheus, Datadog, New Relic, Splunk, ELK Stack</td><td>Metrics, logs, traces, alerting</td></tr>
+<tr><td>IaC (Infrastructure as Code)</td><td>Terraform, Ansible, Pulumi, CloudFormation, Chef</td><td>Reproducible infrastructure provisioning</td></tr>
+<tr><td>Artifact Repository</td><td>Nexus, Artifactory, GitHub Packages</td><td>Store JARs, Docker images, npm packages</td></tr>
+<tr><td>Code Quality</td><td>SonarQube, Checkmarx, Snyk, CodeClimate</td><td>Static analysis, security scanning</td></tr>
+<tr><td>Configuration Management</td><td>Consul, Vault, AWS Parameter Store</td><td>Secrets and config at runtime</td></tr>
+<tr><td>Collaboration</td><td>Slack, Microsoft Teams, Jira, Confluence</td><td>ChatOps, ticketing, documentation</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>DevOps vs Agile</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Agile</th><th>DevOps</th></tr>
+</thead>
+<tbody>
+<tr><td>Primary Focus</td><td>Software development methodology</td><td>Full SDLC including delivery and operations</td></tr>
+<tr><td>Scope</td><td>Dev team practices (Scrum, Kanban)</td><td>Dev + QA + Ops + Security</td></tr>
+<tr><td>Goal</td><td>Respond to change; deliver working software iteratively</td><td>Deliver working software to production fast and safely</td></tr>
+<tr><td>Key Artifact</td><td>Working software at end of sprint</td><td>Production-ready deployable artifact continuously</td></tr>
+<tr><td>Ceremonies</td><td>Sprint planning, daily standup, retrospective</td><td>Postmortems, pipeline reviews, chaos engineering</td></tr>
+<tr><td>Tools</td><td>Jira, Azure Boards, Trello</td><td>Jenkins, Docker, Terraform, Grafana</td></tr>
+<tr><td>Metrics</td><td>Velocity, burndown, sprint goal achievement</td><td>DORA metrics, uptime, MTTR, deployment frequency</td></tr>
+<tr><td>Relationship</td><td>DevOps extends Agile principles into ops</td><td>Agile is a prerequisite mindset for DevOps success</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What is DevOps in one sentence?</h4>
+<p><strong>A:</strong> DevOps is a culture and practice that combines development and operations to automate and integrate the processes between code commit and production deployment, enabling faster, more reliable software delivery.</p>
+
+<h4>Q2: Is DevOps a tool?</h4>
+<p><strong>A:</strong> No. Tools enable DevOps, but DevOps is primarily about culture (collaboration, shared ownership), processes (CI/CD, IaC), and measurement (DORA metrics). You can have Jenkins without DevOps culture and still fail.</p>
+
+<h4>Q3: What problem does DevOps solve?</h4>
+<p><strong>A:</strong> It solves the conflict between speed and stability caused by siloed Dev and Ops teams, manual deployments, and late testing — resulting in slow releases, high failure rates, and long recovery times.</p>
+
+<h4>Q4: What are the four DORA metrics?</h4>
+<p><strong>A:</strong> (1) Deployment Frequency, (2) Lead Time for Changes, (3) Change Failure Rate, (4) Mean Time to Recovery (MTTR).</p>
+
+<h4>Q5: What is "shift-left"?</h4>
+<p><strong>A:</strong> Moving testing, security, and quality activities earlier in the SDLC — during requirements, design, and development — rather than waiting until pre-release or production.</p>
+
+<h4>Q6: What is the difference between DevOps and SRE?</h4>
+<p><strong>A:</strong> DevOps is a broad cultural movement. SRE (Site Reliability Engineering, coined by Google) is a specific implementation that applies software engineering to operations problems, with concrete practices like error budgets and SLOs.</p>
+
+<h4>Q7: What is DevSecOps?</h4>
+<p><strong>A:</strong> Integrating security practices into the DevOps pipeline — SAST, DAST, dependency scanning, secrets management — so security is continuous, not a final gate.</p>
+
+<h4>Q8: How does QA fit into a DevOps team?</h4>
+<p><strong>A:</strong> QA acts as a quality engineer: building/maintaining test automation, defining quality gates in CI/CD, performing exploratory testing, managing test environments, and analyzing quality metrics — embedded in the team, not a separate phase.</p>
+
+<h4>Q9: What is Infrastructure as Code (IaC)?</h4>
+<p><strong>A:</strong> Managing infrastructure (servers, networks, cloud resources) through machine-readable definition files (Terraform, CloudFormation) version-controlled in Git — enabling reproducible, reviewable, automated provisioning.</p>
+
+<h4>Q10: What is the "wall of confusion"?</h4>
+<p><strong>A:</strong> A metaphor for the boundary between Dev and Ops in traditional orgs where Dev throws code over the wall without understanding operational constraints, and Ops receives code they didn't build and can't easily troubleshoot.</p>
+
+<h4>Q11: Name three cultural pillars of DevOps.</h4>
+<p><strong>A:</strong> Collaboration (shared goals), automation (eliminate manual toil), and continuous improvement (measure, learn, iterate). Shared responsibility and blameless postmortems are also key.</p>
+
+<h4>Q12: What is a blameless postmortem?</h4>
+<p><strong>A:</strong> An incident review focused on systemic causes and process improvements rather than individual blame. Goal: learn and prevent recurrence, not punish.</p>
+
+<h4>Q13: How do you measure DevOps success?</h4>
+<p><strong>A:</strong> DORA metrics, pipeline success rate, test automation coverage, defect escape rate, MTTR, customer-reported incidents, and team satisfaction surveys.</p>
+
+<h4>Q14: What is ChatOps?</h4>
+<p><strong>A:</strong> Using chat platforms (Slack, Teams) as the interface for DevOps operations — triggering deployments, querying monitoring, receiving alerts — via bots and integrations.</p>
+
+<h4>Q15: Can you do DevOps without cloud?</h4>
+<p><strong>A:</strong> Yes. DevOps principles apply on-premises too. Cloud accelerates DevOps (elastic environments, managed services) but is not required. Jenkins + Docker + Ansible on bare metal is valid DevOps.</p>
+
+<h4>Q16: What is the CAMS acronym?</h4>
+<p><strong>A:</strong> Culture, Automation, Measurement, Sharing — early DevOps pillars articulated by Damon Edwards and John Willis.</p>
+
+<h4>Q17: How would you introduce DevOps to a traditional QA team?</h4>
+<p><strong>A:</strong> Start with CI integration of existing automation, demonstrate faster feedback loops, involve QA in pipeline design, upskill on Git and Jenkins, redefine QA role as quality engineering partner — not gatekeeper.</p>
+
+<h4>Q18: What is the difference between continuous monitoring and continuous testing?</h4>
+<p><strong>A:</strong> Continuous testing runs automated tests in the pipeline on every change. Continuous monitoring observes production systems (metrics, logs, alerts) after deployment. Both provide feedback loops — testing catches defects pre-release; monitoring catches issues post-release.</p>
+
+<h4>Q19: Name two anti-patterns that prevent DevOps adoption.</h4>
+<p><strong>A:</strong> (1) "Ops silo" — operations team not involved until deployment day. (2) "Automation without culture" — buying Jenkins but keeping manual CAB approvals, blame culture, and quarterly release windows.</p>
+
+</section>
+
+<section id="section-2" class="section-card">
+<h2>Section 2: CI/CD Basics</h2>
+
+<h3>Continuous Integration (CI)</h3>
+<h4>Definition</h4>
+<p><strong>Continuous Integration</strong> is the practice of merging all developers' working copies to a shared mainline (trunk) several times a day, with each integration verified by an automated build and test suite. The term was coined by Grady Booch and popularized by Martin Fowler and Kent Beck in Extreme Programming.</p>
+
+<h4>CI Workflow</h4>
+<ol>
+<li>Developer commits code to a feature branch (or directly to trunk in trunk-based development)</li>
+<li>SCM webhook or polling triggers the CI server (Jenkins, GitHub Actions)</li>
+<li>CI server pulls latest code, compiles/builds the application</li>
+<li>Automated tests run: unit → integration → static analysis</li>
+<li>Results reported back to developer via email, Slack, or PR status check</li>
+<li>If build fails, developer fixes immediately ("fix the build" culture)</li>
+</ol>
+
+<h4>Benefits of CI</h4>
+<ul>
+<li><strong>Early defect detection</strong> — bugs found within minutes of introduction</li>
+<li><strong>Reduced integration hell</strong> — small, frequent merges vs painful merge weeks</li>
+<li><strong>Always deployable mainline</strong> — trunk stays green</li>
+<li><strong>Fast feedback</strong> — developers know within 5–15 minutes if they broke something</li>
+<li><strong>Audit trail</strong> — every commit tied to a build and test result</li>
+</ul>
+
+<h4>What QA Does in CI</h4>
+<ul>
+<li>Maintains automated test suites integrated into the build pipeline</li>
+<li>Defines which tests run on every commit vs nightly</li>
+<li>Sets quality gates: minimum code coverage, zero critical SonarQube issues</li>
+<li>Triage flaky tests that cause false pipeline failures</li>
+<li>Reviews test results on every PR before merge approval</li>
+</ul>
+
+<h3>Continuous Delivery (CD — Delivery)</h3>
+<h4>Definition</h4>
+<p><strong>Continuous Delivery</strong> extends CI by ensuring the software is <em>always</em> in a deployable state. Every change that passes the automated pipeline produces a production-ready artifact. Deployment to production requires a <strong>manual approval gate</strong> — a human decides when to release.</p>
+
+<h4>Key Characteristics</h4>
+<ul>
+<li>Automated deployment to staging/QA environments</li>
+<li>Manual "promote to production" button or approval workflow</li>
+<li>Production-ready artifacts stored in artifact repository (Nexus, ECR)</li>
+<li>Release notes and versioning automated</li>
+<li>Rollback procedure tested and documented</li>
+</ul>
+
+<div class="callout">
+<strong>Remember:</strong> Continuous Delivery = "We <em>can</em> deploy anytime." Continuous Deployment = "We <em>do</em> deploy automatically."
+</div>
+
+<h3>Continuous Deployment (CD — Deployment)</h3>
+<h4>Definition</h4>
+<p><strong>Continuous Deployment</strong> goes one step further: every change that passes all automated tests and quality gates is automatically deployed to production <strong>without human intervention</strong>. Companies like Netflix, Etsy, and GitHub operate this way for portions of their stack.</p>
+
+<h4>Requirements for Continuous Deployment</h4>
+<ul>
+<li>Extremely high test automation coverage (especially E2E and canary monitoring)</li>
+<li>Feature flags to decouple deployment from release</li>
+<li>Robust observability and automated rollback on error budget breach</li>
+<li>Strong DevOps culture and mature pipeline</li>
+</ul>
+
+<h3>CI vs CD (Delivery) vs CD (Deployment)</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Continuous Integration</th><th>Continuous Delivery</th><th>Continuous Deployment</th></tr>
+</thead>
+<tbody>
+<tr><td>Scope</td><td>Build + test on commit</td><td>CI + automated deploy to pre-prod</td><td>CI + automated deploy to production</td></tr>
+<tr><td>Human Gate</td><td>None (fully automated)</td><td>Manual approval before production</td><td>None (fully automated to prod)</td></tr>
+<tr><td>Artifact</td><td>Build output verified</td><td>Production-ready artifact stored</td><td>Same; auto-promoted to prod</td></tr>
+<tr><td>Release Frequency</td><td>N/A (not about release)</td><td>On-demand (when approved)</td><td>Every passing commit</td></tr>
+<tr><td>Risk Level</td><td>Low (no deployment)</td><td>Medium (human checkpoint)</td><td>High (requires mature automation)</td></tr>
+<tr><td>Typical Use</td><td>All teams should do CI</td><td>Most enterprise teams</td><td>High-maturity tech companies</td></tr>
+<tr><td>Rollback</td><td>Revert commit</td><td>Manual rollback procedure</td><td>Automated rollback on failure</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Build Pipeline vs Release Pipeline</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Build Pipeline</th><th>Release Pipeline</th></tr>
+</thead>
+<tbody>
+<tr><td>Purpose</td><td>Compile, test, package code into artifact</td><td>Deploy artifact to target environments</td></tr>
+<tr><td>Trigger</td><td>Every commit / PR</td><td>Successful build completion or manual trigger</td></tr>
+<tr><td>Output</td><td>JAR, WAR, Docker image, npm package</td><td>Running application in QA/Staging/Prod</td></tr>
+<tr><td>Duration</td><td>5–30 minutes typically</td><td>5–60 minutes (depends on strategy)</td></tr>
+<tr><td>Tools</td><td>Jenkins, GitHub Actions, Maven, Gradle</td><td>ArgoCD, Spinnaker, Octopus, kubectl</td></tr>
+<tr><td>Environments</td><td>Build agent / ephemeral container</td><td>QA → Staging → Production</td></tr>
+<tr><td>QA Role</td><td>Unit/integration tests, code quality gates</td><td>Smoke, regression, E2E in target env</td></tr>
+<tr><td>Failure Impact</td><td>Blocks merge; no deployment occurs</td><td>Blocks promotion; previous version stays live</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Manual Deployment vs Automated Deployment</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Metric</th><th>Manual Deployment</th><th>Automated Deployment</th></tr>
+</thead>
+<tbody>
+<tr><td>Speed</td><td>Hours to days (scheduling, CAB approval)</td><td>Minutes (pipeline-triggered)</td></tr>
+<tr><td>Consistency</td><td>Varies by operator; "works for Bob"</td><td>Identical every time; scripted steps</td></tr>
+<tr><td>Human Error Rate</td><td>High (wrong config, missed step)</td><td>Low (scripted, version-controlled)</td></tr>
+<tr><td>Rollback Time</td><td>30 min – 4 hours</td><td>1–5 minutes (automated)</td></tr>
+<tr><td>Audit Trail</td><td>Email threads, ticket notes</td><td>Pipeline logs, Git history</td></tr>
+<tr><td>Cost per Deploy</td><td>High (engineer hours)</td><td>Low (compute cost only)</td></tr>
+<tr><td>Scalability</td><td>Does not scale beyond ~1/week</td><td>Scales to dozens/day</td></tr>
+<tr><td>Documentation</td><td>Runbook in wiki (often outdated)</td><td>Pipeline-as-code (always current)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>CI/CD Workflow Diagrams</h3>
+
+<h4>Continuous Integration Flow</h4>
+<pre class="ascii-diagram"><code>
+ Developer                Git Repo              CI Server              Test Results
+     │                        │                      │                       │
+     │──── git push ─────────►│                      │                       │
+     │                        │──── webhook ────────►│                       │
+     │                        │                      │── pull code           │
+     │                        │                      │── compile/build       │
+     │                        │                      │── run unit tests      │
+     │                        │                      │── run integration     │
+     │                        │                      │── SonarQube scan      │
+     │                        │                      │                       │
+     │◄──── notification ─────│◄──── status update ──│──── PASS / FAIL ─────►│
+     │                        │                      │                       │
+     │ (if FAIL: fix &amp; push)  │                      │                       │
+</code></pre>
+
+<h4>Continuous Delivery Flow</h4>
+<pre class="ascii-diagram"><code>
+ CI Build Passes          Artifact Repo         QA Env           Staging Env        Production
+       │                       │                  │                   │                  │
+       │── package JAR/Docker ──►│                  │                   │                  │
+       │                       │── auto deploy ──►│                   │                  │
+       │                       │                  │── smoke tests     │                  │
+       │                       │                  │── regression      │                  │
+       │                       │── auto deploy ───────────────────────►│                  │
+       │                       │                  │                   │── E2E tests      │
+       │                       │                  │                   │                  │
+       │                       │                  │                   │  [MANUAL GATE]   │
+       │                       │                  │                   │──── approve ────►│
+       │                       │                  │                   │                  │── live
+</code></pre>
+
+<h4>Continuous Deployment Flow</h4>
+<pre class="ascii-diagram"><code>
+ Every Commit ──► CI Build ──► All Tests Pass ──► Canary Deploy (5% traffic)
+                                                        │
+                                                        ├── metrics OK ──► Full Deploy (100%)
+                                                        │
+                                                        └── metrics BAD ──► Auto Rollback
+</code></pre>
+
+<h3>Branching Strategies for CI/CD</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Strategy</th><th>Description</th><th>CI/CD Fit</th><th>Pros</th><th>Cons</th></tr>
+</thead>
+<tbody>
+<tr><td>GitFlow</td><td>main, develop, feature, release, hotfix branches</td><td>Moderate; complex merges</td><td>Clear release process; good for scheduled releases</td><td>Merge overhead; long-lived branches</td></tr>
+<tr><td>Trunk-Based Development</td><td>Short-lived branches (&lt;2 days); frequent merge to main</td><td>Excellent; industry best practice for CI/CD</td><td>Always deployable main; minimal merge conflicts</td><td>Requires feature flags; discipline needed</td></tr>
+<tr><td>Feature Branching</td><td>One branch per feature; merge via PR</td><td>Good with PR-triggered CI</td><td>Isolated development; code review via PR</td><td>Branch drift if branches live too long</td></tr>
+<tr><td>Release Branching</td><td>Branch cut for stabilization before release</td><td>Used with GitFlow</td><td>Bug fixes on release branch without affecting main</td><td>Duplicate fixes needed on main and release branch</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>QA Activities in CI/CD — Tests at Each Stage</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Pipeline Stage</th><th>Test Type</th><th>Duration</th><th>Owner</th><th>Failure Action</th></tr>
+</thead>
+<tbody>
+<tr><td>Commit / PR</td><td>Unit tests, lint, SAST</td><td>2–10 min</td><td>Developers + QA framework</td><td>Block merge</td></tr>
+<tr><td>Post-merge CI</td><td>Integration tests, API tests</td><td>10–20 min</td><td>QA / SDET</td><td>Block artifact creation</td></tr>
+<tr><td>Deploy to QA</td><td>Smoke tests, critical path E2E</td><td>5–15 min</td><td>QA automation</td><td>Block staging promotion</td></tr>
+<tr><td>Deploy to Staging</td><td>Full regression, E2E, contract tests</td><td>30–120 min</td><td>QA automation</td><td>Block production approval</td></tr>
+<tr><td>Pre-Production</td><td>Performance, load, security (DAST)</td><td>1–4 hours</td><td>QA + Performance team</td><td>Block release</td></tr>
+<tr><td>Post-Production</td><td>Synthetic monitoring, canary analysis</td><td>Continuous</td><td>SRE + QA</td><td>Auto rollback</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What is the difference between CI and CD?</h4>
+<p><strong>A:</strong> CI automates build and test on every code change. CD (Delivery) extends this by keeping the app always deployable with manual production approval. CD (Deployment) automatically deploys every passing change to production.</p>
+
+<h4>Q2: What makes a good CI pipeline?</h4>
+<p><strong>A:</strong> Fast feedback (&lt;15 min), reliable (no flaky tests), comprehensive (unit + integration), visible results (PR checks), and fails fast (run cheapest tests first).</p>
+
+<h4>Q3: What is a quality gate?</h4>
+<p><strong>A:</strong> A checkpoint in the pipeline that must pass before proceeding — e.g., 80% code coverage, zero critical SonarQube issues, all smoke tests green.</p>
+
+<h4>Q4: What is pipeline-as-code?</h4>
+<p><strong>A:</strong> Defining CI/CD pipeline steps in version-controlled files (Jenkinsfile, .github/workflows/*.yml) rather than configuring via UI — enabling review, rollback, and reproducibility.</p>
+
+<h4>Q5: What is a flaky test and how do you handle it?</h4>
+<p><strong>A:</strong> A test that passes and fails intermittently without code changes. Handle by: quarantine (exclude from gating), root-cause (timing, test data, environment), fix or delete, track flaky rate metric.</p>
+
+<h4>Q6: What is the test pyramid?</h4>
+<p><strong>A:</strong> Mike Cohn's model: many fast unit tests at base, fewer integration tests in middle, few slow E2E tests at top. CI runs pyramid bottom-up for speed.</p>
+
+<h4>Q7: Build failed in CI but works locally — what do you check?</h4>
+<p><strong>A:</strong> Environment differences (JDK version, env vars), missing dependencies, test order dependency, uncommitted files, different branch state, timezone/locale issues.</p>
+
+<h4>Q8: What is a deployment pipeline?</h4>
+<p><strong>A:</strong> An automated sequence of stages that takes code from commit to production: build → test → package → deploy QA → test → deploy staging → test → deploy prod.</p>
+
+<h4>Q9: What is artifact immutability?</h4>
+<p><strong>A:</strong> Once a build artifact (Docker image, JAR) is created and tested, the same exact artifact is promoted through all environments — never rebuilt for production.</p>
+
+<h4>Q10: What is a smoke test in CI/CD?</h4>
+<p><strong>A:</strong> A minimal test suite (5–15 tests) verifying the application starts and critical paths work after deployment. Fast gate before running full regression.</p>
+
+<h4>Q11: How do feature flags relate to CI/CD?</h4>
+<p><strong>A:</strong> Feature flags decouple deployment from release — code can be deployed to production dark (flag off) and enabled gradually, reducing risk of continuous deployment.</p>
+
+<h4>Q12: What is the difference between a build and a release?</h4>
+<p><strong>A:</strong> A build produces a versioned artifact from source code. A release deploys that artifact to an environment and makes it available to users.</p>
+
+<h4>Q13: How would you reduce CI pipeline time from 45 to 15 minutes?</h4>
+<p><strong>A:</strong> Parallelize test stages, run only affected tests (test impact analysis), cache dependencies, use faster build agents, move slow E2E to post-deploy stage, optimize Docker layer caching.</p>
+
+<h4>Q14: What is shift-right testing?</h4>
+<p><strong>A:</strong> Testing in production using techniques like canary analysis, chaos engineering, synthetic monitoring, and A/B testing — complementing shift-left.</p>
+
+<h4>Q15: What is a broken build policy?</h4>
+<p><strong>A:</strong> Team agreement that a failed CI build on main/trunk is the top priority fix — no new commits until the build is green. Prevents defect accumulation and keeps main always deployable.</p>
+
+<h4>Q16: How do you decide what tests to run in CI vs nightly?</h4>
+<p><strong>A:</strong> CI (every commit): fast unit tests, lint, smoke API tests (&lt;15 min total). Nightly: full regression, performance, cross-browser E2E, security scans — anything too slow for per-commit feedback.</p>
+
+<h4>Q17: What is trunk-based development and why does it pair well with CI?</h4>
+<p><strong>A:</strong> Developers commit small changes directly to main (or via short-lived branches merged within 1–2 days). Trunk is always deployable. CI validates every commit immediately — minimizing merge conflicts and integration risk.</p>
+
+</section>
+
+<section id="section-3" class="section-card">
+<h2>Section 3: DevOps Pipeline — Complete Flow</h2>
+
+<h3>Complete Pipeline Overview</h3>
+<pre class="ascii-diagram"><code>
+┌──────────┐   ┌───────────┐   ┌──────────────┐   ┌─────────┐   ┌─────────────┐
+│ Developer│──►│ Git Commit│──►│ Build Trigger│──►│ Compile │──►│ Unit Tests  │
+└──────────┘   └───────────┘   └──────────────┘   └─────────┘   └──────┬──────┘
+                                                                        │
+    ┌───────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌──────────────┐   ┌─────────┐   ┌────────────┐   ┌───────────┐   ┌──────────────────┐
+│ Code Quality │──►│ Package │──►│ Deploy QA  │──►│ Automation│──►│ Deploy Staging   │
+│ (SonarQube)  │   │ JAR/Docker│  │ Environment│   │ Tests     │   │ Environment      │
+└──────────────┘   └─────────┘   └────────────┘   └───────────┘   └────────┬─────────┘
+                                                                            │
+                                                                            ▼
+                                                                   ┌─────────────────┐
+                                                                   │ Deploy Production│
+                                                                   │ (Blue-Green /    │
+                                                                   │  Canary / Rolling)│
+                                                                   └─────────────────┘
+</code></pre>
+
+<h3>Stage 1: Git Commit</h3>
+<p>Every pipeline starts with a developer pushing code to a remote repository. The CI system must detect this change reliably.</p>
+<h4>Trigger Mechanisms</h4>
+<ul>
+<li><strong>Webhooks</strong> — GitHub/GitLab sends HTTP POST to Jenkins on push/PR events (preferred; instant)</li>
+<li><strong>Poll SCM</strong> — Jenkins checks repo every N minutes (fallback; adds delay)</li>
+<li><strong>Manual trigger</strong> — "Build Now" button for hotfixes or reruns</li>
+<li><strong>Scheduled trigger</strong> — Cron for nightly builds (e.g., <code>H 2 * * *</code>)</li>
+<li><strong>Upstream trigger</strong> — Job B starts when Job A completes</li>
+</ul>
+<pre><code># Example: GitHub webhook payload (simplified)
+{
+  "ref": "refs/heads/main",
+  "repository": { "name": "ecommerce-api" },
+  "pusher": { "name": "dev-user" },
+  "commits": [{ "id": "abc123", "message": "Add payment validation" }]
+}</code></pre>
+
+<h3>Stage 2: Build Trigger</h3>
+<p>Jenkins receives the webhook and queues a build. The master node schedules work to an available agent.</p>
+<ul>
+<li>Job configuration specifies which branch triggers builds (<code>*/main</code>, <code>PR-*</code>)</li>
+<li>Multibranch Pipeline auto-discovers branches and creates jobs per branch</li>
+<li>Build enters the executor queue; displayed in Jenkins dashboard "Build Queue"</li>
+<li>Agent selection based on labels (<code>linux</code>, <code>docker</code>, <code>windows</code>)</li>
+</ul>
+
+<h3>Stage 3: Compile</h3>
+<p>Source code is compiled and dependencies resolved. Language-specific build tools handle this stage.</p>
+<pre><code># Maven
+mvn clean compile -B -DskipTests
+
+# Gradle
+./gradlew build -x test
+
+# Node.js
+npm ci &amp;&amp; npm run build
+
+# Output: compiled classes in target/ or build/</code></pre>
+<p>Build agents cache dependencies (<code>~/.m2/repository</code>, Gradle cache) to speed subsequent builds.</p>
+
+<h3>Stage 4: Unit Testing</h3>
+<p>Developer-written unit tests validate individual functions/classes in isolation. Fast — typically runs in under 5 minutes.</p>
+<ul>
+<li><strong>Frameworks:</strong> JUnit 5, TestNG (Java); pytest (Python); Jest (JavaScript)</li>
+<li><strong>Coverage thresholds:</strong> JaCoCo, Cobertura — pipeline fails if coverage drops below 80%</li>
+<li><strong>Parallel execution:</strong> Surefire parallel mode for large test suites</li>
+<li><strong>Reports:</strong> JUnit XML published to Jenkins; trends visible on job page</li>
+</ul>
+<pre><code>mvn test -B
+# Generates: target/surefire-reports/TEST-*.xml
+# JaCoCo report: target/site/jacoco/index.html</code></pre>
+
+<h3>Stage 5: Code Quality Check</h3>
+<p>Static analysis tools scan code for bugs, vulnerabilities, code smells, and duplication.</p>
+<h4>SonarQube Integration</h4>
+<pre><code># Jenkins pipeline stage
+stage('SonarQube Analysis') {
+  steps {
+    withSonarQubeEnv('SonarQube-Server') {
+      sh 'mvn sonar:sonar \
+        -Dsonar.projectKey=ecommerce-api \
+        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml'
+    }
+  }
+}
+
+stage('Quality Gate') {
+  steps {
+    timeout(time: 5, unit: 'MINUTES') {
+      waitForQualityGate abortPipeline: true
+    }
+  }
+}</code></pre>
+<h4>Typical Quality Gate Conditions</h4>
+<ul>
+<li>Zero new critical/blocker issues</li>
+<li>Code coverage on new code ≥ 80%</li>
+<li>Duplicated lines on new code ≤ 3%</li>
+<li>All new security hotspots reviewed</li>
+</ul>
+
+<h3>Stage 6: Package Creation</h3>
+<p>Successful build produces a versioned, immutable artifact stored in a repository.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Artifact Type</th><th>Format</th><th>Storage</th></tr>
+</thead>
+<tbody>
+<tr><td>Java application</td><td>JAR / WAR</td><td>Nexus, Artifactory</td></tr>
+<tr><td>Containerized app</td><td>Docker image</td><td>ECR, Docker Hub, Harbor</td></tr>
+<tr><td>Frontend SPA</td><td>Static files (dist/)</td><td>S3, Azure Blob, CDN</td></tr>
+<tr><td>Mobile app</td><td>APK / IPA</td><td>Firebase App Distribution</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code># Docker packaging example
+docker build -t myregistry/ecommerce-api:${BUILD_NUMBER} .
+docker push myregistry/ecommerce-api:${BUILD_NUMBER}</code></pre>
+
+<h3>Stage 7: Deploy to QA</h3>
+<p>Artifact deployed to QA environment for automated testing. Environment should mirror staging/production configuration.</p>
+<ul>
+<li><strong>Provisioning:</strong> Terraform/Ansible creates or updates QA infrastructure</li>
+<li><strong>Deployment:</strong> kubectl apply, Helm upgrade, or SSH + script</li>
+<li><strong>Config:</strong> Environment-specific variables from Vault or ConfigMap</li>
+<li><strong>Database:</strong> Flyway/Liquibase migrations run before app start</li>
+<li><strong>Health check:</strong> Wait for /actuator/health to return 200 before proceeding</li>
+</ul>
+
+<h3>Stage 8: Automation Testing</h3>
+<p>QA automation suite runs against the deployed QA environment in progressive layers:</p>
+<ol>
+<li><strong>Smoke tests</strong> (5 min) — app starts, login works, critical API responds</li>
+<li><strong>API tests</strong> (10 min) — REST contract validation, Postman/Newman or RestAssured</li>
+<li><strong>Regression tests</strong> (30–60 min) — full automated suite (Selenium, Cypress, Playwright)</li>
+<li><strong>E2E tests</strong> (15–30 min) — critical user journeys (checkout, registration)</li>
+</ol>
+<pre><code># Example: Run TestNG suite post-deploy
+mvn test -DsuiteXmlFile=smoke-testng.xml -Denv=qa
+# Publish Allure report to Jenkins</code></pre>
+
+<h3>Stage 9: Deploy to Staging</h3>
+<p>Production-like environment with production-scale data (masked), same infrastructure topology, and identical configuration patterns.</p>
+<ul>
+<li>Full regression and E2E suites re-run (environment-specific issues may appear)</li>
+<li>Performance baseline tests (response time SLAs)</li>
+<li>Security scan (DAST — OWASP ZAP against staging URL)</li>
+<li>Manual UAT may occur here in Continuous Delivery model</li>
+</ul>
+
+<h3>Stage 10: Deploy to Production</h3>
+<p>Final stage — requires highest confidence. Multiple deployment strategies available based on risk tolerance.</p>
+
+<h3>QA Gates at Each Phase</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Phase</th><th>QA Gate</th><th>Pass Criteria</th><th>Failure Action</th></tr>
+</thead>
+<tbody>
+<tr><td>Compile</td><td>Build success</td><td>Zero compilation errors</td><td>Notify developer; block pipeline</td></tr>
+<tr><td>Unit Tests</td><td>Test pass rate</td><td>100% pass; coverage ≥ 80%</td><td>Block merge; developer fixes</td></tr>
+<tr><td>Code Quality</td><td>SonarQube gate</td><td>Zero new critical issues</td><td>Block artifact creation</td></tr>
+<tr><td>Package</td><td>Artifact validation</td><td>Checksum verified; scan clean</td><td>Block deployment</td></tr>
+<tr><td>Deploy QA</td><td>Health check</td><td>/health returns 200 within 3 min</td><td>Rollback QA; alert team</td></tr>
+<tr><td>Automation Tests</td><td>Smoke + regression</td><td>100% smoke pass; ≥ 98% regression</td><td>Block staging promotion</td></tr>
+<tr><td>Deploy Staging</td><td>Staging validation</td><td>Health check + config verification</td><td>Rollback staging</td></tr>
+<tr><td>Pre-Prod</td><td>Performance + security</td><td>p95 &lt; 500ms; zero high vulns</td><td>Block production deploy</td></tr>
+<tr><td>Deploy Prod</td><td>Canary metrics</td><td>Error rate &lt; 0.1%; latency stable</td><td>Auto rollback</td></tr>
+<tr><td>Post-Prod</td><td>Synthetic monitoring</td><td>All probes green for 15 min</td><td>Alert on-call; investigate</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Deployment Strategies Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Strategy</th><th>How It Works</th><th>Downtime</th><th>Risk</th><th>Rollback Speed</th><th>Best For</th></tr>
+</thead>
+<tbody>
+<tr><td>Blue-Green</td><td>Two identical environments; switch traffic instantly</td><td>Zero</td><td>Low</td><td>Instant (switch back)</td><td>Critical apps; need instant rollback</td></tr>
+<tr><td>Canary</td><td>Route small % traffic to new version; gradually increase</td><td>Zero</td><td>Very low</td><td>Fast (stop canary)</td><td>High-traffic services; A/B testing</td></tr>
+<tr><td>Rolling Update</td><td>Replace instances one-by-one with new version</td><td>Zero</td><td>Medium</td><td>Moderate</td><td>Kubernetes default; stateless apps</td></tr>
+<tr><td>Recreate</td><td>Terminate all old instances; start new ones</td><td>Yes (brief)</td><td>High</td><td>Slow (redeploy old)</td><td>Dev/test environments only</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre class="ascii-diagram"><code>
+Blue-Green Deployment:
+  [Load Balancer] ──► [Blue  v1.2]  ◄── currently serving traffic
+                   ╲
+                    ╲──► [Green v1.3]  ◄── new version deployed &amp; tested
+  Switch: LB flips to Green instantly. Blue kept for rollback.
+
+Canary Deployment:
+  [Load Balancer] ── 95% ──► [v1.2 instances]
+                ╲
+                 ╲─ 5% ────► [v1.3 canary]
+  Monitor error rate &amp; latency → increase to 25% → 50% → 100%
+</code></pre>
+
+<h3>Real Project Example: E-Commerce Application</h3>
+<div class="callout">
+<strong>Project:</strong> ShopFast — microservices e-commerce platform (Java Spring Boot + React frontend)
+</div>
+<ol>
+<li><strong>Developer</strong> pushes feature branch; opens PR to <code>main</code></li>
+<li><strong>PR Pipeline</strong> (GitHub Actions): compile → unit tests → SonarQube → integration tests (5 min)</li>
+<li><strong>Merge to main</strong> triggers Jenkins multibranch pipeline</li>
+<li><strong>Build stage:</strong> Maven package → Docker image → push to ECR tagged <code>1.47.${BUILD_NUMBER}</code></li>
+<li><strong>Deploy QA:</strong> ArgoCD syncs to QA Kubernetes cluster; Flyway runs DB migrations</li>
+<li><strong>Test QA:</strong> Smoke (TestNG, 5 min) → API regression (RestAssured, 20 min) → E2E (Cypress, 45 min)</li>
+<li><strong>Deploy Staging:</strong> Same artifact promoted via ArgoCD; performance test (JMeter, 30 min)</li>
+<li><strong>Manual approval:</strong> Release manager approves in Jenkins after reviewing Allure report</li>
+<li><strong>Deploy Prod:</strong> Canary — 5% traffic for 15 min → metrics OK → 100% rollout</li>
+<li><strong>Monitor:</strong> Datadog alerts; synthetic checks every 60 seconds</li>
+</ol>
+<p><strong>Pipeline duration:</strong> ~2 hours end-to-end. <strong>Deployment frequency:</strong> 3–4 times per week.</p>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: Walk me through a complete CI/CD pipeline.</h4>
+<p><strong>A:</strong> Commit → webhook triggers CI → compile → unit tests → SonarQube → package artifact → deploy QA → automation tests → deploy staging → full regression → manual approval → canary deploy to prod → monitor.</p>
+
+<h4>Q2: What happens if unit tests pass but E2E fails in QA?</h4>
+<p><strong>A:</strong> Pipeline stops; staging/production promotion blocked. QA triages failure — environment issue, test bug, or real defect. Defect logged; developer fixes; pipeline re-triggered from commit or rebuild.</p>
+
+<h4>Q3: Why deploy the same artifact to all environments?</h4>
+<p><strong>A:</strong> Artifact immutability ensures what was tested in QA/staging is exactly what runs in production — eliminating "works in QA, fails in prod" caused by rebuild differences.</p>
+
+<h4>Q4: What is a quality gate in SonarQube?</h4>
+<p><strong>A:</strong> A set of conditions (coverage, bugs, vulnerabilities, duplications) that code must meet. Jenkins <code>waitForQualityGate</code> blocks the pipeline if conditions fail.</p>
+
+<h4>Q5: Explain blue-green vs canary deployment.</h4>
+<p><strong>A:</strong> Blue-green maintains two full environments and switches traffic instantly — fast rollback but double infrastructure cost. Canary routes a small traffic percentage to the new version, monitoring metrics before full rollout — lower risk, gradual.</p>
+
+<h4>Q6: What tests should run before production deployment?</h4>
+<p><strong>A:</strong> Full regression, E2E critical paths, performance baseline, security scan (DAST), smoke test in staging, and canary monitoring post-deploy.</p>
+
+<h4>Q7: How do you handle database migrations in the pipeline?</h4>
+<p><strong>A:</strong> Use Flyway/Liquibase in a dedicated pipeline stage before app deployment. Migrations must be backward-compatible for rollback. Test migrations in QA/staging first.</p>
+
+<h4>Q8: What is a smoke test vs regression test in pipeline context?</h4>
+<p><strong>A:</strong> Smoke: 5–15 critical tests verifying basic functionality post-deploy (fast gate). Regression: full automated suite covering all features (comprehensive, slower).</p>
+
+<h4>Q9: How would you design QA gates for a microservices pipeline?</h4>
+<p><strong>A:</strong> Contract tests between services (Pact), independent service pipelines, integration test stage after all services deploy to QA, shared smoke suite for critical cross-service flows.</p>
+
+<h4>Q10: What is the role of Allure/reporting in the pipeline?</h4>
+<p><strong>A:</strong> Allure aggregates test results into rich HTML reports with history, trends, categories, and attachments (screenshots). Jenkins publishes reports for stakeholder visibility and release decisions.</p>
+
+<h4>Q11: How do you achieve zero-downtime deployment?</h4>
+<p><strong>A:</strong> Use blue-green, canary, or rolling update strategies with health checks. Load balancer only routes to healthy instances. Database migrations must be backward-compatible.</p>
+
+<h4>Q12: What is pipeline orchestration vs pipeline automation?</h4>
+<p><strong>A:</strong> Automation executes individual steps. Orchestration coordinates multiple stages, environments, approvals, and parallel jobs into a cohesive end-to-end flow.</p>
+
+</section>
+
+<section id="section-4" class="section-card">
+<h2>Section 4: Git Basics for CI/CD</h2>
+
+<h3>Git Overview</h3>
+<p><strong>Git</strong> is a distributed version control system (DVCS) created by Linus Torvalds in 2005 for Linux kernel development. Unlike centralized VCS (SVN, CVS), every developer has a full copy of the repository history locally.</p>
+
+<h4>Why Git is the Industry Standard</h4>
+<ul>
+<li><strong>Distributed</strong> — work offline; full history on every machine</li>
+<li><strong>Branching</strong> — cheap, fast branches enable feature development and CI/CD workflows</li>
+<li><strong>Speed</strong> — most operations are local (microseconds)</li>
+<li><strong>Integrity</strong> — SHA-1 hashing ensures data integrity</li>
+<li><strong>Ecosystem</strong> — GitHub, GitLab, Bitbucket built on Git; all CI tools integrate natively</li>
+<li><strong>De facto standard</strong> — 93%+ of professional developers use Git (Stack Overflow surveys)</li>
+</ul>
+
+<h3>Core Concepts</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Concept</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Repository (Repo)</td><td>Directory containing project files and complete Git history (.git folder)</td></tr>
+<tr><td>Working Directory</td><td>Your local project files — where you edit code</td></tr>
+<tr><td>Staging Area (Index)</td><td>Intermediate area — files prepared for next commit</td></tr>
+<tr><td>Local Repository</td><td>Committed snapshots stored in .git/objects</td></tr>
+<tr><td>Remote Repository</td><td>Hosted copy on GitHub/GitLab — shared team source of truth</td></tr>
+<tr><td>Commit</td><td>Snapshot of staged files at a point in time with message and SHA hash</td></tr>
+<tr><td>Branch</td><td>Movable pointer to a commit — enables parallel development</td></tr>
+<tr><td>HEAD</td><td>Pointer to current branch/commit you're working on</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Git Workflow Diagram</h3>
+<pre class="ascii-diagram"><code>
+  Working Directory          Staging Area           Local Repo           Remote Repo
+  (your files)               (git add)              (git commit)         (git push)
+       │                          │                      │                     │
+       │  edit file.py            │                      │                     │
+       │─────────────────────────►│                      │                     │
+       │         git add          │                      │                     │
+       │                          │──── git commit ─────►│                     │
+       │                          │                      │──── git push ──────►│
+       │                          │                      │                     │
+       │◄──── git pull (fetch+merge) ────────────────────│◄────────────────────│
+       │                          │                      │◄─── git fetch ──────│
+</code></pre>
+
+<h3>Essential Commands</h3>
+
+<h4>git clone — Copy a remote repository</h4>
+<pre><code>$ git clone https://github.com/org/ecommerce-api.git
+Cloning into 'ecommerce-api'...
+remote: Enumerating objects: 1247, done.
+Receiving objects: 100% (1247/1247), 3.2 MiB | 8.1 MiB/s, done.
+Resolving deltas: 100% (892/892), done.</code></pre>
+
+<h4>git init — Create a new repository</h4>
+<pre><code>$ mkdir my-project &amp;&amp; cd my-project
+$ git init
+Initialized empty Git repository in /home/user/my-project/.git/</code></pre>
+
+<h4>git status — Check working tree state</h4>
+<pre><code>$ git status
+On branch main
+Changes not staged for commit:
+  modified:   src/PaymentService.java
+Untracked files:
+  src/PaymentValidator.java</code></pre>
+
+<h4>git add — Stage files for commit</h4>
+<pre><code>$ git add src/PaymentValidator.java     # stage one file
+$ git add .                                # stage all changes
+$ git add -p                               # interactive staging (chunks)</code></pre>
+
+<h4>git commit — Save staged snapshot</h4>
+<pre><code>$ git commit -m "Add payment validation logic"
+[main abc1234] Add payment validation logic
+ 2 files changed, 47 insertions(+), 3 deletions(-)</code></pre>
+
+<h4>git push — Upload commits to remote</h4>
+<pre><code>$ git push origin main
+Enumerating objects: 7, done.
+To https://github.com/org/ecommerce-api.git
+   def5678..abc1234  main -&gt; main</code></pre>
+
+<h4>git pull vs git fetch</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Command</th><th>Action</th><th>Safe?</th><th>When to Use</th></tr>
+</thead>
+<tbody>
+<tr><td>git fetch</td><td>Downloads remote changes; does NOT merge</td><td>Yes — read-only</td><td>Review changes before integrating</td></tr>
+<tr><td>git pull</td><td>fetch + merge (or rebase) into current branch</td><td>Can cause conflicts</td><td>Quick sync when you trust remote changes</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>$ git fetch origin          # download only
+$ git log origin/main       # review what changed
+$ git merge origin/main     # integrate when ready</code></pre>
+
+<h4>git branch — List and manage branches</h4>
+<pre><code>$ git branch                  # list local branches
+  feature/payment-validation
+* main
+$ git branch feature/checkout # create branch
+$ git branch -d feature/old   # delete merged branch</code></pre>
+
+<h4>git checkout / git switch — Change branches</h4>
+<pre><code>$ git switch feature/checkout       # modern (Git 2.23+)
+$ git checkout feature/checkout     # legacy equivalent
+$ git switch -c feature/new-feature # create and switch</code></pre>
+
+<h4>git merge — Combine branch histories</h4>
+<pre><code># Fast-forward merge (linear history)
+$ git switch main
+$ git merge feature/payment-validation
+Updating def5678..abc1234
+Fast-forward
+
+# 3-way merge (diverged histories — creates merge commit)
+$ git merge feature/checkout
+Merge made by the 'ort' strategy.</code></pre>
+
+<h4>git rebase — Replay commits on top of another branch</h4>
+<pre><code>$ git switch feature/payment-validation
+$ git rebase main
+Successfully rebased and updated refs/heads/feature/payment-validation.</code></pre>
+
+<h4>git stash — Temporarily save uncommitted changes</h4>
+<pre><code>$ git stash push -m "WIP payment work"
+$ git stash list
+$ git stash pop               # restore and remove from stash</code></pre>
+
+<h4>git log — View commit history</h4>
+<pre><code>$ git log --oneline --graph --all -10
+* abc1234 (HEAD -&gt; main) Add payment validation
+* def5678 Fix checkout bug
+* ghi9012 Initial commit</code></pre>
+
+<h4>git diff — Show changes</h4>
+<pre><code>$ git diff                    # unstaged changes
+$ git diff --staged           # staged changes
+$ git diff main..feature/x    # between branches</code></pre>
+
+<h4>git cherry-pick — Apply specific commit to current branch</h4>
+<pre><code>$ git cherry-pick abc1234     # apply commit abc1234 to current branch</code></pre>
+
+<h4>git reset — Undo commits (soft/mixed/hard)</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Mode</th><th>HEAD</th><th>Staging</th><th>Working Dir</th><th>Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td>--soft</td><td>Moved back</td><td>Preserved</td><td>Preserved</td><td>Redo commit with different message</td></tr>
+<tr><td>--mixed (default)</td><td>Moved back</td><td>Cleared</td><td>Preserved</td><td>Unstage files; keep changes</td></tr>
+<tr><td>--hard</td><td>Moved back</td><td>Cleared</td><td>Discarded</td><td>Completely discard changes (dangerous)</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>$ git reset --soft HEAD~1     # undo last commit, keep staged
+$ git reset --hard HEAD~1     # undo last commit, discard all (careful!)</code></pre>
+
+<h3>Merge vs Rebase</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Merge</th><th>Rebase</th></tr>
+</thead>
+<tbody>
+<tr><td>History</td><td>Preserves branching; merge commits visible</td><td>Linear, clean history</td></tr>
+<tr><td>Commit IDs</td><td>Original commits preserved</td><td>New commit IDs created</td></tr>
+<tr><td>Conflict Resolution</td><td>Once, at merge time</td><td>Each replayed commit may conflict</td></tr>
+<tr><td>Safe for shared branches?</td><td>Yes</td><td>No — never rebase public/shared branches</td></tr>
+<tr><td>When to Use</td><td>Integrating feature branches to main</td><td>Updating feature branch with latest main</td></tr>
+<tr><td>CI/CD Impact</td><td>Merge commits trigger builds normally</td><td>Rewritten history can confuse CI if not force-pushed carefully</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Merge Conflicts — Resolution Steps</h3>
+<ol>
+<li>Git marks conflicted files during merge/rebase</li>
+<li>Open conflicted file — look for markers:
+<pre><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+your changes
+=======
+their changes
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/checkout</code></pre>
+</li>
+<li>Edit file — choose correct code (yours, theirs, or combination)</li>
+<li>Remove conflict markers</li>
+<li><code>git add &lt;resolved-file&gt;</code></li>
+<li><code>git commit</code> (merge) or <code>git rebase --continue</code> (rebase)</li>
+<li>Run tests to verify resolution didn't break functionality</li>
+</ol>
+
+<h3>Git Branching Strategies for QA</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Branch Type</th><th>Naming</th><th>Purpose</th><th>QA Activity</th></tr>
+</thead>
+<tbody>
+<tr><td>Feature branch</td><td>feature/payment-validation</td><td>Develop new feature</td><td>Test on PR; automated CI on push</td></tr>
+<tr><td>Test branch</td><td>test/regression-sprint14</td><td>Stabilize test suite for release</td><td>Run full regression; fix flaky tests</td></tr>
+<tr><td>Hotfix branch</td><td>hotfix/checkout-crash</td><td>Critical production fix</td><td>Smoke + targeted regression before merge</td></tr>
+<tr><td>Release branch</td><td>release/2.4.0</td><td>Release stabilization</td><td>Full regression; UAT sign-off</td></tr>
+<tr><td>main/master</td><td>main</td><td>Production-ready code</td><td>CI always green; deployment source</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>.gitignore for Automation Projects</h3>
+<pre><code># Compiled output
+target/
+build/
+*.class
+
+# Test reports &amp; artifacts
+test-output/
+allure-results/
+allure-report/
+screenshots/
+videos/
+logs/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+
+# Secrets — NEVER commit
+.env
+credentials.json
+*.pem
+config/secrets.yml
+
+# Test data (large files)
+test-data/large-dataset/
+*.csv.bak</code></pre>
+
+<h3>Git Hooks Relevant to QA</h3>
+<p>Git hooks are scripts that run automatically at certain Git events. Stored in <code>.git/hooks/</code> (or managed via tools like Husky).</p>
+
+<h4>pre-commit Hook — Run lint/format checks</h4>
+<pre><code>#!/bin/sh
+# .git/hooks/pre-commit
+echo "Running pre-commit checks..."
+mvn checkstyle:check
+if [ $? -ne 0 ]; then
+  echo "Checkstyle failed. Commit aborted."
+  exit 1
+fi</code></pre>
+
+<h4>pre-push Hook — Run tests before push</h4>
+<pre><code>#!/bin/sh
+# .git/hooks/pre-push
+echo "Running unit tests before push..."
+mvn test -q
+if [ $? -ne 0 ]; then
+  echo "Tests failed. Push aborted."
+  exit 1
+fi</code></pre>
+
+<div class="callout">
+<strong>QA Tip:</strong> Pre-push hooks catch failures before they hit CI — saving pipeline time and keeping main green. Coordinate with dev team to implement team-wide via Husky or pre-commit framework.
+</div>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What is the difference between git pull and git fetch?</h4>
+<p><strong>A:</strong> Fetch downloads remote changes without modifying your working branch. Pull = fetch + merge (or rebase) — integrates remote changes into your current branch immediately.</p>
+
+<h4>Q2: When would you use rebase over merge?</h4>
+<p><strong>A:</strong> Rebase on private feature branches to keep history linear before opening a PR. Never rebase shared/public branches. Merge when integrating approved PRs into main.</p>
+
+<h4>Q3: What is a merge conflict and how do you resolve it?</h4>
+<p><strong>A:</strong> Occurs when two branches modify the same lines. Git marks conflicts with &lt;&lt;&lt;&lt;&lt;&lt;&lt; markers. Manually edit to correct code, remove markers, git add, and commit/continue rebase.</p>
+
+<h4>Q4: What is git stash used for?</h4>
+<p><strong>A:</strong> Temporarily saves uncommitted changes so you can switch branches cleanly. Pop stash to restore. Useful when urgent hotfix requires switching away from WIP feature.</p>
+
+<h4>Q5: Explain git reset --hard vs --soft.</h4>
+<p><strong>A:</strong> --soft moves HEAD back but keeps staging and working directory intact. --hard moves HEAD back AND discards all changes — destructive, use with caution.</p>
+
+<h4>Q6: What is a fast-forward merge?</h4>
+<p><strong>A:</strong> When target branch has no new commits since feature branch diverged, Git simply moves the pointer forward — no merge commit created. Clean linear history.</p>
+
+<h4>Q7: How does Git integrate with CI/CD?</h4>
+<p><strong>A:</strong> Webhooks on push/PR trigger CI pipelines. Branch protection rules enforce PR reviews and passing CI checks before merge. Tags trigger release pipelines.</p>
+
+<h4>Q8: What are branch protection rules?</h4>
+<p><strong>A:</strong> GitHub/GitLab settings preventing direct push to main — requiring PR reviews, passing CI status checks, and signed commits before merge.</p>
+
+<h4>Q9: What is git cherry-pick?</h4>
+<p><strong>A:</strong> Applies a specific commit from one branch to another without merging the entire branch. Used for hotfix backports.</p>
+
+<h4>Q10: What should never be committed to Git?</h4>
+<p><strong>A:</strong> Secrets (passwords, API keys, certificates), large binary files, generated artifacts (target/, node_modules/), personal IDE settings, and production credentials.</p>
+
+<h4>Q11: What is the difference between git switch and git checkout?</h4>
+<p><strong>A:</strong> git switch (Git 2.23+) is dedicated to branch switching — clearer intent. git checkout is the legacy command that also handles file restoration — more ambiguous.</p>
+
+<h4>Q12: How do you revert a bad commit already pushed to main?</h4>
+<p><strong>A:</strong> Use <code>git revert &lt;commit-hash&gt;</code> which creates a new commit undoing the changes — safe for shared branches. Avoid git reset --hard on shared branches.</p>
+
+<h4>Q13: What is a PR (Pull Request) and how does QA use it?</h4>
+<p><strong>A:</strong> A request to merge a branch into main. QA reviews automated test results on the PR, performs exploratory testing on preview environments, and approves or requests changes before merge.</p>
+
+<h4>Q14: Explain git tag and its use in CI/CD.</h4>
+<p><strong>A:</strong> Tags mark specific commits (usually releases). Semantic versioning tags (v2.4.0) trigger release pipelines to build and deploy production artifacts.</p>
+
+</section>
+
+<section id="section-5" class="section-card">
+<h2>Section 5: Jenkins Introduction</h2>
+
+<h3>What is Jenkins?</h3>
+<p><strong>Jenkins</strong> is an open-source automation server written in Java, originally created by Kohsuke Kawaguchi (originally "Hudson," forked in 2011). It orchestrates CI/CD pipelines — automating build, test, and deployment processes triggered by events like Git commits.</p>
+
+<ul>
+<li><strong>Open-source</strong> — free under MIT license; no vendor lock-in</li>
+<li><strong>Java-based</strong> — runs on JVM; platform-independent (Windows, Linux, macOS)</li>
+<li><strong>1800+ plugins</strong> — extensible for virtually any tool (Git, Maven, Docker, Kubernetes, Slack, SonarQube, Allure)</li>
+<li><strong>Pipeline-as-code</strong> — Jenkinsfile defines pipeline in Groovy DSL, version-controlled alongside application code</li>
+<li><strong>Massive community</strong> — most widely deployed CI server globally; extensive documentation and Stack Overflow support</li>
+</ul>
+
+<h3>Why Jenkins?</h3>
+<ul>
+<li><strong>Free and open-source</strong> — no licensing cost vs Azure DevOps paid tiers or GitHub Actions minutes</li>
+<li><strong>Highly extensible</strong> — plugin ecosystem covers every tool in the DevOps stack</li>
+<li><strong>Self-hosted control</strong> — full control over infrastructure, security, and data residency</li>
+<li><strong>Cross-platform</strong> — master and agents on Windows, Linux, macOS, Docker, Kubernetes</li>
+<li><strong>Mature and battle-tested</strong> — 15+ years in production at thousands of enterprises</li>
+<li><strong>Flexible pipeline model</strong> — freestyle jobs, multibranch pipelines, shared libraries</li>
+<li><strong>Large talent pool</strong> — most QA/SDET engineers have Jenkins experience</li>
+</ul>
+
+<h3>Jenkins vs GitHub Actions vs GitLab CI vs Azure DevOps</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Jenkins</th><th>GitHub Actions</th><th>GitLab CI</th><th>Azure DevOps</th></tr>
+</thead>
+<tbody>
+<tr><td>Hosting</td><td>Self-hosted</td><td>Cloud (GitHub-hosted) + self-hosted runners</td><td>Cloud + self-hosted</td><td>Cloud + self-hosted agents</td></tr>
+<tr><td>Cost</td><td>Free (infra cost only)</td><td>Free tier + paid minutes</td><td>Free tier + paid</td><td>Free tier + paid pipelines</td></tr>
+<tr><td>Setup Complexity</td><td>High (manual install, plugins)</td><td>Low (built into GitHub)</td><td>Medium (built into GitLab)</td><td>Medium</td></tr>
+<tr><td>Pipeline Definition</td><td>Jenkinsfile (Groovy)</td><td>YAML (.github/workflows/)</td><td>.gitlab-ci.yml (YAML)</td><td>azure-pipelines.yml (YAML)</td></tr>
+<tr><td>Plugin/Extension Ecosystem</td><td>1800+ plugins</td><td>Marketplace actions</td><td>Built-in + integrations</td><td>Marketplace extensions</td></tr>
+<tr><td>Scalability</td><td>Master-agent model; K8s agents</td><td>GitHub-hosted or self-hosted runners</td><td>GitLab runners (auto-scaling)</td><td>Microsoft-hosted or self-hosted</td></tr>
+<tr><td>Best For</td><td>Enterprise self-hosted; complex pipelines</td><td>GitHub-centric projects</td><td>All-in-one DevOps platform</td><td>Microsoft/Azure ecosystem</td></tr>
+<tr><td>UI/UX</td><td>Functional but dated</td><td>Clean; integrated in GitHub</td><td>Modern; integrated in GitLab</td><td>Modern Azure portal</td></tr>
+<tr><td>Learning Curve</td><td>Steep (Groovy, plugins, admin)</td><td>Moderate (YAML)</td><td>Moderate (YAML)</td><td>Moderate (YAML)</td></tr>
+<tr><td>Community Support</td><td>Largest CI community</td><td>Large (GitHub ecosystem)</td><td>Growing</td><td>Enterprise Microsoft support</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Jenkins Architecture — Master-Agent Model</h3>
+
+<h4>Master (Controller)</h4>
+<ul>
+<li>Schedules build jobs and dispatches to agents</li>
+<li>Serves the web UI (dashboard, job configuration, build history)</li>
+<li>Stores job configurations, build logs, and artifacts metadata</li>
+<li>Manages plugins, credentials, and global settings</li>
+<li>Should NOT run heavy builds itself in production (resource contention)</li>
+</ul>
+
+<h4>Agent (Node)</h4>
+<ul>
+<li>Executes build jobs dispatched by the master</li>
+<li>Can be permanent (always connected) or ephemeral (cloud/K8s — spun up on demand)</li>
+<li>Multiple agents enable parallel builds</li>
+<li>Labeled (<code>linux</code>, <code>windows</code>, <code>docker</code>) for targeted job assignment</li>
+</ul>
+
+<h4>Executor</h4>
+<ul>
+<li>A slot on an agent that runs one build at a time</li>
+<li>Agent with 4 executors can run 4 parallel builds</li>
+<li>Executor count tuned based on agent CPU/RAM</li>
+</ul>
+
+<pre class="ascii-diagram"><code>
+                    ┌─────────────────────────────────┐
+                    │         JENKINS MASTER          │
+                    │  ┌───────────┐  ┌────────────┐  │
+                    │  │ Scheduler │  │  Web UI    │  │
+                    │  └─────┬─────┘  │ Dashboard  │  │
+                    │        │        │ Job Config │  │
+                    │  ┌─────▼─────┐  │ Plugins    │  │
+                    │  │Build Queue│  └────────────┘  │
+                    │  └─────┬─────┘                   │
+                    └────────┼─────────────────────────┘
+                             │ dispatch
+              ┌──────────────┼──────────────┐
+              │              │              │
+     ┌────────▼──────┐ ┌────▼────────┐ ┌───▼──────────┐
+     │  Agent: Linux │ │ Agent: Win  │ │ Agent: Docker│
+     │  Executors: 4 │ │ Executors: 2│ │ Executors: 8 │
+     │  [Build #142] │ │  [idle]     │ │ [Build #143] │
+     │  [Build #144] │ │  [idle]     │ │ [Build #145] │
+     └───────────────┘ └─────────────┘ └──────────────┘
+</code></pre>
+
+<h3>Jenkins Dashboard Walkthrough</h3>
+<h4>Main Screen</h4>
+<ul>
+<li><strong>Left sidebar:</strong> New Item, Build History, Manage Jenkins, User profile</li>
+<li><strong>Center:</strong> Job list with weather icons (build health), last success/failure, last duration</li>
+<li><strong>Top right:</strong> Build Queue (pending jobs), Build Executor Status (busy/idle executors)</li>
+</ul>
+
+<h4>Job List</h4>
+<ul>
+<li>Each row = one job (freestyle, pipeline, multibranch)</li>
+<li><strong>S (blue/red)</strong> — last build status</li>
+<li><strong>W (weather)</strong> — trend of last 5 builds (sunny = stable, stormy = failing)</li>
+<li><strong>Last Success / Last Failure</strong> — timestamps and build numbers</li>
+<li><strong>Duration</strong> — how long last build took</li>
+</ul>
+
+<h4>Build History</h4>
+<ul>
+<li>Chronological list of all builds for a job</li>
+<li>Click build number → Console Output, Changes, Test Results, Artifacts</li>
+<li>Console Output: real-time log of every pipeline step</li>
+<li>Blue Ocean: modern pipeline visualization (stage view)</li>
+</ul>
+
+<h4>Build Queue</h4>
+<ul>
+<li>Jobs waiting for a free executor</li>
+<li>Can cancel queued items</li>
+<li>Long queue indicates need for more agents/executors</li>
+</ul>
+
+<h3>Advantages of Jenkins</h3>
+<ol>
+<li>Completely free and open-source — no licensing fees</li>
+<li>1800+ plugins for any tool integration</li>
+<li>Self-hosted — full data and infrastructure control</li>
+<li>Cross-platform — Windows, Linux, macOS agents</li>
+<li>Pipeline-as-code with Jenkinsfile (version-controlled pipelines)</li>
+<li>Massive community — tutorials, plugins, Stack Overflow answers</li>
+<li>Supports complex workflows — parallel stages, conditional logic, shared libraries</li>
+<li>Distributed builds — scale horizontally with agents</li>
+<li>Integrates with everything — Git, Maven, Docker, K8s, SonarQube, Slack, Jira</li>
+<li>Mature and stable — 15+ years production-proven</li>
+<li>Flexible job types — freestyle, pipeline, multibranch, organization folders</li>
+<li>Extensive reporting — JUnit, Allure, HTML Publisher, Cobertura plugins</li>
+<li>Credentials management — secure storage for secrets used in pipelines</li>
+</ol>
+
+<h3>Limitations of Jenkins</h3>
+<ol>
+<li><strong>High maintenance overhead</strong> — plugin updates, security patches, server management</li>
+<li><strong>Outdated UI</strong> — functional but not modern (Blue Ocean partially addresses this)</li>
+<li><strong>Plugin dependency hell</strong> — plugins can conflict, break, or become unmaintained</li>
+<li><strong>Groovy learning curve</strong> — Jenkinsfile syntax requires training</li>
+<li><strong>Single master bottleneck</strong> — master failure stops all builds (mitigated with HA setup)</li>
+<li><strong>Security responsibility</strong> — self-hosted means you manage access control, updates, network security</li>
+<li><strong>No built-in Git hosting</strong> — requires external SCM (unlike GitLab CI)</li>
+</ol>
+
+<h3>Real-World Usage: Jenkins for Test Automation</h3>
+<p>Product companies typically use Jenkins in these patterns:</p>
+
+<h4>Pattern 1: Nightly Regression</h4>
+<ul>
+<li>Cron trigger: <code>H 2 * * *</code> (2 AM daily)</li>
+<li>Pull latest test code → run full TestNG/Selenium suite → publish Allure report → email team</li>
+</ul>
+
+<h4>Pattern 2: PR Validation</h4>
+<ul>
+<li>GitHub webhook triggers on PR open/update</li>
+<li>Run smoke + unit tests (10 min) → post status check to PR → block merge if fail</li>
+</ul>
+
+<h4>Pattern 3: Post-Deploy Testing</h4>
+<ul>
+<li>Upstream deploy job triggers test job</li>
+<li>Deploy to QA → smoke → regression → gate staging promotion</li>
+</ul>
+
+<h4>Pattern 4: Multibranch Pipeline</h4>
+<ul>
+<li>Auto-discovers branches; creates job per branch</li>
+<li>Feature branches get CI; main branch gets full CI/CD</li>
+</ul>
+
+<div class="callout">
+<strong>Example Jenkinsfile snippet for QA automation:</strong>
+<pre><code>pipeline {
+  agent { label 'linux' }
+  stages {
+    stage('Checkout') { steps { checkout scm } }
+    stage('Build') { steps { sh 'mvn clean compile -DskipTests' } }
+    stage('Unit Tests') { steps { sh 'mvn test' } }
+    stage('Deploy QA') { steps { sh './deploy-qa.sh' } }
+    stage('Automation Tests') {
+      steps { sh 'mvn test -DsuiteXmlFile=regression.xml -Denv=qa' }
+      post {
+        always { allure includeProperties: false, jdk: '', results: [[path: 'allure-results']] }
+      }
+    }
+  }
+}</code></pre>
+</div>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What is Jenkins?</h4>
+<p><strong>A:</strong> An open-source Java-based automation server that implements CI/CD — automating build, test, and deployment pipelines triggered by events like Git commits.</p>
+
+<h4>Q2: Explain Jenkins master-agent architecture.</h4>
+<p><strong>A:</strong> Master schedules jobs, serves UI, manages config. Agents execute builds. Executors are slots on agents — one build per executor. Master dispatches queued jobs to available agent executors.</p>
+
+<h4>Q3: What is a Jenkinsfile?</h4>
+<p><strong>A:</strong> A text file (Groovy DSL) defining the pipeline stages, stored in the repo root. Enables pipeline-as-code — version-controlled, reviewable, reproducible.</p>
+
+<h4>Q4: What is the difference between freestyle and pipeline jobs?</h4>
+<p><strong>A:</strong> Freestyle: configured via UI, limited logic. Pipeline: defined in Jenkinsfile, supports complex workflows (parallel, conditional, loops), version-controlled.</p>
+
+<h4>Q5: How do you integrate automated tests with Jenkins?</h4>
+<p><strong>A:</strong> Add test execution stage in Jenkinsfile, publish JUnit/Allure reports via plugins, set build result based on test pass/fail, archive screenshots on failure.</p>
+
+<h4>Q6: What is a Jenkins plugin? Give examples.</h4>
+<p><strong>A:</strong> Extensions adding functionality. Examples: Git Plugin (SCM), Maven Integration, Allure Report, SonarQube Scanner, Docker Pipeline, Slack Notification.</p>
+
+<h4>Q7: What is Blue Ocean?</h4>
+<p><strong>A:</strong> Jenkins' modern UI plugin providing visual pipeline editor, stage view, and branch-centric navigation — cleaner than classic UI.</p>
+
+<h4>Q8: How do you parallelize tests in Jenkins?</h4>
+<p><strong>A:</strong> Use parallel block in declarative pipeline, or TestNG parallel execution, or matrix builds. Multiple agents with sufficient executors enable concurrent test runs.</p>
+
+<h4>Q9: What is a multibranch pipeline?</h4>
+<p><strong>A:</strong> Automatically discovers branches in SCM and creates a pipeline job for each. Jenkinsfile in each branch defines branch-specific CI/CD behavior.</p>
+
+<h4>Q10: How do you handle secrets in Jenkins?</h4>
+<p><strong>A:</strong> Jenkins Credentials Manager stores username/password, SSH keys, secret text. Accessed in pipeline via withCredentials block — never hardcoded in Jenkinsfile.</p>
+
+<h4>Q11: Jenkins build is slow — how do you optimize?</h4>
+<p><strong>A:</strong> Add more agents/executors, cache dependencies, parallelize stages, use lighter agents (Docker), skip unnecessary stages on PR builds, optimize test suite.</p>
+
+<h4>Q12: What is a shared library in Jenkins?</h4>
+<p><strong>A:</strong> Reusable Groovy code stored in a separate Git repo, imported into Jenkinsfiles. Enables DRY — common functions (deploy, notify, test) shared across multiple pipelines.</p>
+
+<h4>Q13: How does Jenkins compare to GitHub Actions for test automation?</h4>
+<p><strong>A:</strong> Jenkins: self-hosted, more control, steeper setup, Groovy pipelines. GitHub Actions: cloud-native, YAML-based, tight GitHub integration, easier setup but less customizable for complex enterprise pipelines.</p>
+
+<h4>Q14: What is the executor queue and how do you troubleshoot a stuck queue?</h4>
+<p><strong>A:</strong> The executor queue lists builds waiting for a free agent executor. If stuck: check agent connectivity (JNLP/SSH), verify agents aren't offline, increase executor count, add new agents, or cancel stale queued items.</p>
+
+<h4>Q15: How would you set up Jenkins for a Selenium + TestNG project?</h4>
+<p><strong>A:</strong> Install Git, Maven, Allure plugins. Configure JDK and Maven in Global Tools. Create Pipeline job with Jenkinsfile: checkout → mvn test → publish Allure/JUnit reports. Use headless Chrome on Linux agent with sufficient RAM.</p>
+
+<h4>Q16: What is the difference between a Jenkins agent and an executor?</h4>
+<p><strong>A:</strong> An agent (node) is a machine/container that connects to the master. An executor is a slot on that agent that runs one build at a time. One agent can have multiple executors (e.g., 4-core agent with 4 executors runs 4 parallel builds).</p>
+
+</section>
+
+<section id="section-6" class="section-card">
+<h2>Section 6: Jenkins Installation &amp; Setup</h2>
+
+<h3>Prerequisites</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Requirement</th><th>Minimum</th><th>Recommended</th></tr>
+</thead>
+<tbody>
+<tr><td>Java JDK</td><td>JDK 11 (Jenkins 2.357+)</td><td>JDK 17 (LTS)</td></tr>
+<tr><td>RAM</td><td>2 GB</td><td>4 GB+ (more with many jobs/agents)</td></tr>
+<tr><td>Disk</td><td>1 GB for Jenkins</td><td>10 GB+ (build artifacts, logs)</td></tr>
+<tr><td>CPU</td><td>1 core</td><td>2+ cores</td></tr>
+<tr><td>OS</td><td>Windows 10+, Ubuntu 20.04+, macOS</td><td>Linux (most common in production)</td></tr>
+<tr><td>Network</td><td>Port 8080 (default)</td><td>HTTPS via reverse proxy (nginx)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Note:</strong> Jenkins 2.357+ requires Java 11 minimum. Jenkins 2.463+ supports Java 17 and 21. Always use LTS (Long Term Support) Jenkins releases for production.
+</div>
+
+<h3>Installation on Windows</h3>
+<h4>Step 1: Install Java JDK</h4>
+<pre><code># Download JDK 17 from adoptium.net or Oracle
+# Verify installation:
+java -version
+# openjdk version "17.0.10" 2024-01-16</code></pre>
+
+<h4>Step 2: Download Jenkins</h4>
+<pre><code># Option A: Installer (recommended for beginners)
+# Download jenkins.msi from https://www.jenkins.io/download/
+# Run installer — installs as Windows service
+
+# Option B: WAR file
+# Download jenkins.war from https://www.jenkins.io/download/
+mkdir C:\Jenkins
+# Move jenkins.war to C:\Jenkins\</code></pre>
+
+<h4>Step 3: Start Jenkins</h4>
+<pre><code># If using WAR:
+cd C:\Jenkins
+java -jar jenkins.war --httpPort=8080
+
+# If using MSI installer — starts automatically as Windows service
+# Check service: services.msc → Jenkins</code></pre>
+
+<h4>Step 4: Unlock Jenkins</h4>
+<pre><code># Open browser: http://localhost:8080
+# Initial admin password located at:
+type C:\Program Files\Jenkins\secrets\initialAdminPassword
+# Or for WAR install:
+type C:\Users\%USERNAME%\.jenkins\secrets\initialAdminPassword</code></pre>
+
+<h3>Installation on Linux (Ubuntu)</h3>
+<pre><code># Step 1: Install Java 17
+sudo apt update
+sudo apt install -y fontconfig openjdk-17-jre
+java -version
+
+# Step 2: Add Jenkins repository
+sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]" \
+  https://pkg.jenkins.io/debian-stable binary/ | \
+  sudo tee /etc/apt/sources.list.d/jenkins.list &gt; /dev/null
+
+# Step 3: Install Jenkins
+sudo apt update
+sudo apt install -y jenkins
+
+# Step 4: Start and enable service
+sudo systemctl start jenkins
+sudo systemctl enable jenkins
+sudo systemctl status jenkins
+
+# Step 5: Get initial admin password
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+# Step 6: Open browser
+# http://&lt;server-ip&gt;:8080</code></pre>
+
+<h3>Installation via Docker</h3>
+<pre><code># Pull official Jenkins LTS image
+docker pull jenkins/jenkins:lts-jdk17
+
+# Run Jenkins with persistent volume
+docker run -d \
+  --name jenkins \
+  -p 8080:8080 \
+  -p 50000:50000 \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  jenkins/jenkins:lts-jdk17
+
+# Get initial admin password
+docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+
+# Access: http://localhost:8080</code></pre>
+
+<h4>Docker Compose (Production-Ready)</h4>
+<pre><code># docker-compose.yml
+version: '3.8'
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+volumes:
+  jenkins_home:</code></pre>
+
+<h3>Installation Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Windows (MSI/WAR)</th><th>Linux (apt)</th><th>Docker</th></tr>
+</thead>
+<tbody>
+<tr><td>Setup Difficulty</td><td>Easy (MSI installer)</td><td>Moderate (repo setup)</td><td>Easy (one command)</td></tr>
+<tr><td>Production Use</td><td>Rare (dev/test only)</td><td>Most common</td><td>Very common (K8s)</td></tr>
+<tr><td>Service Management</td><td>Windows Service</td><td>systemd</td><td>docker restart</td></tr>
+<tr><td>Persistence</td><td>C:\Program Files\Jenkins</td><td>/var/lib/jenkins</td><td>Docker volume</td></tr>
+<tr><td>Upgrade</td><td>Re-run MSI or replace WAR</td><td>apt upgrade jenkins</td><td>Pull new image; recreate container</td></tr>
+<tr><td>Isolation</td><td>None</td><td>None</td><td>Container isolation</td></tr>
+<tr><td>Agent Setup</td><td>Native Windows agents</td><td>SSH or JNLP agents</td><td>Sidecar or K8s pod agents</td></tr>
+<tr><td>Pros</td><td>Familiar for Windows devs</td><td>Stable, well-documented</td><td>Portable, reproducible, easy cleanup</td></tr>
+<tr><td>Cons</td><td>Not ideal for server production</td><td>OS-level dependency</td><td>Volume backup needed; socket mount security</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Initial Setup Wizard</h3>
+<ol>
+<li><strong>Unlock Jenkins</strong> — enter initial admin password from file</li>
+<li><strong>Customize Jenkins</strong> — choose "Install suggested plugins" (Git, Maven, Pipeline, etc.)</li>
+<li><strong>Plugin Installation</strong> — wait 2–5 minutes for downloads</li>
+<li><strong>Create Admin User</strong> — username, password, full name, email</li>
+<li><strong>Instance Configuration</strong> — confirm Jenkins URL (http://localhost:8080)</li>
+<li><strong>Start using Jenkins</strong> — dashboard appears</li>
+</ol>
+
+<h4>Additional Plugins to Install (for QA Automation)</h4>
+<ul>
+<li>Allure Jenkins Plugin</li>
+<li>HTML Publisher Plugin</li>
+<li>JUnit Plugin</li>
+<li>NodeJS Plugin</li>
+<li>Pipeline: Stage View</li>
+<li>Blue Ocean (optional — modern UI)</li>
+<li>Credentials Binding Plugin</li>
+<li>SSH Agent Plugin</li>
+<li>Docker Pipeline Plugin</li>
+</ul>
+
+<h3>Jenkins Configuration</h3>
+
+<h4>Global Tool Configuration</h4>
+<p>Navigate: <strong>Manage Jenkins → Global Tool Configuration</strong></p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Tool</th><th>Configuration</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>JDK</td><td>Name: JDK17, JAVA_HOME: /usr/lib/jvm/java-17-openjdk</td><td>Auto-install or point to existing</td></tr>
+<tr><td>Maven</td><td>Name: Maven3, Version: 3.9.x</td><td>Auto-install from Apache archive</td></tr>
+<tr><td>Git</td><td>Name: Default, Path: git (or /usr/bin/git)</td><td>Usually pre-installed on Linux</td></tr>
+<tr><td>Allure</td><td>Name: Allure, Version: 2.24.x</td><td>Install Allure commandline plugin first</td></tr>
+<tr><td>NodeJS</td><td>Name: Node18, Version: 18.x</td><td>For JavaScript/Playwright/Cypress projects</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>System Configuration</h4>
+<p>Navigate: <strong>Manage Jenkins → System</strong></p>
+<ul>
+<li><strong>Jenkins URL:</strong> Set to actual hostname (not localhost) for webhook callbacks</li>
+<li><strong>System Message:</strong> Optional banner for all users</li>
+<li><strong># of Executors:</strong> Set to 0 on master (don't run builds on master)</li>
+<li><strong>Environment Variables:</strong> Add global vars (e.g., <code>MAVEN_OPTS=-Xmx1024m</code>)</li>
+<li><strong>SMTP:</strong> Configure email server for build notifications
+<pre><code>SMTP Server: smtp.gmail.com
+Port: 587
+Use TLS: Yes
+Username: jenkins-alerts@company.com</code></pre>
+</li>
+</ul>
+
+<h4>Security Configuration</h4>
+<p>Navigate: <strong>Manage Jenkins → Security</strong></p>
+<ul>
+<li><strong>Enable security</strong> — always enabled in production</li>
+<li><strong>Security Realm:</strong> Jenkins' own user database, or LDAP, or GitHub OAuth</li>
+<li><strong>Authorization:</strong> Matrix-based security or Role-Based Strategy plugin</li>
+</ul>
+
+<h4>Matrix-Based Security Example</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>User/Group</th><th>Overall</th><th>Job Build</th><th>Job Configure</th><th>Job Read</th><th>Credentials</th></tr>
+</thead>
+<tbody>
+<tr><td>admin</td><td>Admin</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Manage</td></tr>
+<tr><td>developers</td><td>Read</td><td>Yes</td><td>Yes (own jobs)</td><td>Yes</td><td>View</td></tr>
+<tr><td>qa-team</td><td>Read</td><td>Yes</td><td>No</td><td>Yes</td><td>View</td></tr>
+<tr><td>viewers</td><td>Read</td><td>No</td><td>No</td><td>Yes</td><td>None</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Credentials Management</h4>
+<p>Navigate: <strong>Manage Jenkins → Credentials → System → Global credentials</strong></p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Credential Type</th><th>Use Case</th><th>Pipeline Usage</th></tr>
+</thead>
+<tbody>
+<tr><td>Username/Password</td><td>Git repo access, API auth</td><td>withCredentials([usernamePassword(...)])</td></tr>
+<tr><td>SSH Private Key</td><td>Git SSH clone, remote server access</td><td>sshagent(['key-id']) { sh 'git clone ...' }</td></tr>
+<tr><td>Secret Text</td><td>API tokens, single passwords</td><td>withCredentials([string(...)])</td></tr>
+<tr><td>Certificate</td><td>TLS client auth</td><td>withCredentials([certificate(...)])</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Jenkins URL and Port Configuration</h3>
+<pre><code># Change default port (WAR deployment)
+java -jar jenkins.war --httpPort=9090
+
+# Linux systemd override
+sudo systemctl edit jenkins
+# Add:
+[Service]
+Environment="JENNINS_PORT=9090"
+Environment="JENKINS_HTTPS_PORT=-1"
+
+# Docker
+docker run -p 9090:8080 jenkins/jenkins:lts-jdk17
+
+# Reverse proxy (nginx) for HTTPS
+server {
+    listen 443 ssl;
+    server_name jenkins.company.com;
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}</code></pre>
+
+<h3>Backup and Restore Strategies</h3>
+<h4>What to Back Up</h4>
+<ul>
+<li><code>JENKINS_HOME</code> directory — contains all config, jobs, plugins, credentials, build history</li>
+<li>Key subdirectories: <code>jobs/</code>, <code>plugins/</code>, <code>secrets/</code>, <code>credentials.xml</code>, <code>config.xml</code></li>
+</ul>
+
+<h4>Backup Methods</h4>
+<pre><code># Method 1: ThinBackup Plugin (recommended)
+# Install ThinBackup plugin → Manage Jenkins → ThinBackup
+# Schedule daily backup of JENKINS_HOME
+
+# Method 2: Manual tar backup (Linux)
+sudo systemctl stop jenkins
+sudo tar -czf jenkins-backup-$(date +%Y%m%d).tar.gz /var/lib/jenkins/
+sudo systemctl start jenkins
+
+# Method 3: Docker volume backup
+docker run --rm -v jenkins_home:/data -v $(pwd):/backup \
+  alpine tar czf /backup/jenkins-backup.tar.gz /data
+
+# Method 4: Configuration as Code (JCasC)
+# Store Jenkins config in YAML in Git — rebuild from scratch</code></pre>
+
+<h4>Restore</h4>
+<pre><code># Stop Jenkins
+sudo systemctl stop jenkins
+# Restore backup
+sudo tar -xzf jenkins-backup-20240711.tar.gz -C /
+# Fix ownership
+sudo chown -R jenkins:jenkins /var/lib/jenkins
+# Start Jenkins
+sudo systemctl start jenkins</code></pre>
+
+<div class="callout">
+<strong>Best Practice:</strong> Use Configuration as Code (JCasC plugin) alongside ThinBackup. JCasC enables disaster recovery by rebuilding Jenkins from a Git-stored YAML config + plugin list.
+</div>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What are the prerequisites for installing Jenkins?</h4>
+<p><strong>A:</strong> Java JDK 11 or 17 (LTS), minimum 2 GB RAM (4 GB recommended), 1 GB+ disk, and port 8080 available. Linux is preferred for production.</p>
+
+<h4>Q2: How do you install Jenkins on Ubuntu?</h4>
+<p><strong>A:</strong> Install JDK 17, add Jenkins Debian repo, apt install jenkins, systemctl start jenkins, retrieve initial admin password from /var/lib/jenkins/secrets/initialAdminPassword, complete setup wizard.</p>
+
+<h4>Q3: What is JENKINS_HOME?</h4>
+<p><strong>A:</strong> The directory where Jenkins stores all data — job configs, build history, plugins, credentials, workspace files. Default: /var/lib/jenkins (Linux), C:\Program Files\Jenkins (Windows), /var/jenkins_home (Docker).</p>
+
+<h4>Q4: How do you change the Jenkins port?</h4>
+<p><strong>A:</strong> WAR: --httpPort flag. Linux: edit /etc/default/jenkins or systemd override. Docker: map different host port (-p 9090:8080). Production: use nginx reverse proxy for HTTPS on 443.</p>
+
+<h4>Q5: What plugins would you install for a QA automation project?</h4>
+<p><strong>A:</strong> Git, Pipeline, Maven Integration, JUnit, Allure, HTML Publisher, Credentials Binding, NodeJS (for Cypress/Playwright), Docker Pipeline, Email Extension.</p>
+
+<h4>Q6: How do you secure Jenkins?</h4>
+<p><strong>A:</strong> Enable authentication, configure matrix/role-based authorization, store secrets in Credentials Manager (never in Jenkinsfile), keep plugins updated, use HTTPS, restrict agent connections, disable anonymous access.</p>
+
+<h4>Q7: How do you back up Jenkins?</h4>
+<p><strong>A:</strong> Back up JENKINS_HOME directory using ThinBackup plugin (scheduled), manual tar, or Docker volume backup. Complement with Configuration as Code (JCasC) for config in Git.</p>
+
+<h4>Q8: What is the Jenkins setup wizard?</h4>
+<p><strong>A:</strong> First-run wizard: unlock with initial admin password, install suggested plugins, create admin user, configure Jenkins URL. Appears on first browser access.</p>
+
+<h4>Q9: Why run Jenkins in Docker?</h4>
+<p><strong>A:</strong> Portability, easy setup/teardown, isolation from host OS, reproducible environments, easy scaling with Docker Compose or Kubernetes, simple version upgrades by pulling new image.</p>
+
+<h4>Q10: How do you configure Allure reports in Jenkins?</h4>
+<p><strong>A:</strong> Install Allure Jenkins Plugin and Allure Commandline in Global Tool Configuration. In pipeline post stage: <code>allure results: [[path: 'allure-results']]</code>. Report published on job page after each build.</p>
+
+<h4>Q11: What is Configuration as Code (JCasC)?</h4>
+<p><strong>A:</strong> Plugin that configures Jenkins entirely from YAML files in Git — plugins, security, tools, jobs. Enables reproducible Jenkins instances and disaster recovery without manual UI configuration.</p>
+
+<h4>Q12: Should you run builds on the Jenkins master?</h4>
+<p><strong>A:</strong> No, in production. Set master executors to 0. Master should only schedule and serve UI. Builds run on agents to prevent resource contention and security risks.</p>
+
+</section>

@@ -1,0 +1,1847 @@
+<!-- SECTION 24: CUCUMBER HOOKS -->
+<section id="section-24" class="section-card">
+<h2>Section 24: Cucumber Hooks</h2>
+
+<h3>What Are Hooks?</h3>
+<p><strong>Hooks</strong> in Cucumber are blocks of code that run at specific points in the test lifecycle — before or after scenarios and steps. They provide setup and teardown logic that keeps feature files clean and centralizes cross-cutting concerns like browser initialization, database seeding, logging, and screenshot capture.</p>
+
+<div class="callout">
+<strong>Key Idea:</strong> Hooks decouple infrastructure concerns from business-readable Gherkin. Scenarios describe <em>what</em> to test; hooks handle <em>how</em> the environment is prepared and cleaned up.
+</div>
+
+<h3>Hook Annotations Overview</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Annotation</th><th>Scope</th><th>When It Runs</th></tr>
+</thead>
+<tbody>
+<tr><td><code>@Before</code></td><td>Scenario</td><td>Before each scenario (after background steps)</td></tr>
+<tr><td><code>@After</code></td><td>Scenario</td><td>After each scenario completes (pass or fail)</td></tr>
+<tr><td><code>@BeforeStep</code></td><td>Step</td><td>Before each step definition executes</td></tr>
+<tr><td><code>@AfterStep</code></td><td>Step</td><td>After each step definition executes</td></tr>
+<tr><td><code>@BeforeAll</code></td><td>Suite</td><td>Once before all scenarios (Cucumber 7+)</td></tr>
+<tr><td><code>@AfterAll</code></td><td>Suite</td><td>Once after all scenarios (Cucumber 7+)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>@Before — Runs Before Each Scenario</h3>
+<p>Use <code>@Before</code> to launch browsers, reset application state, create test data, or start logging for every scenario.</p>
+<pre><code class="language-java">@Before
+public void setUp() {
+    driver = DriverFactory.getDriver();
+    driver.manage().window().maximize();
+    logger.info("Scenario setup complete");
+}</code></pre>
+
+<h3>@After — Runs After Each Scenario</h3>
+<p>Use <code>@After</code> for cleanup: quit browser, delete temp files, rollback DB transactions, or capture evidence on failure.</p>
+<pre><code class="language-java">@After
+public void tearDown(Scenario scenario) {
+    if (scenario.isFailed()) {
+        captureScreenshot(scenario);
+    }
+    DriverFactory.quitDriver();
+}</code></pre>
+
+<h3>@BeforeStep and @AfterStep</h3>
+<p>Step-level hooks run around every Gherkin step. Useful for fine-grained logging, highlighting elements before interaction, or capturing screenshots on step failure.</p>
+<pre><code class="language-java">@BeforeStep
+public void beforeStep(Scenario scenario) {
+    logger.info("Starting step in scenario: " + scenario.getName());
+}
+
+@AfterStep
+public void afterStep(Scenario scenario) {
+    if (scenario.isFailed()) {
+        byte[] screenshot = ((TakesScreenshot) driver)
+            .getScreenshotAs(OutputType.BYTES);
+        scenario.attach(screenshot, "image/png", "Step Failure");
+    }
+}</code></pre>
+
+<h3>Hook with Scenario Parameter</h3>
+<p>Passing the <code>Scenario</code> object gives access to scenario metadata at runtime:</p>
+<ul>
+<li><strong>Name:</strong> <code>scenario.getName()</code></li>
+<li><strong>Status:</strong> <code>scenario.isFailed()</code>, <code>scenario.getStatus()</code></li>
+<li><strong>Tags:</strong> <code>scenario.getSourceTagNames()</code></li>
+<li><strong>URI:</strong> <code>scenario.getUri()</code> — feature file path</li>
+<li><strong>Line:</strong> <code>scenario.getLine()</code> — scenario line number</li>
+</ul>
+<pre><code class="language-java">@After
+public void logScenarioResult(Scenario scenario) {
+    logger.info("Scenario: " + scenario.getName()
+        + " | Status: " + scenario.getStatus()
+        + " | Tags: " + scenario.getSourceTagNames());
+}</code></pre>
+
+<h3>Conditional Hooks with Tags</h3>
+<p>Tag expressions in hook annotations restrict execution to matching scenarios. This avoids unnecessary setup for unrelated tests.</p>
+<pre><code class="language-java">@Before("@login or @checkout")
+public void setUpAuthContext() {
+    // Only runs for login or checkout scenarios
+    authToken = AuthService.getTestToken();
+}
+
+@Before("@database")
+public void setUpDatabase() {
+    dbHelper.connect();
+    dbHelper.seedTestData();
+}
+
+@After("@database")
+public void tearDownDatabase() {
+    dbHelper.truncateTables();
+    dbHelper.disconnect();
+}</code></pre>
+
+<h3>Hook Execution Order</h3>
+<p>When multiple hooks of the same type exist, use the <code>order</code> attribute (lower numbers run first for <code>@Before</code>; higher numbers run first for <code>@After</code>).</p>
+<pre><code class="language-java">@Before(order = 0)
+public void connectDatabase() { dbHelper.connect(); }
+
+@Before(order = 1)
+public void launchBrowser() { driver = DriverFactory.getDriver(); }
+
+@Before(order = 2)
+public void navigateToBaseUrl() { driver.get(ConfigReader.get("base.url")); }
+
+@After(order = 2)
+public void captureScreenshotOnFailure(Scenario scenario) { /* ... */ }
+
+@After(order = 1)
+public void quitBrowser() { DriverFactory.quitDriver(); }
+
+@After(order = 0)
+public void disconnectDatabase() { dbHelper.disconnect(); }</code></pre>
+
+<div class="callout">
+<strong>Order Rule:</strong> <code>@Before</code> hooks run ascending (0 → 1 → 2). <code>@After</code> hooks run descending (2 → 1 → 0) — mirroring a stack: last setup in, first teardown out.
+</div>
+
+<h3>Complete Hooks Class</h3>
+<pre><code class="language-java">package hooks;
+
+import io.cucumber.java.*;
+import org.openqa.selenium.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import utils.DriverFactory;
+import utils.ConfigReader;
+import utils.DatabaseHelper;
+
+public class Hooks {
+
+    private static final Logger logger = LoggerFactory.getLogger(Hooks.class);
+    private WebDriver driver;
+    private DatabaseHelper dbHelper;
+
+    // ── One-time suite setup (Cucumber 7+) ──
+    @BeforeAll
+    public static void beforeAll() {
+        logger.info("=== Test Suite Started ===");
+        ConfigReader.load("qa");
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        logger.info("=== Test Suite Finished ===");
+    }
+
+    // ── Scenario-level setup ──
+    @Before(order = 0)
+    public void startLogging(Scenario scenario) {
+        logger.info("▶ Starting scenario: {} | Tags: {}",
+            scenario.getName(), scenario.getSourceTagNames());
+    }
+
+    @Before(order = 1)
+    public void launchBrowser() {
+        driver = DriverFactory.getDriver();
+        driver.manage().window().maximize();
+        driver.get(ConfigReader.get("base.url"));
+    }
+
+    @Before(value = "@database", order = 0)
+    public void setUpDatabase() {
+        dbHelper = new DatabaseHelper();
+        dbHelper.connect();
+        dbHelper.insertTestUser("testuser", "pass123");
+    }
+
+    // ── Step-level hooks ──
+    @BeforeStep
+    public void logStep(Scenario scenario) {
+        logger.debug("Executing step in: {}", scenario.getName());
+    }
+
+    @AfterStep
+    public void screenshotOnStepFailure(Scenario scenario) {
+        if (scenario.isFailed()) {
+            attachScreenshot(scenario, "Step Failure Screenshot");
+        }
+    }
+
+    // ── Scenario-level teardown ──
+    @After(order = 2)
+    public void captureFailureScreenshot(Scenario scenario) {
+        if (scenario.isFailed()) {
+            attachScreenshot(scenario, "Scenario Failure Screenshot");
+            logger.error("✘ Scenario FAILED: {}", scenario.getName());
+        } else {
+            logger.info("✔ Scenario PASSED: {}", scenario.getName());
+        }
+    }
+
+    @After(order = 1)
+    public void quitBrowser() {
+        DriverFactory.quitDriver();
+    }
+
+    @After(value = "@database", order = 0)
+    public void cleanUpDatabase() {
+        dbHelper.deleteTestUser("testuser");
+        dbHelper.disconnect();
+    }
+
+    private void attachScreenshot(Scenario scenario, String name) {
+        try {
+            byte[] screenshot = ((TakesScreenshot) driver)
+                .getScreenshotAs(OutputType.BYTES);
+            scenario.attach(screenshot, "image/png", name);
+        } catch (Exception e) {
+            logger.warn("Could not capture screenshot: {}", e.getMessage());
+        }
+    }
+}</code></pre>
+
+<h3>@BeforeAll / @AfterAll (Cucumber 7+)</h3>
+<p>Suite-level hooks run once per test run — ideal for loading configuration, initializing report directories, or warming up connection pools. Methods must be <code>static</code>.</p>
+<pre><code class="language-java">@BeforeAll
+public static void globalSetup() {
+    Files.createDirectories(Paths.get("target/screenshots"));
+    RestAssured.baseURI = ConfigReader.get("api.base.url");
+}
+
+@AfterAll
+public static void globalTeardown() {
+    EmailNotifier.sendSummaryReport();
+}</code></pre>
+
+<h3>Hooks vs TestNG @BeforeMethod Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Cucumber Hooks</th><th>TestNG @BeforeMethod</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Scope</strong></td><td>Scenario / Step / Suite</td><td>Test method (Java method annotated with @Test)</td></tr>
+<tr><td><strong>Tag filtering</strong></td><td>Built-in via tag expressions (@Before("@smoke"))</td><td>Via groups (@BeforeMethod(groups="smoke"))</td></tr>
+<tr><td><strong>Scenario context</strong></td><td>Scenario parameter with name, tags, status</td><td>ITestResult or Method parameter</td></tr>
+<tr><td><strong>Step-level control</strong></td><td>@BeforeStep / @AfterStep</td><td>Not available natively</td></tr>
+<tr><td><strong>Execution order</strong></td><td>order attribute on annotation</td><td>dependsOnMethods, priority</td></tr>
+<tr><td><strong>Integration</strong></td><td>Works standalone or with TestNG runner</td><td>Native TestNG lifecycle</td></tr>
+<tr><td><strong>Screenshot attach</strong></td><td>scenario.attach() embeds in Cucumber reports</td><td>Manual — listener or Reporter.log()</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Hook Best Practices</h3>
+<ul>
+<li><strong>Keep hooks thin</strong> — delegate heavy logic to utility classes; hooks should orchestrate, not implement.</li>
+<li><strong>Use tag-based conditional hooks</strong> — avoid running DB setup for UI-only scenarios.</li>
+<li><strong>Always set hook order explicitly</strong> when multiple hooks exist — implicit order is fragile.</li>
+<li><strong>Capture screenshots in @After, not @Before</strong> — browser state reflects the failure point.</li>
+<li><strong>Use @BeforeAll/@AfterAll sparingly</strong> — static state can cause issues in parallel runs.</li>
+<li><strong>Never put assertions in hooks</strong> — hooks prepare/teardown; steps validate behavior.</li>
+<li><strong>Make hooks idempotent</strong> — safe to run even if a prior step partially succeeded.</li>
+<li><strong>Log scenario name and tags</strong> — essential for debugging parallel and tagged runs.</li>
+</ul>
+
+<h3>Interview Q&amp;A — Cucumber Hooks</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>What are Cucumber hooks?</td><td>Java methods annotated with @Before, @After, @BeforeStep, @AfterStep that run setup/teardown at scenario or step boundaries.</td></tr>
+<tr><td>2</td><td>When does @Before run relative to Background?</td><td>@Before runs after Background steps but before the scenario's own steps.</td></tr>
+<tr><td>3</td><td>How do you run a hook only for @login scenarios?</td><td>@Before("@login") — Cucumber evaluates the tag expression against scenario tags.</td></tr>
+<tr><td>4</td><td>What is the order attribute?</td><td>Controls execution sequence; lower order runs first for @Before, reverse for @After.</td></tr>
+<tr><td>5</td><td>How do you attach a screenshot to a report?</td><td>scenario.attach(bytes, "image/png", "name") in an @After or @AfterStep hook.</td></tr>
+<tr><td>6</td><td>Can hooks access the Scenario object?</td><td>Yes — inject Scenario as a method parameter in @Before, @After, @BeforeStep, @AfterStep.</td></tr>
+<tr><td>7</td><td>Difference between @Before and @BeforeAll?</td><td>@Before runs before each scenario; @BeforeAll runs once before the entire test suite (static method, Cucumber 7+).</td></tr>
+<tr><td>8</td><td>Can you have multiple @Before hooks?</td><td>Yes — use order attribute to control sequence; all matching hooks execute.</td></tr>
+<tr><td>9</td><td>What happens if a @Before hook throws an exception?</td><td>The scenario is marked failed/skipped; subsequent steps do not run; @After hooks still execute.</td></tr>
+<tr><td>10</td><td>Hooks vs Background in feature file?</td><td>Background is Gherkin-level shared steps visible in reports; hooks are invisible Java infrastructure code.</td></tr>
+<tr><td>11</td><td>How to skip browser launch for @api tagged scenarios?</td><td>Do not put browser launch in global @Before; use @Before("not @api") or a dedicated @Before("@ui") hook.</td></tr>
+<tr><td>12</td><td>Are hooks thread-safe in parallel execution?</td><td>Each scenario gets its own hook instance in parallel mode if using ThreadLocal for driver/state.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 25: CUCUMBER REPORTING -->
+<section id="section-25" class="section-card">
+<h2>Section 25: Cucumber Reporting</h2>
+
+<h3>Built-in Cucumber Report Plugins</h3>
+<p>Cucumber generates reports via <strong>plugins</strong> configured in the runner class. Each plugin produces a different output format for console, CI, or third-party dashboards.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Plugin</th><th>Output</th><th>Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td><code>pretty</code></td><td>Colored console output</td><td>Local development, quick feedback</td></tr>
+<tr><td><code>html:path</code></td><td>HTML report file</td><td>Shareable static report in target folder</td></tr>
+<tr><td><code>json:path</code></td><td>JSON file</td><td>Input for Extent, Allure, Jenkins Cucumber plugin</td></tr>
+<tr><td><code>junit:path</code></td><td>JUnit XML</td><td>CI tools expecting JUnit format (Jenkins, Azure)</td></tr>
+<tr><td><code>timeline:path</code></td><td>Timeline HTML</td><td>Visualize parallel scenario execution timing</td></tr>
+<tr><td><code>message:path</code></td><td>NDJSON messages</td><td>Cucumber Reports Service, custom parsers</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Multiple Plugins in Runner</h3>
+<pre><code class="language-java">@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = {"stepdefinitions", "hooks"},
+    plugin = {
+        "pretty",
+        "html:target/cucumber-report.html",
+        "json:target/cucumber.json",
+        "junit:target/cucumber-junit.xml",
+        "timeline:target/timeline/index.html"
+    },
+    tags = "@smoke",
+    monochrome = true
+)
+public class TestRunner extends AbstractTestNGCucumberTests { }</code></pre>
+
+<h3>Cucumber Built-in HTML Report</h3>
+<p>The HTML plugin generates a self-contained report showing features, scenarios, steps, pass/fail status, duration, and error stack traces. Open <code>target/cucumber-report.html</code> in a browser after test execution.</p>
+<ul>
+<li><strong>Feature summary</strong> — pass/fail counts per feature file</li>
+<li><strong>Scenario drill-down</strong> — step-by-step results with timing</li>
+<li><strong>Error details</strong> — stack traces for failed steps</li>
+<li><strong>Tags display</strong> — shows which tags were executed</li>
+</ul>
+
+<h3>Extent Reports with Cucumber</h3>
+<p><strong>Extent Reports</strong> provides rich, dashboard-style HTML reports with charts, system info, and screenshot embedding.</p>
+
+<h4>Dependencies (pom.xml)</h4>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;tech.grasshopper&lt;/groupId&gt;
+    &lt;artifactId&gt;extentreports-cucumber7-adapter&lt;/artifactId&gt;
+    &lt;version&gt;1.14.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+
+<h4>Runner Configuration</h4>
+<pre><code class="language-java">plugin = {
+    "pretty",
+    "json:target/cucumber.json",
+    "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
+}</code></pre>
+
+<h4>spark-config.xml Customization</h4>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;extentreports&gt;
+    &lt;configuration&gt;
+        &lt;theme&gt;STANDARD&lt;/theme&gt;
+        &lt;documentTitle&gt;BDD Automation Report&lt;/documentTitle&gt;
+        &lt;reportName&gt;QA Regression Results&lt;/reportName&gt;
+        &lt;timeStampFormat&gt;MMM dd, yyyy HH:mm:ss&lt;/timeStampFormat&gt;
+        &lt;encoding&gt;UTF-8&lt;/encoding&gt;
+        &lt;protocol&gt;HTTPS&lt;/protocol&gt;
+    &lt;/configuration&gt;
+&lt;/extentreports&gt;</code></pre>
+<p>Place <code>spark-config.xml</code> in <code>src/test/resources</code>. Extent auto-discovers it.</p>
+
+<h4>Complete Extent Setup</h4>
+<pre><code class="language-java">// Hooks.java — embed screenshot in Extent via Scenario.attach
+@After
+public void attachScreenshot(Scenario scenario) {
+    if (scenario.isFailed()) {
+        byte[] screenshot = ((TakesScreenshot) driver)
+            .getScreenshotAs(OutputType.BYTES);
+        scenario.attach(screenshot, "image/png", "Failure Screenshot");
+    }
+}
+
+// extent.properties in src/test/resources
+// extent.reporter.spark.start=true
+// extent.reporter.spark.out=target/SparkReport/Spark.html
+// extent.reporter.spark.config=src/test/resources/spark-config.xml</code></pre>
+
+<h3>Allure Reports with Cucumber</h3>
+
+<h4>Dependency</h4>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+    &lt;artifactId&gt;allure-cucumber7-jvm&lt;/artifactId&gt;
+    &lt;version&gt;2.25.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+
+<h4>Runner Plugin</h4>
+<pre><code class="language-java">plugin = {
+    "pretty",
+    "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"
+}</code></pre>
+
+<h4>Allure Annotations in Step Definitions</h4>
+<pre><code class="language-java">import io.qameta.allure.*;
+
+@Step("Login with username: {0}")
+public void login(String username, String password) {
+    loginPage.enterUsername(username);
+    loginPage.enterPassword(password);
+    loginPage.clickLogin();
+}
+
+@Attachment(value = "Screenshot", type = "image/png")
+public byte[] captureScreenshot() {
+    return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+}
+
+@Description("Verify user can login with valid credentials")
+@Given("I am logged in as {string}")
+public void iAmLoggedInAs(String user) {
+    login(user, "password123");
+}</code></pre>
+
+<h4>Generate Allure Report</h4>
+<pre><code class="language-bash">mvn clean test
+allure serve target/allure-results</code></pre>
+
+<h3>Cucumber Reports Service (Online)</h3>
+<p><strong>reports.cucumber.io</strong> is Cucumber's cloud reporting platform. Publish results by setting environment variables:</p>
+<pre><code class="language-bash">export CUCUMBER_PUBLISH_ENABLED=true
+mvn clean test</code></pre>
+<p>Alternatively, use the <code>message</code> plugin output and upload via CI pipeline. Provides team dashboards, trend analysis, and shareable links without hosting reports locally.</p>
+
+<h3>Screenshot Embedding in Reports</h3>
+<p>The <code>Scenario.attach()</code> method embeds bytes into Cucumber-compatible reports (HTML, Allure, Extent).</p>
+<pre><code class="language-java">@After
+public void embedEvidence(Scenario scenario) {
+    if (scenario.isFailed()) {
+        // Screenshot
+        byte[] screenshot = ((TakesScreenshot) driver)
+            .getScreenshotAs(OutputType.BYTES);
+        scenario.attach(screenshot, "image/png", "Failure Screenshot");
+
+        // Page source on failure
+        String pageSource = driver.getPageSource();
+        scenario.attach(pageSource, "text/html", "Page Source");
+
+        // Log snippet
+        scenario.attach("Current URL: " + driver.getCurrentUrl(),
+            "text/plain", "Debug Info");
+    }
+}
+
+@AfterStep
+public void embedStepScreenshot(Scenario scenario) {
+    if (scenario.isFailed()) {
+        byte[] screenshot = ((TakesScreenshot) driver)
+            .getScreenshotAs(OutputType.BYTES);
+        scenario.attach(screenshot, "image/png",
+            "Failed Step: " + scenario.getName());
+    }
+}</code></pre>
+
+<h3>Report Comparison: Built-in vs Extent vs Allure</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Built-in HTML</th><th>Extent Reports</th><th>Allure Reports</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Setup complexity</strong></td><td>Minimal — one plugin line</td><td>Adapter + config XML + properties</td><td>Plugin + Maven plugin + CLI</td></tr>
+<tr><td><strong>Visual quality</strong></td><td>Basic tables</td><td>Rich dashboard with charts</td><td>Modern UI with history/trends</td></tr>
+<tr><td><strong>Screenshot support</strong></td><td>Via scenario.attach()</td><td>Via scenario.attach() + @After hook</td><td>@Attachment annotation + attach()</td></tr>
+<tr><td><strong>History/trends</strong></td><td>No</td><td>Limited (Spark standalone)</td><td>Yes — built-in trend graphs</td></tr>
+<tr><td><strong>CI integration</strong></td><td>Archive HTML artifact</td><td>Archive Spark HTML</td><td>allure-report Jenkins plugin</td></tr>
+<tr><td><strong>Step categorization</strong></td><td>By feature/scenario</td><td>By feature + author + category</td><td>Epic/Feature/Story hierarchy</td></tr>
+<tr><td><strong>Parallel timeline</strong></td><td>timeline plugin (separate)</td><td>No native timeline</td><td>Duration charts per test</td></tr>
+<tr><td><strong>Best for</strong></td><td>Quick local runs</td><td>Management-facing dashboards</td><td>Enterprise CI with trend analysis</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A — Cucumber Reporting</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>How do you generate an HTML report in Cucumber?</td><td>Add "html:target/report.html" to the plugin array in @CucumberOptions.</td></tr>
+<tr><td>2</td><td>What is the purpose of the JSON plugin?</td><td>Produces machine-readable output consumed by Extent, Allure, Jenkins Cucumber Reports plugin.</td></tr>
+<tr><td>3</td><td>How do you embed screenshots in Cucumber reports?</td><td>scenario.attach(byteArray, "image/png", "label") in @After or @AfterStep hooks.</td></tr>
+<tr><td>4</td><td>How to integrate Allure with Cucumber 7?</td><td>Add allure-cucumber7-jvm dependency and AllureCucumber7Jvm plugin; run allure serve after tests.</td></tr>
+<tr><td>5</td><td>What is ExtentCucumberAdapter?</td><td>A plugin that converts Cucumber events into Extent Reports Spark dashboard format.</td></tr>
+<tr><td>6</td><td>Can you use multiple report plugins simultaneously?</td><td>Yes — plugin array supports pretty, html, json, junit, Allure, Extent all at once.</td></tr>
+<tr><td>7</td><td>What is the timeline plugin?</td><td>Generates an HTML timeline showing when each scenario started/ended — useful for parallel run analysis.</td></tr>
+<tr><td>8</td><td>How to publish reports to reports.cucumber.io?</td><td>Set CUCUMBER_PUBLISH_ENABLED=true environment variable before running tests.</td></tr>
+<tr><td>9</td><td>JUnit XML plugin purpose?</td><td>Produces JUnit-format XML that Jenkins, Azure DevOps, and other CI tools parse natively.</td></tr>
+<tr><td>10</td><td>How does Allure @Attachment differ from scenario.attach()?</td><td>@Attachment is Allure-specific for rich report embedding; scenario.attach() works across Cucumber-compatible reporters.</td></tr>
+<tr><td>11</td><td>Where are Allure results stored?</td><td>target/allure-results/ — JSON/XML files generated during test run; served by Allure CLI.</td></tr>
+<tr><td>12</td><td>How to customize Extent report title and theme?</td><td>Configure spark-config.xml with documentTitle, reportName, and theme elements.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 26: TESTNG + CUCUMBER INTEGRATION -->
+<section id="section-26" class="section-card">
+<h2>Section 26: TestNG + Cucumber Integration</h2>
+
+<h3>Why Integrate TestNG with Cucumber?</h3>
+<p>Cucumber excels at the BDD layer — Gherkin features, step definitions, hooks. TestNG excels at the <strong>execution layer</strong> — parallel runs, grouping, listeners, XML suites, and CI integration. Combining both gives you readable tests with enterprise-grade execution control.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Cucumber Provides</th><th>TestNG Provides</th></tr>
+</thead>
+<tbody>
+<tr><td>Gherkin feature files</td><td>Parallel scenario execution</td></tr>
+<tr><td>Step definitions &amp; hooks</td><td>testng.xml suite configuration</td></tr>
+<tr><td>Tag-based filtering</td><td>Groups and listeners</td></tr>
+<tr><td>Scenario-level reporting</td><td>Retry analyzer, ITestListener</td></tr>
+<tr><td>Data Tables &amp; Scenario Outline</td><td>@DataProvider for parallel scenarios</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Architecture Overview</h3>
+<pre class="ascii-diagram">
+┌──────────────────────────────────────────────────────────┐
+│                     testng.xml                           │
+│              (parallel, groups, listeners)               │
+└────────────────────────┬─────────────────────────────────┘
+                         ▼
+┌──────────────────────────────────────────────────────────┐
+│              TestRunner (extends                         │
+│         AbstractTestNGCucumberTests)                     │
+│              @CucumberOptions                            │
+└────────────────────────┬─────────────────────────────────┘
+                         ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐
+│ Feature Files│→ │Step Definitions│→ │ Page Objects / API  │
+│  (.feature)  │  │   + Hooks    │  │     Utilities       │
+└──────────────┘  └──────────────┘  └──────────────────────┘
+                         ▼
+              ┌──────────────────────┐
+              │  Reports &amp; Listeners │
+              │ (Allure, Extent, etc)│
+              └──────────────────────┘
+</pre>
+
+<h3>AbstractTestNGCucumberTests — Base Runner Class</h3>
+<p>Extend <code>AbstractTestNGCucumberTests</code> from <code>io.cucumber.testng</code> to bridge Cucumber scenarios as TestNG test methods.</p>
+<pre><code class="language-java">package runners;
+
+import io.cucumber.testng.AbstractTestNGCucumberTests;
+import io.cucumber.testng.CucumberOptions;
+import org.testng.annotations.DataProvider;
+
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = {"stepdefinitions", "hooks"},
+    plugin = {
+        "pretty",
+        "html:target/cucumber-report.html",
+        "json:target/cucumber.json",
+        "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"
+    },
+    tags = "@smoke"
+)
+public class TestRunner extends AbstractTestNGCucumberTests {
+
+    @Override
+    @DataProvider(parallel = true)
+    public Object[][] scenarios() {
+        return super.scenarios();
+    }
+}</code></pre>
+
+<h3>Parallel Scenario Execution</h3>
+<p>Override the <code>scenarios()</code> data provider with <code>parallel = true</code>. Control thread count via testng.xml.</p>
+<pre><code class="language-xml">&lt;suite name="BDD Suite" parallel="methods" thread-count="4"&gt;
+  &lt;test name="Cucumber Tests"&gt;
+    &lt;classes&gt;
+      &lt;class name="runners.TestRunner"/&gt;
+    &lt;/classes&gt;
+  &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<div class="callout">
+<strong>Thread Safety:</strong> Use ThreadLocal for WebDriver and scenario-scoped state when running scenarios in parallel. Never share a single driver instance across threads.
+</div>
+
+<h3>TestNG Listeners with Cucumber</h3>
+<pre><code class="language-java">// Custom listener for retry and reporting
+public class RetryListener implements IAnnotationTransformer {
+    @Override
+    public void transform(ITestAnnotation annotation,
+                          Class testClass,
+                          Constructor testConstructor,
+                          Method testMethod) {
+        annotation.setRetryAnalyzer(RetryAnalyzer.class);
+    }
+}
+
+// RetryAnalyzer.java
+public class RetryAnalyzer implements IRetryAnalyzer {
+    private int count = 0;
+    private static final int MAX_RETRY = 2;
+
+    @Override
+    public boolean retry(ITestResult result) {
+        if (count &lt; MAX_RETRY) {
+            count++;
+            return true;
+        }
+        return false;
+    }
+}</code></pre>
+<pre><code class="language-xml">&lt;listeners&gt;
+    &lt;listener class-name="listeners.RetryListener"/&gt;
+    &lt;listener class-name="listeners.TestReportListener"/&gt;
+&lt;/listeners&gt;</code></pre>
+
+<h3>TestNG Groups with Cucumber Tags Mapping</h3>
+<p>Map Cucumber tags to TestNG groups for suite-level filtering:</p>
+<pre><code class="language-java">// SmokeRunner.java — tags = "@smoke"
+@CucumberOptions(tags = "@smoke", ...)
+
+// RegressionRunner.java — tags = "@regression"
+@CucumberOptions(tags = "@regression", ...)</code></pre>
+<pre><code class="language-xml">&lt;suite name="Full Regression" parallel="methods" thread-count="4"&gt;
+  &lt;test name="Smoke"&gt;
+    &lt;classes&gt;&lt;class name="runners.SmokeRunner"/&gt;&lt;/classes&gt;
+  &lt;/test&gt;
+  &lt;test name="Regression"&gt;
+    &lt;classes&gt;&lt;class name="runners.RegressionRunner"/&gt;&lt;/classes&gt;
+  &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>Complete Project Structure for Integrated Framework</h3>
+<pre class="ascii-diagram">
+bdd-testng-framework/
+├── src/test/java/
+│   ├── runners/
+│   │   ├── TestRunner.java
+│   │   ├── SmokeRunner.java
+│   │   └── RegressionRunner.java
+│   ├── stepdefinitions/
+│   │   ├── LoginSteps.java
+│   │   └── HomeSteps.java
+│   ├── hooks/
+│   │   └── Hooks.java
+│   ├── pages/
+│   │   ├── BasePage.java
+│   │   └── LoginPage.java
+│   ├── utils/
+│   │   └── DriverFactory.java
+│   └── listeners/
+│       ├── RetryListener.java
+│       └── TestReportListener.java
+├── src/test/resources/
+│   └── features/
+│       ├── login.feature
+│       └── home.feature
+├── testng.xml
+└── pom.xml
+</pre>
+
+<h3>Execution Flow</h3>
+<pre class="ascii-diagram">
+Maven/TestNG
+     │
+     ▼
+testng.xml ──→ loads TestRunner class
+     │
+     ▼
+AbstractTestNGCucumberTests
+     │
+     ├── @BeforeAll hooks (Cucumber)
+     ├── For each scenario (parallel via DataProvider):
+     │     ├── @Before hooks
+     │     ├── Background steps
+     │     ├── Scenario steps → Step Definitions
+     │     ├── @After hooks (screenshot, cleanup)
+     │     └── TestNG ITestListener callbacks
+     ├── @AfterAll hooks (Cucumber)
+     └── Generate reports (HTML, JSON, Allure)
+</pre>
+
+<h3>Interview Q&amp;A — TestNG + Cucumber Integration</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Why integrate TestNG with Cucumber?</td><td>TestNG adds parallel execution, XML suites, listeners, retry, and CI-friendly grouping on top of Cucumber's BDD layer.</td></tr>
+<tr><td>2</td><td>What class do you extend for TestNG + Cucumber?</td><td>AbstractTestNGCucumberTests from io.cucumber.testng package.</td></tr>
+<tr><td>3</td><td>How to run Cucumber scenarios in parallel?</td><td>Override scenarios() @DataProvider with parallel=true; set thread-count in testng.xml.</td></tr>
+<tr><td>4</td><td>Can TestNG @Test annotations run Cucumber scenarios?</td><td>No — Cucumber scenarios become TestNG tests via AbstractTestNGCucumberTests, not via @Test.</td></tr>
+<tr><td>5</td><td>How to run only @smoke tagged scenarios?</td><td>tags = "@smoke" in @CucumberOptions, or -Dcucumber.filter.tags="@smoke" on CLI.</td></tr>
+<tr><td>6</td><td>Do TestNG listeners work with Cucumber?</td><td>Yes — register ITestListener implementations in testng.xml; they fire for each scenario.</td></tr>
+<tr><td>7</td><td>How to implement retry for flaky scenarios?</td><td>IRetryAnalyzer + IAnnotationTransformer registered as TestNG listener.</td></tr>
+<tr><td>8</td><td>Can you have multiple Cucumber runners in one suite?</td><td>Yes — define multiple &lt;test&gt; blocks in testng.xml, each pointing to a different runner class.</td></tr>
+<tr><td>9</td><td>What happens to Cucumber hooks in parallel mode?</td><td>Each parallel scenario gets its own hook execution; use ThreadLocal for shared resources.</td></tr>
+<tr><td>10</td><td>Cucumber standalone runner vs TestNG runner?</td><td>Standalone uses @Suite + Cucumber class; TestNG uses AbstractTestNGCucumberTests for TestNG features.</td></tr>
+<tr><td>11</td><td>How to pass parameters from testng.xml to Cucumber?</td><td>Use system properties (-Denv=qa) read by ConfigReader in hooks or step definitions.</td></tr>
+<tr><td>12</td><td>Does TestNG @BeforeMethod work with Cucumber scenarios?</td><td>It runs but is not recommended — use Cucumber @Before/@After hooks for scenario lifecycle instead.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 27: SELENIUM + TESTNG + CUCUMBER FULL FRAMEWORK -->
+<section id="section-27" class="section-card">
+<h2>Section 27: Selenium + TestNG + Cucumber Full Framework</h2>
+
+<h3>Framework Architecture</h3>
+<p>A production-ready BDD automation framework layers Gherkin features on top of Page Object Model, with TestNG driving parallel execution and Cucumber managing scenario lifecycle through hooks.</p>
+
+<h3>Project Structure</h3>
+<pre class="ascii-diagram">
+bdd-automation-framework/
+├── src/
+│   ├── main/java/
+│   │   ├── pages/           (Page Objects)
+│   │   │   ├── BasePage.java
+│   │   │   ├── LoginPage.java
+│   │   │   └── HomePage.java
+│   │   ├── utils/
+│   │   │   ├── DriverFactory.java
+│   │   │   ├── ConfigReader.java
+│   │   │   ├── ExcelReader.java
+│   │   │   └── WaitUtils.java
+│   │   └── context/
+│   │       ├── TestContext.java
+│   │       └── ScenarioContext.java
+│   └── test/
+│       ├── java/
+│       │   ├── runners/
+│       │   │   ├── SmokeRunner.java
+│       │   │   └── RegressionRunner.java
+│       │   ├── stepdefinitions/
+│       │   │   ├── LoginSteps.java
+│       │   │   ├── SearchSteps.java
+│       │   │   └── CheckoutSteps.java
+│       │   └── hooks/
+│       │       └── Hooks.java
+│       └── resources/
+│           ├── features/
+│           │   ├── login.feature
+│           │   ├── search.feature
+│           │   └── checkout.feature
+│           └── config/
+│               ├── qa.properties
+│               └── staging.properties
+├── pom.xml
+├── testng.xml
+└── Jenkinsfile
+</pre>
+
+<h3>1. pom.xml — All Dependencies</h3>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;com.automation&lt;/groupId&gt;
+    &lt;artifactId&gt;bdd-automation-framework&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+
+    &lt;properties&gt;
+        &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
+        &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
+        &lt;selenium.version&gt;4.18.1&lt;/selenium.version&gt;
+        &lt;cucumber.version&gt;7.15.0&lt;/cucumber.version&gt;
+        &lt;testng.version&gt;7.9.0&lt;/testng.version&gt;
+        &lt;allure.version&gt;2.25.0&lt;/allure.version&gt;
+    &lt;/properties&gt;
+
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.seleniumhq.selenium&lt;/groupId&gt;
+            &lt;artifactId&gt;selenium-java&lt;/artifactId&gt;
+            &lt;version&gt;${selenium.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.cucumber&lt;/groupId&gt;
+            &lt;artifactId&gt;cucumber-java&lt;/artifactId&gt;
+            &lt;version&gt;${cucumber.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.cucumber&lt;/groupId&gt;
+            &lt;artifactId&gt;cucumber-testng&lt;/artifactId&gt;
+            &lt;version&gt;${cucumber.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.testng&lt;/groupId&gt;
+            &lt;artifactId&gt;testng&lt;/artifactId&gt;
+            &lt;version&gt;${testng.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+            &lt;artifactId&gt;allure-cucumber7-jvm&lt;/artifactId&gt;
+            &lt;version&gt;${allure.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.github.bonigarcia&lt;/groupId&gt;
+            &lt;artifactId&gt;webdrivermanager&lt;/artifactId&gt;
+            &lt;version&gt;5.7.0&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.slf4j&lt;/groupId&gt;
+            &lt;artifactId&gt;slf4j-simple&lt;/artifactId&gt;
+            &lt;version&gt;2.0.12&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.poi&lt;/groupId&gt;
+            &lt;artifactId&gt;poi-ooxml&lt;/artifactId&gt;
+            &lt;version&gt;5.2.5&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.2.5&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;suiteXmlFiles&gt;
+                        &lt;suiteXmlFile&gt;testng.xml&lt;/suiteXmlFile&gt;
+                    &lt;/suiteXmlFiles&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+                &lt;artifactId&gt;allure-maven&lt;/artifactId&gt;
+                &lt;version&gt;2.12.0&lt;/version&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/project&gt;</code></pre>
+
+<h3>2. DriverFactory.java — ThreadLocal Browser Management</h3>
+<pre><code class="language-java">package utils;
+
+import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.edge.EdgeDriver;
+
+public class DriverFactory {
+
+    private static final ThreadLocal&lt;WebDriver&gt; driverThread = new ThreadLocal&lt;&gt;();
+
+    public static WebDriver getDriver() {
+        if (driverThread.get() == null) {
+            driverThread.set(createDriver());
+        }
+        return driverThread.get();
+    }
+
+    private static WebDriver createDriver() {
+        String browser = System.getProperty("browser", "chrome").toLowerCase();
+        boolean headless = Boolean.parseBoolean(
+            System.getProperty("headless", "false"));
+
+        return switch (browser) {
+            case "firefox" -&gt; {
+                WebDriverManager.firefoxdriver().setup();
+                yield new FirefoxDriver();
+            }
+            case "edge" -&gt; {
+                WebDriverManager.edgedriver().setup();
+                yield new EdgeDriver();
+            }
+            default -&gt; {
+                WebDriverManager.chromedriver().setup();
+                ChromeOptions options = new ChromeOptions();
+                if (headless) options.addArguments("--headless=new");
+                options.addArguments("--disable-gpu", "--no-sandbox");
+                yield new ChromeDriver(options);
+            }
+        };
+    }
+
+    public static void quitDriver() {
+        if (driverThread.get() != null) {
+            driverThread.get().quit();
+            driverThread.remove();
+        }
+    }
+}</code></pre>
+
+<h3>3. ConfigReader.java</h3>
+<pre><code class="language-java">package utils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+public class ConfigReader {
+
+    private static Properties properties = new Properties();
+
+    public static void load(String env) {
+        String file = "config/" + env + ".properties";
+        try (InputStream input = ConfigReader.class
+                .getClassLoader().getResourceAsStream(file)) {
+            if (input == null) {
+                throw new RuntimeException("Config file not found: " + file);
+            }
+            properties.load(input);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load config: " + file, e);
+        }
+    }
+
+    public static String get(String key) {
+        String sysVal = System.getProperty(key);
+        return sysVal != null ? sysVal : properties.getProperty(key);
+    }
+}</code></pre>
+
+<h3>4. BasePage.java — Common Page Methods</h3>
+<pre><code class="language-java">package pages;
+
+import org.openqa.selenium.*;
+import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import utils.DriverFactory;
+import java.time.Duration;
+
+public abstract class BasePage {
+
+    protected WebDriver driver;
+    protected WebDriverWait wait;
+
+    public BasePage() {
+        this.driver = DriverFactory.getDriver();
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        PageFactory.initElements(driver, this);
+    }
+
+    protected void click(WebElement element) {
+        wait.until(ExpectedConditions.elementToBeClickable(element)).click();
+    }
+
+    protected void type(WebElement element, String text) {
+        wait.until(ExpectedConditions.visibilityOf(element));
+        element.clear();
+        element.sendKeys(text);
+    }
+
+    protected String getText(WebElement element) {
+        return wait.until(ExpectedConditions.visibilityOf(element)).getText();
+    }
+
+    protected boolean isDisplayed(WebElement element) {
+        try {
+            return wait.until(ExpectedConditions.visibilityOf(element)).isDisplayed();
+        } catch (TimeoutException e) {
+            return false;
+        }
+    }
+}</code></pre>
+
+<h3>5. LoginPage.java — Page Object with PageFactory</h3>
+<pre><code class="language-java">package pages;
+
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+
+public class LoginPage extends BasePage {
+
+    @FindBy(id = "username")
+    private WebElement usernameField;
+
+    @FindBy(id = "password")
+    private WebElement passwordField;
+
+    @FindBy(id = "login-btn")
+    private WebElement loginButton;
+
+    @FindBy(css = ".error-message")
+    private WebElement errorMessage;
+
+    public void enterUsername(String username) { type(usernameField, username); }
+    public void enterPassword(String password) { type(passwordField, password); }
+    public void clickLogin() { click(loginButton); }
+
+    public void login(String username, String password) {
+        enterUsername(username);
+        enterPassword(password);
+        clickLogin();
+    }
+
+    public String getErrorMessage() { return getText(errorMessage); }
+    public boolean isLoginPageDisplayed() { return isDisplayed(usernameField); }
+
+    public void navigateToLogin() {
+        driver.get(utils.ConfigReader.get("base.url") + "/login");
+    }
+}</code></pre>
+
+<h3>6. login.feature — Three Scenarios</h3>
+<pre><code class="language-gherkin">@login
+Feature: User Login
+  As a registered user
+  I want to login to the application
+  So that I can access my account
+
+  Background:
+    Given I navigate to the login page
+
+  @smoke @positive
+  Scenario: Successful login with valid credentials
+    When I enter username "testuser" and password "pass123"
+    And I click the login button
+    Then I should be redirected to the home page
+    And the welcome message should contain "Welcome, testuser"
+
+  @negative
+  Scenario: Login fails with invalid password
+    When I enter username "testuser" and password "wrongpass"
+    And I click the login button
+    Then I should see an error message "Invalid username or password"
+    And I should remain on the login page
+
+  @negative
+  Scenario Outline: Login fails with empty fields
+    When I enter username "&lt;username&gt;" and password "&lt;password&gt;"
+    And I click the login button
+    Then I should see an error message "&lt;error&gt;"
+
+    Examples:
+      | username  | password  | error                |
+      |           | pass123   | Username is required |
+      | testuser  |           | Password is required |
+      |           |           | All fields required  |</code></pre>
+
+<h3>7. LoginSteps.java</h3>
+<pre><code class="language-java">package stepdefinitions;
+
+import context.TestContext;
+import io.cucumber.java.en.*;
+import org.testng.Assert;
+import pages.HomePage;
+import pages.LoginPage;
+
+public class LoginSteps {
+
+    private TestContext testContext;
+    private LoginPage loginPage;
+    private HomePage homePage;
+
+    public LoginSteps(TestContext testContext) {
+        this.testContext = testContext;
+        this.loginPage = new LoginPage();
+        this.homePage = new HomePage();
+    }
+
+    @Given("I navigate to the login page")
+    public void navigateToLoginPage() {
+        loginPage.navigateToLogin();
+        Assert.assertTrue(loginPage.isLoginPageDisplayed());
+    }
+
+    @When("I enter username {string} and password {string}")
+    public void enterCredentials(String username, String password) {
+        loginPage.enterUsername(username);
+        loginPage.enterPassword(password);
+        testContext.setUsername(username);
+    }
+
+    @When("I click the login button")
+    public void clickLoginButton() { loginPage.clickLogin(); }
+
+    @Then("I should be redirected to the home page")
+    public void verifyHomePage() {
+        Assert.assertTrue(homePage.isHomePageDisplayed());
+    }
+
+    @Then("the welcome message should contain {string}")
+    public void verifyWelcomeMessage(String expected) {
+        Assert.assertTrue(homePage.getWelcomeMessage().contains(expected));
+    }
+
+    @Then("I should see an error message {string}")
+    public void verifyErrorMessage(String expected) {
+        Assert.assertEquals(loginPage.getErrorMessage(), expected);
+    }
+
+    @Then("I should remain on the login page")
+    public void verifyOnLoginPage() {
+        Assert.assertTrue(loginPage.isLoginPageDisplayed());
+    }
+}</code></pre>
+
+<h3>8. Hooks.java — Browser, Screenshot, Cleanup</h3>
+<pre><code class="language-java">package hooks;
+
+import context.TestContext;
+import io.cucumber.java.*;
+import org.openqa.selenium.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import utils.ConfigReader;
+import utils.DriverFactory;
+
+public class Hooks {
+
+    private static final Logger logger = LoggerFactory.getLogger(Hooks.class);
+    private WebDriver driver;
+    private TestContext testContext;
+
+    public Hooks(TestContext testContext) { this.testContext = testContext; }
+
+    @BeforeAll
+    public static void beforeAll() {
+        ConfigReader.load(System.getProperty("env", "qa"));
+    }
+
+    @Before
+    public void setUp(Scenario scenario) {
+        driver = DriverFactory.getDriver();
+        driver.manage().window().maximize();
+        driver.get(ConfigReader.get("base.url"));
+        logger.info("Started: {}", scenario.getName());
+    }
+
+    @After
+    public void tearDown(Scenario scenario) {
+        if (scenario.isFailed()) {
+            byte[] screenshot = ((TakesScreenshot) driver)
+                .getScreenshotAs(OutputType.BYTES);
+            scenario.attach(screenshot, "image/png", "Failure Screenshot");
+        }
+        testContext.clear();
+        DriverFactory.quitDriver();
+    }
+}</code></pre>
+
+<h3>9. TestContext.java — Sharing State Between Steps</h3>
+<pre><code class="language-java">package context;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class TestContext {
+
+    private final Map&lt;String, Object&gt; context = new HashMap&lt;&gt;();
+    private String username;
+
+    public void set(String key, Object value) { context.put(key, value); }
+    public Object get(String key) { return context.get(key); }
+    public void setUsername(String username) {
+        this.username = username;
+        context.put("username", username);
+    }
+    public String getUsername() { return username; }
+    public void clear() { context.clear(); username = null; }
+}</code></pre>
+
+<h3>10. SmokeRunner.java</h3>
+<pre><code class="language-java">package runners;
+
+import io.cucumber.testng.AbstractTestNGCucumberTests;
+import io.cucumber.testng.CucumberOptions;
+import org.testng.annotations.DataProvider;
+
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = {"stepdefinitions", "hooks", "context"},
+    plugin = {
+        "pretty",
+        "html:target/cucumber-report.html",
+        "json:target/cucumber.json",
+        "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"
+    },
+    tags = "@smoke"
+)
+public class SmokeRunner extends AbstractTestNGCucumberTests {
+
+    @Override
+    @DataProvider(parallel = true)
+    public Object[][] scenarios() { return super.scenarios(); }
+}</code></pre>
+
+<h3>11. testng.xml</h3>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="BDD Automation Suite" parallel="methods" thread-count="3"&gt;
+
+    &lt;listeners&gt;
+        &lt;listener class-name="io.qameta.allure.testng.AllureTestNg"/&gt;
+    &lt;/listeners&gt;
+
+    &lt;test name="Smoke Tests"&gt;
+        &lt;classes&gt;&lt;class name="runners.SmokeRunner"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+
+    &lt;test name="Regression Tests"&gt;
+        &lt;classes&gt;&lt;class name="runners.RegressionRunner"/&gt;&lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>Framework Design Patterns Used</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Pattern</th><th>Where Applied</th><th>Benefit</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Page Object Model (POM)</strong></td><td>pages/ package</td><td>Encapsulates locators and actions; single place to update UI changes</td></tr>
+<tr><td><strong>Factory Pattern</strong></td><td>DriverFactory.java</td><td>Creates browser instances based on config; hides creation logic</td></tr>
+<tr><td><strong>ThreadLocal Pattern</strong></td><td>DriverFactory ThreadLocal</td><td>Thread-safe driver for parallel scenario execution</td></tr>
+<tr><td><strong>Dependency Injection</strong></td><td>Cucumber PicoContainer</td><td>Shares TestContext across step definition classes</td></tr>
+<tr><td><strong>Singleton (Config)</strong></td><td>ConfigReader static Properties</td><td>Single config load per JVM run</td></tr>
+<tr><td><strong>Strategy Pattern</strong></td><td>Browser selection in DriverFactory</td><td>Switch browser at runtime via -Dbrowser</td></tr>
+<tr><td><strong>Facade Pattern</strong></td><td>BasePage common methods</td><td>Simplifies wait/click/type for all page objects</td></tr>
+<tr><td><strong>BDD / Layered Architecture</strong></td><td>features → steps → pages → utils</td><td>Separates business language from technical implementation</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A — Full BDD Framework</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Describe your BDD framework architecture.</td><td>Feature files → Step Definitions → Page Objects → Utilities; TestNG for parallel execution; Cucumber hooks for setup/teardown.</td></tr>
+<tr><td>2</td><td>Why use ThreadLocal for WebDriver?</td><td>Each parallel scenario thread needs its own driver instance to avoid cross-test interference.</td></tr>
+<tr><td>3</td><td>How do you share data between step definition classes?</td><td>TestContext injected via Cucumber PicoContainer constructor injection.</td></tr>
+<tr><td>4</td><td>What is the role of BasePage?</td><td>Abstract parent providing common wait, click, type methods using WebDriverWait and PageFactory.</td></tr>
+<tr><td>5</td><td>How do you run smoke vs regression?</td><td>Separate runner classes with different tags referenced in testng.xml test blocks.</td></tr>
+<tr><td>6</td><td>How to switch environments?</td><td>-Denv=qa loads the corresponding properties file in ConfigReader via @BeforeAll hook.</td></tr>
+<tr><td>7</td><td>Where do you capture screenshots?</td><td>Hooks @After — scenario.attach() on failure; embedded in Allure/Cucumber HTML reports.</td></tr>
+<tr><td>8</td><td>Why PageFactory over direct findElement?</td><td>Lazy initialization of @FindBy elements; cleaner page classes.</td></tr>
+<tr><td>9</td><td>How to handle test data?</td><td>Scenario Outline Examples tables, Excel via ExcelReader, or config properties.</td></tr>
+<tr><td>10</td><td>How is the framework CI-ready?</td><td>Maven + testng.xml + system properties + JSON/Allure report artifacts.</td></tr>
+<tr><td>11</td><td>What goes in main vs test source?</td><td>main/java: pages, utils, context; test/java: runners, steps, hooks, features.</td></tr>
+<tr><td>12</td><td>How to avoid duplicate step definitions?</td><td>One step class per feature domain; reuse via common step classes in glue path.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 28: API TESTING WITH CUCUMBER -->
+<section id="section-28" class="section-card">
+<h2>Section 28: API Testing with Cucumber</h2>
+
+<h3>REST Assured + Cucumber Integration</h3>
+<p>API testing in a BDD framework uses REST Assured for HTTP calls and Cucumber for readable Gherkin scenarios. The same hooks, reporting, and CI pipeline as UI tests apply — only the step definitions change from Selenium to REST Assured.</p>
+
+<div class="callout">
+<strong>Architecture:</strong> Feature files describe API behavior in business language. Step definitions build requests, send them via REST Assured, and assert responses using Hamcrest matchers or JSONPath.
+</div>
+
+<h3>Dependencies</h3>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.rest-assured&lt;/groupId&gt;
+    &lt;artifactId&gt;rest-assured&lt;/artifactId&gt;
+    &lt;version&gt;5.4.0&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.rest-assured&lt;/groupId&gt;
+    &lt;artifactId&gt;json-path&lt;/artifactId&gt;
+    &lt;version&gt;5.4.0&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;mysql&lt;/groupId&gt;
+    &lt;artifactId&gt;mysql-connector-java&lt;/artifactId&gt;
+    &lt;version&gt;8.0.33&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+
+<h3>Feature File for API Testing</h3>
+<pre><code class="language-gherkin">@api
+Feature: User API
+  As an API consumer
+  I want to manage users via REST endpoints
+  So that I can verify backend behavior
+
+  @smoke
+  Scenario: Create user via API
+    Given the API base URL is "https://api.example.com"
+    When I send a POST request to "/users" with body:
+      | name  | email           |
+      | QA    | qa@example.com  |
+    Then the response status code should be 201
+    And the response body should contain "id"
+    And the response JSON path "$.email" should be "qa@example.com"
+
+  Scenario: Get user by ID
+    Given the API base URL is "https://api.example.com"
+    And a user exists with id "1"
+    When I send a GET request to "/users/1"
+    Then the response status code should be 200
+    And the response JSON path "$.name" should be "QA"
+
+  @negative
+  Scenario: Create user with invalid email returns 400
+    Given the API base URL is "https://api.example.com"
+    When I send a POST request to "/users" with body:
+      | name  | email       |
+      | QA    | invalid     |
+    Then the response status code should be 400
+    And the response body should contain "Invalid email"</code></pre>
+
+<h3>Complete APISteps.java with REST Assured</h3>
+<pre><code class="language-java">package stepdefinitions;
+
+import context.TestContext;
+import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.*;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import org.testng.Assert;
+
+import java.util.List;
+import java.util.Map;
+
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+public class APISteps {
+
+    private TestContext testContext;
+    private RequestSpecification request;
+    private Response response;
+
+    public APISteps(TestContext testContext) {
+        this.testContext = testContext;
+    }
+
+    @Given("the API base URL is {string}")
+    public void setBaseUrl(String baseUrl) {
+        baseURI = baseUrl;
+        request = given()
+            .header("Content-Type", "application/json")
+            .header("Accept", "application/json");
+    }
+
+    @Given("a user exists with id {string}")
+    public void userExists(String id) {
+        testContext.set("userId", id);
+    }
+
+    @When("I send a GET request to {string}")
+    public void sendGetRequest(String endpoint) {
+        response = request.when().get(endpoint);
+        testContext.set("response", response);
+    }
+
+    @When("I send a POST request to {string} with body:")
+    public void sendPostRequest(String endpoint, DataTable dataTable) {
+        Map&lt;String, String&gt; body = dataTable.asMaps().get(0);
+        response = request
+            .body(body)
+            .when()
+            .post(endpoint);
+        testContext.set("response", response);
+        testContext.set("requestBody", body);
+    }
+
+    @When("I send a PUT request to {string} with body:")
+    public void sendPutRequest(String endpoint, DataTable dataTable) {
+        Map&lt;String, String&gt; body = dataTable.asMaps().get(0);
+        response = request.body(body).when().put(endpoint);
+        testContext.set("response", response);
+    }
+
+    @When("I send a DELETE request to {string}")
+    public void sendDeleteRequest(String endpoint) {
+        response = request.when().delete(endpoint);
+        testContext.set("response", response);
+    }
+
+    @Then("the response status code should be {int}")
+    public void verifyStatusCode(int expectedStatus) {
+        response = (Response) testContext.get("response");
+        Assert.assertEquals(response.getStatusCode(), expectedStatus,
+            "Status code mismatch. Body: " + response.getBody().asString());
+    }
+
+    @Then("the response body should contain {string}")
+    public void verifyBodyContains(String expectedText) {
+        response = (Response) testContext.get("response");
+        Assert.assertTrue(response.getBody().asString().contains(expectedText),
+            "Response body does not contain: " + expectedText);
+    }
+
+    @Then("the response JSON path {string} should be {string}")
+    public void verifyJsonPath(String jsonPath, String expectedValue) {
+        response = (Response) testContext.get("response");
+        String actual = response.jsonPath().getString(jsonPath);
+        Assert.assertEquals(actual, expectedValue,
+            "JSONPath " + jsonPath + " mismatch");
+    }
+
+    @Then("the response header {string} should be {string}")
+    public void verifyHeader(String headerName, String expectedValue) {
+        response = (Response) testContext.get("response");
+        Assert.assertEquals(response.getHeader(headerName), expectedValue);
+    }
+
+    @Then("the response time should be less than {int} ms")
+    public void verifyResponseTime(int maxMs) {
+        response = (Response) testContext.get("response");
+        Assert.assertTrue(response.getTime() &lt; maxMs,
+            "Response time " + response.getTime() + "ms exceeded " + maxMs + "ms");
+    }
+}</code></pre>
+
+<h3>JSON Body from Data Tables</h3>
+<p>Cucumber Data Tables map naturally to JSON request bodies. For nested JSON, convert the table to a Map or use a JSON template:</p>
+<pre><code class="language-java">@When("I send a POST request to {string} with JSON body:")
+public void sendPostWithJson(String endpoint, String jsonBody) {
+    response = request.body(jsonBody).when().post(endpoint);
+    testContext.set("response", response);
+}
+
+// Feature file usage with doc string:
+// When I send a POST request to "/orders" with JSON body:
+//   """
+//   {"productId": 101, "quantity": 2, "shipping": {"city": "NYC"}}
+//   """</code></pre>
+
+<h3>JSONPath Assertions</h3>
+<pre><code class="language-java">// Hamcrest fluent validation (alternative approach)
+response.then()
+    .statusCode(201)
+    .body("id", notNullValue())
+    .body("email", equalTo("qa@example.com"))
+    .body("orders.size()", greaterThan(0))
+    .body("orders[0].productId", equalTo(101));
+
+// Extract values for DB validation
+int userId = response.jsonPath().getInt("id");
+testContext.set("createdUserId", userId);</code></pre>
+
+<h3>API + DB Validation in BDD</h3>
+<p>Combine API response validation with database record verification for end-to-end backend testing.</p>
+<pre><code class="language-gherkin">  Scenario: Create user and verify in database
+    Given the API base URL is "https://api.example.com"
+    And the database connection is established
+    When I send a POST request to "/users" with body:
+      | name     | email              |
+      | DBTest   | dbtest@example.com |
+    Then the response status code should be 201
+    And the user "dbtest@example.com" should exist in the database
+    And the database user count should be greater than 0</code></pre>
+
+<h3>JDBC Step Definitions</h3>
+<pre><code class="language-java">package stepdefinitions;
+
+import io.cucumber.java.en.*;
+import org.testng.Assert;
+import utils.DatabaseHelper;
+
+public class DatabaseSteps {
+
+    private DatabaseHelper dbHelper;
+
+    public DatabaseSteps() {
+        this.dbHelper = new DatabaseHelper();
+    }
+
+    @Given("the database connection is established")
+    public void connectDatabase() {
+        dbHelper.connect();
+    }
+
+    @Then("the user {string} should exist in the database")
+    public void verifyUserInDb(String email) {
+        int count = dbHelper.queryForInt(
+            "SELECT COUNT(*) FROM users WHERE email = ?", email);
+        Assert.assertEquals(count, 1, "User not found in database: " + email);
+    }
+
+    @Then("the database user count should be greater than {int}")
+    public void verifyUserCount(int minCount) {
+        int count = dbHelper.queryForInt("SELECT COUNT(*) FROM users");
+        Assert.assertTrue(count > minCount);
+    }
+
+    @Then("I delete the test user {string} from the database")
+    public void deleteTestUser(String email) {
+        dbHelper.execute("DELETE FROM users WHERE email = ?", email);
+    }
+}</code></pre>
+
+<h3>API Test Framework Structure</h3>
+<pre class="ascii-diagram">
+api-bdd-framework/
+├── src/test/java/
+│   ├── runners/
+│   │   └── APIRunner.java
+│   ├── stepdefinitions/
+│   │   ├── APISteps.java
+│   │   └── DatabaseSteps.java
+│   ├── hooks/
+│   │   └── APIHooks.java
+│   └── utils/
+│       ├── DatabaseHelper.java
+│       └── ApiConfigReader.java
+├── src/test/resources/
+│   ├── features/
+│   │   ├── user_api.feature
+│   │   └── order_api.feature
+│   └── config/
+│       └── api-qa.properties
+└── pom.xml
+</pre>
+
+<h3>Complete Runner for API Tests</h3>
+<pre><code class="language-java">package runners;
+
+import io.cucumber.testng.AbstractTestNGCucumberTests;
+import io.cucumber.testng.CucumberOptions;
+import org.testng.annotations.DataProvider;
+
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = {"stepdefinitions", "hooks", "context"},
+    plugin = {
+        "pretty",
+        "html:target/api-report.html",
+        "json:target/api-cucumber.json",
+        "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"
+    },
+    tags = "@api"
+)
+public class APIRunner extends AbstractTestNGCucumberTests {
+
+    @Override
+    @DataProvider(parallel = true)
+    public Object[][] scenarios() {
+        return super.scenarios();
+    }
+}</code></pre>
+
+<h3>API Hooks (No Browser)</h3>
+<pre><code class="language-java">@Before("@api")
+public void setUpApi() {
+    RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+}
+
+@After("@api")
+public void tearDownApi(Scenario scenario) {
+    if (scenario.isFailed()) {
+        Response response = (Response) testContext.get("response");
+        if (response != null) {
+            scenario.attach(response.getBody().asString(),
+                "application/json", "API Response Body");
+        }
+    }
+}</code></pre>
+
+<h3>Interview Q&amp;A — API Testing with Cucumber</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>How do you integrate REST Assured with Cucumber?</td><td>Create step definitions that use REST Assured given/when/then DSL; store Response in TestContext for cross-step assertions.</td></tr>
+<tr><td>2</td><td>How to pass JSON body from feature file?</td><td>Use Data Tables with asMaps() for flat JSON, or doc strings (""") for nested JSON bodies.</td></tr>
+<tr><td>3</td><td>How to validate JSON response fields?</td><td>response.jsonPath().getString("$.field") with Assert, or Hamcrest matchers via response.then().body().</td></tr>
+<tr><td>4</td><td>Can UI and API tests share the same framework?</td><td>Yes — separate feature files and step classes; tag @ui vs @api; conditional hooks skip browser for API tests.</td></tr>
+<tr><td>5</td><td>How to validate API response AND database?</td><td>Assert response in API steps; use JDBC steps to query DB and verify record exists with matching fields.</td></tr>
+<tr><td>6</td><td>How to handle authentication in API steps?</td><td>Set auth token in @Before("@api") hook or Given step: request.header("Authorization", "Bearer " + token).</td></tr>
+<tr><td>7</td><td>How to chain API calls in one scenario?</td><td>Store response values (e.g., created user ID) in TestContext; subsequent steps read from context.</td></tr>
+<tr><td>8</td><td>How to test response time in BDD?</td><td>Step: "the response time should be less than 500 ms" — assert response.getTime() &lt; maxMs.</td></tr>
+<tr><td>9</td><td>How to attach API response to report on failure?</td><td>In @After hook, scenario.attach(response.getBody().asString(), "application/json", "Response").</td></tr>
+<tr><td>10</td><td>REST Assured vs HttpClient in Cucumber?</td><td>REST Assured provides fluent DSL, built-in JSONPath, Hamcrest integration — ideal for BDD readability.</td></tr>
+<tr><td>11</td><td>How to parameterize API base URL?</td><td>Given step accepts URL string, or read from ConfigReader based on -Denv system property.</td></tr>
+<tr><td>12</td><td>How to run only API tests in CI?</td><td>mvn test -Dcucumber.filter.tags="@api" with APIRunner in testng.xml.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- SECTION 29: JENKINS + CUCUMBER/TESTNG INTEGRATION -->
+<section id="section-29" class="section-card">
+<h2>Section 29: Jenkins + Cucumber/TestNG Integration</h2>
+
+<h3>CI/CD Pipeline for BDD Framework</h3>
+<p>Jenkins orchestrates the full BDD test lifecycle — from code checkout through Maven build, parallel TestNG/Cucumber execution, report generation, and stakeholder notification.</p>
+
+<h3>Pipeline Architecture</h3>
+<pre class="ascii-diagram">
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+│   Git    │───→│ Jenkins  │───→│  Maven   │───→│  TestNG  │
+│  (Push/  │    │ Pipeline │    │  Build   │    │  Runner  │
+│   PR)    │    │          │    │          │    │          │
+└──────────┘    └──────────┘    └──────────┘    └────┬─────┘
+                                                      │
+                                                      ▼
+                                               ┌──────────┐
+                                               │ Cucumber │
+                                               │ Scenarios│
+                                               │(Parallel)│
+                                               └────┬─────┘
+                                                    │
+                    ┌───────────────────────────────┼───────────────────────────────┐
+                    ▼                               ▼                               ▼
+             ┌────────────┐                 ┌────────────┐                 ┌────────────┐
+             │  Cucumber  │                 │   Allure   │                 │   Email /  │
+             │ JSON/HTML  │                 │   Report   │                 │   Slack    │
+             │  Reports   │                 │  Dashboard │                 │ Notification│
+             └────────────┘                 └────────────┘                 └────────────┘
+</pre>
+
+<h3>Complete Jenkinsfile</h3>
+<pre><code class="language-yaml">pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'TAG', choices: ['@smoke', '@regression', '@full'],
+               description: 'Cucumber tag to execute')
+        choice(name: 'ENV', choices: ['qa', 'staging'],
+               description: 'Target environment')
+        choice(name: 'BROWSER', choices: ['chrome', 'firefox', 'edge'],
+               description: 'Browser for UI tests')
+        booleanParam(name: 'HEADLESS', defaultValue: true,
+                     description: 'Run browser in headless mode')
+    }
+
+    environment {
+        MAVEN_OPTS = '-Xmx1024m'
+        ALLURE_RESULTS = 'target/allure-results'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean compile -B'
+            }
+        }
+
+        stage('Smoke Tests') {
+            when { expression { params.TAG == '@smoke' || params.TAG == '@full' } }
+            steps {
+                sh """
+                    mvn test -B \
+                      -Dcucumber.filter.tags="@smoke" \
+                      -Denv=${params.ENV} \
+                      -Dbrowser=${params.BROWSER} \
+                      -Dheadless=${params.HEADLESS}
+                """
+            }
+            post {
+                always {
+                    cucumber fileIncludePattern: 'target/cucumber.json'
+                    archiveArtifacts artifacts: 'target/cucumber-report.html', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Regression Tests') {
+            when { expression { params.TAG == '@regression' || params.TAG == '@full' } }
+            parallel {
+                stage('Regression - Chrome') {
+                    steps {
+                        sh """
+                            mvn test -B \
+                              -Dcucumber.filter.tags="@regression" \
+                              -Denv=${params.ENV} \
+                              -Dbrowser=chrome \
+                              -Dheadless=true
+                        """
+                    }
+                }
+                stage('Regression - Firefox') {
+                    steps {
+                        sh """
+                            mvn test -B \
+                              -Dcucumber.filter.tags="@regression" \
+                              -Denv=${params.ENV} \
+                              -Dbrowser=firefox \
+                              -Dheadless=true
+                        """
+                    }
+                }
+            }
+            post {
+                always {
+                    cucumber fileIncludePattern: 'target/cucumber.json'
+                }
+            }
+        }
+
+        stage('Allure Report') {
+            steps {
+                allure includeProperties: false,
+                       jdk: '',
+                       results: [[path: "${ALLURE_RESULTS}"]]
+            }
+        }
+    }
+
+    post {
+        always {
+            junit 'target/cucumber-junit.xml'
+            archiveArtifacts artifacts: 'target/**/*-report*, target/allure-results/**',
+                             allowEmptyArchive: true
+        }
+        success {
+            emailext(
+                subject: "✔ BDD Tests PASSED - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """Build ${env.BUILD_URL} succeeded.
+                         Environment: ${params.ENV} | Tag: ${params.TAG}
+                         Allure Report: ${env.BUILD_URL}allure""",
+                to: '${DEFAULT_RECIPIENTS}'
+            )
+        }
+        failure {
+            emailext(
+                subject: "✘ BDD Tests FAILED - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """Build ${env.BUILD_URL} failed.
+                         Check console output and Allure report.""",
+                to: '${DEFAULT_RECIPIENTS}'
+            )
+        }
+    }
+}</code></pre>
+
+<h3>Jenkins Parameterized Build</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Parameter</th><th>Options</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>TAG</strong></td><td>@smoke, @regression, @full</td><td>Select which test suite to execute</td></tr>
+<tr><td><strong>ENV</strong></td><td>qa, staging</td><td>Target environment — loads corresponding config properties</td></tr>
+<tr><td><strong>BROWSER</strong></td><td>chrome, firefox, edge</td><td>Browser selection passed to DriverFactory</td></tr>
+<tr><td><strong>HEADLESS</strong></td><td>true / false</td><td>Headless mode for CI agents without display</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Maven Command in Jenkins</h3>
+<pre><code class="language-bash"># Smoke tests on QA with Chrome
+mvn clean test -Dcucumber.filter.tags="@smoke" -Dbrowser=chrome -Denv=qa
+
+# Regression with parallel threads
+mvn clean test -Dcucumber.filter.tags="@regression" -Dbrowser=chrome -Denv=staging -Dheadless=true
+
+# API tests only
+mvn clean test -Dcucumber.filter.tags="@api" -Denv=qa
+
+# Full suite with Allure
+mvn clean test -Denv=qa -Dbrowser=chrome
+allure generate target/allure-results -o target/allure-report</code></pre>
+
+<h3>Cucumber JSON Report in Jenkins</h3>
+<p>Install the <strong>Cucumber Reports Plugin</strong> in Jenkins. After test execution, publish results:</p>
+<pre><code class="language-groovy">post {
+    always {
+        cucumber fileIncludePattern: '**/cucumber.json'
+        archiveArtifacts artifacts: 'target/cucumber-report.html'
+    }
+}</code></pre>
+<p>This renders feature/scenario pass-fail trends directly in the Jenkins build page with drill-down to failed steps.</p>
+
+<h3>Allure Report in Jenkins</h3>
+<p>Install the <strong>Allure Plugin</strong>. Configure the pipeline stage:</p>
+<pre><code class="language-groovy">stage('Allure Report') {
+    steps {
+        allure includeProperties: false,
+               results: [[path: 'target/allure-results']]
+    }
+}</code></pre>
+<p>Allure dashboard appears as a sidebar link on each build with history, severity, and screenshot attachments.</p>
+
+<h3>Scheduled Execution (Nightly Regression)</h3>
+<pre><code class="language-groovy">triggers {
+    cron('H 2 * * 1-5')  // Nightly at ~2 AM, Mon-Fri
+}
+
+// Or in Jenkins job config:
+// Build Triggers → Build periodically → H 2 * * *
+// Maven goal: clean test -Dcucumber.filter.tags="@regression" -Denv=qa -Dheadless=true</code></pre>
+
+<h3>Slack / Teams Notification</h3>
+<pre><code class="language-groovy">post {
+    always {
+        script {
+            def status = currentBuild.currentResult
+            def color  = status == 'SUCCESS' ? 'good' : 'danger'
+            def emoji  = status == 'SUCCESS' ? '✔' : '✘'
+
+            slackSend(
+                channel: '#qa-automation',
+                color: color,
+                message: "${emoji} *${env.JOB_NAME}* #${env.BUILD_NUMBER} - ${status}\n" +
+                         "Tag: ${params.TAG} | Env: ${params.ENV} | Browser: ${params.BROWSER}\n" +
+                         "&lt;${env.BUILD_URL}|View Build&gt; | &lt;${env.BUILD_URL}allure|Allure Report&gt;"
+            )
+        }
+    }
+}</code></pre>
+
+<div class="callout">
+<strong>Microsoft Teams:</strong> Use the Office 365 Connector plugin or webhook notification step with Adaptive Card JSON containing build status, report links, and failure summary.
+</div>
+
+<h3>Jenkins Pipeline Best Practices for BDD</h3>
+<ul>
+<li><strong>Archive reports always</strong> — use post { always { } } so reports are saved even on failure.</li>
+<li><strong>Parameterize everything</strong> — tag, env, browser — avoid hardcoding in Jenkinsfile.</li>
+<li><strong>Run smoke on every commit</strong> — gate merges with fast @smoke suite (&lt; 10 min).</li>
+<li><strong>Parallel regression</strong> — split by browser or feature tag in parallel stages.</li>
+<li><strong>Headless by default</strong> — CI agents rarely have a display; pass -Dheadless=true.</li>
+<li><strong>Separate API and UI stages</strong> — API tests run faster without browser overhead.</li>
+<li><strong>Pin Maven/ JDK versions</strong> — use Jenkins tools directive for reproducible builds.</li>
+</ul>
+
+<h3>Interview Q&amp;A — Jenkins + Cucumber/TestNG</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Question</th><th>Answer</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>How do you integrate Cucumber tests with Jenkins?</td><td>Jenkinsfile runs mvn test with Cucumber runner; publish cucumber.json via Cucumber Reports plugin; archive HTML/Allure artifacts.</td></tr>
+<tr><td>2</td><td>How to select Cucumber tags in Jenkins?</td><td>Parameterized build with TAG choice parameter passed as -Dcucumber.filter.tags="@smoke".</td></tr>
+<tr><td>3</td><td>How to run smoke and regression in parallel?</td><td>Use parallel { stage('Smoke') {} stage('Regression') {} } in declarative pipeline.</td></tr>
+<tr><td>4</td><td>What Maven command runs BDD tests?</td><td>mvn clean test -Dcucumber.filter.tags="@smoke" -Dbrowser=chrome -Denv=qa</td></tr>
+<tr><td>5</td><td>How to publish Cucumber reports in Jenkins?</td><td>Install Cucumber Reports plugin; add cucumber fileIncludePattern: 'target/cucumber.json' in post block.</td></tr>
+<tr><td>6</td><td>How to generate Allure report in Jenkins?</td><td>Install Allure plugin; add allure results stage pointing to target/allure-results.</td></tr>
+<tr><td>7</td><td>How to schedule nightly regression?</td><td>cron('H 2 * * 1-5') trigger in Jenkinsfile or periodic build trigger in job config.</td></tr>
+<tr><td>8</td><td>How to notify team on test failure?</td><td>post { failure { emailext / slackSend } } with build URL and Allure report link.</td></tr>
+<tr><td>9</td><td>How to switch environments in CI?</td><td>Parameterized ENV choice passed as -Denv=qa; ConfigReader loads matching properties file.</td></tr>
+<tr><td>10</td><td>How to handle test artifacts?</td><td>archiveArtifacts for HTML reports, screenshots, cucumber.json, allure-results in post always block.</td></tr>
+<tr><td>11</td><td>Should smoke tests gate deployments?</td><td>Yes — run @smoke on every PR/commit; fail the pipeline if smoke fails to prevent broken deploys.</td></tr>
+<tr><td>12</td><td>How to run tests headless in Jenkins?</td><td>Pass -Dheadless=true system property; DriverFactory reads it and adds --headless Chrome argument.</td></tr>
+</tbody>
+</table>
+</div>
+</section>

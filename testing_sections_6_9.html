@@ -1,0 +1,1382 @@
+<section id="section-6" class="section-card">
+<h2>Section 6: Agile Methodology</h2>
+
+<h3>What is Agile?</h3>
+
+<p><strong>Agile</strong> is an iterative and incremental approach to software development that emphasizes collaboration, customer feedback, and the ability to respond to change. Rather than delivering an entire product at the end of a long development cycle, Agile teams deliver working software in small, frequent increments — typically every one to four weeks.</p>
+
+<h4>Definition</h4>
+<p>Agile is a mindset and set of practices defined by the <em>Agile Manifesto</em> (2001) that prioritizes individuals and interactions, working software, customer collaboration, and responding to change over rigid processes, comprehensive documentation, contract negotiation, and following a fixed plan.</p>
+
+<h4>History</h4>
+<p>In the late 1990s, software projects were failing at alarming rates under the <strong>Waterfall</strong> model. The 2001 gathering at Snowbird, Utah brought together 17 software practitioners — including Kent Beck, Martin Fowler, and Jeff Sutherland — who authored the Agile Manifesto. Frameworks like Scrum (1995), Extreme Programming (XP), and Kanban soon followed, giving teams concrete practices to implement Agile values.</p>
+
+<h4>Why Agile Replaced Waterfall</h4>
+<div class="callout">
+<p><strong>Waterfall failed because:</strong> requirements changed after months of development; testing happened too late to fix architectural issues; customers saw the product only at the end; and long release cycles meant competitors shipped first. Agile addresses each failure mode by shortening feedback loops, integrating QA from sprint one, and delivering value continuously.</p>
+</div>
+
+<ul>
+<li><strong>Changing requirements:</strong> Waterfall locked requirements at the start; Agile welcomes change even late in development.</li>
+<li><strong>Late testing:</strong> Waterfall deferred QA to the final phase; Agile embeds testing in every sprint.</li>
+<li><strong>Customer disconnect:</strong> Waterfall had sign-off gates; Agile involves customers every sprint review.</li>
+<li><strong>High risk:</strong> Waterfall discovered problems at integration; Agile surfaces risk early through working increments.</li>
+</ul>
+
+<h3>Agile Manifesto: The Four Values</h3>
+
+<p>The Agile Manifesto states four value pairs. The items on the <em>left</em> are valued more — but the items on the right still matter.</p>
+
+<h4>1. Individuals and Interactions over Processes and Tools</h4>
+<p><strong>Meaning:</strong> Effective communication between developers, QA, PO, and stakeholders drives quality more than any tool chain.</p>
+<p><strong>QA Focus:</strong> As a QA engineer, you participate in standups, refinement, and pairing sessions — not just ticket updates. When you find a defect, walk to the developer or hop on a quick call rather than filing a vague bug and waiting three days. Tools like Jira and Selenium support your work; they don't replace the conversation about edge cases, test data, or acceptance criteria ambiguity.</p>
+
+<h4>2. Working Software over Comprehensive Documentation</h4>
+<p><strong>Meaning:</strong> Delivering tested, deployable software each sprint matters more than 200-page requirement specs.</p>
+<p><strong>QA Focus:</strong> Your test cases, automation scripts, and CI results <em>are</em> the living documentation. Focus on executable specifications (BDD Gherkin, automated regression suites) over Word documents that go stale. Document enough for audit and onboarding — not so much that maintenance becomes a second job.</p>
+
+<h4>3. Customer Collaboration over Contract Negotiation</h4>
+<p><strong>Meaning:</strong> Ongoing partnership with the business beats arguing over what the contract "really meant."</p>
+<p><strong>QA Focus:</strong> Attend sprint reviews and demo prep. When acceptance criteria are unclear, ask the PO or customer proxy directly: "If the user enters zero quantity, should we block or warn?" Your questions during refinement prevent contract-style disputes later.</p>
+
+<h4>4. Responding to Change over Following a Plan</h4>
+<p><strong>Meaning:</strong> Plans are useful; rigidity is not. Priorities shift — teams adapt.</p>
+<p><strong>QA Focus:</strong> Build flexible test automation (Page Object Model, API abstraction layers) so when UI changes mid-sprint, you update one layer — not 400 tests. Maintain a regression suite that runs fast enough to give confidence on every change, not just planned releases.</p>
+
+<h3>The 12 Agile Principles</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Principle</th><th>One-Line Explanation</th><th>QA Relevance</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Customer satisfaction through early and continuous delivery</td><td>Ship valuable software frequently, from weeks to months.</td><td>Test each increment — don't wait for "feature complete."</td></tr>
+<tr><td>2</td><td>Welcome changing requirements</td><td>Change is competitive advantage, even late in development.</td><td>Design tests for maintainability; use tags to scope regression.</td></tr>
+<tr><td>3</td><td>Deliver working software frequently</td><td>Prefer shorter timescales between releases.</td><td>CI/CD pipelines must run on every commit; smoke tests gate deploys.</td></tr>
+<tr><td>4</td><td>Business people and developers work together daily</td><td>Close cooperation throughout the project.</td><td>QA bridges business rules and technical implementation in refinement.</td></tr>
+<tr><td>5</td><td>Build projects around motivated individuals</td><td>Trust and support people; don't micromanage.</td><td>QA owns quality advocacy — propose improvements in retros, not just report bugs.</td></tr>
+<tr><td>6</td><td>Face-to-face conversation is most efficient</td><td>Direct communication beats lengthy documentation chains.</td><td>Three Amigos sessions (PO, Dev, QA) clarify stories before coding.</td></tr>
+<tr><td>7</td><td>Working software is the primary measure of progress</td><td>Code that runs and passes tests = progress; slides don't count.</td><td>Definition of Done includes tested, automated where feasible, and deployable.</td></tr>
+<tr><td>8</td><td>Sustainable development pace</td><td>Teams maintain velocity indefinitely — no death marches.</td><td>Don't skip regression to "just ship it"; push back on unrealistic sprint commitments.</td></tr>
+<tr><td>9</td><td>Continuous attention to technical excellence</td><td>Good design and craftsmanship enable agility.</td><td>Invest in test frameworks, flaky-test triage, and environment stability.</td></tr>
+<tr><td>10</td><td>Simplicity — maximize work not done</td><td>Do the simplest thing that delivers value.</td><td>Automate high-value paths first; avoid over-engineering test harnesses.</td></tr>
+<tr><td>11</td><td>Self-organizing teams</td><td>Best architectures and requirements emerge from empowered teams.</td><td>QA participates in estimation and task breakdown — not assigned testing at the end.</td></tr>
+<tr><td>12</td><td>Regular reflection and adjustment</td><td>Teams inspect and adapt at regular intervals.</td><td>Retrospectives drive test debt reduction, better AC quality, faster feedback loops.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Agile vs Waterfall: Detailed Comparison</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Dimension</th><th>Waterfall</th><th>Agile</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Planning</strong></td><td>Comprehensive upfront plan; changes require change control boards</td><td>Rolling wave planning; plan detail increases as work approaches</td></tr>
+<tr><td><strong>Requirements</strong></td><td>Fixed at project start; signed off before design</td><td>Evolving backlog; refined continuously each sprint</td></tr>
+<tr><td><strong>Design</strong></td><td>Complete system design before coding</td><td>Just-enough design per story; emergent architecture</td></tr>
+<tr><td><strong>Development</strong></td><td>Sequential phases; coding starts after design approval</td><td>Concurrent dev, test, and design within each iteration</td></tr>
+<tr><td><strong>Testing</strong></td><td>Dedicated test phase after development completes</td><td>Continuous testing — unit, integration, E2E every sprint</td></tr>
+<tr><td><strong>Delivery</strong></td><td>Single big-bang release at project end</td><td>Incremental releases every 1–4 weeks</td></tr>
+<tr><td><strong>Feedback Loop</strong></td><td>Customer sees product at UAT — months after start</td><td>Customer validates every sprint review</td></tr>
+<tr><td><strong>Risk</strong></td><td>High — integration and requirement risks discovered late</td><td>Lower — risks surface early through working increments</td></tr>
+<tr><td><strong>Documentation</strong></td><td>Heavy BRD, FRD, test plans upfront</td><td>Lightweight — user stories, AC, living automation</td></tr>
+<tr><td><strong>Team Structure</strong></td><td>Silos — separate dev, QA, ops teams</td><td>Cross-functional squad — dev, QA, ops together</td></tr>
+<tr><td><strong>Customer Involvement</strong></td><td>At kickoff and UAT only</td><td>PO embedded; stakeholder demos every sprint</td></tr>
+<tr><td><strong>Scope Management</strong></td><td>Fixed scope, variable timeline/budget</td><td>Fixed time/budget, variable scope (prioritized backlog)</td></tr>
+<tr><td><strong>Defect Cost</strong></td><td>Expensive — found in late test or production</td><td>Cheaper — caught within days in same sprint</td></tr>
+<tr><td><strong>QA Role Timing</strong></td><td>QA engaged after dev handoff</td><td>QA engaged at story refinement, before first line of code</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Agile Life Cycle</h3>
+
+<pre class="ascii-diagram"><code>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        AGILE ITERATIVE LIFE CYCLE                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Release 1          Release 2          Release 3          Release N
+  ┌─────────┐        ┌─────────┐        ┌─────────┐        ┌─────────┐
+  │ Sprint 1│        │ Sprint 3│        │ Sprint 5│        │ Sprint  │
+  │ Sprint 2│   ──►  │ Sprint 4│   ──►  │ Sprint 6│   ──►  │  ...    │
+  └────┬────┘        └────┬────┘        └────┬────┘        └────┬────┘
+       │                  │                  │                  │
+       ▼                  ▼                  ▼                  ▼
+   Increment v1.0     Increment v1.1     Increment v2.0     Increment vN
+
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │                    SINGLE SPRINT (e.g., 2 weeks)                     │
+  ├──────────────────────────────────────────────────────────────────────┤
+  │                                                                      │
+  │   PLAN ──► DESIGN ──► BUILD ──► TEST ──► REVIEW ──► RETRO           │
+  │     │         │          │         │         │          │            │
+  │     │         │          │         │         │          └── Improve  │
+  │     │         │          │         │         └── Demo to stakeholders│
+  │     │         │          │         └── QA: manual + automation      │
+  │     │         │          └── Dev + QA pair on stories               │
+  │     │         └── Spike / tech design as needed                     │
+  │     └── Sprint Planning: select backlog items, define sprint goal   │
+  │                                                                      │
+  │   ◄─────────────── Continuous Feedback Loop ──────────────────────► │
+  │                                                                      │
+  └──────────────────────────────────────────────────────────────────────┘
+
+  QA Activities Across Iteration:
+  ┌────────────┬────────────┬────────────┬────────────┬────────────┐
+  │ Refinement │  Dev/Test  │ Regression │   Demo     │   Retro    │
+  │ Write AC   │  Parallel  │  CI Suite  │ Show test  │ Flaky test │
+  │ scenarios  │  execution │  nightly   │ coverage   │ debt items │
+  └────────────┴────────────┴────────────┴────────────┴────────────┘
+</code></pre>
+
+<h3>Scrum vs Kanban vs SAFe</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Scrum</th><th>Kanban</th><th>SAFe (Scaled Agile)</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Structure</strong></td><td>Fixed-length sprints (1–4 weeks)</td><td>Continuous flow; no fixed iterations</td><td>Multiple Agile Release Trains on PI cadence</td></tr>
+<tr><td><strong>Roles</strong></td><td>PO, Scrum Master, Dev Team</td><td>No prescribed roles</td><td>RTE, PO, SM, System Architect, QA at multiple levels</td></tr>
+<tr><td><strong>Planning</strong></td><td>Sprint Planning each iteration</td><td>Replenishment as WIP allows</td><td>PI Planning every 8–12 weeks</td></tr>
+<tr><td><strong>Work Limits</strong></td><td>Sprint commitment (time-box)</td><td>WIP limits per column</td><td>Team + program WIP; PI objectives</td></tr>
+<tr><td><strong>Metrics</strong></td><td>Velocity, burndown</td><td>Lead time, cycle time, throughput</td><td>Velocity, predictability, ART metrics</td></tr>
+<tr><td><strong>Change Mid-Cycle</strong></td><td>Scope locked during sprint</td><td>Items added anytime if WIP permits</td><td>Changes via backlog; PI scope negotiated at boundaries</td></tr>
+<tr><td><strong>Ceremonies</strong></td><td>5 events: Planning, Daily, Review, Retro, Refinement</td><td>Optional: standup, replenishment, review</td><td>PI Planning, System Demo, Inspect &amp; Adapt</td></tr>
+<tr><td><strong>Best For</strong></td><td>Product teams with defined release cadence</td><td>Support, ops, unpredictable incoming work</td><td>Large enterprises (50–500+ people) on same product</td></tr>
+<tr><td><strong>QA Integration</strong></td><td>QA in sprint; DoD includes tested increment</td><td>QA pulls next item when capacity frees</td><td>QA in team + system-level QA sync across ARTs</td></tr>
+<tr><td><strong>Estimation</strong></td><td>Story points; sprint commitment</td><td>Often no estimation; focus on flow</td><td>Story points + WSJF at portfolio level</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>SAFe Overview</h3>
+
+<h4>What is SAFe?</h4>
+<p><strong>Scaled Agile Framework (SAFe)</strong> is an enterprise-scale Agile methodology that aligns multiple Scrum/Kanban teams toward common program and portfolio objectives. It adds layers — Team, Program, Large Solution, Portfolio — so that 10 teams shipping independently still integrate into a cohesive release train.</p>
+
+<h4>PI Planning (Program Increment Planning)</h4>
+<p>PI Planning is a two-day, face-to-face (or virtual) event held every 8–12 weeks where all teams on an <strong>Agile Release Train (ART)</strong> plan the next Program Increment together. Teams break down features into stories, identify dependencies, and commit to PI Objectives. QA participates by estimating test effort, flagging integration test needs, and identifying cross-team test dependencies (e.g., Team A's API change breaks Team B's UI tests).</p>
+
+<h4>Agile Release Trains (ARTs)</h4>
+<p>An ART is a long-lived team of Agile teams (typically 50–125 people) that plans, commits, and executes together. Each ART delivers a continuous flow of value on a shared cadence. QA engineers belong to a specific team within the ART but coordinate system-level testing during the PI.</p>
+
+<h4>QA Role in SAFe</h4>
+<ul>
+<li><strong>Team level:</strong> Same as Scrum — refine stories, automate, test within sprint, meet Definition of Done.</li>
+<li><strong>Program level:</strong> Participate in System Demo; execute end-to-end scenarios spanning teams; maintain shared regression suite.</li>
+<li><strong>PI Planning:</strong> Estimate testing capacity; negotiate test environment availability; identify NFR (performance, security) test stories.</li>
+<li><strong>Inspect &amp; Adapt:</strong> Contribute to problem-solving workshops on quality metrics, escaped defects, automation coverage gaps.</li>
+</ul>
+
+<h3>Advantages of Agile for QA</h3>
+
+<div class="callout">
+<p><strong>Early Involvement:</strong> QA joins refinement before development starts — catching ambiguous acceptance criteria when they're cheap to fix, not after code is merged.</p>
+</div>
+
+<ul>
+<li><strong>Continuous Feedback:</strong> Daily standups and sprint reviews create rapid defect discovery and resolution cycles.</li>
+<li><strong>Shift-Left Testing:</strong> Unit tests, API tests, and contract tests run in CI before QA manual pass — reducing escaped defects.</li>
+<li><strong>Reduced Test Debt:</strong> Testing every sprint prevents the "test everything at the end" avalanche.</li>
+<li><strong>Direct PO Access:</strong> QA clarifies requirements with the Product Owner in real time.</li>
+<li><strong>Automation ROI:</strong> Frequent releases justify automation investment; each regression run saves manual hours.</li>
+<li><strong>Quality as Team Responsibility:</strong> Developers write unit tests; QA focuses on integration, E2E, and exploratory testing.</li>
+<li><strong>Visible Progress:</strong> Burndown charts and CI dashboards show test completion transparently.</li>
+<li><strong>Retrospective Improvement:</strong> QA proposes process fixes (better test data, stable environments) every sprint.</li>
+</ul>
+
+<h3>Challenges of Agile for QA</h3>
+
+<ul>
+<li><strong>Incomplete Requirements:</strong> Stories may lack edge-case AC; QA must ask probing questions under time pressure.</li>
+<li><strong>Time Pressure:</strong> "Done" at sprint end means testing competes with last-minute dev commits — risk of shallow testing.</li>
+<li><strong>Regression Overhead:</strong> Each sprint adds features; full regression grows unless automation keeps pace.</li>
+<li><strong>Changing Scope:</strong> Mid-sprint scope creep (even when discouraged) forces re-prioritizing test effort.</li>
+<li><strong>Environment Instability:</strong> Shared QA environments break frequently; blocked testing stalls sprint goals.</li>
+<li><strong>Flaky Automation:</strong> CI failures from unstable tests erode trust in the pipeline.</li>
+<li><strong>Documentation Gaps:</strong> Less formal specs mean QA relies on tribal knowledge — risky for onboarding.</li>
+<li><strong>Sprint Commitment Pressure:</strong> Teams may mark stories "done" without meeting full DoD to hit velocity targets.</li>
+</ul>
+
+<h3>Real Project Example: QA Engineer in an Agile Team</h3>
+
+<h4>Day-in-the-Life Narrative — Sprint Week 2, Day 7 (Wednesday)</h4>
+
+<p><strong>8:45 AM — Pre-Standup Prep:</strong> Priya, a QA Automation Engineer on the E-commerce Checkout squad, checks Jenkins: overnight regression ran 847 tests — 3 failures. She triages: two are known flaky login tests (creates Jira ticket QA-4412), one is a genuine regression in tax calculation (blocks story CHK-892).</p>
+
+<p><strong>9:00 AM — Daily Standup:</strong> "Yesterday I finished API automation for coupon validation and found a tax bug on CHK-892. Today I'll verify the dev fix, run smoke on staging, and start mobile checkout tests. Blocker: staging payment gateway is returning 503 — need DevOps to restart the mock service."</p>
+
+<p><strong>9:30 AM — Pair with Developer:</strong> Priya pairs with Raj on the tax fix. She writes a failing integration test first; Raj fixes the code; test goes green. They merge together — shift-left in action.</p>
+
+<p><strong>11:00 AM — Backlog Refinement (1 hr):</strong> Next sprint's story: "Guest checkout without account." Priya asks: "What happens if guest email already exists?" PO clarifies: show login prompt. Priya adds AC and notes three test scenarios in Jira.</p>
+
+<p><strong>1:00 PM — Test Execution:</strong> Manual exploratory testing on CHK-885 (address autocomplete). Finds edge case: PO boxes rejected incorrectly. Logs bug with screenshot, network HAR, steps to reproduce.</p>
+
+<p><strong>3:00 PM — Automation:</strong> Extends Page Object for checkout; adds 4 new Cypress tests for guest flow skeleton (story not dev-complete — TDD approach with mocked API).</p>
+
+<p><strong>4:30 PM — Slack / Jira Updates:</strong> Moves CHK-892 to Done after CI green. Updates sprint board. Comments on CHK-885 bug with severity assessment: Medium — workaround exists.</p>
+
+<p><strong>5:15 PM — Optional:</strong> Reviews dev's PR for testability — suggests adding <code>data-testid</code> attributes to new buttons.</p>
+
+<h3>Interview Questions &amp; Answers — Agile Methodology</h3>
+
+<h4>Q1: What is Agile, and how is it different from Scrum?</h4>
+<p><strong>A:</strong> Agile is a philosophy and set of values/principles for iterative development. Scrum is a specific framework that implements Agile through defined roles, ceremonies, and artifacts. You can be Agile without Scrum (e.g., Kanban, XP), but Scrum is the most common Agile framework.</p>
+
+<h4>Q2: Explain the Agile Manifesto values and how they apply to QA.</h4>
+<p><strong>A:</strong> The four values prioritize people, working software, collaboration, and adaptability. For QA: collaborate in refinement (interactions over tools), rely on automated tests as living docs (software over documents), clarify AC with PO directly (collaboration over contracts), and refactor tests when requirements change (change over plan).</p>
+
+<h4>Q3: Why did Agile emerge? What problems does it solve for testing?</h4>
+<p><strong>A:</strong> Waterfall caused late defect discovery, requirement drift, and QA bottlenecks at project end. Agile integrates testing every sprint, enabling shift-left, continuous feedback, and cheaper defect fixes.</p>
+
+<h4>Q4: What are the 12 Agile Principles? Name five and explain QA relevance.</h4>
+<p><strong>A:</strong> Examples: (1) Early delivery — test each increment; (7) Working software as progress — DoD requires tested code; (9) Technical excellence — invest in automation frameworks; (11) Self-organizing teams — QA estimates and owns test tasks; (12) Reflect and adapt — retros improve test processes.</p>
+
+<h4>Q5: Compare Agile and Waterfall from a QA perspective.</h4>
+<p><strong>A:</strong> Waterfall: QA starts after dev completes; big test phase; late defects expensive. Agile: QA from refinement; continuous testing; defects found within days; regression grows each sprint requiring automation discipline.</p>
+
+<h4>Q6: What is the difference between Scrum, Kanban, and SAFe?</h4>
+<p><strong>A:</strong> Scrum uses time-boxed sprints with fixed roles and ceremonies. Kanban uses continuous flow with WIP limits — no sprints. SAFe scales Agile to enterprises with ARTs, PI Planning, and alignment across dozens of teams.</p>
+
+<h4>Q7: What is PI Planning, and what does QA do there?</h4>
+<p><strong>A:</strong> PI Planning is a 2-day event every 8–12 weeks where ART teams plan the next Program Increment. QA estimates test effort, identifies cross-team dependencies, plans integration/regression scope, and commits to PI objectives.</p>
+
+<h4>Q8: What are the main advantages of Agile for QA?</h4>
+<p><strong>A:</strong> Early involvement in requirements, continuous feedback, shift-left, direct PO access, justified automation ROI, quality as shared responsibility, and sprint retros for process improvement.</p>
+
+<h4>Q9: What challenges does Agile create for QA?</h4>
+<p><strong>A:</strong> Incomplete requirements, sprint-end time pressure, growing regression scope, environment instability, flaky automation, reduced formal documentation, and temptation to skip DoD to meet velocity.</p>
+
+<h4>Q10: How does QA "shift left" in Agile?</h4>
+<p><strong>A:</strong> Participate in refinement and Three Amigos; write test scenarios before dev; encourage TDD/BDD; run API and contract tests in CI; review PRs for testability; automate smoke tests on every build.</p>
+
+<h4>Q11: What is an increment in Agile?</h4>
+<p><strong>A:</strong> A potentially shippable piece of product at the end of an iteration, meeting Definition of Done — including tested, integrated, and documented (as agreed) functionality.</p>
+
+<h4>Q12: How do you handle changing requirements mid-sprint as QA?</h4>
+<p><strong>A:</strong> Discuss impact with PO and SM; if scope change is essential, swap equal-effort stories out; update test cases and automation; re-run targeted regression; never silently absorb extra scope — it hides quality risk.</p>
+
+<h4>Q13: What metrics does QA track in Agile?</h4>
+<p><strong>A:</strong> Sprint burndown (test tasks), test case execution rate, automation coverage, escaped defect rate, CI pass rate, defect density per story, cycle time from In Progress to Done, flaky test count.</p>
+
+<h4>Q14: How is quality everyone's responsibility in Agile?</h4>
+<p><strong>A:</strong> Developers write unit/integration tests and fix bugs they introduce. PO writes testable AC. QA provides quality coaching, exploratory testing, and automation — but doesn't own quality alone. DoD is a team agreement.</p>
+
+<h4>Q15: Describe a situation where Agile practices helped you catch a critical bug early.</h4>
+<p><strong>A:</strong> (Use STAR format) During refinement for a payment story, I asked about currency rounding. The AC didn't specify banker's rounding — we updated it before dev started. My API test written on day 2 caught a rounding bug that would have caused financial discrepancies in production.</p>
+
+<h4>Q16: Can Agile work without automation?</h4>
+<p><strong>A:</strong> For small products early on, yes — manual regression may suffice briefly. As sprints accumulate features, manual regression becomes the bottleneck. Sustainable Agile QA requires automation for regression, smoke, and CI gates.</p>
+
+<h4>Q17: What is the QA engineer's role in sprint review?</h4>
+<p><strong>A:</strong> Support the demo by confirming tested scenarios, present test coverage summary if asked, note known open defects and workarounds, and gather stakeholder feedback that becomes new backlog items.</p>
+
+<h4>Q18: How do you prevent testing from becoming a sprint bottleneck?</h4>
+<p><strong>A:</strong> Test alongside development (not after), automate regression, use risk-based testing for new features, ensure stories are small and testable (INVEST), maintain stable test environments, and include test tasks in sprint planning with realistic capacity.</p>
+
+<h4>Q19: What is the difference between Agile and Lean?</h4>
+<p><strong>A:</strong> Agile focuses on iterative software delivery and customer collaboration. Lean (originally from manufacturing) focuses on eliminating waste and optimizing flow. Kanban applies Lean principles to knowledge work. Both complement each other — Agile teams often use Lean thinking to identify waste in testing (waiting for environments, redundant manual tests).</p>
+
+<h4>Q20: How do you measure Agile maturity from a QA standpoint?</h4>
+<p><strong>A:</strong> Indicators: QA involved in refinement (&gt;80% of stories), automated regression in CI (&lt;30 min), DoD consistently enforced, escaped defect rate decreasing, cycle time from Ready for QA to Done stable, test tasks visible on sprint board, retros produce actionable quality improvements.</p>
+
+<h3>Agile Frameworks Quick Reference</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Framework</th><th>Focus</th><th>QA Entry Point</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Scrum</strong></td><td>Sprint-based delivery with defined roles and ceremonies</td><td>Sprint Planning, refinement, daily standup, DoD enforcement</td></tr>
+<tr><td><strong>Kanban</strong></td><td>Continuous flow with WIP limits</td><td>Pull-based testing when item enters QA column; cycle time tracking</td></tr>
+<tr><td><strong>XP (Extreme Programming)</strong></td><td>Engineering practices: TDD, pair programming, CI</td><td>TDD collaboration, pair testing, continuous integration gates</td></tr>
+<tr><td><strong>SAFe</strong></td><td>Enterprise scaling across ARTs</td><td>PI Planning, system demo, cross-team integration testing</td></tr>
+<tr><td><strong>LeSS / Nexus</strong></td><td>Scrum scaled to 2–8+ teams on one product</td><td>Shared sprint review, cross-team regression coordination</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Agile Anti-Patterns QA Should Watch For</h3>
+<ul>
+<li><strong>Water-Scrum-Fall:</strong> Sprints for dev, but testing and release happen in big batches afterward — negates Agile benefits</li>
+<li><strong>Dark Scrum:</strong> Velocity worship; stories marked Done without meeting DoD — QA must push back</li>
+<li><strong>Fragile Agile:</strong> No automation investment; manual regression grows until team collapses under test debt</li>
+<li><strong>Zombie Standups:</strong> Status reports to manager, no blockers raised — QA should model raising real impediments</li>
+<li><strong>PO Absent:</strong> No one to clarify AC — QA documents assumptions and escalates via SM</li>
+</ul>
+
+</section>
+
+<section id="section-7" class="section-card">
+<h2>Section 7: Scrum Framework</h2>
+
+<h3>Scrum Overview</h3>
+<p><strong>Scrum</strong> is the most widely adopted Agile framework. It organizes work into fixed-length <em>sprints</em>, defines three accountabilities (Product Owner, Scrum Master, Developers), five events, and three artifacts. For QA engineers, Scrum provides predictable cadence, clear entry points for quality activities, and transparent progress tracking.</p>
+
+<h3>Scrum Roles</h3>
+
+<h4>Product Owner (PO)</h4>
+<p>The Product Owner maximizes product value by owning and ordering the Product Backlog. They represent stakeholders and customers, decide what gets built and in what order, and accept or reject completed work.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Responsibility</th><th>Description</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td>Backlog Management</td><td>Create, refine, prioritize, and maintain Product Backlog items</td><td>Prioritizes "One-click reorder" above "Dark mode" based on customer data</td></tr>
+<tr><td>Define Value</td><td>Articulate why each item matters to users and business</td><td>Writes story: "Reduce checkout abandonment by 15%"</td></tr>
+<tr><td>Acceptance Criteria</td><td>Provide clear, testable AC (often with QA input)</td><td>AC: "Given valid card, payment processes in &lt;3 seconds"</td></tr>
+<tr><td>Sprint Goal</td><td>Collaborate on sprint goal during Planning</td><td>"Enable guest checkout for holiday campaign launch"</td></tr>
+<tr><td>Accept/Reject Work</td><td>Validate increment meets AC at end of sprint</td><td>Rejects story because refund flow missing from AC implementation</td></tr>
+<tr><td>Stakeholder Liaison</td><td>Communicate vision, gather feedback, manage expectations</td><td>Shares sprint review feedback → new backlog items</td></tr>
+<tr><td>Say "No"</td><td>Protect team from scope creep; defer lower-value work</td><td>Declines mid-sprint "quick logo change" — adds to backlog</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>PO Interactions with QA:</strong> QA helps PO write testable AC during refinement. QA asks "what if" questions that expose gaps. PO clarifies business rules QA needs for test data (e.g., valid discount codes). At sprint end, PO relies on QA's sign-off that DoD is met before formal acceptance.</p>
+
+<p><strong>Real Example:</strong> PO proposes story "Apply loyalty points at checkout." QA asks: "Can points cover 100% of order?" PO initially unsure — checks with business. AC updated: "Points may cover up to 80% of order total; remaining must be paid by card." QA writes test cases from clarified AC — prevents rework.</p>
+
+<h4>Scrum Master (SM)</h4>
+<p>The Scrum Master serves the team by ensuring Scrum is understood and enacted, removing impediments, and fostering an environment where the team can be productive. They are a <strong>servant-leader</strong> — leading through service, not authority.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Responsibility</th><th>Description</th><th>How They Help QA</th></tr>
+</thead>
+<tbody>
+<tr><td>Facilitate Events</td><td>Ensure ceremonies happen, stay time-boxed, stay productive</td><td>Keeps refinement focused so QA gets AC clarity time</td></tr>
+<tr><td>Remove Impediments</td><td>Block and tackle organizational obstacles</td><td>Escalates broken QA environment; gets DevOps priority fix</td></tr>
+<tr><td>Coach Scrum</td><td>Teach team Scrum theory and practice</td><td>Reminds team: stories aren't Done until QA DoD met</td></tr>
+<tr><td>Protect Team</td><td>Shield from external interruptions during sprint</td><td>Redirects ad-hoc testing requests to PO for backlog prioritization</td></tr>
+<tr><td>Promote Collaboration</td><td>Foster cross-functional teamwork</td><td>Organizes Three Amigos sessions for complex stories</td></tr>
+<tr><td>Improve Process</td><td>Facilitate retrospectives; track action items</td><td>Follows up on retro action: "Reduce flaky tests by 50%"</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Servant-Leader Concept:</strong> The SM doesn't assign tasks or dictate solutions. They ask: "What's blocking you?" and "What does the team need?" For QA, this means the SM advocates for test environment stability, realistic sprint capacity including test effort, and team agreement on Definition of Done — without being QA's manager.</p>
+
+<h4>Development Team (Developers)</h4>
+<p>In Scrum, "Developers" means everyone who creates the increment — not just coders. This includes frontend, backend, QA/automation engineers, and sometimes DevOps. The team is <strong>cross-functional</strong> (all skills to deliver increment) and <strong>self-organizing</strong> (decides how to accomplish sprint goal).</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Characteristic</th><th>Description</th><th>QA Implication</th></tr>
+</thead>
+<tbody>
+<tr><td>Cross-Functional</td><td>Team has all skills to deliver shippable increment</td><td>QA is embedded — not a separate handoff team</td></tr>
+<tr><td>Self-Organizing</td><td>Team decides task assignment and approach</td><td>QA volunteers for test tasks during planning; pairs with devs</td></tr>
+<tr><td>Size</td><td>Typically 3–9 people</td><td>Small enough for daily coordination; large enough for throughput</td></tr>
+<tr><td>Collective Ownership</td><td>Whole team owns sprint goal, not individual stories</td><td>QA helps finish dev tasks if blocked; devs help with test data setup</td></tr>
+<tr><td>No Sub-Teams</td><td>No "QA team" vs "dev team" within Scrum team</td><td>Quality is shared; QA leads quality practices</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>QA / Automation Engineer in Scrum</h4>
+<p>QA is a full Scrum team member — attending all ceremonies, participating in estimation, and contributing to the sprint goal. Below is a detailed day-by-day breakdown for a 2-week sprint.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Day</th><th>Primary QA Activities</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Day 1 (Mon) — Sprint Start</strong></td><td>Sprint Planning (full morning)</td><td>Review committed stories; break into test tasks; estimate; identify test data/env needs; agree on sprint test goal</td></tr>
+<tr><td><strong>Day 1 PM</strong></td><td>Setup &amp; Early Test Design</td><td>Create test cases from AC; scaffold automation structure; verify environments post-deploy</td></tr>
+<tr><td><strong>Day 2</strong></td><td>Refinement + Dev Support</td><td>Backlog grooming for Sprint+1; write Gherkin scenarios; pair on first story; API test stubs</td></tr>
+<tr><td><strong>Day 3</strong></td><td>Parallel Testing</td><td>Test first completed story; log bugs; run smoke suite; begin automation for stable flows</td></tr>
+<tr><td><strong>Day 4</strong></td><td>Automation Focus</td><td>Build/maintain regression tests; fix flaky tests; CI pipeline monitoring</td></tr>
+<tr><td><strong>Day 5</strong></td><td>Mid-Sprint Checkpoint</td><td>Review burndown — are test tasks on track? Exploratory test in-progress stories; regression on merged code</td></tr>
+<tr><td><strong>Day 6</strong></td><td>Integration Testing</td><td>Cross-story integration scenarios; data setup for edge cases; performance smoke if NFR story</td></tr>
+<tr><td><strong>Day 7</strong></td><td>Bug Verification + Automation</td><td>Verify fixed defects; regression on bug fixes; extend automation coverage</td></tr>
+<tr><td><strong>Day 8</strong></td><td>Heavy Test Execution</td><td>Most stories nearing Done — full AC validation; update test reports in Jira</td></tr>
+<tr><td><strong>Day 9</strong></td><td>Final Push + Demo Prep</td><td>Complete remaining test tasks; full regression; prepare test summary for sprint review; known issues list</td></tr>
+<tr><td><strong>Day 10 (Fri) — Sprint End</strong></td><td>Review + Retro</td><td>AM: Sprint Review — support demo, present quality metrics. PM: Retrospective — propose QA improvements</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Scrum Ceremonies</h3>
+
+<h4>1. Sprint Planning</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Attribute</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Duration</strong></td><td>Max 8 hours for 1-month sprint; typically 2–4 hours for 2-week sprint</td></tr>
+<tr><td><strong>Participants</strong></td><td>Entire Scrum Team + optional stakeholders (observe only)</td></tr>
+<tr><td><strong>Agenda Part 1</strong></td><td>PO presents top backlog items; team discusses scope; defines Sprint Goal</td></tr>
+<tr><td><strong>Agenda Part 2</strong></td><td>Team selects items fitting capacity; breaks into tasks; creates Sprint Backlog</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>How QA Participates:</strong></p>
+<ul>
+<li>Reviews each story's AC — flags untestable or ambiguous items before commitment</li>
+<li>Proposes test tasks: "Manual AC validation," "API automation," "Regression run," "Test data setup"</li>
+<li>Contributes to story point estimation via Planning Poker — shares testing complexity perspective</li>
+<li>Advocates for capacity: "We can commit to 5 stories if test env is stable; 4 if not"</li>
+<li>Identifies dependencies: "Need payment sandbox credentials before Day 3"</li>
+</ul>
+
+<p><strong>What QA Prepares:</strong> Review refined backlog before planning; note AC gaps; prepare estimation notes (similar past stories); verify environment readiness checklist.</p>
+
+<p><strong>Story Point Estimation:</strong> QA participates equally. A "5-point" story with complex validation logic and multi-system integration may get QA pushback to split it. QA might say: "The dev work is 3 points, but integration testing across 3 services adds risk — I recommend 5 total or split the story."</p>
+
+<h4>2. Daily Standup (Daily Scrum)</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Attribute</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Duration</strong></td><td>15 minutes, same time every day</td></tr>
+<tr><td><strong>Participants</strong></td><td>Developers (required); SM (facilitates); PO (optional)</td></tr>
+<tr><td><strong>Format</strong></td><td>What did I do yesterday? What will I do today? Any blockers?</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>What QA Reports — Real Examples:</strong></p>
+<ul>
+<li><strong>Yesterday:</strong> "Completed manual testing on AUTH-234 login flow — found 2 bugs, both logged. Ran nightly regression — 98% pass rate."</li>
+<li><strong>Today:</strong> "Verifying AUTH-234 bug fixes, automating happy-path login test, starting exploratory testing on AUTH-235 password reset."</li>
+<li><strong>Blocker:</strong> "Staging SSO is down since 6 PM — can't test OAuth stories. Need DevOps ticket escalated."</li>
+</ul>
+
+<h4>3. Backlog Grooming / Refinement</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Attribute</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Duration</strong></td><td>1–2 hours per week (typically mid-sprint)</td></tr>
+<tr><td><strong>Participants</strong></td><td>PO, Developers, QA; SM optional</td></tr>
+<tr><td><strong>Goal</strong></td><td>Ensure upcoming stories meet Definition of Ready</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>QA's Role:</strong></p>
+<ul>
+<li>Ask clarifying questions: "What error message for invalid email?" "Is there a rate limit on API calls?"</li>
+<li>Identify test scenarios: happy path, negative, boundary, security, performance</li>
+<li>Suggest splitting oversized stories that aren't testable in one sprint</li>
+<li>Propose AC in Given-When-Then format</li>
+<li>Flag NFR needs: accessibility, load, cross-browser</li>
+<li>Estimate relative testing effort to inform story points</li>
+</ul>
+
+<h4>4. Sprint Review (Demo)</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Attribute</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Duration</strong></td><td>Max 4 hours for 1-month sprint; ~1–2 hours for 2-week sprint</td></tr>
+<tr><td><strong>Participants</strong></td><td>Scrum Team + stakeholders, customers, management</td></tr>
+<tr><td><strong>Goal</strong></td><td>Inspect increment; gather feedback; adapt backlog</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>QA's Role in Demo:</strong> Confirm demonstrated features were tested; optionally present quality summary ("12 stories tested, 8 bugs found and fixed, 2 known low-severity open"); show test coverage dashboard if stakeholders ask; note scenarios not yet tested (if any story partially Done — should not happen if DoD enforced).</p>
+
+<h4>5. Sprint Retrospective</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Attribute</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Duration</strong></td><td>Max 3 hours for 1-month sprint; ~1–1.5 hours for 2-week sprint</td></tr>
+<tr><td><strong>Participants</strong></td><td>Scrum Team only — safe space</td></tr>
+<tr><td><strong>Format</strong></td><td>What went well? What didn't? What will we improve?</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>QA-Specific Improvements &amp; Action Items:</strong></p>
+<ul>
+<li>"Flaky tests caused 4 false CI failures — Action: dedicate 2 hours sprintly to flaky test triage (Owner: QA, Deadline: Sprint 14)"</li>
+<li>"AC too vague on 3 stories — Action: mandatory Three Amigos before sprint commitment (Owner: SM)"</li>
+<li>"QA bottleneck Day 8–9 — Action: split stories smaller; devs merge by Day 6 (Owner: Team)"</li>
+<li>"Test data reset broken — Action: DevOps automates daily DB refresh (Owner: DevOps)"</li>
+</ul>
+
+<h3>Scrum Artifacts</h3>
+
+<h4>Product Backlog</h4>
+<p>Ordered list of everything needed in the product. PO owns ordering. Items include user stories, bugs, tech debt, spikes, and enablers.</p>
+
+<p><strong>Prioritization Techniques:</strong></p>
+<ul>
+<li><strong>MoSCoW:</strong> Must have, Should have, Could have, Won't have — QA flags Must-have quality items (e.g., security fix)</li>
+<li><strong>WSJF (Weighted Shortest Job First):</strong> Cost of Delay / Job Size — used in SAFe; QA input on "job size" includes test complexity</li>
+<li><strong>Value vs Effort:</strong> Quick wins vs strategic bets — QA highlights hidden test effort on "small" UI changes</li>
+</ul>
+
+<h4>Sprint Backlog</h4>
+<p>Subset of Product Backlog selected for the sprint plus plan to deliver it. Includes dev tasks AND test tasks.</p>
+
+<p><strong>How Testing Tasks Fit:</strong></p>
+<pre><code>Sprint Backlog Example — Story CHECKOUT-101 (5 pts)
+├── Dev: Implement coupon API endpoint
+├── Dev: Build coupon UI component
+├── Dev: Unit tests for coupon validation
+├── QA: Write test cases from AC (2 hrs)
+├── QA: Manual functional testing (4 hrs)
+├── QA: Automate coupon API tests (6 hrs)
+├── QA: Regression run — checkout suite (1 hr)
+└── QA: Exploratory testing — edge cases (2 hrs)
+</code></pre>
+
+<h4>Increment</h4>
+<p>Sum of all Product Backlog items completed during the sprint, meeting Definition of Done. Each increment is additive to prior work.</p>
+
+<p><strong>Definition of Done — QA Perspective:</strong></p>
+<ul>
+<li>All AC verified (manual and/or automated)</li>
+<li>No open Critical/High bugs on the story</li>
+<li>Automation added/updated for regression paths (per team agreement)</li>
+<li>Code merged to main/develop; CI pipeline green</li>
+<li>Test results documented in test management tool or Jira</li>
+<li>Peer review of test coverage for complex stories</li>
+<li>Performance/security checks if applicable NFRs exist</li>
+</ul>
+
+<h4>Burndown Chart</h4>
+<p>Shows remaining work (tasks or story points) over sprint days. QA tracks test task burndown separately or as part of team burndown.</p>
+
+<pre class="ascii-diagram"><code>
+Sprint Burndown — Test Tasks Remaining (2-Week Sprint)
+
+Tasks
+  20 │●
+  18 │  ●
+  16 │    ●
+  14 │      ●                    Ideal line ----
+  12 │        ●              ●
+  10 │          ●          ●       ╲
+   8 │            ●      ●           ╲
+   6 │              ●  ●               ╲
+   4 │                ●                  ●
+   2 │                  ●                  ●
+   0 │────────────────────●──────────────────●── Days
+     Day1  2   3   4   5   6   7   8   9  10
+
+  ● = Actual remaining test tasks
+  ─ ─ = Ideal burndown (linear)
+
+  Day 5 spike: 3 stories merged same day — test tasks added
+  Day 8–9: team swarmed testing to reach zero by sprint end
+</code></pre>
+
+<h4>Velocity</h4>
+<p><strong>Calculation:</strong> Sum of story points completed (per DoD) over the last 3–5 sprints, averaged. Example: Sprints 8–10 completed 34, 38, 36 points → velocity ≈ 36 points/sprint.</p>
+
+<p><strong>How QA Uses Velocity:</strong></p>
+<ul>
+<li>Capacity planning: if velocity is 36 and each story averages 20% QA effort, plan ~7 QA-days of test work</li>
+<li>Push back on over-commitment: "We averaged 36 pts; committing to 50 risks untested stories"</li>
+<li>Track quality-adjusted velocity: some teams track "accepted points" vs "committed" to reflect DoD compliance</li>
+</ul>
+
+<h3>Sprint Timeline — 2-Week Sprint</h3>
+
+<pre class="ascii-diagram"><code>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    2-WEEK SCRUM SPRINT TIMELINE                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  WEEK 1                              │  WEEK 2                              │
+│  Mon   Tue   Wed   Thu   Fri         │  Mon   Tue   Wed   Thu   Fri         │
+│  ───   ───   ───   ───   ───         │  ───   ───   ───   ───   ───         │
+│                                                                             │
+│  [SP]  Daily  Refine Daily  Daily    │  Daily Daily Daily Daily [SR]        │
+│  2-4hr Stand  1-2hr Stand  Stand     │  Stand Stand Stand Stand 1-2hr       │
+│        up          up     up         │  up    up    up    up               │
+│                                      │                              [RETRO] │
+│                                      │                              1-1.5hr│
+│  ◄── Dev + QA parallel work ──────────────────────────────────────────►  │
+│      Test design → Test execution → Automation → Regression → Bug verify   │
+│                                                                             │
+│  QA Milestones:                                                             │
+│  Day 1: Test tasks created    Day 5: Mid-sprint burndown check             │
+│  Day 2: AC test cases ready   Day 8: Full regression run                   │
+│  Day 3: First story tested    Day 9: Demo prep + test summary                │
+│  Day 4: Automation PRs        Day 10: Review + Retro                         │
+│                                                                             │
+│  Legend: [SP]=Sprint Planning  [SR]=Sprint Review  [RETRO]=Retrospective    │
+│          Refine=Backlog Refinement   Daily Stand=Daily Standup (15 min)      │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+
+<h3>Definition of Done vs Definition of Ready</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Definition of Ready (DoR)</th><th>Definition of Done (DoD)</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>When Applied</strong></td><td>Before story enters sprint</td><td>Before story marked Done</td></tr>
+<tr><td><strong>Purpose</strong></td><td>Story is clear enough to start work</td><td>Story is complete and shippable</td></tr>
+<tr><td><strong>Owner</strong></td><td>PO + team agreement</td><td>Whole team agreement</td></tr>
+<tr><td><strong>AC Present</strong></td><td>Yes — testable AC documented</td><td>All AC verified pass</td></tr>
+<tr><td><strong>Estimation</strong></td><td>Story pointed by team</td><td>N/A — already estimated</td></tr>
+<tr><td><strong>Dependencies</strong></td><td>Identified and resolved or planned</td><td>All dependencies integrated and tested</td></tr>
+<tr><td><strong>Test Approach</strong></td><td>QA agrees story is testable; scenarios outlined</td><td>Tests executed; automation updated</td></tr>
+<tr><td><strong>Design/UI</strong></td><td>Mockups or wireframes attached if UI story</td><td>Matches approved design</td></tr>
+<tr><td><strong>Size</strong></td><td>Small enough for one sprint (INVEST)</td><td>Fully complete — not partial</td></tr>
+<tr><td><strong>Bugs</strong></td><td>N/A</td><td>No open Sev-1/Sev-2 bugs on story</td></tr>
+<tr><td><strong>Code Quality</strong></td><td>N/A</td><td>Code reviewed, merged, CI green</td></tr>
+<tr><td><strong>Documentation</strong></td><td>Business rules documented if complex</td><td>Release notes / help updated if user-facing</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Sprint Duration Best Practices</h3>
+<ul>
+<li><strong>2 weeks</strong> is the industry sweet spot — long enough to deliver meaningful work, short enough for frequent feedback</li>
+<li><strong>1 week</strong> suits mature teams with strong CI/CD; overhead of ceremonies proportionally higher</li>
+<li><strong>3–4 weeks</strong> acceptable for hardware-dependent or compliance-heavy work; risk of late discovery increases</li>
+<li>Keep duration consistent — changing sprint length breaks velocity comparison</li>
+<li>QA needs at least 20–30% of sprint capacity reserved for regression and automation maintenance</li>
+<li>Align sprint end with release cadence if continuous deployment isn't mature</li>
+</ul>
+
+<h3>Interview Questions &amp; Answers — Scrum Framework</h3>
+
+<h4>Q1: What are the three Scrum roles and their responsibilities?</h4>
+<p><strong>A:</strong> Product Owner — maximizes value, owns backlog, sets priorities. Scrum Master — serves team, removes impediments, facilitates Scrum. Developers — cross-functional, self-organizing team that delivers the increment (includes QA).</p>
+
+<h4>Q2: What are the five Scrum events?</h4>
+<p><strong>A:</strong> Sprint (container), Sprint Planning, Daily Scrum, Sprint Review, Sprint Retrospective. Backlog Refinement is a complementary practice, not an official event but essential.</p>
+
+<h4>Q3: How does QA participate in Sprint Planning?</h4>
+<p><strong>A:</strong> Review AC for testability, break out test tasks, contribute to estimation, flag environment dependencies, and ensure sprint capacity includes adequate test effort and regression time.</p>
+
+<h4>Q4: What should QA say in Daily Standup?</h4>
+<p><strong>A:</strong> Yesterday's testing completed, bugs found/fixed, automation progress. Today's test plan. Blockers like environment issues, missing test data, or waiting on bug fixes.</p>
+
+<h4>Q5: What is the QA role in Backlog Refinement?</h4>
+<p><strong>A:</strong> Ask clarifying questions, define test scenarios, suggest Given-When-Then AC, identify stories too large to test in one sprint, and estimate testing complexity.</p>
+
+<h4>Q6: Explain Definition of Done from a QA perspective.</h4>
+<p><strong>A:</strong> All AC verified, no critical bugs open, automation updated, CI green, test results recorded, code merged. DoD is a team contract — story isn't Done without it.</p>
+
+<h4>Q7: What is Definition of Ready and why does QA care?</h4>
+<p><strong>A:</strong> Criteria a story must meet before sprint commitment: clear AC, estimated, testable, dependencies known. QA cares because starting on vague stories causes rework, missed edge cases, and sprint-end crunch.</p>
+
+<h4>Q8: How is velocity calculated and used?</h4>
+<p><strong>A:</strong> Average story points completed over 3–5 sprints. Used for capacity planning — not performance comparison. QA uses it to ensure committed work is testable within sprint.</p>
+
+<h4>Q9: What is a burndown chart and how does QA use it?</h4>
+<p><strong>A:</strong> Graph of remaining work vs sprint days. QA tracks test task burndown to identify if testing is falling behind development, triggering early intervention (swarming, scope negotiation).</p>
+
+<h4>Q10: What is the Sprint Goal?</h4>
+<p><strong>A:</strong> Single objective for the sprint providing focus and flexibility in scope. Example: "Enable mobile checkout." QA aligns test priorities to stories supporting that goal.</p>
+
+<h4>Q11: Can the PO change sprint scope mid-sprint?</h4>
+<p><strong>A:</strong> Scrum discourages it. If scope changes dramatically, PO and team renegotiate — swap equal-effort items. QA assesses test impact of any change before agreement.</p>
+
+<h4>Q12: What is a servant-leader Scrum Master?</h4>
+<p><strong>A:</strong> SM leads by serving — removing blockers, coaching, facilitating — not by assigning tasks or micromanaging. For QA: SM escalates environment issues and protects DoD standards.</p>
+
+<h4>Q13: How do you avoid QA being a bottleneck at sprint end?</h4>
+<p><strong>A:</strong> Test continuously from Day 1; automate regression; enforce DoR; keep stories small; include test tasks in sprint backlog with time estimates; devs merge early; swarm on testing Days 8–9 if needed.</p>
+
+<h4>Q14: What happens in Sprint Retrospective relevant to QA?</h4>
+<p><strong>A:</strong> Team reflects on process. QA raises quality concerns: flaky tests, bad AC, environment issues. Action items with owners improve next sprint's quality workflow.</p>
+
+<h4>Q15: Difference between Sprint Review and Retrospective?</h4>
+<p><strong>A:</strong> Review = inspect product increment with stakeholders, gather feedback. Retro = inspect team process internally, identify improvements. QA demos quality metrics in Review; proposes process fixes in Retro.</p>
+
+<h4>Q16: What are the three Scrum artifacts?</h4>
+<p><strong>A:</strong> Product Backlog, Sprint Backlog, Increment. Each includes transparency; Product Backlog is ordered by PO; Increment must meet DoD.</p>
+
+<h4>Q17: How do you estimate story points as QA?</h4>
+<p><strong>A:</strong> Use relative sizing (Fibonacci), considering dev + test + integration complexity. Reference past similar stories. Planning Poker — discuss outliers. QA voice ensures test effort isn't ignored.</p>
+
+<h4>Q18: What is the "Increment" in Scrum?</h4>
+<p><strong>A:</strong> All completed backlog items at end of sprint that meet DoD — potentially shippable. QA ensures increment quality through testing, not just "dev complete" code.</p>
+
+<h4>Q19: Describe Three Amigos and QA's role.</h4>
+<p><strong>A:</strong> Session with PO (business), Developer (implementation), QA (testing perspective) before development. QA asks edge-case questions, defines AC, identifies test scenarios — prevents defects from ambiguity.</p>
+
+<h4>Q20: Ideal sprint length and why?</h4>
+<p><strong>A:</strong> Two weeks for most teams — balances delivery speed with enough time for dev, test, and automation. Consistent length enables reliable velocity. Adjust based on release maturity and regulatory needs.</p>
+
+</section>
+
+<section id="section-8" class="section-card">
+<h2>Section 8: User Stories</h2>
+
+<h3>User Story Format</h3>
+<p>A user story is a lightweight requirement written from the user's perspective. The standard template:</p>
+
+<pre><code>As a [type of user/persona],
+I want [functionality/capability],
+So that [benefit/business value].
+</code></pre>
+
+<div class="callout">
+<p><strong>Example:</strong> "As a <em>registered customer</em>, I want to <em>save items to a wishlist</em>, so that <em>I can purchase them later without searching again</em>."</p>
+</div>
+
+<p>Stories are intentionally brief — details live in Acceptance Criteria, conversations, and mockups. QA derives test cases from the story + AC, not from the story title alone.</p>
+
+<h3>INVEST Principles</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Principle</th><th>Explanation</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>I — Independent</strong></td><td>Story can be developed and tested without depending on other stories</td><td>Bad: "Checkout with loyalty points" depends on unreleased loyalty system. Good: Split — "Display points balance" ships independently first</td></tr>
+<tr><td><strong>N — Negotiable</strong></td><td>Story is a conversation starter, not a fixed contract</td><td>PO says "filter products"; team negotiates: price only in v1, brand filter in v2</td></tr>
+<tr><td><strong>V — Valuable</strong></td><td>Delivers value to user or business</td><td>Bad: "Refactor database schema." Good (as enabler): "Reduce checkout load time by 50%" with tech tasks linked</td></tr>
+<tr><td><strong>E — Estimable</strong></td><td>Team can reasonably estimate size</td><td>Bad: "Make search better" (vague). Good: "Search by SKU with autocomplete" — team estimates 5 points</td></tr>
+<tr><td><strong>S — Small</strong></td><td>Completable within one sprint</td><td>Bad: "Build entire payment module" (epic). Good: "Apply single coupon code at checkout" — 3 points</td></tr>
+<tr><td><strong>T — Testable</strong></td><td>Clear pass/fail criteria exist</td><td>Bad: "Fast page load." Good: "Search results return in &lt;2 seconds for 10K product catalog"</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Acceptance Criteria — Given-When-Then (BDD Style)</h3>
+<p>Acceptance Criteria define the conditions a story must satisfy to be accepted. BDD format makes them directly translatable to automated tests.</p>
+
+<pre><code>Scenario: Successful price filter
+  Given I am on the product listing page
+  And the catalog contains products from $10 to $500
+  When I set the minimum price to $50 and maximum to $200
+  And I click "Apply Filter"
+  Then I see only products priced between $50 and $200
+  And the filter badge shows "$50 - $200"
+</code></pre>
+
+<pre><code>Scenario: Invalid price range
+  Given I am on the product listing page
+  When I set minimum price to $300 and maximum to $100
+  Then I see error message "Minimum price cannot exceed maximum price"
+  And no filter is applied
+</code></pre>
+
+<pre><code>Scenario: Empty results
+  Given I am on the product listing page
+  When I set minimum price to $9999
+  And I click "Apply Filter"
+  Then I see message "No products match your filters"
+  And I see a "Clear Filters" button
+</code></pre>
+
+<h3>Story Points</h3>
+
+<h4>Fibonacci Scale</h4>
+<p>Teams use modified Fibonacci: <strong>1, 2, 3, 5, 8, 13, 21</strong>. Gaps increase with uncertainty — larger stories are harder to estimate precisely.</p>
+
+<h4>Relative Estimation</h4>
+<p>Story points measure <em>relative effort/complexity</em>, not hours. A 5-point story is roughly twice as complex as a 2-point story. QA complexity (integration, test data, environments) counts in the estimate.</p>
+
+<h4>Planning Poker</h4>
+<p>Each team member selects a card privately, reveals simultaneously. Outliers explain reasoning — QA might say "I voted 8 because this touches 3 microservices and needs contract tests." Team converges on consensus.</p>
+
+<h3>Story Point Estimation Exercise</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Story</th><th>Complexity Factors</th><th>Discussion Notes</th><th>Final Points</th></tr>
+</thead>
+<tbody>
+<tr><td>1. Add "Forgot Password" link to login page</td><td>Simple UI change; existing API</td><td>Low dev; QA: 3 test cases, no new automation</td><td><strong>2</strong></td></tr>
+<tr><td>2. Implement OAuth login (Google + Microsoft)</td><td>2 providers; token handling; security review</td><td>Dev: SSO integration. QA: cross-browser, token expiry, error flows, security test</td><td><strong>8</strong></td></tr>
+<tr><td>3. Export order history to CSV</td><td>Backend query; file generation; pagination for large sets</td><td>QA: verify CSV format, special characters, 10K row performance</td><td><strong>5</strong></td></tr>
+<tr><td>4. Real-time inventory sync across 4 warehouses</td><td>Event-driven; 4 external APIs; conflict resolution</td><td>High integration risk; QA needs mock services, eventual consistency tests</td><td><strong>13</strong></td></tr>
+<tr><td>5. Fix typo in footer copyright text</td><td>One-line change</td><td>No QA beyond visual check; team may use 0 or 1</td><td><strong>1</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Epic → Feature → Story → Task Hierarchy</h3>
+
+<pre class="ascii-diagram"><code>
+┌─────────────────────────────────────────────────────────────────┐
+│  EPIC: Online Checkout Redesign                                 │
+│  (Spans multiple sprints / PI)                                  │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         ▼                   ▼                   ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ FEATURE:        │ │ FEATURE:        │ │ FEATURE:        │
+│ Guest Checkout  │ │ Payment Methods │ │ Order Confirm   │
+└────────┬────────┘ └────────┬────────┘ └────────┬────────┘
+         │                   │                   │
+    ┌────┴────┐         ┌────┴────┐         ┌────┴────┐
+    ▼         ▼         ▼         ▼         ▼         ▼
+┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐
+│Story 1│ │Story 2│ │Story 3│ │Story 4│ │Story 5│ │Story 6│
+│Enter  │ │Validate│ │Add    │ │Apply  │ │Email  │ │PDF    │
+│email  │ │guest  │ │credit │ │coupon │ │confirm│ │receipt│
+│       │ │cart   │ │card   │ │       │ │       │ │       │
+└───┬───┘ └───┬───┘ └───┬───┘ └───┬───┘ └───┬───┘ └───┬───┘
+    │         │         │         │         │         │
+    ▼         ▼         ▼         ▼         ▼         ▼
+  Tasks:    Tasks:    Tasks:    Tasks:    Tasks:    Tasks:
+  Dev, QA   Dev, QA   Dev, QA   Dev, QA   Dev, QA   Dev, QA
+  Design    Test      API       Automate  Template  Automate
+
+  ◄─── Sprint 1 ───► ◄─── Sprint 2 ───► ◄── Sprint 3 ──►
+</code></pre>
+
+<h3>Domain Examples</h3>
+
+<h4>E-Commerce: Product Price Filter</h4>
+<p><strong>User Story:</strong> As a <em>customer</em>, I want to <em>filter products by price range</em>, so that <em>I can find items within my budget quickly</em>.</p>
+
+<p><strong>Acceptance Criteria:</strong></p>
+<ol>
+<li>Given products exist from $10–$500, when user sets min $50 and max $200 and applies filter, then only products in range display.</li>
+<li>Given user sets min &gt; max, when applying filter, then show validation error and do not filter.</li>
+<li>Given active price filter, when user clicks "Clear Filters", then all products display and filter resets.</li>
+<li>Given filter applied, when user navigates away and returns, then filter persists in session.</li>
+<li>Given no products match range, when filter applied, then show "No products found" with clear option.</li>
+</ol>
+
+<p><strong>Test Scenarios Derived from AC:</strong></p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>ID</th><th>Scenario</th><th>Type</th></tr>
+</thead>
+<tbody>
+<tr><td>TS-01</td><td>Apply valid price range $50–$200; verify product count and prices</td><td>Functional — Happy path</td></tr>
+<tr><td>TS-02</td><td>Set min $300, max $100; verify error message</td><td>Negative</td></tr>
+<tr><td>TS-03</td><td>Apply filter, click Clear; verify full catalog restored</td><td>Functional</td></tr>
+<tr><td>TS-04</td><td>Apply filter, navigate to product detail, browser back; verify filter persists</td><td>Session/State</td></tr>
+<tr><td>TS-05</td><td>Filter $9999–$10000; verify empty state message and UI</td><td>Boundary</td></tr>
+<tr><td>TS-06</td><td>Filter with min=$0; verify products at $0.01+ included appropriately</td><td>Boundary</td></tr>
+<tr><td>TS-07</td><td>Concurrent filter: price + category; verify combined results</td><td>Integration</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Banking: Money Transfer</h4>
+<p><strong>User Story:</strong> As an <em>account holder</em>, I want to <em>transfer money to another account</em>, so that <em>I can pay friends and family instantly</em>.</p>
+
+<p><strong>Acceptance Criteria:</strong></p>
+<ol>
+<li>Given sufficient balance, when user enters valid recipient account and amount, then transfer completes and both balances update within 30 seconds.</li>
+<li>Given insufficient balance, when user submits transfer, then show error "Insufficient funds" and no debit occurs.</li>
+<li>Given transfer amount exceeds daily limit ($10,000), when submitted, then block with limit message.</li>
+<li>Given successful transfer, when complete, then user receives confirmation with transaction ID and timestamp.</li>
+<li>Given invalid recipient account number, when submitted, then show "Account not found" without debiting sender.</li>
+</ol>
+
+<p><strong>Test Scenarios:</strong></p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>ID</th><th>Scenario</th><th>Type</th></tr>
+</thead>
+<tbody>
+<tr><td>TS-01</td><td>Transfer $100 from Account A ($500 balance) to valid Account B; verify balances</td><td>Happy path</td></tr>
+<tr><td>TS-02</td><td>Transfer $600 from Account A ($500 balance); verify rejection</td><td>Negative</td></tr>
+<tr><td>TS-03</td><td>Transfer $10,001 in single day; verify daily limit enforcement</td><td>Boundary/Business rule</td></tr>
+<tr><td>TS-04</td><td>Complete transfer; verify confirmation email/SMS with transaction ID</td><td>Integration</td></tr>
+<tr><td>TS-05</td><td>Enter non-existent account number; verify no debit, error shown</td><td>Negative</td></tr>
+<tr><td>TS-06</td><td>Transfer $0.01 (minimum); verify success</td><td>Boundary</td></tr>
+<tr><td>TS-07</td><td>Concurrent transfers from same account totaling &gt; balance; verify only one succeeds</td><td>Concurrency/Security</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Healthcare: Appointment Booking</h4>
+<p><strong>User Story:</strong> As a <em>patient</em>, I want to <em>book an appointment with my doctor online</em>, so that <em>I don't have to call the clinic during business hours</em>.</p>
+
+<p><strong>Acceptance Criteria:</strong></p>
+<ol>
+<li>Given patient is logged in, when selecting available slot from doctor's calendar, then appointment is confirmed and added to patient dashboard.</li>
+<li>Given slot was just booked by another patient, when current user submits, then show "Slot no longer available" and refresh calendar.</li>
+<li>Given appointment is 24+ hours away, when patient cancels, then slot reopens and confirmation email sent.</li>
+<li>Given appointment is within 24 hours, when patient attempts cancel, then show policy message and disable cancel button.</li>
+<li>Given booking complete, when confirmed, then send confirmation email with date, time, doctor name, and clinic address.</li>
+</ol>
+
+<p><strong>Test Scenarios:</strong></p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>ID</th><th>Scenario</th><th>Type</th></tr>
+</thead>
+<tbody>
+<tr><td>TS-01</td><td>Book available slot; verify dashboard, calendar update, confirmation email</td><td>Happy path</td></tr>
+<tr><td>TS-02</td><td>Two users book same slot simultaneously; verify one succeeds, one gets error</td><td>Concurrency</td></tr>
+<tr><td>TS-03</td><td>Cancel appointment 48 hours before; verify slot available, email sent</td><td>Functional</td></tr>
+<tr><td>TS-04</td><td>Attempt cancel 12 hours before; verify blocked per policy</td><td>Business rule</td></tr>
+<tr><td>TS-05</td><td>Book without login; verify redirect to login</td><td>Security</td></tr>
+<tr><td>TS-06</td><td>Verify HIPAA: appointment details not visible to other patients</td><td>Security/Compliance</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>How QA Writes Test Cases from User Stories — Step-by-Step</h3>
+
+<ol>
+<li><strong>Read the story</strong> — understand persona, goal, and business value</li>
+<li><strong>Review Acceptance Criteria</strong> — each AC should map to at least one test case</li>
+<li><strong>Identify test scenarios</strong> — happy path, negative, boundary, integration, NFR (performance, security, accessibility)</li>
+<li><strong>Apply equivalence partitioning and boundary value analysis</strong> — derive data sets from input rules</li>
+<li><strong>Write test cases</strong> with: ID, title, preconditions, steps, expected result, priority, traceability to story/AC</li>
+<li><strong>Review with PO/Dev</strong> — Three Amigos or async review for missed edge cases</li>
+<li><strong>Prioritize</strong> — P1 for AC coverage, P2 for edge cases, P3 for exploratory charters</li>
+<li><strong>Automate</strong> — convert Given-When-Then AC to Cucumber/Cypress/Playwright specs where ROI is high</li>
+<li><strong>Execute and update</strong> — log results in Jira/Zephyr; update when AC changes</li>
+</ol>
+
+<h3>Bad vs Good User Story Comparison</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Bad Story</th><th>Good Story</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Format</strong></td><td>"Fix login"</td><td>"As a user, I want to reset my password via email, so that I can regain access if I forget it"</td></tr>
+<tr><td><strong>Testability</strong></td><td>"System should be user-friendly"</td><td>"Search results return in &lt;2 seconds for 95th percentile"</td></tr>
+<tr><td><strong>Size</strong></td><td>"Build complete CRM module" (epic disguised as story)</td><td>"As a sales rep, I want to add a note to a lead, so that I track conversation history"</td></tr>
+<tr><td><strong>AC Quality</strong></td><td>No acceptance criteria</td><td>3–5 Given-When-Then scenarios covering happy, negative, edge cases</td></tr>
+<tr><td><strong>Independence</strong></td><td>"Add checkout with loyalty, coupons, and gift cards"</td><td>Split: three independent stories, prioritized separately</td></tr>
+<tr><td><strong>Value</strong></td><td>"Upgrade React to v18"</td><td>"As a user, I want faster page loads (tech enabler linked to perf epic)"</td></tr>
+<tr><td><strong>Persona</strong></td><td>"As a user..." (too generic)</td><td>"As a premium subscriber..." (specific permissions/rules)</td></tr>
+<tr><td><strong>Estimability</strong></td><td>"Improve reporting"</td><td>"As a manager, I want to export monthly sales report as PDF"</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions &amp; Answers — User Stories</h3>
+
+<h4>Q1: What is a user story and how is it formatted?</h4>
+<p><strong>A:</strong> A brief requirement from the user's perspective: "As a [user], I want [functionality], so that [benefit]." Details are in AC and conversations.</p>
+
+<h4>Q2: Explain INVEST principles.</h4>
+<p><strong>A:</strong> Independent, Negotiable, Valuable, Estimable, Small, Testable — criteria for well-formed stories. QA especially cares about Testable and Small.</p>
+
+<h4>Q3: What are Acceptance Criteria and how do you write them?</h4>
+<p><strong>A:</strong> Conditions of satisfaction for a story. Use Given-When-Then for clarity and automation. Each AC should be verifiable pass/fail. QA collaborates with PO to write them during refinement.</p>
+
+<h4>Q4: What are story points and how do they differ from hours?</h4>
+<p><strong>A:</strong> Relative measure of effort/complexity using Fibonacci scale. Not time — a 5-point story is ~2.5x a 2-point story. Accounts for dev, test, and integration complexity.</p>
+
+<h4>Q5: What is Planning Poker?</h4>
+<p><strong>A:</strong> Estimation technique where team members vote privately with cards, reveal together, discuss outliers, and converge. QA ensures test complexity is considered.</p>
+
+<h4>Q6: Epic vs Feature vs Story vs Task — explain hierarchy.</h4>
+<p><strong>A:</strong> Epic = large initiative spanning sprints. Feature = cohesive capability within epic. Story = single sprint-sized user value. Task = breakdown work item for dev/QA within a story.</p>
+
+<h4>Q7: How do you derive test cases from a user story?</h4>
+<p><strong>A:</strong> Map each AC to test cases; add negative, boundary, integration, and NFR scenarios; apply test design techniques; trace test IDs to story; prioritize and automate high-value paths.</p>
+
+<h4>Q8: What makes a user story "testable"?</h4>
+<p><strong>A:</strong> Clear, measurable AC with defined inputs and expected outputs. Avoid subjective terms ("fast," "easy"). Specific thresholds and error messages enable pass/fail determination.</p>
+
+<h4>Q9: Give an example of splitting a large story.</h4>
+<p><strong>A:</strong> "User registration" epic splits into: (1) Register with email/password, (2) Email verification, (3) Social login, (4) Profile setup. Each independently deliverable and testable.</p>
+
+<h4>Q10: What is the difference between a user story and a use case?</h4>
+<p><strong>A:</strong> User story is brief, user-value focused, with details deferred to conversation. Use case is detailed, step-by-step interaction between actor and system — more formal and comprehensive.</p>
+
+<h4>Q11: How do you handle a story with no acceptance criteria?</h4>
+<p><strong>A:</strong> Do not accept into sprint. Flag in refinement; work with PO to define AC before sprint planning. Testing without AC leads to ambiguity disputes and missed defects.</p>
+
+<h4>Q12: What is a spike in relation to user stories?</h4>
+<p><strong>A:</strong> Time-boxed research story to answer questions (e.g., "Spike: evaluate payment gateway APIs"). Outcome is knowledge, not shippable feature — informs future stories.</p>
+
+<h4>Q13: How does BDD relate to user stories?</h4>
+<p><strong>A:</strong> BDD uses Given-When-Then Gherkin syntax for AC, bridging business language and automated tests. Stories provide context; scenarios provide executable specifications.</p>
+
+<h4>Q14: Who writes user stories?</h4>
+<p><strong>A:</strong> Primarily the Product Owner, with input from team. QA contributes testability feedback and AC during refinement — doesn't usually own story authorship.</p>
+
+<h4>Q15: How do you estimate a story that is mostly testing effort?</h4>
+<p><strong>A:</strong> Story points cover whole-team effort. If integration testing dominates, vote higher (8 vs 5). Compare to similar past stories. Discuss in Planning Poker — don't estimate in isolation.</p>
+
+<h4>Q16: What is story mapping and how does QA use it?</h4>
+<p><strong>A:</strong> Story mapping is a visual technique arranging user activities (backbone) and stories (below) to show user journey and release slices. QA uses it to identify integration test paths across the journey, spot missing edge-case stories, and plan end-to-end test scenarios before sprint commitment.</p>
+
+<h4>Q17: How do technical stories differ from user stories?</h4>
+<p><strong>A:</strong> Technical stories (enablers) may use format "As a developer, I want to..." or be written as Tasks. They don't deliver direct user value but enable future stories (e.g., "Set up test data service"). QA validates enablers by verifying downstream stories become testable.</p>
+
+<h3>User Story Templates &amp; Variations</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Template</th><th>When to Use</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td>Standard</td><td>User-facing features</td><td>As a customer, I want to track my order, so that I know when it arrives</td></tr>
+<tr><td>Job Story (JTBD)</td><td>Focus on motivation over persona</td><td>When I receive a wrong item, I want to initiate a return quickly, so I can get a refund without calling support</td></tr>
+<tr><td>Technical Enabler</td><td>Infrastructure, refactoring</td><td>As a QA engineer, I want a test data factory API, so that tests run with consistent data</td></tr>
+<tr><td>Bug Fix Story</td><td>Defect requiring sprint capacity</td><td>As a user, I want checkout to accept Visa cards, so that I can complete my purchase (regression fix)</td></tr>
+<tr><td>NFR Story</td><td>Non-functional requirements</td><td>As a user, I want search results in &lt;2 seconds, so that I don't abandon the site</td></tr>
+</tbody>
+</table>
+</div>
+
+</section>
+
+<section id="section-9" class="section-card">
+<h2>Section 9: Jira Complete Guide</h2>
+
+<h3>What is Jira?</h3>
+<p><strong>Jira</strong> is Atlassian's issue tracking and project management tool used by Agile teams to plan, track, and release software. It provides boards, backlogs, workflows, dashboards, reporting, and JQL search — making work visible and traceable from idea to production.</p>
+
+<h4>Purpose</h4>
+<ul>
+<li>Centralize requirements, bugs, tasks, and test-related work</li>
+<li>Visualize sprint progress via Scrum/Kanban boards</li>
+<li>Enforce workflow states (e.g., Ready for QA → Testing → Done)</li>
+<li>Generate reports: velocity, burndown, cumulative flow</li>
+<li>Integrate with CI/CD, test management, and collaboration tools</li>
+</ul>
+
+<h4>Why Industry Standard</h4>
+<div class="callout">
+<p>Jira dominates because it is highly configurable (custom workflows, fields, issue types), integrates with the Atlassian ecosystem (Confluence, Bitbucket) and 3000+ marketplace apps (Zephyr, Xray, Jenkins), and scales from startup teams to enterprise SAFe programs. Interview familiarity is expected for Senior QA/SDET roles.</p>
+</div>
+
+<h3>Jira Project Types: Scrum vs Kanban Board</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Scrum Board</th><th>Kanban Board</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Cadence</strong></td><td>Fixed sprints with start/end dates</td><td>Continuous flow; no sprints</td></tr>
+<tr><td><strong>Planning</strong></td><td>Sprint Planning selects backlog into sprint</td><td>Pull work when WIP allows</td></tr>
+<tr><td><strong>Backlog</strong></td><td>Product Backlog + Sprint Backlog</td><td>Single prioritized backlog</td></tr>
+<tr><td><strong>Metrics</strong></td><td>Velocity, sprint burndown</td><td>Cycle time, lead time, cumulative flow</td></tr>
+<tr><td><strong>WIP Limits</strong></td><td>Implicit via sprint commitment</td><td>Explicit per column</td></tr>
+<tr><td><strong>Releases</strong></td><td>Aligned to sprint boundaries</td><td>Release anytime</td></tr>
+<tr><td><strong>Best For QA</strong></td><td>Feature teams with planned test cycles</td><td>Support, production bugs, ad-hoc requests</td></tr>
+<tr><td><strong>Reports</strong></td><td>Sprint report, velocity chart</td><td>Control chart, CFD</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Jira Navigation</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Area</th><th>Purpose</th><th>QA Use</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Dashboard</strong></td><td>Personalized home with gadgets/widgets</td><td>Monitor assigned bugs, sprint progress, filter results</td></tr>
+<tr><td><strong>Projects</strong></td><td>Container for boards, backlog, issues</td><td>Navigate to your team's project (e.g., CHECKOUT)</td></tr>
+<tr><td><strong>Boards</strong></td><td>Visual workflow — Scrum or Kanban</td><td>Track stories through Ready for QA → Testing → Done</td></tr>
+<tr><td><strong>Filters</strong></td><td>Saved JQL queries</td><td>"My Open Bugs," "Sprint Ready for QA," "Regression Blockers"</td></tr>
+<tr><td><strong>Reports</strong></td><td>Built-in analytics</td><td>Velocity, burndown, cumulative flow, sprint report</td></tr>
+<tr><td><strong>Issues</strong></td><td>Global issue search and create</td><td>Quick bug creation, bulk operations</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Issue Types</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Issue Type</th><th>When to Create</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Epic</strong></td><td>Large feature spanning multiple sprints</td><td>Groups related stories; tracked on roadmap; example: "EPIC-100: Mobile App v2"</td></tr>
+<tr><td><strong>Story</strong></td><td>User-facing functionality delivering value</td><td>Has story points, AC, sprint assignment; primary QA test target</td></tr>
+<tr><td><strong>Task</strong></td><td>Technical/non-user-facing work</td><td>Test env setup, automation framework upgrade, CI pipeline fix</td></tr>
+<tr><td><strong>Bug</strong></td><td>Defect found during testing or production</td><td>Fields: Summary, Steps to Reproduce, Expected/Actual, Severity, Priority, Environment, Screenshots, Attachments (HAR, logs)</td></tr>
+<tr><td><strong>Spike</strong></td><td>Research or investigation time-box</td><td>"Spike: Evaluate Playwright vs Cypress" — outcome documented in Confluence</td></tr>
+<tr><td><strong>Subtask</strong></td><td>Breakdown of story or task</td><td>"Manual test execution," "Write API automation," "Update regression suite"</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Bug Fields Explained</h4>
+<ul>
+<li><strong>Summary:</strong> Concise title — "Checkout fails when coupon + loyalty points combined"</li>
+<li><strong>Description:</strong> Steps to reproduce, expected vs actual behavior</li>
+<li><strong>Priority:</strong> Business urgency (Highest → Lowest) — set by PO/team</li>
+<li><strong>Severity:</strong> Technical impact (Critical/Major/Minor/Cosmetic) — often set by QA</li>
+<li><strong>Environment:</strong> Staging, Production, Browser/OS version</li>
+<li><strong>Linked Issues:</strong> "Blocks" story, "Relates to" duplicate, "Clones" for retest</li>
+</ul>
+
+<h3>Issue Fields</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th><th>QA Usage</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Summary</strong></td><td>One-line title</td><td>Clear, searchable bug/story title</td></tr>
+<tr><td><strong>Description</strong></td><td>Detailed body — AC, steps, context</td><td>AC in Given-When-Then; bug reproduction steps</td></tr>
+<tr><td><strong>Priority</strong></td><td>Business urgency</td><td>Flag P1 production bugs for immediate attention</td></tr>
+<tr><td><strong>Labels</strong></td><td>Free-form tags</td><td>regression, automation, flaky-test, smoke-test</td></tr>
+<tr><td><strong>Components</strong></td><td>Module/subsystem</td><td>Checkout, Auth, Payment — filter bugs by area</td></tr>
+<tr><td><strong>Fix Version</strong></td><td>Target release</td><td>Track which release includes the fix</td></tr>
+<tr><td><strong>Sprint</strong></td><td>Assigned sprint (Scrum)</td><td>See current sprint test scope</td></tr>
+<tr><td><strong>Story Points</strong></td><td>Effort estimate</td><td>On stories; QA input during planning</td></tr>
+<tr><td><strong>Assignee</strong></td><td>Person responsible</td><td>Bug assigned to dev; test subtask to QA</td></tr>
+<tr><td><strong>Reporter</strong></td><td>Person who created issue</td><td>QA reporter on bugs found during testing</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Issue Statuses &amp; QA Workflow</h3>
+
+<p>Standard flow: <strong>To Do → In Progress → In Review → Ready for QA → Testing → Done</strong></p>
+
+<pre class="ascii-diagram"><code>
+                    QA-CUSTOM WORKFLOW
+    ┌────────┐    ┌─────────────┐    ┌───────────┐
+    │ To Do  │───►│ In Progress │───►│ In Review │
+    └────────┘    └─────────────┘    └─────┬─────┘
+                                           │
+                                           ▼
+                                   ┌───────────────┐
+                                   │ Ready for QA  │◄── Dev marks after
+                                   └───────┬───────┘    self-test + PR merge
+                                           │
+                              QA picks up  │
+                                           ▼
+                                   ┌───────────────┐
+                          ┌───────│   Testing     │───────┐
+                          │       └───────┬───────┘       │
+                          │               │               │
+                     Bug found       All AC pass     Blocked
+                          │               │          (env issue)
+                          ▼               ▼               │
+                   ┌──────────┐    ┌──────────┐          │
+                   │ Bug Open │    │   Done   │          │
+                   │ (linked) │    └──────────┘          │
+                   └────┬─────┘                           │
+                        │                                 │
+                   Dev fixes                             │
+                        │                                 │
+                        └────────► Ready for QA (retest) ◄┘
+</code></pre>
+
+<h3>JQL (Jira Query Language)</h3>
+
+<h4>Basic Queries</h4>
+<pre><code>project = "CHECKOUT"
+status = "Ready for QA"
+assignee = currentUser()
+priority = Highest
+</code></pre>
+
+<h4>Advanced Queries</h4>
+<pre><code>project = CHECKOUT AND created &gt;= -7d AND labels = regression
+component = Payment AND status in ("Testing", "Ready for QA")
+fixVersion = "2026-Q3-Release" AND type = Bug AND priority in (Highest, High)
+</code></pre>
+
+<h4>15+ Useful JQL Queries for QA Engineers</h4>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>JQL Query</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td><code>project = X AND status = "Ready for QA"</code></td><td>All stories awaiting QA pickup</td></tr>
+<tr><td>2</td><td><code>assignee = currentUser() AND status = Testing</code></td><td>My active test assignments</td></tr>
+<tr><td>3</td><td><code>type = Bug AND reporter = currentUser() AND created &gt;= -30d</code></td><td>Bugs I logged last 30 days</td></tr>
+<tr><td>4</td><td><code>sprint in openSprints() AND status != Done</code></td><td>Incomplete sprint items</td></tr>
+<tr><td>5</td><td><code>type = Bug AND priority in (Highest, High) AND status != Done</code></td><td>Open critical/high bugs</td></tr>
+<tr><td>6</td><td><code>labels = regression AND status = Open</code></td><td>Open regression failures</td></tr>
+<tr><td>7</td><td><code>component = Checkout AND type = Bug</code></td><td>All checkout module bugs</td></tr>
+<tr><td>8</td><td><code>fixVersion = "Release-2.5" AND type in (Story, Bug)</code></td><td>Release 2.5 scope</td></tr>
+<tr><td>9</td><td><code>status changed to "Ready for QA" during (-1d, now())</code></td><td>Items sent to QA today</td></tr>
+<tr><td>10</td><td><code>type = Bug AND status = Done AND resolution = Fixed AND updated &gt;= -7d</code></td><td>Recently fixed bugs for retest</td></tr>
+<tr><td>11</td><td><code>parent = STORY-123</code></td><td>All subtasks of a story</td></tr>
+<tr><td>12</td><td><code>"Epic Link" = EPIC-456</code></td><td>All stories under an epic</td></tr>
+<tr><td>13</td><td><code>labels = flaky-test AND status != Done</code></td><td>Known flaky tests backlog</td></tr>
+<tr><td>14</td><td><code>type = Story AND "Story Points" &gt; 8</code></td><td>Oversized stories needing split</td></tr>
+<tr><td>15</td><td><code>project = X AND status = Done AND sprint = "Sprint 14"</code></td><td>Completed work in Sprint 14</td></tr>
+<tr><td>16</td><td><code>type = Bug AND created &gt;= startOfMonth() AND reporter in membersOf("qa-team")</code></td><td>QA team bugs this month</td></tr>
+<tr><td>17</td><td><code>summary ~ "payment*" AND type = Bug AND status != Done</code></td><td>Open payment-related bugs (text search)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Jira Dashboards</h3>
+
+<p><strong>Gadgets Useful for QA:</strong></p>
+<ul>
+<li><strong>Filter Results:</strong> Display saved JQL — e.g., "Ready for QA" queue</li>
+<li><strong>Sprint Burndown:</strong> Track remaining work in current sprint</li>
+<li><strong>Sprint Health:</strong> Flags scope creep, at-risk items</li>
+<li><strong>Pie Chart:</strong> Bugs by priority, component, or status</li>
+<li><strong>Created vs Resolved:</strong> Bug trend — are we finding more than fixing?</li>
+<li><strong>Two-Dimensional Filter Statistics:</strong> Matrix of component vs priority</li>
+<li><strong>Activity Stream:</strong> Recent changes on watched issues</li>
+</ul>
+
+<h3>Jira Reports</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Report</th><th>What It Shows</th><th>QA Value</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Velocity Chart</strong></td><td>Story points completed per sprint over time</td><td>Capacity planning; detect if quality debt reduces true velocity</td></tr>
+<tr><td><strong>Sprint Report</strong></td><td>Committed vs completed; scope changes mid-sprint</td><td>Review if untested items were removed or carried over</td></tr>
+<tr><td><strong>Burndown Chart</strong></td><td>Remaining work day-by-day in sprint</td><td>Identify if testing is lagging development</td></tr>
+<tr><td><strong>Cumulative Flow Diagram</strong></td><td>Issue count per status over time</td><td>Bottleneck detection — wide "Testing" band = QA bottleneck</td></tr>
+<tr><td><strong>Control Chart</strong></td><td>Cycle time for completed issues (Kanban)</td><td>How long from In Progress to Done — includes test wait time</td></tr>
+<tr><td><strong>Version Report</strong></td><td>Progress toward a release version</td><td>Release readiness — open bugs in fix version</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Jira Integrations</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Tool</th><th>Integration Purpose</th><th>QA Benefit</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Confluence</strong></td><td>Documentation linked to Jira issues</td><td>Test plans, AC details, retro notes linked to epics/stories</td></tr>
+<tr><td><strong>Slack</strong></td><td>Notifications on issue changes</td><td>Alert channel when story moves to Ready for QA or P1 bug logged</td></tr>
+<tr><td><strong>Jenkins / GitHub Actions</strong></td><td>CI build status on issues</td><td>See if branch builds pass before starting QA; auto-transition on deploy</td></tr>
+<tr><td><strong>Zephyr Scale / Xray</strong></td><td>Test management inside Jira</td><td>Link test cases to stories; execution results; coverage reports; BDD import</td></tr>
+<tr><td><strong>Bitbucket / GitHub</strong></td><td>Branch/PR linked to issues</td><td>Trace code changes to story; smart commits transition status</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Best Practices for QA Using Jira</h3>
+
+<ul>
+<li><strong>Log bugs immediately</strong> with complete reproduction steps, screenshots, environment, and severity</li>
+<li><strong>Link bugs to stories</strong> using "blocks" or "relates to" — traceability for release decisions</li>
+<li><strong>Use subtasks</strong> for test work — visible on sprint board, tracked in burndown</li>
+<li><strong>Apply consistent labels</strong> — regression, smoke, automation, flaky — enables powerful JQL filters</li>
+<li><strong>Transition statuses promptly</strong> — don't leave items in "Testing" after completion</li>
+<li><strong>Comment with test results</strong> — "12/12 AC pass, automation PR #445 merged, moving to Done"</li>
+<li><strong>Create saved filters</strong> for daily queues: Ready for QA, My Bugs, Retest Needed</li>
+<li><strong>Watch critical issues</strong> — get notified on status changes without manual checking</li>
+<li><strong>Don't use Jira as chat</strong> — short comments with facts; long discussions in Slack/Confluence with link</li>
+<li><strong>Keep story points on stories only</strong> — not bugs or subtasks (team convention)</li>
+<li><strong>Review dashboard daily</strong> — sprint health, open P1 bugs, items in Testing column</li>
+<li><strong>Use Zephyr/Xray</strong> if available — avoid duplicate test tracking in spreadsheets</li>
+</ul>
+
+<h3>Interview Questions &amp; Answers — Jira</h3>
+
+<h4>Q1: What is Jira and why is it widely used?</h4>
+<p><strong>A:</strong> Atlassian's issue tracking and Agile project management tool. Industry standard due to configurability, Atlassian ecosystem integration, extensive marketplace apps, and support for Scrum, Kanban, and SAFe at scale.</p>
+
+<h4>Q2: Difference between Scrum board and Kanban board in Jira?</h4>
+<p><strong>A:</strong> Scrum board uses sprints with sprint backlog and velocity metrics. Kanban board uses continuous flow with WIP limits and cycle time metrics. QA uses Scrum for planned feature work, Kanban for support/production bugs.</p>
+
+<h4>Q3: Explain common Jira issue types.</h4>
+<p><strong>A:</strong> Epic (large initiative), Story (user value), Task (technical work), Bug (defect), Spike (research), Subtask (breakdown). QA primarily tests stories, logs bugs, and creates test subtasks.</p>
+
+<h4>Q4: What fields are important when logging a bug?</h4>
+<p><strong>A:</strong> Summary, steps to reproduce, expected vs actual, environment (browser/OS/build), severity, priority, screenshots/logs, link to story, assignee.</p>
+
+<h4>Q5: What is JQL and give three useful queries for QA.</h4>
+<p><strong>A:</strong> Jira Query Language for searching issues. Examples: <code>status = "Ready for QA"</code>, <code>type = Bug AND priority = Highest AND status != Done</code>, <code>sprint in openSprints() AND assignee = currentUser()</code>.</p>
+
+<h4>Q6: Describe a QA-friendly workflow in Jira.</h4>
+<p><strong>A:</strong> To Do → In Progress → In Review → Ready for QA → Testing → Done. Dev moves to Ready for QA after merge; QA picks up, tests, logs bugs if needed, moves to Done when AC pass.</p>
+
+<h4>Q7: What is the difference between Priority and Severity?</h4>
+<p><strong>A:</strong> Severity = technical impact of the bug (Critical to Cosmetic) — usually set by QA. Priority = business urgency for fixing (Highest to Lowest) — usually set by PO/team lead. A cosmetic typo can be Low severity but High priority if on homepage during launch.</p>
+
+<h4>Q8: How do you use Jira dashboards as QA?</h4>
+<p><strong>A:</strong> Create personal dashboard with Filter Results (Ready for QA queue), Sprint Burndown, Pie Chart (bugs by priority), and Created vs Resolved trend. Review daily for workload and quality trends.</p>
+
+<h4>Q9: What reports help QA identify bottlenecks?</h4>
+<p><strong>A:</strong> Cumulative Flow Diagram — widening "Testing" column indicates QA bottleneck. Burndown — test tasks not decreasing signals falling behind. Sprint Report — scope changes affecting test plan.</p>
+
+<h4>Q10: How does Jira integrate with test management tools?</h4>
+<p><strong>A:</strong> Zephyr Scale and Xray are Jira plugins enabling test case creation, linking tests to stories, execution tracking, and coverage reports — all within Jira without separate tools.</p>
+
+<h4>Q11: What is a Jira filter and why save them?</h4>
+<p><strong>A:</strong> Saved JQL query reusable for boards, dashboards, and subscriptions. QA saves filters like "Retest Needed," "My Open Bugs," "Sprint Test Queue" for daily efficiency.</p>
+
+<h4>Q12: How do you link a bug to a user story in Jira?</h4>
+<p><strong>A:</strong> Use "Link Issue" → "blocks" (bug blocks story completion) or "relates to." Ensures traceability — release decisions consider open blocking bugs on stories.</p>
+
+<h4>Q13: What are Components and Labels — when to use each?</h4>
+<p><strong>A:</strong> Components = structured module taxonomy (Checkout, Auth) — one per issue, project-defined. Labels = flexible tags (regression, smoke) — multiple per issue, anyone can add. Both enable JQL filtering.</p>
+
+<h4>Q14: How do you track test execution in Jira without Xray/Zephyr?</h4>
+<p><strong>A:</strong> Use subtasks ("Manual test STORY-123"), transition parent story status, comment test results, attach evidence. Less ideal than dedicated test management but workable for small teams.</p>
+
+<h4>Q15: What is Fix Version used for?</h4>
+<p><strong>A:</strong> Target release for a bug fix or feature. QA filters <code>fixVersion = "2.5" AND type = Bug AND status != Done</code> to assess release readiness.</p>
+
+<h4>Q16: Explain smart commits in Jira.</h4>
+<p><strong>A:</strong> Git commit messages with Jira issue keys trigger automatic actions. Example: <code>git commit -m "CHK-892 Fix tax calculation #done"</code> transitions issue to Done when pushed via Bitbucket/GitHub integration. QA verifies transitions match actual test status — don't auto-close without testing.</p>
+
+<h4>Q17: How do you bulk-update issues in Jira?</h4>
+<p><strong>A:</strong> Run a JQL filter → select issues (Bulk Change) → transition, edit fields, or add labels in batch. Useful after regression: label all failed areas <code>regression-sprint-14</code> or bulk-move verified fixes to Done.</p>
+
+<h3>Jira Keyboard Shortcuts &amp; Productivity Tips</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Shortcut</th><th>Action</th><th>QA Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td><code>c</code></td><td>Create issue</td><td>Quick bug creation from any Jira screen</td></tr>
+<tr><td><code>/</code></td><td>Quick search</td><td>Jump to issue by key: /CHK-892</td></tr>
+<tr><td><code>j / k</code></td><td>Navigate issue list</td><td>Move through filter results without mouse</td></tr>
+<tr><td><code>e</code></td><td>Edit selected issue</td><td>Update priority or assignee quickly</td></tr>
+<tr><td><code>assign to me</code></td><td>Workflow command</td><td>Self-assign story from Ready for QA column</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Common Jira Mistakes QA Should Avoid</h3>
+<ul>
+<li>Logging bugs without reproduction steps — causes "Cannot Reproduce" churn</li>
+<li>Leaving resolved bugs unverified — always retest before closing</li>
+<li>Creating duplicate bugs — search JQL before filing</li>
+<li>Not linking bugs to parent story — breaks release traceability</li>
+<li>Using comments for test evidence without attaching logs/screenshots</li>
+<li>Transitioning to Done when AC partially met — erodes trust in quality gates</li>
+</ul>
+
+</section>

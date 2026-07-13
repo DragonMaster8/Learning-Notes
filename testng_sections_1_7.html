@@ -1,0 +1,1642 @@
+<section id="section-1" class="section-card">
+<h2>Section 1: Automation Testing Overview</h2>
+
+<h3>What is Test Automation?</h3>
+<p><strong>Test automation</strong> is the practice of using specialized tools, scripts, and frameworks to execute predefined test cases, compare actual results against expected results, and report outcomes — with minimal human intervention during execution.</p>
+
+<h4>Definition</h4>
+<p>Automation testing converts manual test steps into reusable scripts that can run repeatedly across environments, browsers, and builds. The scripts interact with the application under test (AUT) through APIs, UI drivers, or direct code calls, then validate behavior using assertions.</p>
+
+<h4>Purpose</h4>
+<ul>
+<li><strong>Repeatability</strong> — Run the same tests hundreds of times without human fatigue or inconsistency.</li>
+<li><strong>Speed</strong> — Execute large regression suites in minutes instead of days.</li>
+<li><strong>Early feedback</strong> — Integrate with CI/CD pipelines to catch defects immediately after code commits.</li>
+<li><strong>Coverage expansion</strong> — Free QA engineers from repetitive checks to focus on exploratory and edge-case testing.</li>
+<li><strong>Documentation</strong> — Well-written automation scripts serve as living documentation of expected system behavior.</li>
+</ul>
+
+<h4>When to Automate</h4>
+<ul>
+<li>Tests are <strong>stable</strong> — requirements and UI are not changing daily.</li>
+<li>Tests are <strong>repetitive</strong> — run on every build, release, or sprint.</li>
+<li>Tests are <strong>data-intensive</strong> — many input combinations need validation.</li>
+<li>Tests require <strong>cross-browser / cross-platform</strong> execution.</li>
+<li>Tests are part of a <strong>regression suite</strong> that must run overnight or on every PR.</li>
+<li>ROI is positive — automation cost is justified by frequency and criticality of execution.</li>
+</ul>
+
+<div class="callout">
+<strong>Interview Tip:</strong> Automation is not a replacement for manual testing — it is a force multiplier. The best teams automate the boring, repeatable checks and invest manual effort in exploratory, usability, and ad-hoc testing.
+</div>
+
+<h3>Why Automation? Manual vs Automation</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Criteria</th><th>Manual Testing</th><th>Automation Testing</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Speed</strong></td><td>Slow — human-paced, one scenario at a time</td><td>Fast — hundreds of tests in parallel within minutes</td></tr>
+<tr><td><strong>Accuracy</strong></td><td>Prone to human error, oversight, fatigue</td><td>Consistent — same steps, same validations every run</td></tr>
+<tr><td><strong>Reusability</strong></td><td>Low — steps must be re-executed manually each time</td><td>High — scripts reused across sprints, environments, teams</td></tr>
+<tr><td><strong>Initial Cost</strong></td><td>Low upfront — no tooling investment</td><td>High upfront — framework, infrastructure, training</td></tr>
+<tr><td><strong>Long-term Cost</strong></td><td>Increases linearly with each release cycle</td><td>Decreases per execution after initial investment</td></tr>
+<tr><td><strong>Test Coverage</strong></td><td>Limited by time and headcount</td><td>Extensive — data-driven, cross-browser, API + UI combined</td></tr>
+<tr><td><strong>Maintenance</strong></td><td>Low — update test cases in test management tool</td><td>High — scripts break when UI/API changes; requires ongoing upkeep</td></tr>
+<tr><td><strong>CI/CD Integration</strong></td><td>Difficult — requires human trigger and review</td><td>Native — hooks into Jenkins, GitHub Actions, Azure DevOps</td></tr>
+<tr><td><strong>ROI</strong></td><td>Best for one-time, exploratory, usability tests</td><td>Best for regression, smoke, performance baselines — ROI grows over time</td></tr>
+<tr><td><strong>Best For</strong></td><td>Exploratory, ad-hoc, usability, new feature discovery</td><td>Regression, smoke, data validation, load baselines, nightly builds</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Automation Testing Life Cycle</h3>
+<pre class="ascii-diagram">
+┌─────────────────────┐
+│ Feasibility Analysis│  ← Which tests? Which tools? ROI?
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│   Tool Selection    │  ← Selenium, Playwright, Cypress, REST Assured
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│ Framework Design    │  ← Page Object Model, reporting, config, CI hooks
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│ Script Development  │  ← Write, review, peer-review test scripts
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│    Execution        │  ← Local, CI/CD, scheduled, on-demand
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│   Maintenance       │  ← Fix flaky tests, update locators, refactor
+└─────────────────────┘
+         (continuous loop back to Script Development)
+</pre>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Phase</th><th>Activities</th><th>Deliverables</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Feasibility Analysis</strong></td><td>Identify automatable tests, estimate effort, assess tool fit, calculate ROI</td><td>Automation feasibility report, candidate test list, effort estimate</td></tr>
+<tr><td><strong>Tool Selection</strong></td><td>Evaluate tools against tech stack, team skills, budget, licensing</td><td>Tool evaluation matrix, POC results, selected tool stack</td></tr>
+<tr><td><strong>Framework Design</strong></td><td>Define architecture (POM, BDD), folder structure, reporting, logging, config strategy</td><td>Framework design document, coding standards, base classes</td></tr>
+<tr><td><strong>Script Development</strong></td><td>Write test scripts, page objects, utilities; conduct code reviews</td><td>Automated test scripts, page object classes, test data files</td></tr>
+<tr><td><strong>Execution</strong></td><td>Run suites locally and in CI/CD; monitor results; triage failures</td><td>Execution reports, pass/fail metrics, defect logs</td></tr>
+<tr><td><strong>Maintenance</strong></td><td>Update scripts for UI changes, fix flaky tests, refactor, add new coverage</td><td>Updated scripts, maintenance log, flaky test registry</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Types of Automation Frameworks</h3>
+
+<h4>1. Linear (Record &amp; Playback) Framework</h4>
+<p>Each test is a standalone script recorded sequentially. No reusability between tests.</p>
+<ul>
+<li><strong>Pros:</strong> Quick to create, no programming required, good for POC</li>
+<li><strong>Cons:</strong> Zero reusability, hard to maintain, breaks easily on UI changes, not scalable</li>
+</ul>
+
+<h4>2. Modular Framework</h4>
+<p>Application is divided into independent modules. Each module has its own test script; a master script calls modules in sequence.</p>
+<ul>
+<li><strong>Pros:</strong> Reusable modules, easier maintenance than linear, good separation of concerns</li>
+<li><strong>Cons:</strong> Master script changes needed when flow changes, data still hardcoded in modules</li>
+</ul>
+
+<h4>3. Data-Driven Framework</h4>
+<p>Test logic is separated from test data. Data is stored externally in Excel, CSV, JSON, or databases and fed into test scripts via parameters.</p>
+<ul>
+<li><strong>Pros:</strong> Same script runs with multiple data sets, reduces code duplication, easy to add new test cases by adding data rows</li>
+<li><strong>Cons:</strong> More complex setup, data management overhead, requires data validation strategy</li>
+</ul>
+
+<h4>4. Keyword-Driven Framework</h4>
+<p>Actions are defined as keywords (e.g., <code>ClickButton</code>, <code>EnterText</code>, <code>VerifyTitle</code>). Test cases are written as tables of keywords + arguments, interpreted by an engine.</p>
+<ul>
+<li><strong>Pros:</strong> Non-technical stakeholders can write tests, highly reusable action library, decouples test design from implementation</li>
+<li><strong>Cons:</strong> High initial development cost, keyword engine complexity, debugging is harder</li>
+</ul>
+
+<h4>5. Hybrid Framework</h4>
+<p>Combines modular, data-driven, and keyword-driven approaches. Most common in industry — e.g., Page Object Model + DataProvider + TestNG groups.</p>
+<ul>
+<li><strong>Pros:</strong> Best of all worlds, scalable, maintainable, industry-proven pattern</li>
+<li><strong>Cons:</strong> Requires experienced engineers, longer initial setup, team must follow conventions</li>
+</ul>
+
+<h4>6. BDD (Behavior-Driven Development) Framework</h4>
+<p>Tests written in business-readable Gherkin syntax (Given/When/Then). Tools: Cucumber (Java), SpecFlow (.NET), Behave (Python).</p>
+<ul>
+<li><strong>Pros:</strong> Bridges business and tech, living documentation, stakeholder-readable scenarios</li>
+<li><strong>Cons:</strong> Step definition maintenance, can become slow if over-engineered, abstraction overhead</li>
+</ul>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Framework</th><th>Data Handling</th><th>Maintainability</th><th>Learning Curve</th><th>Best For</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Linear</strong></td><td>Hardcoded in script</td><td>Very Low</td><td>Very Easy</td><td>POC, demos, one-off checks</td></tr>
+<tr><td><strong>Modular</strong></td><td>Hardcoded per module</td><td>Low–Medium</td><td>Easy</td><td>Small apps with stable flows</td></tr>
+<tr><td><strong>Data-Driven</strong></td><td>External files (Excel, CSV, JSON)</td><td>Medium</td><td>Medium</td><td>Forms, login combos, API payloads</td></tr>
+<tr><td><strong>Keyword-Driven</strong></td><td>Keyword tables / spreadsheets</td><td>Medium–High</td><td>Medium–Hard</td><td>Teams with mixed technical levels</td></tr>
+<tr><td><strong>Hybrid</strong></td><td>External data + POM + config</td><td>High</td><td>Hard</td><td>Enterprise Selenium/TestNG projects</td></tr>
+<tr><td><strong>BDD</strong></td><td>Feature files + step definitions</td><td>High (with discipline)</td><td>Medium</td><td>Agile teams, stakeholder collaboration</td></tr>
+<tr><td><strong>Page Object Model</strong></td><td>Separate from page classes</td><td>Very High</td><td>Medium</td><td>Any UI automation (often combined with Hybrid)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>What to Automate vs What NOT to Automate</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Decision Factor</th><th>✅ Automate</th><th>❌ Do NOT Automate</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Frequency</strong></td><td>Runs every build / sprint / release</td><td>One-time or rarely executed tests</td></tr>
+<tr><td><strong>Stability</strong></td><td>UI and requirements are stable</td><td>Feature still in active development / flux</td></tr>
+<tr><td><strong>Complexity</strong></td><td>Straightforward pass/fail validation</td><td>Subjective judgment (visual design, UX feel)</td></tr>
+<tr><td><strong>Data</strong></td><td>Many input combinations (data-driven)</td><td>Tests requiring human intuition or creativity</td></tr>
+<tr><td><strong>Criticality</strong></td><td>Smoke, sanity, core regression paths</td><td>Exploratory testing sessions</td></tr>
+<tr><td><strong>ROI</strong></td><td>High execution count justifies script cost</td><td>Automation effort exceeds manual execution cost</td></tr>
+<tr><td><strong>Environment</strong></td><td>Repeatable, consistent test environments</td><td>Tests dependent on specific hardware or manual setup</td></tr>
+<tr><td><strong>Type</strong></td><td>API tests, database validation, regression UI</td><td>Usability testing, ad-hoc bug verification</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Rule of Thumb:</strong> Automate the <em>verification</em> of stable functionality. Keep manual effort for <em>exploration</em> of new or changing functionality.
+</div>
+
+<h3>Interview Q&amp;A — Automation Testing Overview</h3>
+
+<h4>Q1: What is test automation and why do companies invest in it?</h4>
+<p>Test automation uses scripts and tools to execute tests automatically. Companies invest because it provides faster feedback in CI/CD, reduces regression effort, improves consistency, and allows QA to focus on high-value exploratory testing.</p>
+
+<h4>Q2: Can automation replace manual testing entirely?</h4>
+<p>No. Automation validates known expected behavior. Manual testing is essential for exploratory testing, usability evaluation, ad-hoc scenarios, and new features where requirements are still evolving.</p>
+
+<h4>Q3: What is the Automation Testing Life Cycle?</h4>
+<p>Feasibility Analysis → Tool Selection → Framework Design → Script Development → Execution → Maintenance. Maintenance is continuous and often loops back to script development.</p>
+
+<h4>Q4: What is a Hybrid framework and why is it most popular?</h4>
+<p>A Hybrid framework combines modular structure, data-driven inputs, and often Page Object Model. It balances reusability, maintainability, and scalability — making it the industry standard for Selenium-based projects.</p>
+
+<h4>Q5: What is Page Object Model (POM)?</h4>
+<p>POM is a design pattern where each web page is represented by a Java class containing locators and interaction methods. Tests call page object methods instead of interacting with WebDriver directly, reducing duplication and easing maintenance.</p>
+
+<h4>Q6: How do you calculate ROI for automation?</h4>
+<p>ROI = (Manual execution cost × Number of executions − Automation development + maintenance cost) / Automation cost. Consider frequency, team size, defect escape rate reduction, and time-to-release improvements.</p>
+
+<h4>Q7: What tests should you automate first?</h4>
+<p>Start with smoke tests and high-risk regression paths that run frequently — login, checkout, payment, core CRUD operations. These give the highest immediate ROI.</p>
+
+<h4>Q8: What is the difference between Data-Driven and Keyword-Driven frameworks?</h4>
+<p>Data-Driven separates test <em>data</em> from test <em>logic</em> — same script, different inputs. Keyword-Driven separates test <em>actions</em> into reusable keywords — test cases are tables of keyword sequences independent of code.</p>
+
+<h4>Q9: What are common challenges in test automation?</h4>
+<p>Flaky tests, high maintenance when UI changes, tool selection mismatches, lack of skilled engineers, poor framework design, insufficient test data management, and unrealistic automation coverage expectations.</p>
+
+<h4>Q10: What is BDD and how does it differ from TDD?</h4>
+<p>BDD (Behavior-Driven Development) focuses on system behavior described in business language (Gherkin). TDD (Test-Driven Development) is a developer practice of writing unit tests before code. BDD operates at acceptance/integration level; TDD at unit level.</p>
+
+<h4>Q11: What is a flaky test and how do you handle it?</h4>
+<p>A flaky test passes and fails intermittently without code changes — usually due to timing issues, environment instability, or poor locators. Fix with explicit waits, stable locators, retry mechanisms (with caution), and root-cause analysis rather than just re-running.</p>
+
+<h4>Q12: How do you decide which automation tool to use?</h4>
+<p>Evaluate against: application type (web/mobile/API), tech stack, team skills, budget, CI/CD compatibility, community support, reporting needs, and cross-browser requirements. POC on 2–3 candidates before committing.</p>
+
+<h4>Q13: What is the difference between smoke, sanity, and regression testing?</h4>
+<p><strong>Smoke:</strong> Broad shallow check — does the build work at all? (15–30 min). <strong>Sanity:</strong> Narrow deep check on a specific module after a fix. <strong>Regression:</strong> Full suite validating existing functionality after changes (hours).</p>
+
+<h4>Q14: What role does automation play in Agile/CI-CD?</h4>
+<p>Automation gates every commit/PR with smoke tests, runs regression nightly, provides immediate feedback to developers, and supports continuous delivery by ensuring quality at speed.</p>
+</section>
+
+<section id="section-2" class="section-card">
+<h2>Section 2: TestNG Introduction</h2>
+
+<h3>What is TestNG?</h3>
+<p><strong>TestNG</strong> stands for <strong>Testing Next Generation</strong>. It is an open-source Java testing framework created by <strong>Cédric Beust</strong> in 2004, inspired by JUnit and NUnit. TestNG was designed to cover all categories of tests — unit, functional, integration, and end-to-end — with powerful configuration and reporting capabilities.</p>
+
+<p>Unlike JUnit (originally a unit-testing framework), TestNG was built from the ground up for integration and system-level testing, making it the de facto standard for Selenium WebDriver automation in Java projects.</p>
+
+<div class="callout">
+<strong>Key Fact for Interviews:</strong> TestNG is not a replacement for JUnit at the unit level — many projects use JUnit for unit tests and TestNG for integration/UI automation suites.
+</div>
+
+<h3>Why TestNG over JUnit?</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>JUnit 4</th><th>TestNG</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Annotations</strong></td><td>@Before, @After, @Test, @Ignore</td><td>@BeforeSuite/Test/Class/Method, @AfterSuite/Test/Class/Method, @Test, more granular</td></tr>
+<tr><td><strong>Parallel Execution</strong></td><td>Not built-in (requires runners)</td><td>Native via testng.xml — methods, classes, tests in parallel</td></tr>
+<tr><td><strong>Test Groups</strong></td><td>Categories (JUnit 4.8+) — limited</td><td>First-class groups with include/exclude in XML</td></tr>
+<tr><td><strong>DataProvider</strong></td><td>@ParameterizedTest (JUnit 5) / @Parameterized (JUnit 4)</td><td>@DataProvider — returns Object[][], very flexible</td></tr>
+<tr><td><strong>XML Configuration</strong></td><td>No native XML suite config</td><td>testng.xml — suite, test, class, group, parallel control</td></tr>
+<tr><td><strong>Reporting</strong></td><td>Basic console output</td><td>HTML reports, emailable-report.html, detailed logs</td></tr>
+<tr><td><strong>Dependencies</strong></td><td>Not supported</td><td>dependsOnMethods, dependsOnGroups — full dependency graph</td></tr>
+<tr><td><strong>Listeners</strong></td><td>Runners, Rules (limited)</td><td>ITestListener, IAnnotationTransformer, ISuiteListener — extensive hooks</td></tr>
+<tr><td><strong>Retry Logic</strong></td><td>Custom runners required</td><td>IRetryAnalyzer interface — built-in retry support</td></tr>
+<tr><td><strong>Parameters</strong></td><td>Limited @Parameterized</td><td>@Parameters from testng.xml + @Optional for defaults</td></tr>
+<tr><td><strong>Test Priority</strong></td><td>@FixMethodOrder (limited)</td><td>@Test(priority = n) — simple integer-based ordering</td></tr>
+<tr><td><strong>Soft Assertions</strong></td><td>Not built-in</td><td>SoftAssert class — collect failures, assertAll() at end</td></tr>
+<tr><td><strong>Timeout</strong></td><td>@Test(timeout=) in JUnit 4</td><td>@Test(timeOut=) — fail test if exceeds milliseconds</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>TestNG Features</h3>
+<ul>
+<li><strong>Annotations</strong> — Rich lifecycle hooks at suite, test, class, and method levels</li>
+<li><strong>Parallel Execution</strong> — Run tests concurrently at method, class, or test level</li>
+<li><strong>Data-Driven Testing</strong> — @DataProvider feeds multiple data sets to a single @Test</li>
+<li><strong>Grouping</strong> — Tag tests (smoke, regression) and run subsets via XML or Maven</li>
+<li><strong>Dependency Management</strong> — Chain tests; skip dependents when parent fails</li>
+<li><strong>Listeners</strong> — Hook into test lifecycle for custom reporting, screenshots, retry</li>
+<li><strong>Reporting</strong> — Built-in HTML reports with pass/fail/skip counts and stack traces</li>
+<li><strong>XML Configuration</strong> — Externalize suite composition without recompiling code</li>
+<li><strong>Flexible Test Configuration</strong> — Parameters, groups, inclusion/exclusion, parallel modes</li>
+</ul>
+
+<h3>TestNG Architecture</h3>
+<pre class="ascii-diagram">
+TestNG Suite (testng.xml)
+│
+├── &lt;test name="Test_A"&gt;
+│   ├── Class: LoginTests
+│   │   ├── @Test method: validLogin()
+│   │   └── @Test method: invalidLogin()
+│   └── Class: HomePageTests
+│       ├── @Test method: verifyBanner()
+│       └── @Test method: verifyNavigation()
+│
+└── &lt;test name="Test_B"&gt;
+    ├── Class: CheckoutTests
+    │   ├── @Test method: addToCart()
+    │   └── @Test method: placeOrder()
+    └── Class: PaymentTests
+        └── @Test method: verifyPaymentGateway()
+</pre>
+
+<div class="callout">
+<strong>Hierarchy:</strong> Suite → Test → Class → Method. One suite can contain multiple &lt;test&gt; tags. Each &lt;test&gt; can contain multiple classes. Each class contains multiple @Test methods.
+</div>
+
+<h3>Maven Dependency</h3>
+<pre><code>&lt;!-- pom.xml --&gt;
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.testng&lt;/groupId&gt;
+        &lt;artifactId&gt;testng&lt;/artifactId&gt;
+        &lt;version&gt;7.10.2&lt;/version&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+
+&lt;!-- Maven Surefire Plugin for TestNG --&gt;
+&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.2.5&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;suiteXmlFiles&gt;
+                    &lt;suiteXmlFile&gt;testng.xml&lt;/suiteXmlFile&gt;
+                &lt;/suiteXmlFiles&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;
+</code></pre>
+
+<h3>Industry Usage</h3>
+<p>The most common automation stack in Java-based QA teams:</p>
+<pre class="ascii-diagram">
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Selenium  │ +  │   TestNG    │ +  │    Maven    │
+│  WebDriver  │    │  Framework  │    │   Build     │
+└─────────────┘    └─────────────┘    └─────────────┘
+       │                  │                  │
+       ▼                  ▼                  ▼
+  Browser control    Test orchestration   Dependency mgmt
+  Page interactions  Groups, parallel     CI/CD integration
+  Waits, locators    Reporting, XML       mvn test execution
+</pre>
+<p>Extended stacks often add: <strong>ExtentReports/Allure</strong> (reporting), <strong>Log4j</strong> (logging), <strong>Jenkins/GitHub Actions</strong> (CI), <strong>REST Assured</strong> (API tests in same suite).</p>
+
+<h3>TestNG vs JUnit 5 vs pytest</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>TestNG</th><th>JUnit 5</th><th>pytest</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Language</strong></td><td>Java</td><td>Java</td><td>Python</td></tr>
+<tr><td><strong>XML Suite Config</strong></td><td>Yes (testng.xml)</td><td>No (JUnit Platform)</td><td>No (pytest.ini / conftest)</td></tr>
+<tr><td><strong>Parallel Execution</strong></td><td>Native in XML</td><td>JUnit Platform config</td><td>pytest-xdist plugin</td></tr>
+<tr><td><strong>Groups/Tags</strong></td><td>groups attribute</td><td>@Tag</td><td>@pytest.mark</td></tr>
+<tr><td><strong>Data-Driven</strong></td><td>@DataProvider</td><td>@ParameterizedTest</td><td>@pytest.mark.parametrize</td></tr>
+<tr><td><strong>Dependencies</strong></td><td>dependsOnMethods</td><td>Not native</td><td>@pytest.mark.dependency</td></tr>
+<tr><td><strong>Soft Assertions</strong></td><td>SoftAssert class</td><td>assertAll() (JUnit 5)</td><td>soft assertions via plugins</td></tr>
+<tr><td><strong>Primary Use</strong></td><td>Selenium UI automation</td><td>Unit + integration testing</td><td>Python automation (any type)</td></tr>
+<tr><td><strong>Reporting</strong></td><td>Built-in HTML</td><td>Basic + plugins</td><td>pytest-html plugin</td></tr>
+<tr><td><strong>Listeners/Hooks</strong></td><td>ITestListener, etc.</td><td>Extension Model</td><td>conftest.py fixtures</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A — TestNG Introduction</h3>
+
+<h4>Q1: What is TestNG and who created it?</h4>
+<p>TestNG (Testing Next Generation) is a Java testing framework created by Cédric Beust in 2004, inspired by JUnit and NUnit. It supports unit, functional, and integration testing with advanced features like grouping, parallel execution, and XML configuration.</p>
+
+<h4>Q2: Why is TestNG preferred over JUnit for Selenium automation?</h4>
+<p>TestNG offers native parallel execution, test groups, dependency management, DataProvider, XML suite configuration, detailed HTML reporting, and listeners — all critical for large-scale UI automation that JUnit 4 lacked natively.</p>
+
+<h4>Q3: What is testng.xml?</h4>
+<p>testng.xml is TestNG's suite configuration file. It defines which tests to run, group inclusion/exclusion, parallel mode, thread count, parameters, and listener classes — all without recompiling Java code.</p>
+
+<h4>Q4: What is the TestNG execution hierarchy?</h4>
+<p>Suite → Test → Class → Method. A suite contains one or more &lt;test&gt; tags. Each test tag lists classes. Each class contains @Test annotated methods.</p>
+
+<h4>Q5: How do you add TestNG to a Maven project?</h4>
+<p>Add the org.testng:testng dependency with test scope in pom.xml. Configure maven-surefire-plugin to point to testng.xml via &lt;suiteXmlFiles&gt;.</p>
+
+<h4>Q6: Can TestNG and JUnit coexist in the same project?</h4>
+<p>Yes. Many projects use JUnit for unit tests and TestNG for integration/UI tests. Maven Surefire can be configured to run both with separate plugin executions.</p>
+
+<h4>Q7: What reports does TestNG generate by default?</h4>
+<p>TestNG generates reports in test-output/ folder: index.html (main report), emailable-report.html (summary for email), testng-results.xml, and per-suite HTML pages with pass/fail/skip details.</p>
+
+<h4>Q8: What is the difference between TestNG and Selenium?</h4>
+<p>Selenium is a browser automation library (WebDriver API). TestNG is a test framework that orchestrates, groups, parallelizes, and reports on tests. Selenium drives the browser; TestNG manages the test lifecycle.</p>
+
+<h4>Q9: What are TestNG listeners?</h4>
+<p>Listeners are interfaces (ITestListener, ISuiteListener, IAnnotationTransformer, IRetryAnalyzer) that hook into test events — onTestStart, onTestFailure, onTestSuccess — enabling custom reporting, screenshots, and retry logic.</p>
+
+<h4>Q10: Is TestNG only for UI testing?</h4>
+<p>No. TestNG can run any Java test — unit tests, API tests (with REST Assured), database tests, integration tests. It is widely used for UI because of its Selenium ecosystem integration, but it is not limited to UI.</p>
+
+<h4>Q11: What is the latest stable TestNG version?</h4>
+<p>As of 2024–2025, TestNG 7.x is current (7.10.x). Always check Maven Central for the latest. Version 7 added Java module support and improved parallel execution.</p>
+
+<h4>Q12: How does TestNG integrate with CI/CD?</h4>
+<p>Run via Maven (<code>mvn test</code>), Gradle, or direct TestNG CLI. Jenkins/GitHub Actions trigger on commit, pass group parameters (<code>-Dgroups=smoke</code>), archive test-output reports, and fail the build on test failures.</p>
+</section>
+
+<section id="section-3" class="section-card">
+<h2>Section 3: TestNG Annotations (Detailed)</h2>
+
+<p>TestNG annotations define the test lifecycle. Understanding <strong>when each annotation runs</strong> is the #1 most asked TestNG interview topic.</p>
+
+<h3>Complete Execution Flow</h3>
+<pre class="ascii-diagram">
+@BeforeSuite
+    └── @BeforeTest
+            └── @BeforeClass
+                    └── @BeforeMethod → @Test → @AfterMethod
+                    └── @BeforeMethod → @Test → @AfterMethod  (repeat per method)
+            └── @AfterClass
+    └── @AfterTest
+└── @AfterSuite
+</pre>
+
+<div class="callout">
+<strong>Memory Aid:</strong> Before = setup (outside → inside). After = teardown (inside → outside). Suite is outermost; Method is innermost.
+</div>
+
+<h3>1. @BeforeSuite</h3>
+<p><strong>Purpose:</strong> Runs once before any tests in the entire suite begin.</p>
+<p><strong>When it runs:</strong> Before @BeforeTest, @BeforeClass, @BeforeMethod, and @Test — exactly once per suite execution.</p>
+<p><strong>Real framework usage:</strong> Initialize database connections, load global configuration properties, set up ExtentReports instance, create shared test data directories.</p>
+<pre><code>@BeforeSuite
+public void globalSetup() {
+    ConfigReader.load("config.properties");
+    DBConnection.initialize();
+    ExtentReportManager.initReport();
+    System.out.println("@BeforeSuite — Global setup complete");
+}
+</code></pre>
+<p><strong>Interview tip:</strong> Only one @BeforeSuite method should exist per suite (across all classes). If multiple classes define it, all will run but order is not guaranteed unless using dependencies.</p>
+
+<h3>2. @BeforeTest</h3>
+<p><strong>Purpose:</strong> Runs before each &lt;test&gt; tag defined in testng.xml.</p>
+<p><strong>When it runs:</strong> After @BeforeSuite, before @BeforeClass. Runs once per &lt;test&gt; block.</p>
+<p><strong>Real framework usage:</strong> Launch browser instance for a test block, set test-level parameters, initialize WebDriver for a specific environment.</p>
+<pre><code>@BeforeTest
+@Parameters({"browser", "url"})
+public void launchBrowser(String browser, String url) {
+    driver = DriverFactory.createDriver(browser);
+    driver.get(url);
+    System.out.println("@BeforeTest — Browser launched for test block");
+}
+</code></pre>
+<p><strong>Interview tip:</strong> @BeforeTest is tied to the XML &lt;test&gt; tag, NOT to a Java @Test method. This confuses many candidates.</p>
+
+<h3>3. @BeforeClass</h3>
+<p><strong>Purpose:</strong> Runs once before the first @Test method in the current class.</p>
+<p><strong>When it runs:</strong> After @BeforeTest, before any @BeforeMethod in that class.</p>
+<p><strong>Real framework usage:</strong> Initialize Page Object instances, create test data specific to the class, open a shared resource.</p>
+<pre><code>@BeforeClass
+public void initPageObjects() {
+    loginPage = new LoginPage(driver);
+    homePage = new HomePage(driver);
+    System.out.println("@BeforeClass — Page objects initialized");
+}
+</code></pre>
+<p><strong>Interview tip:</strong> @BeforeClass methods must be static if the class is run with parallel="classes" — otherwise TestNG cannot instantiate the class properly for parallel execution.</p>
+
+<h3>4. @BeforeMethod</h3>
+<p><strong>Purpose:</strong> Runs before each @Test method in the class.</p>
+<p><strong>When it runs:</strong> After @BeforeClass, immediately before every @Test method execution.</p>
+<p><strong>Real framework usage:</strong> Navigate to starting URL, perform login, reset application state, clear cookies, start test timer.</p>
+<pre><code>@BeforeMethod
+public void navigateToLogin() {
+    driver.get(baseUrl + "/login");
+    System.out.println("@BeforeMethod — Navigated to login page");
+}
+</code></pre>
+<p><strong>Interview tip:</strong> This is the most commonly used setup annotation in Selenium frameworks — it ensures each test starts from a clean, known state.</p>
+
+<h3>5. @Test</h3>
+<p><strong>Purpose:</strong> Marks an actual test method that TestNG will execute and report on.</p>
+<p><strong>When it runs:</strong> After all applicable @Before* methods for that test method.</p>
+<p><strong>Real framework usage:</strong> Contains test logic — interact with UI, call APIs, validate results with assertions.</p>
+<pre><code>@Test(description = "Verify successful login with valid credentials",
+      priority = 1,
+      groups = {"smoke", "login"})
+public void testValidLogin() {
+    loginPage.enterCredentials("user@test.com", "Pass123");
+    loginPage.clickLogin();
+    Assert.assertTrue(homePage.isWelcomeMessageDisplayed());
+    System.out.println("@Test — testValidLogin executed");
+}
+</code></pre>
+<p><strong>Interview tip:</strong> A method without @Test is NOT executed by TestNG, even if it is public. Only @Test (or @Factory) methods are test methods.</p>
+
+<h3>6. @AfterMethod</h3>
+<p><strong>Purpose:</strong> Runs after each @Test method completes (pass or fail).</p>
+<p><strong>When it runs:</strong> Immediately after every @Test method, before the next @BeforeMethod.</p>
+<p><strong>Real framework usage:</strong> Capture screenshot on failure, log test result, clear test-specific data, attach logs to report.</p>
+<pre><code>@AfterMethod
+public void captureScreenshotOnFailure(ITestResult result) {
+    if (result.getStatus() == ITestResult.FAILURE) {
+        ScreenshotUtil.capture(driver, result.getName());
+    }
+    System.out.println("@AfterMethod — Cleanup after: " + result.getName());
+}
+</code></pre>
+<p><strong>Interview tip:</strong> @AfterMethod always runs even if @Test throws an exception — use it for guaranteed cleanup.</p>
+
+<h3>7. @AfterClass</h3>
+<p><strong>Purpose:</strong> Runs once after all @Test methods in the class have finished.</p>
+<p><strong>When it runs:</strong> After the last @AfterMethod in the class.</p>
+<p><strong>Real framework usage:</strong> Close class-level resources, delete test data created for the class, reset shared state.</p>
+<pre><code>@AfterClass
+public void classCleanup() {
+    testDataHelper.deleteTestRecords();
+    System.out.println("@AfterClass — Class-level cleanup done");
+}
+</code></pre>
+
+<h3>8. @AfterTest</h3>
+<p><strong>Purpose:</strong> Runs after all classes in the current &lt;test&gt; tag have finished.</p>
+<p><strong>When it runs:</strong> After all @AfterClass methods for classes in that test block.</p>
+<p><strong>Real framework usage:</strong> Quit browser, flush test-level logs, send partial report for the test block.</p>
+<pre><code>@AfterTest
+public void closeBrowser() {
+    if (driver != null) {
+        driver.quit();
+    }
+    System.out.println("@AfterTest — Browser closed for test block");
+}
+</code></pre>
+
+<h3>9. @AfterSuite</h3>
+<p><strong>Purpose:</strong> Runs once after all tests in the entire suite have completed.</p>
+<p><strong>When it runs:</strong> After all @AfterTest methods — the very last hook.</p>
+<p><strong>Real framework usage:</strong> Generate final ExtentReport, close DB connections, send email summary, archive test artifacts.</p>
+<pre><code>@AfterSuite
+public void generateFinalReport() {
+    ExtentReportManager.flushReport();
+    DBConnection.close();
+    EmailUtil.sendReport("test-output/emailable-report.html");
+    System.out.println("@AfterSuite — Final report generated");
+}
+</code></pre>
+
+<h3>10. @BeforeGroups / @AfterGroups</h3>
+<p><strong>Purpose:</strong> Run setup/teardown before and after the first/last test method in a specific group.</p>
+<p><strong>When it runs:</strong> @BeforeGroups runs before the first method in the specified group; @AfterGroups runs after the last method in that group.</p>
+<pre><code>@BeforeGroups("checkout")
+public void setupCheckoutData() {
+    cartHelper.addDefaultItems();
+    System.out.println("@BeforeGroups — Checkout data prepared");
+}
+
+@AfterGroups("checkout")
+public void cleanupCheckoutData() {
+    cartHelper.clearCart();
+    System.out.println("@AfterGroups — Checkout data cleaned");
+}
+
+@Test(groups = "checkout")
+public void testPlaceOrder() {
+    checkoutPage.placeOrder();
+    Assert.assertTrue(confirmationPage.isOrderConfirmed());
+}
+</code></pre>
+<p><strong>Interview tip:</strong> Groups hooks run within the normal Before/After Method lifecycle — they are additional, not replacements.</p>
+
+<h3>Complete Example — All Annotations in One Class</h3>
+<pre><code>public class AnnotationOrderDemo {
+
+    @BeforeSuite
+    public void beforeSuite() {
+        System.out.println("1. @BeforeSuite");
+    }
+
+    @BeforeTest
+    public void beforeTest() {
+        System.out.println("2. @BeforeTest");
+    }
+
+    @BeforeClass
+    public void beforeClass() {
+        System.out.println("3. @BeforeClass");
+    }
+
+    @BeforeMethod
+    public void beforeMethod() {
+        System.out.println("4. @BeforeMethod");
+    }
+
+    @Test(priority = 1)
+    public void testOne() {
+        System.out.println("5. @Test — testOne");
+    }
+
+    @Test(priority = 2)
+    public void testTwo() {
+        System.out.println("5. @Test — testTwo");
+    }
+
+    @AfterMethod
+    public void afterMethod() {
+        System.out.println("6. @AfterMethod");
+    }
+
+    @AfterClass
+    public void afterClass() {
+        System.out.println("7. @AfterClass");
+    }
+
+    @AfterTest
+    public void afterTest() {
+        System.out.println("8. @AfterTest");
+    }
+
+    @AfterSuite
+    public void afterSuite() {
+        System.out.println("9. @AfterSuite");
+    }
+}
+
+/* Console Output:
+1. @BeforeSuite
+2. @BeforeTest
+3. @BeforeClass
+4. @BeforeMethod
+5. @Test — testOne
+6. @AfterMethod
+4. @BeforeMethod
+5. @Test — testTwo
+6. @AfterMethod
+7. @AfterClass
+8. @AfterTest
+9. @AfterSuite
+*/
+</code></pre>
+
+<h3>@Test Attributes</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Attribute</th><th>Description</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>priority</strong></td><td>Execution order (lower = first). Default = 0</td><td>@Test(priority = 1)</td></tr>
+<tr><td><strong>groups</strong></td><td>Assign test to one or more groups</td><td>@Test(groups = {"smoke", "login"})</td></tr>
+<tr><td><strong>dependsOnMethods</strong></td><td>Run only if named methods passed</td><td>@Test(dependsOnMethods = {"login"})</td></tr>
+<tr><td><strong>dependsOnGroups</strong></td><td>Run only if named groups passed</td><td>@Test(dependsOnGroups = {"setup"})</td></tr>
+<tr><td><strong>enabled</strong></td><td>Enable/disable test without deleting</td><td>@Test(enabled = false)</td></tr>
+<tr><td><strong>description</strong></td><td>Human-readable description in reports</td><td>@Test(description = "Verify login")</td></tr>
+<tr><td><strong>timeOut</strong></td><td>Fail if execution exceeds milliseconds</td><td>@Test(timeOut = 5000)</td></tr>
+<tr><td><strong>dataProvider</strong></td><td>Link to @DataProvider method</td><td>@Test(dataProvider = "loginData")</td></tr>
+<tr><td><strong>invocationCount</strong></td><td>Run the test N times</td><td>@Test(invocationCount = 3)</td></tr>
+<tr><td><strong>expectedExceptions</strong></td><td>Test passes if specified exception thrown</td><td>@Test(expectedExceptions = IllegalArgumentException.class)</td></tr>
+<tr><td><strong>alwaysRun</strong></td><td>Run even if dependency failed</td><td>@Test(alwaysRun = true)</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>@DataProvider(name = "loginData")
+public Object[][] getLoginData() {
+    return new Object[][] {
+        {"validUser", "pass123", true},
+        {"invalidUser", "wrong", false},
+        {"", "pass123", false}
+    };
+}
+
+@Test(dataProvider = "loginData",
+      description = "Data-driven login test",
+      timeOut = 10000,
+      invocationCount = 1,
+      expectedExceptions = { },
+      priority = 1,
+      groups = {"regression"})
+public void testLogin(String username, String password, boolean expected) {
+    boolean result = loginPage.login(username, password);
+    Assert.assertEquals(result, expected);
+}
+</code></pre>
+
+<h3>Interview Q&amp;A — TestNG Annotations</h3>
+
+<h4>Q1: What is the execution order of TestNG annotations?</h4>
+<p>@BeforeSuite → @BeforeTest → @BeforeClass → @BeforeMethod → @Test → @AfterMethod → @AfterClass → @AfterTest → @AfterSuite. For multiple @Test methods, @BeforeMethod → @Test → @AfterMethod repeats.</p>
+
+<h4>Q2: What is the difference between @BeforeTest and @BeforeMethod?</h4>
+<p>@BeforeTest runs once per &lt;test&gt; tag in testng.xml (before all classes in that test block). @BeforeMethod runs before every individual @Test method. @BeforeTest is coarser-grained; @BeforeMethod is per-test-method.</p>
+
+<h4>Q3: What is the difference between @BeforeSuite and @BeforeClass?</h4>
+<p>@BeforeSuite runs once for the entire XML suite (all test tags). @BeforeClass runs once per Java class before its first @Test method. Suite is global; Class is per Java file.</p>
+
+<h4>Q4: Does @AfterMethod run if @Test fails?</h4>
+<p>Yes. @AfterMethod always runs after @Test completes, regardless of pass, fail, or skip status. This makes it ideal for screenshots and cleanup.</p>
+
+<h4>Q5: Can you have multiple @BeforeMethod methods in one class?</h4>
+<p>Yes. All @BeforeMethod methods run before each @Test, but their order among themselves is not guaranteed unless you use priority (not available on @BeforeMethod) or dependsOnMethods pattern.</p>
+
+<h4>Q6: What happens if @BeforeSuite throws an exception?</h4>
+<p>All tests in the suite are skipped. @BeforeSuite failure is catastrophic — no tests run. Always handle exceptions carefully in suite-level setup.</p>
+
+<h4>Q7: Must @BeforeClass be static?</h4>
+<p>Not always, but it MUST be static when running with parallel="classes" because TestNG creates separate instances per class in parallel mode and static methods don't require instance state.</p>
+
+<h4>Q8: What is @BeforeGroups used for?</h4>
+<p>It runs once before the first test method in the specified group executes. Useful for group-specific setup like preparing checkout test data only when checkout group tests run.</p>
+
+<h4>Q9: What is the difference between @Test(enabled=false) and commenting out a test?</h4>
+<p>enabled=false keeps the test in reports as "Skipped" and preserves the code for future use. Commenting removes it entirely from TestNG's discovery. enabled=false is the professional approach.</p>
+
+<h4>Q10: What does @Test(timeOut = 5000) do?</h4>
+<p>Fails the test if it runs longer than 5000 milliseconds (5 seconds). Useful for catching hung tests, infinite loops, or missing waits in Selenium scripts.</p>
+
+<h4>Q11: What is expectedExceptions in @Test?</h4>
+<p>@Test(expectedExceptions = IOException.class) means the test PASSES if an IOException is thrown, and FAILS if no exception or a different exception occurs. Used for negative testing.</p>
+
+<h4>Q12: What is invocationCount?</h4>
+<p>@Test(invocationCount = 5) runs the same test method 5 times. Useful for stability testing, load smoke checks, or verifying intermittent issues.</p>
+
+<h4>Q13: How does @Test(priority = -1) work?</h4>
+<p>Negative priorities are allowed. Lower numbers run first, so priority = -1 runs before priority = 0 (default) which runs before priority = 1.</p>
+
+<h4>Q14: What annotations can receive ITestResult as a parameter?</h4>
+<p>@AfterMethod and @BeforeMethod can accept ITestResult (or Method, ITestContext) as parameters. TestNG injects them automatically — useful for getting test name, status, and parameters in hooks.</p>
+
+<h4>Q15: What is the difference between @Factory and @Test?</h4>
+<p>@Test marks a single test method. @Factory marks a method that returns an array of test class instances, allowing dynamic test creation — e.g., run the same test class with different browsers.</p>
+
+<h4>Q16: If a class has no @Test methods but has @BeforeClass, what happens?</h4>
+<p>TestNG skips the class entirely if no @Test methods are present (or all are enabled=false). Configuration methods alone do not trigger class execution.</p>
+</section>
+
+<section id="section-4" class="section-card">
+<h2>Section 4: TestNG Execution Flow</h2>
+
+<h3>Complete Hierarchy: Suite → Test → Class → Method</h3>
+<p>TestNG organizes test execution in four nested levels. Understanding this hierarchy is essential for designing testng.xml files and debugging execution order issues.</p>
+
+<pre class="ascii-diagram">
+SUITE (testng.xml — &lt;suite&gt;)
+│
+├── TEST ("Smoke Tests" — &lt;test&gt;)
+│   ├── CLASS: LoginTest.java
+│   │   ├── METHOD: testValidLogin()     [@Test priority=1]
+│   │   └── METHOD: testInvalidLogin()   [@Test priority=2]
+│   └── CLASS: HomePageTest.java
+│       └── METHOD: testHomePageLoads()  [@Test]
+│
+├── TEST ("Regression Tests" — &lt;test&gt;)
+│   ├── CLASS: SearchTest.java
+│   │   ├── METHOD: testSearchByKeyword()
+│   │   └── METHOD: testSearchFilters()
+│   └── CLASS: CheckoutTest.java
+│       ├── METHOD: testAddToCart()
+│       └── METHOD: testCheckout()
+│
+└── TEST ("API Tests" — &lt;test&gt;)
+    └── CLASS: UserApiTest.java
+        ├── METHOD: testCreateUser()
+        └── METHOD: testDeleteUser()
+</pre>
+
+<h3>testng.xml Mapping</h3>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="ECommerce Suite" parallel="tests" thread-count="2"&gt;
+
+    &lt;test name="Smoke Tests"&gt;
+        &lt;classes&gt;
+            &lt;class name="com.tests.LoginTest"/&gt;
+            &lt;class name="com.tests.HomePageTest"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+
+    &lt;test name="Regression Tests"&gt;
+        &lt;classes&gt;
+            &lt;class name="com.tests.SearchTest"/&gt;
+            &lt;class name="com.tests.CheckoutTest"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+
+    &lt;test name="API Tests"&gt;
+        &lt;classes&gt;
+            &lt;class name="com.tests.UserApiTest"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+
+&lt;/suite&gt;
+</code></pre>
+
+<h3>Real Framework Example — E-Commerce Automation</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Level</th><th>E-Commerce Mapping</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Suite</strong></td><td>Entire application test run</td><td>"ECommerce Full Regression Suite"</td></tr>
+<tr><td><strong>Test</strong></td><td>Feature module or test type</td><td>"User Management", "Product Catalog", "Checkout Flow"</td></tr>
+<tr><td><strong>Class</strong></td><td>Page or API resource</td><td>LoginTest, ProductSearchTest, PaymentTest</td></tr>
+<tr><td><strong>Method</strong></td><td>Individual test scenario</td><td>testValidLogin(), testSearchByCategory(), testApplyCoupon()</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Execution Order with Multiple Classes</h3>
+<p>By default, TestNG executes classes in <strong>alphabetical order</strong> by class name. Within a class, @Test methods run by priority (default 0), then alphabetically for same priority.</p>
+
+<pre class="ascii-diagram">
+Default Class Order (alphabetical):
+  CheckoutTest  →  HomePageTest  →  LoginTest  →  SearchTest
+
+Within LoginTest (priority, then alphabetical):
+  priority=1: testValidLogin()
+  priority=2: testInvalidLogin()
+  priority=2: testLockedAccount()  ← same priority → alphabetical
+</pre>
+
+<h3>Controlling Execution Order</h3>
+
+<h4>1. preserve-order in testng.xml</h4>
+<pre><code>&lt;test name="Ordered Tests"&gt;
+    &lt;classes&gt;
+        &lt;class name="com.tests.CheckoutTest"&gt;
+            &lt;methods&gt;
+                &lt;include name="testAddToCart"/&gt;
+                &lt;include name="testCheckout"/&gt;
+            &lt;/methods&gt;
+        &lt;/class&gt;
+        &lt;class name="com.tests.LoginTest"/&gt;
+    &lt;/classes&gt;
+&lt;/test&gt;
+</code></pre>
+<p>Classes listed in XML run in the order they appear when <code>preserve-order="true"</code> (default).</p>
+
+<h4>2. priority attribute</h4>
+<pre><code>@Test(priority = 1)
+public void testLogin() { /* runs first */ }
+
+@Test(priority = 2)
+public void testSearch() { /* runs second */ }
+
+@Test(priority = 3)
+public void testCheckout() { /* runs third */ }
+</code></pre>
+
+<h4>3. dependsOnMethods (dependency chain)</h4>
+<pre><code>@Test
+public void login() { /* step 1 */ }
+
+@Test(dependsOnMethods = "login")
+public void search() { /* step 2 — skipped if login fails */ }
+
+@Test(dependsOnMethods = "search")
+public void checkout() { /* step 3 — skipped if search fails */ }
+</code></pre>
+
+<h3>What Happens When a Test Fails</h3>
+<pre class="ascii-diagram">
+Scenario: login FAILS, search depends on login, checkout depends on search
+
+login()       → FAILED ❌
+search()      → SKIPPED ⏭ (depends on login)
+checkout()    → SKIPPED ⏭ (depends on search)
+
+Scenario: login PASSES, search FAILS
+
+login()       → PASSED ✅
+search()      → FAILED ❌
+checkout()    → SKIPPED ⏭ (depends on search)
+
+Scenario: checkout has alwaysRun = true, search FAILS
+
+login()       → PASSED ✅
+search()      → FAILED ❌
+checkout()    → RUNS ✅ (alwaysRun = true overrides skip)
+</pre>
+
+<div class="callout">
+<strong>Important:</strong> When a dependency fails, dependent tests are marked as <strong>SKIPPED</strong> (not FAILED). This distinction matters in reports and CI pass/fail gates.
+</div>
+
+<h3>Parallel Execution Modes</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>parallel attribute</th><th>What runs in parallel</th><th>Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>methods</strong></td><td>@Test methods across classes</td><td>Max speed — many independent tests</td></tr>
+<tr><td><strong>classes</strong></td><td>Test classes</td><td>Isolate class-level state, moderate parallelism</td></tr>
+<tr><td><strong>tests</strong></td><td>&lt;test&gt; tags</td><td>Run smoke and regression blocks simultaneously</td></tr>
+<tr><td><strong>instances</strong></td><td>Test class instances (@Factory)</td><td>Same class, different data/browser instances</td></tr>
+<tr><td><strong>false</strong> (default)</td><td>Sequential execution</td><td>Tests with shared state or dependencies</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A — TestNG Execution Flow</h3>
+
+<h4>Q1: Explain the TestNG execution hierarchy.</h4>
+<p>Suite (testng.xml) contains Test (&lt;test&gt; tags) which contain Classes (Java test classes) which contain Methods (@Test annotated methods). Configuration annotations run at each level accordingly.</p>
+
+<h4>Q2: In what order are test classes executed by default?</h4>
+<p>Alphabetically by fully qualified class name, unless preserve-order is set or dependencies/priorities override the order.</p>
+
+<h4>Q3: How do you run only specific test methods from a class?</h4>
+<p>In testng.xml, use &lt;methods&gt;&lt;include name="methodName"/&gt;&lt;/methods&gt; inside the &lt;class&gt; tag. Alternatively, use groups to filter.</p>
+
+<h4>Q4: What happens when a test with dependsOnMethods fails?</h4>
+<p>All dependent tests are SKIPPED — they do not run and are not marked as failed. They appear as skipped in the report.</p>
+
+<h4>Q5: What is the difference between parallel="methods" and parallel="classes"?</h4>
+<p>parallel="methods" runs individual @Test methods concurrently (maximum parallelism). parallel="classes" runs entire classes concurrently — methods within a class still run sequentially.</p>
+
+<h4>Q6: Can you run multiple testng.xml files in one Maven execution?</h4>
+<p>Yes. Configure maven-surefire-plugin with multiple &lt;suiteXmlFile&gt; entries, or use a suite-of-suites XML that references other XML files.</p>
+
+<h4>Q7: What is thread-count in testng.xml?</h4>
+<p>thread-count specifies the number of threads for parallel execution. With parallel="methods" thread-count="5", up to 5 test methods run simultaneously.</p>
+
+<h4>Q8: How do you skip a test class entirely in testng.xml?</h4>
+<p>Remove the class from the XML, or use &lt;class name="..."&gt;&lt;methods&gt;&lt;exclude name=".*"/&gt;&lt;/methods&gt;&lt;/class&gt;, or set enabled=false on all @Test methods in the class.</p>
+
+<h4>Q9: What is the difference between include/exclude in testng.xml vs groups?</h4>
+<p>include/exclude operates on specific method names — surgical selection. Groups operate on tagged categories — run all tests marked "smoke" regardless of class or method name.</p>
+
+<h4>Q10: How does TestNG handle tests in multiple &lt;test&gt; tags?</h4>
+<p>Each &lt;test&gt; tag is an independent block with its own @BeforeTest/@AfterTest lifecycle. Tests in different &lt;test&gt; tags can run in parallel if parallel="tests" is set.</p>
+</section>
+
+<section id="section-5" class="section-card">
+<h2>Section 5: TestNG Assertions</h2>
+
+<p>Assertions validate that actual results match expected results. TestNG provides hard assertions via the <code>Assert</code> class and soft assertions via the <code>SoftAssert</code> class.</p>
+
+<h3>Hard Assertions</h3>
+<p>Hard assertions stop test execution immediately on failure. Subsequent lines and assertions are not executed.</p>
+
+<h4>Assert.assertEquals(actual, expected)</h4>
+<p>Verifies two values are equal. Works with objects, primitives, strings, arrays.</p>
+<pre><code>@Test
+public void testProductPrice() {
+    String actualPrice = productPage.getPrice();
+    Assert.assertEquals(actualPrice, "$29.99");
+}
+</code></pre>
+
+<h4>Assert.assertEquals(actual, expected, message)</h4>
+<p>Same as above but with a custom failure message for clearer debugging.</p>
+<pre><code>Assert.assertEquals(actualCount, 5,
+    "Cart item count mismatch — expected 5 items after adding products");
+</code></pre>
+
+<h4>Assert.assertTrue(condition)</h4>
+<p>Verifies a boolean condition is true. Most common for UI visibility checks.</p>
+<pre><code>Assert.assertTrue(loginPage.isErrorMessageDisplayed(),
+    "Error message should appear for invalid credentials");
+</code></pre>
+
+<h4>Assert.assertFalse(condition)</h4>
+<p>Verifies a boolean condition is false.</p>
+<pre><code>Assert.assertFalse(checkoutPage.isPlaceOrderButtonEnabled(),
+    "Place Order button should be disabled with empty cart");
+</code></pre>
+
+<h4>Assert.assertNull(object)</h4>
+<p>Verifies an object reference is null.</p>
+<pre><code>Assert.assertNull(sessionManager.getActiveSession(),
+    "Session should be null after logout");
+</code></pre>
+
+<h4>Assert.assertNotNull(object)</h4>
+<p>Verifies an object reference is not null.</p>
+<pre><code>Assert.assertNotNull(driver.findElement(By.id("submitBtn")),
+    "Submit button must be present on the page");
+</code></pre>
+
+<h4>Assert.assertNotEquals(actual, expected)</h4>
+<p>Verifies two values are NOT equal.</p>
+<pre><code>Assert.assertNotEquals(apiResponse.getStatusCode(), 500,
+    "API should not return server error");
+</code></pre>
+
+<h4>Assert.assertSame / Assert.assertNotSame</h4>
+<p>Compares object references (identity), not values. assertSame passes if both refer to the exact same object in memory.</p>
+<pre><code>Object singleton = ConfigManager.getInstance();
+Object sameRef = ConfigManager.getInstance();
+Assert.assertSame(singleton, sameRef, "ConfigManager should be singleton");
+
+Assert.assertNotSame(new ArrayList&lt;&gt;(), new ArrayList&lt;&gt;(),
+    "Two new ArrayLists are different objects");
+</code></pre>
+
+<h4>Assert.fail(message)</h4>
+<p>Forces test failure with a custom message. Used when a condition should never be reached.</p>
+<pre><code>@Test
+public void testUnsupportedBrowser() {
+    if (browser.equals("IE")) {
+        Assert.fail("IE browser is no longer supported — update test configuration");
+    }
+}
+</code></pre>
+
+<h3>Soft Assertions</h3>
+<p>Soft assertions collect all failures during test execution and report them together at the end via <code>assertAll()</code>. The test continues executing even after a soft assertion failure.</p>
+
+<pre><code>import org.testng.asserts.SoftAssert;
+
+@Test
+public void testUserProfilePage() {
+    SoftAssert softAssert = new SoftAssert();
+
+    softAssert.assertEquals(profilePage.getName(), "John Doe", "Name mismatch");
+    softAssert.assertEquals(profilePage.getEmail(), "john@test.com", "Email mismatch");
+    softAssert.assertTrue(profilePage.isAvatarDisplayed(), "Avatar not displayed");
+    softAssert.assertEquals(profilePage.getPhone(), "+1-555-0100", "Phone mismatch");
+    softAssert.assertFalse(profilePage.isEditButtonEnabled(), "Edit should be disabled");
+    softAssert.assertNotNull(profilePage.getMemberSinceDate(), "Member date is null");
+
+    softAssert.assertAll(); // Reports ALL failures at once
+}
+</code></pre>
+
+<div class="callout">
+<strong>Critical:</strong> Always call <code>assertAll()</code> at the end. Without it, soft assertion failures are silently ignored and the test reports as PASSED.
+</div>
+
+<h3>Hard vs Soft Assertions — Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Criteria</th><th>Hard Assert</th><th>Soft Assert</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>On failure</strong></td><td>Stops test immediately</td><td>Continues executing remaining assertions</td></tr>
+<tr><td><strong>Failure reporting</strong></td><td>Reports first failure only</td><td>Reports all failures at assertAll()</td></tr>
+<tr><td><strong>Use case</strong></td><td>Critical checks — login success, page load</td><td>Multiple field validations on one page</td></tr>
+<tr><td><strong>Class</strong></td><td>org.testng.Assert</td><td>org.testng.asserts.SoftAssert</td></tr>
+<tr><td><strong>Static vs Instance</strong></td><td>Static methods</td><td>Instance — create new SoftAssert() per test</td></tr>
+<tr><td><strong>Risk</strong></td><td>Misses subsequent failures</td><td>Test may proceed in invalid state after failure</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Real Scenario — Validating Multiple Fields on a Page</h3>
+<pre><code>@Test
+public void testOrderConfirmationPage() {
+    checkoutPage.completeOrder("4111111111111111", "12/28", "123");
+    OrderConfirmationPage confirmPage = new OrderConfirmationPage(driver);
+
+    SoftAssert soft = new SoftAssert();
+    soft.assertTrue(confirmPage.isOrderConfirmed(), "Order confirmation banner missing");
+    soft.assertNotNull(confirmPage.getOrderNumber(), "Order number not generated");
+    soft.assertEquals(confirmPage.getTotalAmount(), "$149.97", "Total amount incorrect");
+    soft.assertEquals(confirmPage.getShippingAddress(), "123 Main St", "Address mismatch");
+    soft.assertTrue(confirmPage.isEmailSent(), "Confirmation email not triggered");
+    soft.assertAll();
+}
+</code></pre>
+
+<h3>Custom Assertions</h3>
+<p>Create project-specific assertion methods to improve readability and reduce duplication across the framework.</p>
+<pre><code>public class CustomAssertions {
+
+    public static void assertPageTitle(WebDriver driver, String expectedTitle) {
+        String actual = driver.getTitle();
+        Assert.assertEquals(actual, expectedTitle,
+            "Page title mismatch. Expected: " + expectedTitle + ", Actual: " + actual);
+    }
+
+    public static void assertElementVisible(WebDriver driver, By locator, String elementName) {
+        WebElement element = driver.findElement(locator);
+        Assert.assertTrue(element.isDisplayed(),
+            elementName + " is not visible on the page");
+    }
+
+    public static void assertApiStatusCode(Response response, int expectedCode) {
+        Assert.assertEquals(response.getStatusCode(), expectedCode,
+            "API returned unexpected status code");
+    }
+}
+
+// Usage in tests:
+CustomAssertions.assertPageTitle(driver, "Dashboard - MyApp");
+CustomAssertions.assertElementVisible(driver, By.id("nav-menu"), "Navigation Menu");
+</code></pre>
+
+<h3>Common Assertion Mistakes</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Mistake</th><th>Problem</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td>Using assertEquals with wrong parameter order</td><td>Confusing failure messages</td><td>Always: assertEquals(actual, expected) — actual first</td></tr>
+<tr><td>Forgetting assertAll() with SoftAssert</td><td>Failures silently ignored</td><td>Always call softAssert.assertAll() as last line</td></tr>
+<tr><td>Asserting on elements before page loads</td><td>False failures due to timing</td><td>Use explicit waits before assertions</td></tr>
+<tr><td>Using == instead of assertEquals for strings</td><td>Compares references, not values</td><td>Always use Assert.assertEquals for value comparison</td></tr>
+<tr><td>Hard assert for non-critical fields</td><td>Test stops, missing other failures</td><td>Use SoftAssert for multi-field page validation</td></tr>
+<tr><td>No custom message on assertions</td><td>Hard to debug failures in CI</td><td>Always add descriptive message parameter</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A — TestNG Assertions</h3>
+
+<h4>Q1: What is the difference between hard and soft assertions?</h4>
+<p>Hard assertions (Assert class) stop test execution on first failure. Soft assertions (SoftAssert class) collect failures and report all at once via assertAll(). Use hard for critical path checks; soft for multi-field validation.</p>
+
+<h4>Q2: What happens if you forget to call assertAll()?</h4>
+<p>The test will report as PASSED even if soft assertions failed. assertAll() is mandatory — it throws AssertionError with all collected failures.</p>
+
+<h4>Q3: What is the parameter order for assertEquals?</h4>
+<p>Assert.assertEquals(actual, expected) — actual value first, expected second. TestNG also supports assertEquals(expected, actual) in some overloads, but the standard is actual first.</p>
+
+<h4>Q4: When would you use Assert.fail()?</h4>
+<p>When a code path should never be reached — unsupported configurations, unexpected switch cases, or when try-catch catches an exception that should not occur.</p>
+
+<h4>Q5: Can you mix hard and soft assertions in one test?</h4>
+<p>Yes. Common pattern: hard assert for critical preconditions (page loaded, user logged in), then soft assert for multiple field validations on the resulting page.</p>
+
+<h4>Q6: What is the difference between assertEquals and assertSame?</h4>
+<p>assertEquals compares values (calls equals()). assertSame compares object references (=== in memory). Two String objects with same value pass assertEquals but fail assertSame.</p>
+
+<h4>Q7: How do you create custom assertions?</h4>
+<p>Create a utility class with static methods that wrap Assert calls with domain-specific logic and meaningful messages — e.g., assertPageTitle, assertApiResponse.</p>
+
+<h4>Q8: Does TestNG have assertAll like JUnit 5?</h4>
+<p>TestNG uses SoftAssert.assertAll() for grouped soft assertions. JUnit 5 uses assertAll() as a static method. The concept is the same; the API differs.</p>
+
+<h4>Q9: What assertion should you use after clicking a button that opens a modal?</h4>
+<p>Hard assert — Assert.assertTrue(modal.isDisplayed()) — because if the modal didn't open, all subsequent modal validations are meaningless.</p>
+
+<h4>Q10: How do assertions work with TestNG listeners?</h4>
+<p>When an assertion fails, TestNG marks the test as FAILED and triggers onTestFailure in ITestListener. Soft assertion failures only trigger this at assertAll() time.</p>
+
+<h4>Q11: Can SoftAssert be reused across multiple test methods?</h4>
+<p>No. Create a new SoftAssert instance per test method. Reusing across methods can carry over failures from previous tests.</p>
+
+<h4>Q12: What is assertNotEquals used for?</h4>
+<p>Verifying a value has changed — e.g., after an update operation, assertNotEquals(oldValue, newValue) confirms the value was modified.</p>
+</section>
+
+<section id="section-6" class="section-card">
+<h2>Section 6: TestNG Priority and Dependency</h2>
+
+<h3>Priority</h3>
+<p>The <code>priority</code> attribute controls the order in which @Test methods execute within a class. Lower numbers run first.</p>
+
+<h4>Rules</h4>
+<ul>
+<li>Default priority is <strong>0</strong> for all @Test methods without explicit priority.</li>
+<li>Negative priorities are allowed: <code>@Test(priority = -1)</code> runs before priority 0.</li>
+<li>Methods with the <strong>same priority</strong> run in alphabetical order by method name.</li>
+<li>Priority only affects order within the same class — not across classes.</li>
+<li>Priority does NOT guarantee execution if combined with dependsOnMethods — dependencies take precedence.</li>
+</ul>
+
+<h4>Complete Example — 5 Test Methods</h4>
+<pre><code>public class PriorityDemo {
+
+    @Test(priority = 3)
+    public void verifyCheckout() {
+        System.out.println("Priority 3 — verifyCheckout (runs 4th)");
+    }
+
+    @Test(priority = 1)
+    public void verifyLogin() {
+        System.out.println("Priority 1 — verifyLogin (runs 2nd)");
+    }
+
+    @Test // default priority = 0
+    public void verifyHomePage() {
+        System.out.println("Priority 0 — verifyHomePage (runs 1st alphabetically among p=0)");
+    }
+
+    @Test(priority = 0)
+    public void verifyNavigation() {
+        System.out.println("Priority 0 — verifyNavigation (runs 2nd alphabetically among p=0)");
+    }
+
+    @Test(priority = -1)
+    public void setupTestData() {
+        System.out.println("Priority -1 — setupTestData (runs FIRST)");
+    }
+
+    @Test(priority = 2)
+    public void verifySearch() {
+        System.out.println("Priority 2 — verifySearch (runs 3rd)");
+    }
+}
+
+/* Execution Order:
+1. setupTestData       (priority = -1)
+2. verifyHomePage      (priority = 0, alphabetically before verifyNavigation)
+3. verifyNavigation    (priority = 0)
+4. verifyLogin         (priority = 1)
+5. verifySearch        (priority = 2)
+6. verifyCheckout      (priority = 3)
+*/
+</code></pre>
+
+<h3>Dependency</h3>
+<p>Dependency ensures tests run in a logical sequence where downstream tests depend on upstream tests passing. If an upstream test fails, downstream tests are <strong>SKIPPED</strong>.</p>
+
+<h4>dependsOnMethods</h4>
+<pre><code>@Test
+public void login() {
+    loginPage.login("user@test.com", "pass123");
+    Assert.assertTrue(homePage.isDisplayed());
+}
+
+@Test(dependsOnMethods = {"login"})
+public void searchProduct() {
+    searchPage.search("laptop");
+    Assert.assertTrue(searchPage.getResultCount() > 0);
+}
+
+@Test(dependsOnMethods = {"searchProduct"})
+public void addToCart() {
+    searchPage.clickFirstResult();
+    productPage.addToCart();
+    Assert.assertEquals(cartPage.getItemCount(), 1);
+}
+
+@Test(dependsOnMethods = {"addToCart"})
+public void checkout() {
+    cartPage.proceedToCheckout();
+    checkoutPage.completeOrder();
+    Assert.assertTrue(confirmationPage.isOrderConfirmed());
+}
+</code></pre>
+
+<h4>dependsOnGroups</h4>
+<pre><code>@Test(groups = "setup")
+public void createTestAccount() {
+    apiHelper.createUser("testuser");
+}
+
+@Test(groups = "setup")
+public void loadTestProducts() {
+    apiHelper.seedProducts();
+}
+
+@Test(dependsOnGroups = {"setup"})
+public void testPurchaseFlow() {
+    // Runs only if ALL methods in "setup" group passed
+    purchasePage.completePurchase();
+}
+</code></pre>
+
+<h4>alwaysRun = true</h4>
+<pre><code>@Test(dependsOnMethods = {"login"}, alwaysRun = true)
+public void captureLogsOnFailure() {
+    // Runs even if login() failed — useful for cleanup/diagnostics
+    logCollector.saveLogs();
+}
+</code></pre>
+
+<h4>Soft vs Hard Dependency</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Type</th><th>Behavior on Dependency Failure</th><th>Configuration</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Hard Dependency</strong> (default)</td><td>Dependent test is SKIPPED</td><td>@Test(dependsOnMethods = {"login"})</td></tr>
+<tr><td><strong>Soft Dependency</strong></td><td>Dependent test still RUNS</td><td>@Test(dependsOnMethods = {"login"}, alwaysRun = true)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Real Scenario — E-Commerce Purchase Chain</h3>
+<pre class="ascii-diagram">
+login ──→ searchProduct ──→ addToCart ──→ checkout ──→ verifyConfirmation
+  │              │                │             │
+  FAIL          SKIP             SKIP          SKIP
+
+login ──→ searchProduct ──→ addToCart ──→ captureScreenshot (alwaysRun=true)
+  │              │                │             │
+  FAIL          SKIP             SKIP          RUNS ✅
+</pre>
+
+<h3>Priority vs Dependency — Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Criteria</th><th>Priority</th><th>Dependency</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Purpose</strong></td><td>Control execution order</td><td>Enforce logical test flow</td></tr>
+<tr><td><strong>On failure</strong></td><td>Next test still runs</td><td>Dependent tests are SKIPPED</td></tr>
+<tr><td><strong>Scope</strong></td><td>Within same class only</td><td>Can cross classes (dependsOnGroups)</td></tr>
+<tr><td><strong>Attribute</strong></td><td>@Test(priority = n)</td><td>@Test(dependsOnMethods = {"x"})</td></tr>
+<tr><td><strong>Default value</strong></td><td>0</td><td>No dependency (independent)</td></tr>
+<tr><td><strong>Best for</strong></td><td>Ordering independent tests</td><td>Sequential workflows (login → action → verify)</td></tr>
+<tr><td><strong>CI impact</strong></td><td>All tests run regardless of failures</td><td>Failures cascade — fewer tests run</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>When to Use Priority vs Dependency</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Scenario</th><th>Use</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr><td>Independent smoke tests in one class</td><td>Priority</td><td>Tests don't depend on each other; just need ordering</td></tr>
+<tr><td>Login → perform action → verify result</td><td>Dependency</td><td>Action is meaningless if login fails</td></tr>
+<tr><td>Setup data → run validation tests</td><td>Dependency (dependsOnGroups)</td><td>All validation depends on setup group</td></tr>
+<tr><td>Run fast tests before slow tests</td><td>Priority</td><td>Ordering preference, not logical dependency</td></tr>
+<tr><td>Cleanup/teardown after failure</td><td>Dependency + alwaysRun</td><td>Ensure cleanup runs regardless of test outcome</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li><strong>Using priority for dependent flows</strong> — Priority doesn't skip tests on failure. If login fails but checkout has priority 2, checkout still runs and fails confusingly.</li>
+<li><strong>Cross-class dependsOnMethods without same test tag</strong> — Dependencies work best within the same &lt;test&gt; tag. Cross-test dependencies are unreliable.</li>
+<li><strong>Circular dependencies</strong> — testA depends on testB, testB depends on testA → TestNG throws an error at startup.</li>
+<li><strong>Typo in dependsOnMethods name</strong> — TestNG skips the dependent test silently if the method name doesn't match exactly.</li>
+<li><strong>Combining priority with dependency</strong> — Dependencies take precedence. Priority only matters among independent tests.</li>
+</ul>
+
+<h3>Interview Q&amp;A — Priority and Dependency</h3>
+
+<h4>Q1: What is the default priority of a @Test method?</h4>
+<p>0. Methods without an explicit priority attribute default to priority 0 and run alphabetically among themselves.</p>
+
+<h4>Q2: Can priority be negative?</h4>
+<p>Yes. @Test(priority = -1) runs before priority 0. Useful for setup-like tests without using @BeforeMethod.</p>
+
+<h4>Q3: What happens when two tests have the same priority?</h4>
+<p>TestNG executes them in alphabetical order by method name.</p>
+
+<h4>Q4: What is dependsOnMethods?</h4>
+<p>An attribute that makes a test dependent on another test method passing. If the parent test fails or is skipped, the dependent test is SKIPPED.</p>
+
+<h4>Q5: What is the difference between dependsOnMethods and dependsOnGroups?</h4>
+<p>dependsOnMethods depends on a specific method passing. dependsOnGroups depends on ALL methods in the specified group passing.</p>
+
+<h4>Q6: What does alwaysRun = true do?</h4>
+<p>The test runs even if its dependency failed. Used for cleanup, log capture, or diagnostic tests that should execute regardless of upstream status.</p>
+
+<h4>Q7: Can dependsOnMethods reference a method in another class?</h4>
+<p>Only if both classes are in the same &lt;test&gt; tag in testng.xml. Cross-class dependencies within the same test block work; across test blocks they do not.</p>
+
+<h4>Q8: Priority vs Dependency — which should I use for a login → checkout flow?</h4>
+<p>Dependency. If login fails, checkout should be skipped — not run and fail independently. Priority would still run checkout even after login failure.</p>
+
+<h4>Q9: What happens with circular dependencies?</h4>
+<p>TestNG detects circular dependencies at initialization and throws a TestNGException — the suite fails to start.</p>
+
+<h4>Q10: Does priority work across different test classes?</h4>
+<p>No. Priority only controls order within the same class. For cross-class ordering, use testng.xml class order or dependencies.</p>
+
+<h4>Q11: If testA (priority=1) fails and testB (priority=2) has no dependency, does testB run?</h4>
+<p>Yes. Priority does not skip tests on failure. Only dependsOnMethods/dependsOnGroups causes skipping.</p>
+
+<h4>Q12: How do you make a test run last?</h4>
+<p>Assign the highest priority number: @Test(priority = 999). Or use dependsOnMethods to depend on all other tests (less common).</p>
+</section>
+
+<section id="section-7" class="section-card">
+<h2>Section 7: TestNG Groups</h2>
+
+<h3>What are Groups?</h3>
+<p>Groups are TestNG's mechanism for <strong>categorizing tests</strong> and running subsets selectively. Instead of running the entire suite, you can run only "smoke" tests after a deployment or only "regression" tests nightly.</p>
+
+<p>Groups are assigned via the <code>groups</code> attribute on @Test and configured for execution in testng.xml or via Maven parameters.</p>
+
+<h3>Assigning Groups to Tests</h3>
+<pre><code>// Single group
+@Test(groups = "smoke")
+public void testLoginPageLoads() {
+    Assert.assertTrue(loginPage.isDisplayed());
+}
+
+// Multiple groups — test belongs to both
+@Test(groups = {"regression", "ui"})
+public void testProductSearch() {
+    searchPage.search("phone");
+    Assert.assertTrue(searchPage.hasResults());
+}
+
+// Method in three groups
+@Test(groups = {"smoke", "regression", "checkout"})
+public void testQuickCheckout() {
+    checkoutPage.quickOrder();
+    Assert.assertTrue(confirmationPage.isDisplayed());
+}
+</code></pre>
+
+<div class="callout">
+<strong>Key Point:</strong> A test can belong to multiple groups. Running any one of those groups will include the test.
+</div>
+
+<h3>testng.xml Group Configuration</h3>
+
+<h4>Including Groups</h4>
+<pre><code>&lt;suite name="Smoke Suite"&gt;
+    &lt;test name="Smoke Tests"&gt;
+        &lt;groups&gt;
+            &lt;run&gt;
+                &lt;include name="smoke"/&gt;
+            &lt;/run&gt;
+        &lt;/groups&gt;
+        &lt;classes&gt;
+            &lt;class name="com.tests.LoginTest"/&gt;
+            &lt;class name="com.tests.HomePageTest"/&gt;
+            &lt;class name="com.tests.CheckoutTest"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;
+</code></pre>
+
+<h4>Excluding Groups</h4>
+<pre><code>&lt;suite name="Regression Minus Broken"&gt;
+    &lt;test name="Regression Tests"&gt;
+        &lt;groups&gt;
+            &lt;run&gt;
+                &lt;include name="regression"/&gt;
+                &lt;exclude name="broken"/&gt;
+                &lt;exclude name="wip"/&gt;
+            &lt;/run&gt;
+        &lt;/groups&gt;
+        &lt;packages&gt;
+            &lt;package name="com.tests.*"/&gt;
+        &lt;/packages&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;
+</code></pre>
+
+<h4>MetaGroups (Group of Groups)</h4>
+<pre><code>&lt;suite name="Full Regression"&gt;
+    &lt;test name="All Regression"&gt;
+        &lt;groups&gt;
+            &lt;define name="full-regression"&gt;
+                &lt;include name="smoke"/&gt;
+                &lt;include name="regression"/&gt;
+                &lt;include name="api"/&gt;
+            &lt;/define&gt;
+            &lt;run&gt;
+                &lt;include name="full-regression"/&gt;
+                &lt;exclude name="broken"/&gt;
+            &lt;/run&gt;
+        &lt;/groups&gt;
+        &lt;packages&gt;
+            &lt;package name="com.tests.*"/&gt;
+        &lt;/packages&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;
+</code></pre>
+
+<h3>Suite Definitions for Different Execution Needs</h3>
+
+<h4>smoke.xml — Fast Validation After Deployment</h4>
+<pre><code>&lt;!-- smoke.xml — Target: 15-20 min, run on every deployment --&gt;
+&lt;suite name="Smoke Suite" parallel="classes" thread-count="3"&gt;
+    &lt;test name="Smoke"&gt;
+        &lt;groups&gt;
+            &lt;run&gt;
+                &lt;include name="smoke"/&gt;
+            &lt;/run&gt;
+        &lt;/groups&gt;
+        &lt;packages&gt;
+            &lt;package name="com.tests.*"/&gt;
+        &lt;/packages&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;
+</code></pre>
+
+<h4>regression.xml — Full Suite Nightly</h4>
+<pre><code>&lt;!-- regression.xml — Target: 2-4 hours, run nightly --&gt;
+&lt;suite name="Regression Suite" parallel="methods" thread-count="5"&gt;
+    &lt;test name="Full Regression"&gt;
+        &lt;groups&gt;
+            &lt;run&gt;
+                &lt;include name="regression"/&gt;
+                &lt;exclude name="broken"/&gt;
+                &lt;exclude name="manual-only"/&gt;
+            &lt;/run&gt;
+        &lt;/groups&gt;
+        &lt;packages&gt;
+            &lt;package name="com.tests.*"/&gt;
+        &lt;/packages&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;
+</code></pre>
+
+<h4>sanity.xml — Module-Specific Quick Check</h4>
+<pre><code>&lt;!-- sanity.xml — Target: 30 min, run after hotfix to specific module --&gt;
+&lt;suite name="Sanity Suite"&gt;
+    &lt;test name="Checkout Sanity"&gt;
+        &lt;groups&gt;
+            &lt;run&gt;
+                &lt;include name="sanity"/&gt;
+                &lt;include name="checkout"/&gt;
+            &lt;/run&gt;
+        &lt;/groups&gt;
+        &lt;classes&gt;
+            &lt;class name="com.tests.CheckoutTest"/&gt;
+            &lt;class name="com.tests.PaymentTest"/&gt;
+            &lt;class name="com.tests.CartTest"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;
+</code></pre>
+
+<h3>Jenkins Integration — Passing Groups as Maven Parameter</h3>
+<pre><code># Run smoke group from command line
+mvn clean test -DsuiteXmlFile=smoke.xml
+
+# Run specific group via Maven property
+mvn clean test -Dgroups=smoke
+
+# Jenkins pipeline example
+stage('Smoke Tests') {
+    steps {
+        sh 'mvn clean test -DsuiteXmlFile=smoke.xml -Dbrowser=chrome'
+    }
+}
+stage('Regression Tests') {
+    when { branch 'main' }
+    steps {
+        sh 'mvn clean test -DsuiteXmlFile=regression.xml'
+    }
+}
+</code></pre>
+
+<h4>Maven Surefire Plugin Configuration for Groups</h4>
+<pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.2.5&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;suiteXmlFiles&gt;
+            &lt;suiteXmlFile&gt;${suiteXmlFile}&lt;/suiteXmlFile&gt;
+        &lt;/suiteXmlFiles&gt;
+        &lt;properties&gt;
+            &lt;property&gt;
+                &lt;name&gt;usedefaultlisteners&lt;/name&gt;
+                &lt;value&gt;true&lt;/value&gt;
+            &lt;/property&gt;
+            &lt;property&gt;
+                &lt;name&gt;listener&lt;/name&gt;
+                &lt;value&gt;com.framework.listeners.TestListener&lt;/value&gt;
+            &lt;/property&gt;
+        &lt;/properties&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;
+</code></pre>
+
+<h3>Real Framework Group Strategy</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Group</th><th>Purpose</th><th>When to Run</th><th>Approx Count</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>smoke</strong></td><td>Critical path validation — app is functional</td><td>Every deployment, every PR merge</td><td>15–25 tests</td></tr>
+<tr><td><strong>sanity</strong></td><td>Module-specific quick check after hotfix</td><td>After hotfix to specific module</td><td>10–20 tests per module</td></tr>
+<tr><td><strong>regression</strong></td><td>Full functional coverage of all features</td><td>Nightly, pre-release</td><td>200–500+ tests</td></tr>
+<tr><td><strong>ui</strong></td><td>All UI/browser-based tests</td><td>With regression or standalone UI run</td><td>150–300 tests</td></tr>
+<tr><td><strong>api</strong></td><td>REST/SOAP API tests (no browser)</td><td>Every build, fast feedback</td><td>50–100 tests</td></tr>
+<tr><td><strong>checkout</strong></td><td>Payment, cart, order flow tests</td><td>After checkout module changes</td><td>20–40 tests</td></tr>
+<tr><td><strong>broken</strong></td><td>Known failing tests — excluded from CI</td><td>Never in CI — fix and remove tag</td><td>Varies</td></tr>
+<tr><td><strong>wip</strong></td><td>Work in progress — not ready for CI</td><td>Local dev only</td><td>Varies</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Groups with @BeforeGroups / @AfterGroups</h3>
+<pre><code>@BeforeGroups("api")
+public void setupApiAuth() {
+    authToken = apiHelper.getAuthToken("admin", "admin123");
+}
+
+@AfterGroups("api")
+public void teardownApiAuth() {
+    apiHelper.revokeToken(authToken);
+}
+
+@Test(groups = "api")
+public void testGetUsers() {
+    Response response = apiHelper.get("/users", authToken);
+    Assert.assertEquals(response.getStatusCode(), 200);
+}
+
+@Test(groups = "api")
+public void testCreateUser() {
+    Response response = apiHelper.post("/users", newUserPayload, authToken);
+    Assert.assertEquals(response.getStatusCode(), 201);
+}
+</code></pre>
+
+<h3>Interview Q&amp;A — TestNG Groups</h3>
+
+<h4>Q1: What are TestNG groups?</h4>
+<p>Groups are tags assigned to @Test methods that allow selective execution. You can run only "smoke" tests, exclude "broken" tests, or combine groups in testng.xml.</p>
+
+<h4>Q2: Can a test belong to multiple groups?</h4>
+<p>Yes. @Test(groups = {"smoke", "regression", "ui"}) belongs to all three. It will run when any of those groups is included.</p>
+
+<h4>Q3: How do you exclude a group in testng.xml?</h4>
+<p>Use &lt;exclude name="groupName"/&gt; inside the &lt;run&gt; block: &lt;groups&gt;&lt;run&gt;&lt;include name="regression"/&gt;&lt;exclude name="broken"/&gt;&lt;/run&gt;&lt;/groups&gt;</p>
+
+<h4>Q4: What are MetaGroups?</h4>
+<p>MetaGroups are groups of groups defined in testng.xml using &lt;define&gt;. They let you create aliases like "full-regression" that include smoke + regression + api groups.</p>
+
+<h4>Q5: How do you run a specific group from the command line?</h4>
+<p>Create a testng.xml with the group include/exclude configuration and run: mvn test -DsuiteXmlFile=smoke.xml. Or use TestNG CLI with group parameters.</p>
+
+<h4>Q6: What is the difference between groups and priority?</h4>
+<p>Groups categorize tests for selective execution (run subset). Priority controls execution order within a run. They serve completely different purposes.</p>
+
+<h4>Q7: How do groups integrate with Jenkins?</h4>
+<p>Jenkins pipeline passes the suite XML or group name as a Maven parameter. Different pipeline stages run different group configurations — smoke on deploy, regression nightly.</p>
+
+<h4>Q8: What is the "broken" group pattern?</h4>
+<p>Tests with known failures are tagged "broken" and excluded from CI via &lt;exclude name="broken"/&gt;. This keeps CI green while tracking known issues. Remove the tag once fixed.</p>
+
+<h4>Q9: Can @BeforeGroups replace @BeforeMethod?</h4>
+<p>No. @BeforeGroups runs once before the first test in a group; @BeforeMethod runs before every test method. They serve different scopes and complement each other.</p>
+
+<h4>Q10: How do groups work with parallel execution?</h4>
+<p>Groups filter which tests run but don't affect parallel behavior. parallel="methods" with group filtering runs matching methods in parallel.</p>
+
+<h4>Q11: What happens if a test has no group assigned?</h4>
+<p>It runs only when no group filtering is applied (full suite) or when explicitly included by class/method name in testng.xml. Ungrouped tests are excluded when group filtering is active.</p>
+
+<h4>Q12: How do you run tests that belong to groupA OR groupB?</h4>
+<p>Include both groups in testng.xml: &lt;include name="groupA"/&gt;&lt;include name="groupB"/&gt;. TestNG runs tests belonging to either group (union, not intersection).</p>
+
+<h4>Q13: What is the difference between include/exclude groups and include/exclude methods?</h4>
+<p>Group include/exclude filters by group tag — dynamic, tag-based. Method include/exclude filters by exact method name — static, name-based. Groups are more maintainable for large suites.</p>
+
+<h4>Q14: How would you design groups for a microservices application?</h4>
+<p>Group by service (user-service, order-service, payment-service) AND by test type (smoke, regression, api). Combine: @Test(groups = {"smoke", "order-service"}) for targeted runs per microservice.</p>
+</section>

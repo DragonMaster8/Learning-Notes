@@ -1,0 +1,1909 @@
+<section id="section-15" class="section-card">
+<h2>Section 15: Selenium Fundamentals</h2>
+
+<h3>What is Selenium?</h3>
+<p>Selenium is an <strong>open-source</strong> suite of tools for automating web browsers. It enables testers and developers to write scripts that interact with web applications the same way a real user would — clicking buttons, filling forms, navigating pages, and validating content.</p>
+
+<div class="callout">
+<p><strong>Key characteristics:</strong> Cross-browser (Chrome, Firefox, Edge, Safari), cross-platform (Windows, macOS, Linux), multi-language (Java, Python, C#, JavaScript, Ruby), and integrates with TestNG, JUnit, Cucumber, and CI/CD pipelines.</p>
+</div>
+
+<h3>Selenium Components — Evolution</h3>
+
+<h4>1. Selenium RC (Remote Control) — Legacy / Deprecated</h4>
+<p>Selenium RC (2004–2016) used a client-server architecture. Test scripts sent commands to a Selenium Server, which injected JavaScript into the browser to simulate user actions. It was slow, fragile, and required the Selenium Server to be running separately.</p>
+<ul>
+<li><strong>Why deprecated:</strong> JavaScript injection caused cross-origin issues, was slow, and could not interact with native browser dialogs reliably. Replaced entirely by WebDriver in Selenium 3.</li>
+</ul>
+
+<h4>2. Selenium IDE — Record &amp; Playback</h4>
+<p>A browser extension (Chrome/Firefox) that records user interactions and exports them as test scripts. Useful for quick prototyping and learning, but not suitable for complex, maintainable test suites.</p>
+
+<h4>3. Selenium WebDriver — Direct Browser Communication</h4>
+<p>The core automation API. WebDriver communicates directly with each browser's native driver (ChromeDriver, GeckoDriver, etc.) using a standardized protocol. This is what all modern Selenium tests use.</p>
+
+<h4>4. Selenium Grid — Distributed Execution</h4>
+<p>Runs tests in parallel across multiple machines, browsers, and OS combinations. Selenium 4 Grid is fully rewritten — supports Docker, Kubernetes, and event-driven architecture.</p>
+
+<h4>5. Selenium Manager (Selenium 4.6+) — Auto Driver Management</h4>
+<p>Built into Selenium 4.6+, Selenium Manager automatically downloads and manages the correct browser driver version. No need for WebDriverManager or manual driver setup in most cases.</p>
+
+<h3>Selenium Architecture</h3>
+
+<h4>Selenium 3 Architecture</h4>
+<pre class="ascii-diagram">
+┌─────────────┐     JSON Wire Protocol      ┌─────────────────┐     Native Protocol     ┌──────────┐
+│   Client    │ ──────────────────────────► │  Browser Driver │ ──────────────────────► │ Browser  │
+│ (Java Test) │ ◄────────────────────────── │ (ChromeDriver)  │ ◄────────────────────── │ (Chrome) │
+└─────────────┘     HTTP REST (JSON)         └─────────────────┘     DevTools Protocol     └──────────┘
+</pre>
+<p>In Selenium 3, the client library communicated with the browser driver using the <strong>JSON Wire Protocol</strong> — a REST-based HTTP protocol where every action (click, sendKeys, findElement) was a separate HTTP request serialized as JSON.</p>
+
+<h4>Selenium 4 Architecture</h4>
+<pre class="ascii-diagram">
+┌─────────────┐     W3C WebDriver Protocol    ┌─────────────────┐     Native Protocol     ┌──────────┐
+│   Client    │ ────────────────────────────► │  Browser Driver │ ──────────────────────► │ Browser  │
+│ (Java Test) │ ◄──────────────────────────── │ (ChromeDriver)  │ ◄────────────────────── │ (Chrome) │
+└─────────────┘     HTTP (W3C Standard)       └─────────────────┘     CDP / BiDi           └──────────┘
+</pre>
+<p>Selenium 4 adopted the <strong>W3C WebDriver Protocol</strong> as the official standard, replacing the JSON Wire Protocol. This ensures consistent behavior across all browser vendors and enables new features like CDP integration and relative locators.</p>
+
+<h4>Selenium 3 vs Selenium 4 Comparison</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Selenium 3</th><th>Selenium 4</th></tr>
+</thead>
+<tbody>
+<tr><td>Communication Protocol</td><td>JSON Wire Protocol</td><td>W3C WebDriver Protocol</td></tr>
+<tr><td>Relative Locators</td><td>Not available</td><td>above(), below(), toLeftOf(), toRightOf(), near()</td></tr>
+<tr><td>Chrome DevTools Protocol (CDP)</td><td>Not supported</td><td>Full CDP support via DevTools class</td></tr>
+<tr><td>Element Screenshots</td><td>Full page only</td><td>Individual element screenshots</td></tr>
+<tr><td>Window/Tab Management</td><td>Manual handle switching</td><td>newWindow(WindowType.TAB/WINDOW)</td></tr>
+<tr><td>BiDi (Bidirectional Protocol)</td><td>Not available</td><td>Experimental support for real-time events</td></tr>
+<tr><td>Driver Management</td><td>Manual or WebDriverManager</td><td>Built-in Selenium Manager (auto-download)</td></tr>
+<tr><td>Grid Architecture</td><td>Hub-Node (legacy)</td><td>Fully distributed, Docker/K8s ready</td></tr>
+<tr><td>Deprecated APIs</td><td>DesiredCapabilities widely used</td><td>BrowserOptions replaces DesiredCapabilities</td></tr>
+<tr><td>Firefox Options</td><td>FirefoxProfile class</td><td>Options class (profile merged into options)</td></tr>
+<tr><td>Timeout API</td><td>implicitlyWait(long, TimeUnit)</td><td>implicitlyWait(Duration)</td></tr>
+<tr><td>getRect()</td><td>Not available</td><td>getRect() on WebElement</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>WebDriver Interface Hierarchy</h3>
+<pre class="ascii-diagram">
+SearchContext (interface)
+    └── WebDriver (interface)
+            ├── RemoteWebDriver (class)
+            │       ├── ChromeDriver
+            │       ├── FirefoxDriver
+            │       ├── EdgeDriver
+            │       └── SafariDriver
+            ├── WebDriver.Options (nested interface)
+            ├── WebDriver.Timeouts (nested interface)
+            └── WebDriver.Window (nested interface)
+</pre>
+<ul>
+<li><strong>SearchContext:</strong> Defines findElement() and findElements() — the root of element location.</li>
+<li><strong>WebDriver:</strong> Extends SearchContext; adds navigation, window management, timeouts.</li>
+<li><strong>RemoteWebDriver:</strong> Implements WebDriver for remote/distributed execution via Grid.</li>
+<li><strong>ChromeDriver:</strong> Concrete implementation for Google Chrome via ChromeDriver executable.</li>
+</ul>
+
+<h3>Selenium 4 New Features</h3>
+<ul>
+<li><strong>Relative Locators:</strong> Locate elements relative to other elements (above, below, near).</li>
+<li><strong>New Window/Tab:</strong> <code>driver.switchTo().newWindow(WindowType.TAB)</code></li>
+<li><strong>CDP Integration:</strong> Access Chrome DevTools for network interception, geolocation, performance metrics.</li>
+<li><strong>Element Screenshots:</strong> Capture screenshots of individual WebElements.</li>
+<li><strong>Enhanced Grid:</strong> GraphQL support, improved observability, Docker integration.</li>
+<li><strong>Selenium Manager:</strong> Automatic browser driver resolution.</li>
+<li><strong>BiDi Protocol:</strong> Real-time browser event streaming (experimental).</li>
+</ul>
+
+<h3>Browser Driver Management</h3>
+
+<h4>Selenium Manager (Recommended — Selenium 4.6+)</h4>
+<pre><code>// No setup needed — Selenium Manager handles everything
+WebDriver driver = new ChromeDriver();</code></pre>
+
+<h4>WebDriverManager (Third-party — io.github.bonigarcia)</h4>
+<pre><code>WebDriverManager.chromedriver().setup();
+WebDriver driver = new ChromeDriver();</code></pre>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Selenium Manager</th><th>WebDriverManager</th></tr>
+</thead>
+<tbody>
+<tr><td>Built-in</td><td>Yes (Selenium 4.6+)</td><td>No (external dependency)</td></tr>
+<tr><td>Configuration</td><td>Zero config</td><td>Requires .setup() call</td></tr>
+<tr><td>Offline support</td><td>Limited</td><td>Can cache drivers locally</td></tr>
+<tr><td>Custom driver path</td><td>Via system properties</td><td>Via .driverPath()</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Language Bindings</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Language</th><th>Maven Dependency</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>Java</td><td>selenium-java</td><td>Most popular; enterprise standard</td></tr>
+<tr><td>Python</td><td>selenium</td><td>pip install selenium</td></tr>
+<tr><td>C#</td><td>Selenium.WebDriver</td><td>NuGet package</td></tr>
+<tr><td>JavaScript</td><td>selenium-webdriver</td><td>npm install selenium-webdriver</td></tr>
+<tr><td>Ruby</td><td>selenium-webdriver</td><td>gem install selenium-webdriver</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Selenium vs Cypress vs Playwright</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Selenium</th><th>Cypress</th><th>Playwright</th></tr>
+</thead>
+<tbody>
+<tr><td>Language Support</td><td>Java, Python, C#, JS, Ruby</td><td>JavaScript/TypeScript only</td><td>JS, Python, Java, C#</td></tr>
+<tr><td>Browser Support</td><td>Chrome, Firefox, Edge, Safari</td><td>Chrome, Firefox, Edge, Electron</td><td>Chromium, Firefox, WebKit</td></tr>
+<tr><td>Architecture</td><td>External driver per browser</td><td>Runs inside browser</td><td>Direct browser protocol (CDP/BiDi)</td></tr>
+<tr><td>Parallel Execution</td><td>Grid / TestNG parallel</td><td>Cypress Cloud (paid)</td><td>Built-in parallel</td></tr>
+<tr><td>Auto-wait</td><td>Manual (implicit/explicit waits)</td><td>Built-in automatic retries</td><td>Built-in auto-wait</td></tr>
+<tr><td>IFrame Support</td><td>Full support via switchTo()</td><td>Limited (same-origin)</td><td>Full support</td></tr>
+<tr><td>Multi-tab/Window</td><td>Full support</td><td>Limited</td><td>Full support</td></tr>
+<tr><td>Mobile Testing</td><td>Via Appium integration</td><td>Not supported natively</td><td>Mobile emulation built-in</td></tr>
+<tr><td>Community/Ecosystem</td><td>Largest, most mature</td><td>Growing, dev-focused</td><td>Rapidly growing (Microsoft)</td></tr>
+<tr><td>Learning Curve</td><td>Moderate</td><td>Easy (for JS devs)</td><td>Moderate</td></tr>
+<tr><td>Best For</td><td>Enterprise, multi-language teams</td><td>Frontend dev testing</td><td>Modern cross-browser E2E</td></tr>
+<tr><td>Reporting</td><td>ExtentReports, Allure, etc.</td><td>Built-in dashboard</td><td>HTML report, trace viewer</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A — Selenium Fundamentals</h3>
+
+<h4>Q1: What is Selenium and why is it used?</h4>
+<p><strong>A:</strong> Selenium is an open-source web automation framework. It is used to automate browser interactions for functional testing, regression testing, and cross-browser validation without manual effort.</p>
+
+<h4>Q2: What are the components of Selenium?</h4>
+<p><strong>A:</strong> Selenium IDE (record/playback), Selenium WebDriver (core API), Selenium Grid (distributed execution), and Selenium Manager (auto driver management in Selenium 4).</p>
+
+<h4>Q3: What is the difference between Selenium 3 and Selenium 4?</h4>
+<p><strong>A:</strong> Selenium 4 uses W3C WebDriver Protocol instead of JSON Wire Protocol, adds relative locators, CDP support, element screenshots, newWindow() API, built-in Selenium Manager, and a rewritten Grid.</p>
+
+<h4>Q4: What is JSON Wire Protocol?</h4>
+<p><strong>A:</strong> The HTTP-based REST protocol used in Selenium 3 where each WebDriver command was serialized as JSON and sent over HTTP to the browser driver. Deprecated in favor of W3C WebDriver Protocol.</p>
+
+<h4>Q5: What is W3C WebDriver Protocol?</h4>
+<p><strong>A:</strong> An official W3C standard that defines how automation clients communicate with browser drivers. Ensures consistent behavior across all browser vendors and is the protocol used in Selenium 4.</p>
+
+<h4>Q6: What is Selenium Grid used for?</h4>
+<p><strong>A:</strong> Selenium Grid enables parallel test execution across multiple machines, browsers, and OS combinations. Tests are routed to available nodes, reducing total execution time.</p>
+
+<h4>Q7: What is Selenium Manager?</h4>
+<p><strong>A:</strong> A built-in tool in Selenium 4.6+ that automatically detects the installed browser version and downloads the matching driver. Eliminates manual driver management.</p>
+
+<h4>Q8: Explain the WebDriver interface hierarchy.</h4>
+<p><strong>A:</strong> SearchContext → WebDriver → RemoteWebDriver → Browser-specific drivers (ChromeDriver, FirefoxDriver, EdgeDriver). SearchContext provides findElement/findElements; WebDriver adds navigation and management APIs.</p>
+
+<h4>Q9: Is Selenium a testing tool or a library?</h4>
+<p><strong>A:</strong> Selenium is a library/framework, not a standalone testing tool. It must be integrated with testing frameworks like TestNG or JUnit to create, organize, and report tests.</p>
+
+<h4>Q10: What is the difference between Selenium RC and WebDriver?</h4>
+<p><strong>A:</strong> RC injected JavaScript into the browser (slow, fragile). WebDriver communicates directly with the browser's native automation API (fast, reliable). RC is fully deprecated.</p>
+
+<h4>Q11: What are relative locators in Selenium 4?</h4>
+<p><strong>A:</strong> Methods to locate elements based on their spatial relationship to other elements: above(), below(), toLeftOf(), toRightOf(), and near(). Useful when elements lack unique IDs.</p>
+
+<h4>Q12: What is CDP in Selenium 4?</h4>
+<p><strong>A:</strong> Chrome DevTools Protocol integration allows accessing browser internals — network interception, geolocation mocking, performance metrics, and console log capture.</p>
+
+<h4>Q13: Can Selenium automate mobile apps?</h4>
+<p><strong>A:</strong> Selenium itself only automates web browsers. Mobile app automation is done via Appium, which extends the WebDriver protocol for iOS and Android.</p>
+
+<h4>Q14: What is the difference between Selenium and WebDriver?</h4>
+<p><strong>A:</strong> Selenium is the overall project/suite. WebDriver is the specific API within Selenium that provides browser automation capabilities. "Selenium WebDriver" refers to using the WebDriver API as part of the Selenium suite.</p>
+
+<h4>Q15: Why was DesiredCapabilities deprecated?</h4>
+<p><strong>A:</strong> DesiredCapabilities was a generic, untyped way to configure browsers. Selenium 4 replaced it with type-safe BrowserOptions classes (ChromeOptions, FirefoxOptions, EdgeOptions) that provide better IDE support and compile-time safety.</p>
+
+<h4>Q16: What is BiDi in Selenium 4?</h4>
+<p><strong>A:</strong> Bidirectional WebDriver Protocol enables real-time, event-driven communication between the test script and browser — useful for listening to console logs, network events, and DOM mutations as they happen.</p>
+
+<h4>Q17: How does Selenium compare to Playwright?</h4>
+<p><strong>A:</strong> Playwright has built-in auto-wait, faster execution via direct CDP/BiDi, and native parallel support. Selenium has a larger ecosystem, broader language support, and is the industry standard for enterprise Java teams.</p>
+
+<h4>Q18: What is the role of browser drivers?</h4>
+<p><strong>A:</strong> Browser drivers (ChromeDriver, GeckoDriver) are executables that act as a bridge between Selenium client code and the actual browser. They translate WebDriver commands into browser-native actions.</p>
+</section>
+
+<section id="section-16" class="section-card">
+<h2>Section 16: Browser Automation</h2>
+
+<h3>ChromeDriver Setup</h3>
+
+<h4>Option 1: Selenium Manager (Automatic — Recommended)</h4>
+<pre><code>import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class ChromeSetup {
+    public static void main(String[] args) {
+        // Selenium Manager auto-downloads matching ChromeDriver
+        WebDriver driver = new ChromeDriver();
+        driver.get("https://www.google.com");
+        driver.quit();
+    }
+}</code></pre>
+
+<h4>Option 2: Manual Driver Path</h4>
+<pre><code>System.setProperty("webdriver.chrome.driver",
+    "C:/drivers/chromedriver.exe");
+WebDriver driver = new ChromeDriver();</code></pre>
+
+<h4>ChromeOptions — Common Configurations</h4>
+<pre><code>import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+
+ChromeOptions options = new ChromeOptions();
+
+// Headless mode — no visible browser window
+options.addArguments("--headless=new");
+
+// Disable browser notifications
+options.addArguments("--disable-notifications");
+
+// Incognito mode
+options.addArguments("--incognito");
+
+// Custom user profile
+options.addArguments("user-data-dir=C:/ChromeProfile");
+
+// Disable info bars and extensions
+options.addArguments("--disable-infobars");
+options.addArguments("--disable-extensions");
+
+// Maximize on start
+options.addArguments("--start-maximized");
+
+// Disable GPU (useful in CI/CD)
+options.addArguments("--disable-gpu");
+
+// Accept insecure certificates
+options.setAcceptInsecureCerts(true);
+
+WebDriver driver = new ChromeDriver(options);</code></pre>
+
+<h4>Complete Chrome Setup with Options</h4>
+<pre><code>import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import java.time.Duration;
+
+public class ChromeBrowserTest {
+    public static void main(String[] args) {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--start-maximized");
+        options.addArguments("--disable-notifications");
+        options.setAcceptInsecureCerts(true);
+
+        WebDriver driver = new ChromeDriver(options);
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
+
+        driver.get("https://example.com");
+        System.out.println("Title: " + driver.getTitle());
+        driver.quit();
+    }
+}</code></pre>
+
+<h3>EdgeDriver Setup</h3>
+<pre><code>import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
+
+EdgeOptions edgeOptions = new EdgeOptions();
+edgeOptions.addArguments("--start-maximized");
+edgeOptions.addArguments("--inprivate");  // Edge incognito
+
+WebDriver driver = new EdgeDriver(edgeOptions);
+driver.get("https://www.bing.com");
+driver.quit();</code></pre>
+
+<h3>FirefoxDriver Setup</h3>
+<pre><code>import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.firefox.ProfilesIni;
+import org.openqa.selenium.firefox.FirefoxProfile;
+
+// Basic setup
+FirefoxOptions options = new FirefoxOptions();
+options.addArguments("--width=1920", "--height=1080");
+
+// Headless Firefox
+options.addArguments("-headless");
+
+// Custom Firefox profile
+ProfilesIni profiles = new ProfilesIni();
+FirefoxProfile profile = profiles.getProfile("SeleniumProfile");
+profile.setPreference("browser.download.folderList", 2);
+profile.setPreference("dom.webnotifications.enabled", false);
+options.setProfile(profile);
+
+WebDriver driver = new FirefoxDriver(options);
+driver.get("https://www.mozilla.org");
+driver.quit();</code></pre>
+
+<h3>Browser Management</h3>
+<pre><code>import java.time.Duration;
+import org.openqa.selenium.Dimension;
+
+// Window management
+driver.manage().window().maximize();
+driver.manage().window().setSize(new Dimension(1280, 720));
+driver.manage().window().fullscreen();
+driver.manage().window().getSize();
+driver.manage().window().getPosition();
+driver.manage().window().setPosition(new Point(0, 0));
+
+// Cookie management
+driver.manage().deleteAllCookies();
+driver.manage().deleteCookieNamed("sessionId");
+driver.manage().addCookie(new Cookie("token", "abc123"));
+
+// Timeout management
+driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
+driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(20));</code></pre>
+
+<h3>Navigation Commands</h3>
+
+<h4>driver.get() vs driver.navigate().to()</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>driver.get(url)</th><th>driver.navigate().to(url)</th></tr>
+</thead>
+<tbody>
+<tr><td>Defined in</td><td>WebDriver interface</td><td>WebDriver.Navigation interface</td></tr>
+<tr><td>Functionality</td><td>Loads URL, waits for page load</td><td>Loads URL, waits for page load</td></tr>
+<tr><td>History</td><td>Cannot go back/forward</td><td>Part of Navigation — supports back(), forward(), refresh()</td></tr>
+<tr><td>Use case</td><td>Initial page load</td><td>When you need navigation history control</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>// Initial navigation
+driver.get("https://example.com");
+
+// Navigation with history support
+driver.navigate().to("https://example.com/page2");
+driver.navigate().back();       // Go to previous page
+driver.navigate().forward();    // Go forward again
+driver.navigate().refresh();    // Reload current page
+
+// Page information
+String currentUrl = driver.getCurrentUrl();
+String pageTitle = driver.getTitle();
+String pageSource = driver.getPageSource();</code></pre>
+
+<div class="callout">
+<p><strong>Key difference:</strong> <code>get()</code> and <code>navigate().to()</code> behave identically for loading a URL. Use <code>navigate()</code> when you also need <code>back()</code>, <code>forward()</code>, or <code>refresh()</code>.</p>
+</div>
+
+<h3>Headless Execution</h3>
+<pre><code>ChromeOptions options = new ChromeOptions();
+options.addArguments("--headless=new");  // Selenium 4 syntax
+options.addArguments("--window-size=1920,1080");  // Required in headless
+options.addArguments("--disable-gpu");
+
+WebDriver driver = new ChromeDriver(options);</code></pre>
+
+<p><strong>When to use headless:</strong> CI/CD pipelines, server environments without display, faster execution, parallel runs. Avoid for debugging — you cannot see what the browser is doing.</p>
+
+<h3>Browser Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Chrome</th><th>Firefox</th><th>Edge</th></tr>
+</thead>
+<tbody>
+<tr><td>Market Share</td><td>~65% (dominant)</td><td>~3%</td><td>~5%</td></tr>
+<tr><td>Driver</td><td>ChromeDriver</td><td>GeckoDriver</td><td>EdgeDriver (msedgedriver)</td></tr>
+<tr><td>Performance</td><td>Fastest rendering</td><td>Good, slower startup</td><td>Chromium-based, similar to Chrome</td></tr>
+<tr><td>Headless Support</td><td>Excellent (--headless=new)</td><td>Good (-headless)</td><td>Excellent (--headless=new)</td></tr>
+<tr><td>CDP Support</td><td>Full native CDP</td><td>Limited</td><td>Full (Chromium-based)</td></tr>
+<tr><td>Profile Support</td><td>ChromeOptions user-data-dir</td><td>FirefoxProfile</td><td>EdgeOptions profile</td></tr>
+<tr><td>Auto-update Driver</td><td>Selenium Manager</td><td>Selenium Manager</td><td>Selenium Manager</td></tr>
+<tr><td>Best For</td><td>Primary test browser</td><td>Cross-browser validation</td><td>Enterprise Windows environments</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A — Browser Automation</h3>
+
+<h4>Q1: How do you launch Chrome browser in Selenium 4?</h4>
+<p><strong>A:</strong> Simply instantiate ChromeDriver — Selenium Manager handles driver download: <code>WebDriver driver = new ChromeDriver();</code></p>
+
+<h4>Q2: What is the difference between get() and navigate().to()?</h4>
+<p><strong>A:</strong> Both load a URL and wait for page load. navigate().to() is part of the Navigation interface which also provides back(), forward(), and refresh().</p>
+
+<h4>Q3: How do you run tests in headless mode?</h4>
+<p><strong>A:</strong> Add <code>options.addArguments("--headless=new")</code> to ChromeOptions before creating ChromeDriver.</p>
+
+<h4>Q4: What is ChromeOptions used for?</h4>
+<p><strong>A:</strong> ChromeOptions configures Chrome browser behavior — headless mode, notifications, incognito, custom profiles, extensions, window size, and more.</p>
+
+<h4>Q5: How do you maximize the browser window?</h4>
+<p><strong>A:</strong> <code>driver.manage().window().maximize()</code> or add <code>--start-maximized</code> to ChromeOptions.</p>
+
+<h4>Q6: How do you delete all cookies?</h4>
+<p><strong>A:</strong> <code>driver.manage().deleteAllCookies()</code> — useful for ensuring clean test state between tests.</p>
+
+<h4>Q7: What are the three types of timeouts in Selenium?</h4>
+<p><strong>A:</strong> Implicit wait (findElement polling), page load timeout (page load completion), and script timeout (async JavaScript execution).</p>
+
+<h4>Q8: How do you set a custom browser window size?</h4>
+<p><strong>A:</strong> <code>driver.manage().window().setSize(new Dimension(1280, 720))</code></p>
+
+<h4>Q9: What is the difference between close() and quit()?</h4>
+<p><strong>A:</strong> close() closes the current browser window. quit() closes all windows and terminates the WebDriver session, releasing all resources.</p>
+
+<h4>Q10: How do you configure Firefox with a custom profile?</h4>
+<p><strong>A:</strong> Use ProfilesIni to load a profile, set preferences on FirefoxProfile, then pass it to FirefoxOptions via setProfile().</p>
+
+<h4>Q11: When should you use headless mode?</h4>
+<p><strong>A:</strong> CI/CD pipelines, Docker containers, server environments without GUI, and when speed is prioritized over visual debugging.</p>
+
+<h4>Q12: How do you disable browser notifications in Chrome?</h4>
+<p><strong>A:</strong> <code>options.addArguments("--disable-notifications")</code> in ChromeOptions.</p>
+</section>
+
+<section id="section-17" class="section-card">
+<h2>Section 17: Locators</h2>
+
+<div class="callout">
+<p><strong>Most Important Topic:</strong> Locators are in the top 3 most-asked Selenium interview topics. Master all 8 locator strategies, CSS/XPath syntax, and dynamic element handling.</p>
+</div>
+
+<h3>Locator Strategy — Priority Order</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Priority</th><th>Locator</th><th>Speed</th><th>When to Use</th></tr>
+</thead>
+<tbody>
+<tr><td>1 (Best)</td><td>ID</td><td>Fastest</td><td>Unique, stable element IDs</td></tr>
+<tr><td>2</td><td>Name</td><td>Fast</td><td>Form fields with name attribute</td></tr>
+<tr><td>3</td><td>CSS Selector</td><td>Fast</td><td>Complex selections, readable syntax</td></tr>
+<tr><td>4</td><td>XPath</td><td>Slower</td><td>Text-based search, traversing DOM</td></tr>
+<tr><td>5</td><td>LinkText</td><td>Fast</td><td>Exact anchor text match</td></tr>
+<tr><td>6</td><td>PartialLinkText</td><td>Fast</td><td>Partial anchor text</td></tr>
+<tr><td>7</td><td>ClassName</td><td>Fast</td><td>Single class, first match only</td></tr>
+<tr><td>8 (Avoid)</td><td>TagName</td><td>Fast</td><td>Generic tags, multiple elements</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>1. ID Locator</h3>
+<pre><code>WebElement email = driver.findElement(By.id("email"));</code></pre>
+<ul>
+<li><strong>Pros:</strong> Fastest locator, unique by HTML spec, most reliable</li>
+<li><strong>Cons:</strong> Not all elements have IDs; dynamic IDs (React/Vue) change on reload</li>
+<li><strong>When to use:</strong> Elements with stable, unique id attributes</li>
+</ul>
+
+<h3>2. Name Locator</h3>
+<pre><code>WebElement username = driver.findElement(By.name("username"));</code></pre>
+<ul>
+<li><strong>Pros:</strong> Fast, commonly available on form fields</li>
+<li><strong>Cons:</strong> May not be unique; multiple elements can share the same name</li>
+<li><strong>When to use:</strong> Input fields, radio buttons, checkboxes in forms</li>
+</ul>
+
+<h3>3. ClassName Locator</h3>
+<pre><code>WebElement btn = driver.findElement(By.className("btn-primary"));</code></pre>
+<ul>
+<li><strong>Pros:</strong> Simple syntax for styled elements</li>
+<li><strong>Cons:</strong> Returns only the <strong>first match</strong>; compound classes need CSS/XPath; not unique</li>
+<li><strong>When to use:</strong> When class is unique and you need the first matching element</li>
+</ul>
+
+<h3>4. TagName Locator</h3>
+<pre><code>List&lt;WebElement&gt; inputs = driver.findElements(By.tagName("input"));</code></pre>
+<ul>
+<li><strong>Pros:</strong> Finds all elements of a type</li>
+<li><strong>Cons:</strong> Too generic; returns many elements; rarely unique</li>
+<li><strong>When to use:</strong> Counting elements, iterating all links/images</li>
+</ul>
+
+<h3>5. LinkText Locator</h3>
+<pre><code>WebElement signIn = driver.findElement(By.linkText("Sign In"));</code></pre>
+<ul>
+<li><strong>Pros:</strong> Exact match, human-readable, fast</li>
+<li><strong>Cons:</strong> Case-sensitive; must match entire visible text; only works on &lt;a&gt; tags</li>
+<li><strong>When to use:</strong> Navigation links with exact, stable text</li>
+</ul>
+
+<h3>6. PartialLinkText Locator</h3>
+<pre><code>WebElement link = driver.findElement(By.partialLinkText("Sign"));</code></pre>
+<ul>
+<li><strong>Pros:</strong> Flexible partial matching</li>
+<li><strong>Cons:</strong> May match multiple links; less precise</li>
+<li><strong>When to use:</strong> Long link text where only part is stable</li>
+</ul>
+
+<h3>7. CSS Selector — Comprehensive Guide</h3>
+
+<h4>Basic Selectors</h4>
+<pre><code>// By tag
+driver.findElement(By.cssSelector("div"));
+
+// By ID
+driver.findElement(By.cssSelector("#email"));
+driver.findElement(By.cssSelector("input#email"));
+
+// By class
+driver.findElement(By.cssSelector(".btn-primary"));
+driver.findElement(By.cssSelector("input.btn-primary"));</code></pre>
+
+<h4>Attribute Selectors</h4>
+<pre><code>// Single attribute
+driver.findElement(By.cssSelector("input[type='text']"));
+driver.findElement(By.cssSelector("[name='email']"));
+driver.findElement(By.cssSelector("[data-testid='submit-btn']"));
+
+// Multiple attributes
+driver.findElement(By.cssSelector("input[type='text'][name='email']"));
+driver.findElement(By.cssSelector("button[type='submit'][class='btn']"));</code></pre>
+
+<h4>Partial Attribute Matching</h4>
+<pre><code>// Contains (*=)
+driver.findElement(By.cssSelector("[class*='partial']"));
+driver.findElement(By.cssSelector("[id*='user-input']"));
+
+// Starts with (^=)
+driver.findElement(By.cssSelector("[class^='start']"));
+driver.findElement(By.cssSelector("[id^='user']"));
+
+// Ends with ($=)
+driver.findElement(By.cssSelector("[class$='end']"));
+driver.findElement(By.cssSelector("[src$='.png']"));</code></pre>
+
+<h4>Combinators</h4>
+<pre><code>// Direct child (>)
+driver.findElement(By.cssSelector("div.form-group > input"));
+
+// Descendant (space)
+driver.findElement(By.cssSelector("div.container input"));
+
+// Adjacent sibling (+)
+driver.findElement(By.cssSelector("label + input"));
+
+// General sibling (~)
+driver.findElement(By.cssSelector("h1 ~ p"));</code></pre>
+
+<h4>Pseudo-classes</h4>
+<pre><code>// Nth child
+driver.findElement(By.cssSelector("tr:nth-child(2)"));
+driver.findElement(By.cssSelector("li:nth-child(odd)"));
+
+// First/Last child
+driver.findElement(By.cssSelector("li:first-child"));
+driver.findElement(By.cssSelector("li:last-child"));
+
+// Not selector
+driver.findElement(By.cssSelector("input:not([type='hidden'])"));</code></pre>
+
+<h3>8. XPath — Comprehensive Guide</h3>
+
+<h4>Types of XPath</h4>
+<pre><code>// ABSOLUTE XPath — AVOID! Brittle, breaks with any DOM change
+driver.findElement(By.xpath("/html/body/div[1]/form/input[2]"));
+
+// RELATIVE XPath — Preferred
+driver.findElement(By.xpath("//input[@id='email']"));</code></pre>
+
+<h4>Attribute-based XPath</h4>
+<pre><code>// Exact attribute match
+driver.findElement(By.xpath("//input[@id='email']"));
+driver.findElement(By.xpath("//button[@type='submit']"));
+
+// Multiple attributes (AND)
+driver.findElement(By.xpath("//input[@type='text' and @name='email']"));
+
+// Multiple attributes (OR)
+driver.findElement(By.xpath("//input[@id='email' or @name='email']"));
+
+// Contains
+driver.findElement(By.xpath("//div[contains(@class,'partial')]"));
+driver.findElement(By.xpath("//input[contains(@id,'user')]"));
+
+// Starts-with
+driver.findElement(By.xpath("//input[starts-with(@id,'user')]"));
+
+// Ends-with (XPath 2.0 — limited browser support, use contains instead)
+driver.findElement(By.xpath("//input[substring(@id, string-length(@id) - 2) = 'end']"));</code></pre>
+
+<h4>Text-based XPath</h4>
+<pre><code>// Exact text
+driver.findElement(By.xpath("//button[text()='Submit']"));
+driver.findElement(By.xpath("//a[text()='Sign In']"));
+
+// Contains text
+driver.findElement(By.xpath("//span[contains(text(),'Welcome')]"));
+driver.findElement(By.xpath("//div[contains(text(),'Error')]"));
+
+// Normalize space (handles extra whitespace)
+driver.findElement(By.xpath("//button[normalize-space()='Submit']"));
+driver.findElement(By.xpath("//label[normalize-space(text())='Email Address']"));</code></pre>
+
+<h4>XPath Axes</h4>
+<pre><code>// Parent
+driver.findElement(By.xpath("//input[@id='email']/parent::div"));
+driver.findElement(By.xpath("//input[@id='email']/.."));
+
+// Child
+driver.findElement(By.xpath("//div[@class='form']/child::input"));
+driver.findElement(By.xpath("//div[@class='form']/input"));
+
+// Ancestor
+driver.findElement(By.xpath("//input[@id='email']/ancestor::form"));
+driver.findElement(By.xpath("//span/ancestor::div[@class='container']"));
+
+// Descendant
+driver.findElement(By.xpath("//div[@id='form']/descendant::input"));
+driver.findElement(By.xpath("//div[@id='form']//input"));
+
+// Following sibling
+driver.findElement(By.xpath("//label[@for='email']/following-sibling::input"));
+
+// Preceding sibling
+driver.findElement(By.xpath("//input[@id='email']/preceding-sibling::label"));</code></pre>
+
+<h4>Indexed XPath</h4>
+<pre><code>// Select the 2nd input of type text
+driver.findElement(By.xpath("(//input[@type='text'])[2]"));
+
+// Last element
+driver.findElement(By.xpath("(//div[@class='item'])[last()]"));</code></pre>
+
+<h3>CSS vs XPath Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>CSS Selector</th><th>XPath</th></tr>
+</thead>
+<tbody>
+<tr><td>Performance</td><td>Faster (native browser engine)</td><td>Slower (XPath engine traversal)</td></tr>
+<tr><td>Direction</td><td>Forward only (parent → child)</td><td>Bidirectional (parent, child, sibling, ancestor)</td></tr>
+<tr><td>Text Search</td><td>Not supported</td><td>text(), contains(text()), normalize-space()</td></tr>
+<tr><td>Readability</td><td>More readable, shorter</td><td>More verbose, powerful</td></tr>
+<tr><td>Browser Support</td><td>All browsers</td><td>All browsers (slight differences)</td></tr>
+<tr><td>Shadow DOM</td><td>Limited (needs pierce selector)</td><td>Cannot pierce shadow DOM either</td></tr>
+<tr><td>Complex Traversal</td><td>Limited to child/descendant/sibling</td><td>Full axis support (ancestor, following, preceding)</td></tr>
+<tr><td>Dynamic IDs</td><td>[id*='partial'] works well</td><td>contains(@id,'partial') works well</td></tr>
+<tr><td>Index Selection</td><td>:nth-child(n)</td><td>(//element)[n]</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Dynamic Element Strategies</h3>
+<pre><code>// Strategy 1: Partial attribute match (dynamic IDs)
+driver.findElement(By.cssSelector("[id*='user-email']"));
+driver.findElement(By.xpath("//input[contains(@id,'user-email')]"));
+
+// Strategy 2: Parent-child relationship
+driver.findElement(By.cssSelector("div.login-form > input[type='email']"));
+driver.findElement(By.xpath("//div[@class='login-form']//input[@type='email']"));
+
+// Strategy 3: Sibling relationship
+driver.findElement(By.xpath("//label[text()='Email']/following-sibling::input"));
+
+// Strategy 4: Index-based (last resort)
+driver.findElement(By.xpath("(//input[@type='text'])[1]"));
+
+// Strategy 5: data-testid attribute (best practice for test automation)
+driver.findElement(By.cssSelector("[data-testid='login-email']"));</code></pre>
+
+<h3>Locator Best Practices</h3>
+<ol>
+<li><strong>Prefer ID</strong> when available and stable — fastest and most reliable.</li>
+<li><strong>Use CSS over XPath</strong> for performance when text search is not needed.</li>
+<li><strong>Avoid absolute XPath</strong> — breaks with any DOM structure change.</li>
+<li><strong>Use data-testid attributes</strong> — designed for automation, stable across UI changes.</li>
+<li><strong>Never use dynamic IDs</strong> directly — use partial match or parent-child strategy.</li>
+<li><strong>Keep locators short and readable</strong> — if a locator is 200 characters, refactor the HTML or use a better strategy.</li>
+<li><strong>Avoid indexing when possible</strong> — (//input)[3] breaks when order changes.</li>
+<li><strong>Store locators in Page Object classes</strong> — single point of maintenance.</li>
+<li><strong>Test locators in browser DevTools</strong> — use <code>document.querySelector()</code> or $x() in console.</li>
+<li><strong>Use unique, descriptive locator names</strong> in Page Objects — EMAIL_INPUT, not INPUT1.</li>
+</ol>
+
+<h3>Selenium 4 Relative Locators</h3>
+<pre><code>import static org.openqa.selenium.support.locators.RelativeLocator.*;
+
+WebElement password = driver.findElement(By.id("password"));
+
+// Find element below the password field
+WebElement confirmPwd = driver.findElement(with(By.id("confirm-password"))
+    .below(password));
+
+// Find element above
+WebElement username = driver.findElement(with(By.id("username"))
+    .above(password));
+
+// Find element to the right
+WebElement submitBtn = driver.findElement(with(By.id("submit"))
+    .toRightOf(password));
+
+// Find element to the left
+WebElement cancelBtn = driver.findElement(with(By.id("cancel"))
+    .toLeftOf(submitBtn));
+
+// Find element near (within 50 pixels)
+WebElement errorMsg = driver.findElement(with(By.className("error"))
+    .near(password, 50));</code></pre>
+
+<h3>findElement vs findElements</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>findElement()</th><th>findElements()</th></tr>
+</thead>
+<tbody>
+<tr><td>Return type</td><td>WebElement (single)</td><td>List&lt;WebElement&gt; (collection)</td></tr>
+<tr><td>No match found</td><td>Throws NoSuchElementException</td><td>Returns empty list (size 0)</td></tr>
+<tr><td>Multiple matches</td><td>Returns first match only</td><td>Returns all matches</td></tr>
+<tr><td>Use case</td><td>Unique elements (buttons, inputs)</td><td>Lists, tables, multiple items</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Real DOM Examples</h3>
+
+<h4>Example HTML</h4>
+<pre><code>&lt;div class="login-container" data-testid="login-form"&gt;
+  &lt;label for="email"&gt;Email Address&lt;/label&gt;
+  &lt;input type="email" id="user-email-input" name="email" placeholder="Enter email"&gt;
+  &lt;label for="password"&gt;Password&lt;/label&gt;
+  &lt;input type="password" id="user-password" name="password"&gt;
+  &lt;button type="submit" class="btn btn-primary"&gt;Sign In&lt;/button&gt;
+  &lt;a href="/forgot"&gt;Forgot Password?&lt;/a&gt;
+&lt;/div&gt;</code></pre>
+
+<h4>Locator Solutions</h4>
+<pre><code>// Email input — multiple valid approaches
+driver.findElement(By.id("user-email-input"));                          // Best
+driver.findElement(By.name("email"));                                   // Good
+driver.findElement(By.cssSelector("input[type='email']"));                // Good
+driver.findElement(By.cssSelector("[data-testid='login-form'] input[type='email']")); // Scoped
+driver.findElement(By.xpath("//label[text()='Email Address']/following-sibling::input"));
+
+// Sign In button
+driver.findElement(By.xpath("//button[text()='Sign In']"));               // Text-based
+driver.findElement(By.cssSelector("button.btn-primary"));                 // CSS class
+driver.findElement(By.cssSelector("button[type='submit']"));              // Attribute
+
+// Forgot Password link
+driver.findElement(By.linkText("Forgot Password?"));                      // Exact link text
+driver.findElement(By.partialLinkText("Forgot"));                         // Partial</code></pre>
+
+<h3>Interview Q&amp;A — Locators</h3>
+
+<h4>Q1: What are the 8 locator strategies in Selenium?</h4>
+<p><strong>A:</strong> ID, Name, ClassName, TagName, LinkText, PartialLinkText, CSS Selector, and XPath.</p>
+
+<h4>Q2: Which locator is fastest?</h4>
+<p><strong>A:</strong> ID is the fastest because browsers index elements by ID internally. CSS Selector is the second fastest.</p>
+
+<h4>Q3: What is the difference between CSS Selector and XPath?</h4>
+<p><strong>A:</strong> CSS is faster and forward-only. XPath is slower but supports bidirectional traversal and text-based searches.</p>
+
+<h4>Q4: When would you use XPath over CSS?</h4>
+<p><strong>A:</strong> When you need to find elements by visible text, traverse up to parent/ancestor elements, or navigate between siblings.</p>
+
+<h4>Q5: What is the difference between findElement and findElements?</h4>
+<p><strong>A:</strong> findElement returns a single WebElement (throws exception if not found). findElements returns a List (empty list if none found).</p>
+
+<h4>Q6: How do you handle dynamic IDs?</h4>
+<p><strong>A:</strong> Use partial attribute matching: CSS <code>[id*='partial']</code> or XPath <code>contains(@id,'partial')</code>. Alternatively, use parent-child or sibling relationships.</p>
+
+<h4>Q7: Why should you avoid absolute XPath?</h4>
+<p><strong>A:</strong> Absolute XPath (/html/body/div[1]/...) breaks whenever any element is added or removed from the DOM hierarchy above the target element.</p>
+
+<h4>Q8: What are relative locators in Selenium 4?</h4>
+<p><strong>A:</strong> above(), below(), toLeftOf(), toRightOf(), and near() — locate elements based on spatial relationship to a reference element.</p>
+
+<h4>Q9: How do you locate an element by its text?</h4>
+<p><strong>A:</strong> XPath only: <code>//button[text()='Submit']</code> or <code>//span[contains(text(),'Welcome')]</code>. CSS cannot search by text.</p>
+
+<h4>Q10: What is normalize-space() in XPath?</h4>
+<p><strong>A:</strong> Strips leading/trailing whitespace and collapses internal whitespace. Useful when element text has inconsistent spacing: <code>//button[normalize-space()='Submit']</code></p>
+
+<h4>Q11: How do you select the nth element when multiple match?</h4>
+<p><strong>A:</strong> CSS: <code>li:nth-child(3)</code>. XPath: <code>(//li)[3]</code>. Index is 1-based in both.</p>
+
+<h4>Q12: What is a data-testid attribute and why use it?</h4>
+<p><strong>A:</strong> A custom HTML attribute added specifically for test automation. Stable across UI refactors since it is not tied to styling or behavior.</p>
+
+<h4>Q13: Can ClassName locator find multiple classes?</h4>
+<p><strong>A:</strong> No. By.className("btn-primary") only accepts a single class. For compound classes, use CSS: <code>.btn.btn-primary</code>.</p>
+
+<h4>Q14: How do you locate elements inside a shadow DOM?</h4>
+<p><strong>A:</strong> Standard locators cannot pierce shadow DOM. Use Selenium 4's <code>getShadowRoot()</code> or JavaScript execution to access shadow DOM elements.</p>
+
+<h4>Q15: What is the difference between child (>) and descendant (space) in CSS?</h4>
+<p><strong>A:</strong> Child (>) selects direct children only. Descendant (space) selects all nested descendants at any depth.</p>
+
+<h4>Q16: How do you write an XPath for a button with text "Submit" inside a form?</h4>
+<p><strong>A:</strong> <code>//form//button[text()='Submit']</code> or <code>//form/button[normalize-space()='Submit']</code></p>
+
+<h4>Q17: What locator strategy do you use for a table row by cell content?</h4>
+<p><strong>A:</strong> XPath: <code>//td[text()='John']/parent::tr</code> or <code>//tr[td[text()='John']]</code></p>
+
+<h4>Q18: How do you verify a locator finds exactly one element?</h4>
+<p><strong>A:</strong> Use findElements and assert size: <code>assert driver.findElements(by).size() == 1;</code> Or test in browser DevTools console.</p>
+
+<h4>Q19: What is the following-sibling axis in XPath?</h4>
+<p><strong>A:</strong> Selects all sibling elements that appear after the current element: <code>//label[@for='email']/following-sibling::input</code></p>
+
+<h4>Q20: CSS selector for input with type text AND name email?</h4>
+<p><strong>A:</strong> <code>input[type='text'][name='email']</code></p>
+
+<h4>Q21: How do you locate a disabled button?</h4>
+<p><strong>A:</strong> CSS: <code>button[disabled]</code> or <code>button:disabled</code>. XPath: <code>//button[@disabled]</code></p>
+
+<h4>Q22: What is the best locator strategy priority order?</h4>
+<p><strong>A:</strong> ID → Name → CSS Selector → XPath → LinkText → PartialLinkText → ClassName → TagName</p>
+</section>
+
+<section id="section-18" class="section-card">
+<h2>Section 18: WebElement Commands</h2>
+
+<h3>WebElement Interface</h3>
+<p>A <code>WebElement</code> represents a DOM element on the web page. It extends <code>SearchContext</code>, meaning you can call findElement/findElements on a WebElement to scope searches within that element.</p>
+
+<h3>Action Commands</h3>
+
+<h4>click()</h4>
+<pre><code>WebElement loginBtn = driver.findElement(By.id("login"));
+loginBtn.click();  // Click the element</code></pre>
+<p><strong>When to use:</strong> Buttons, links, checkboxes, radio buttons, any clickable element.</p>
+
+<h4>sendKeys()</h4>
+<pre><code>WebElement email = driver.findElement(By.id("email"));
+email.sendKeys("user@example.com");
+
+// Clear before typing
+email.clear();
+email.sendKeys("new@example.com");
+
+// Upload file (send absolute file path)
+WebElement fileInput = driver.findElement(By.id("file-upload"));
+fileInput.sendKeys("C:/Users/test/document.pdf");
+
+// Keyboard actions combined
+email.sendKeys(Keys.TAB);
+email.sendKeys(Keys.CONTROL + "a");  // Select all
+email.sendKeys(Keys.DELETE);</code></pre>
+<p><strong>When to use:</strong> Text inputs, textareas, file uploads, keyboard shortcuts.</p>
+
+<h4>clear()</h4>
+<pre><code>WebElement searchBox = driver.findElement(By.id("search"));
+searchBox.clear();  // Clears the text field</code></pre>
+<p><strong>When to use:</strong> Before entering new text in pre-filled fields.</p>
+
+<h4>submit()</h4>
+<pre><code>WebElement form = driver.findElement(By.id("login-form"));
+form.submit();  // Submits the form (deprecated behavior in modern apps)</code></pre>
+<p><strong>Note:</strong> submit() triggers form submission. In modern SPAs, prefer clicking the submit button instead.</p>
+
+<h3>Query Commands</h3>
+<pre><code>WebElement element = driver.findElement(By.id("email"));
+
+// Visible text content
+String text = element.getText();
+
+// HTML attribute value
+String id = element.getAttribute("id");
+String value = element.getAttribute("value");
+String href = element.getAttribute("href");
+
+// CSS property value
+String color = element.getCssValue("color");
+String fontSize = element.getCssValue("font-size");
+String bgColor = element.getCssValue("background-color");
+
+// HTML tag name
+String tag = element.getTagName();  // "input", "button", "div"
+
+// Element dimensions
+Dimension size = element.getSize();  // width, height
+
+// Element coordinates
+Point location = element.getLocation();  // x, y
+
+// Combined size + location (Selenium 4)
+Rectangle rect = element.getRect();  // x, y, width, height</code></pre>
+
+<h3>State Commands</h3>
+<pre><code>WebElement checkbox = driver.findElement(By.id("agree"));
+WebElement submitBtn = driver.findElement(By.id("submit"));
+WebElement hiddenDiv = driver.findElement(By.id("popup"));
+
+boolean isVisible = hiddenDiv.isDisplayed();   // false if hidden via CSS
+boolean isActive = submitBtn.isEnabled();     // false if disabled attribute set
+boolean isChecked = checkbox.isSelected();    // true if checkbox/radio is checked</code></pre>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Method</th><th>Returns true when</th><th>Common use</th></tr>
+</thead>
+<tbody>
+<tr><td>isDisplayed()</td><td>Element is visible on page</td><td>Verify element visibility after action</td></tr>
+<tr><td>isEnabled()</td><td>Element is not disabled</td><td>Check if button is clickable</td></tr>
+<tr><td>isSelected()</td><td>Checkbox/radio is checked</td><td>Verify selection state</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Chaining Locators on WebElement</h3>
+<pre><code>// Scope search within a parent element
+WebElement form = driver.findElement(By.id("login-form"));
+WebElement email = form.findElement(By.name("email"));
+WebElement password = form.findElement(By.name("password"));
+WebElement submit = form.findElement(By.cssSelector("button[type='submit']"));</code></pre>
+
+<h3>Multiple Elements</h3>
+<pre><code>// Find all matching elements
+List&lt;WebElement&gt; rows = driver.findElements(By.cssSelector("table tr"));
+
+// Iterate with for-each
+for (WebElement row : rows) {
+    System.out.println(row.getText());
+}
+
+// Iterate with streams
+rows.stream()
+    .map(WebElement::getText)
+    .filter(text -> text.contains("Active"))
+    .forEach(System.out::println);
+
+// Get count
+int rowCount = rows.size();
+
+// Access by index
+WebElement firstRow = rows.get(0);
+WebElement lastRow = rows.get(rows.size() - 1);</code></pre>
+
+<h3>Selenium 4 Additions</h3>
+<pre><code>WebElement element = driver.findElement(By.id("submit-btn"));
+
+// Accessibility role (e.g., "button", "textbox", "link")
+String role = element.getAriaRole();
+
+// Accessible name (aria-label or associated label text)
+String name = element.getAccessibleName();
+
+// DOM attribute (exact HTML attribute)
+String domAttr = element.getDomAttribute("class");
+
+// DOM property (live JavaScript property value)
+String domProp = element.getDomProperty("value");</code></pre>
+
+<div class="callout">
+<p><strong>Common Mistake:</strong> Using getText() on an &lt;input&gt; field returns empty string. Use <code>getAttribute("value")</code> or <code>getDomProperty("value")</code> to get the input's current value.</p>
+</div>
+
+<pre><code>WebElement input = driver.findElement(By.id("email"));
+input.sendKeys("test@example.com");
+
+String text = input.getText();              // Returns "" (empty!)
+String value = input.getAttribute("value"); // Returns "test@example.com"
+String prop = input.getDomProperty("value"); // Returns "test@example.com"</code></pre>
+
+<h3>Interview Q&amp;A — WebElement Commands</h3>
+
+<h4>Q1: What is a WebElement in Selenium?</h4>
+<p><strong>A:</strong> A WebElement represents a single DOM element on the web page. It provides methods to interact with (click, sendKeys) and query (getText, getAttribute) the element.</p>
+
+<h4>Q2: What is the difference between getText() and getAttribute("value")?</h4>
+<p><strong>A:</strong> getText() returns the visible text content between tags (for labels, divs, spans). getAttribute("value") returns the value attribute of input fields.</p>
+
+<h4>Q3: How do you upload a file in Selenium?</h4>
+<p><strong>A:</strong> Find the file input element and use sendKeys with the absolute file path: <code>fileInput.sendKeys("C:/path/to/file.pdf")</code></p>
+
+<h4>Q4: What is the difference between isDisplayed() and isEnabled()?</h4>
+<p><strong>A:</strong> isDisplayed() checks if the element is visible on the page. isEnabled() checks if the element is interactive (not disabled).</p>
+
+<h4>Q5: Can you call findElement on a WebElement?</h4>
+<p><strong>A:</strong> Yes. WebElement extends SearchContext, so you can chain locators to scope searches within a parent element.</p>
+
+<h4>Q6: What does isSelected() check?</h4>
+<p><strong>A:</strong> Whether a checkbox, radio button, or option element is currently selected/checked.</p>
+
+<h4>Q7: What is getRect() in Selenium 4?</h4>
+<p><strong>A:</strong> Returns a Rectangle object containing both the element's position (x, y) and dimensions (width, height) in a single call.</p>
+
+<h4>Q8: What is the difference between getAttribute() and getDomProperty()?</h4>
+<p><strong>A:</strong> getAttribute() returns the HTML attribute as written in the source. getDomProperty() returns the live JavaScript property value, which may differ (e.g., after user input).</p>
+
+<h4>Q9: How do you get all links on a page?</h4>
+<p><strong>A:</strong> <code>List&lt;WebElement&gt; links = driver.findElements(By.tagName("a"));</code></p>
+
+<h4>Q10: What happens if you call click() on a hidden element?</h4>
+<p><strong>A:</strong> Selenium throws ElementNotInteractableException because the element is not visible/clickable on the page.</p>
+
+<h4>Q11: How do you get the CSS color of an element?</h4>
+<p><strong>A:</strong> <code>element.getCssValue("color")</code> returns the computed CSS property value as a string (e.g., "rgba(255, 0, 0, 1)").</p>
+
+<h4>Q12: What is getAccessibleName() used for?</h4>
+<p><strong>A:</strong> Returns the accessible name of an element for accessibility testing — either the aria-label or the associated label text.</p>
+</section>
+
+<section id="section-19" class="section-card">
+<h2>Section 19: Waits</h2>
+
+<div class="callout">
+<p><strong>Critical Topic:</strong> Waits are in the top 3 most-asked Selenium interview topics. Understanding implicit, explicit, and fluent waits — and when to use each — is essential.</p>
+</div>
+
+<h3>Why Waits?</h3>
+<p>Modern web applications are dynamic — content loads via AJAX, animations play, elements appear/disappear. Without waits, tests fail with <code>NoSuchElementException</code> or <code>ElementNotInteractableException</code> because Selenium tries to interact before the element is ready.</p>
+
+<h3>Thread.sleep() — Anti-Pattern</h3>
+<pre><code>// NEVER DO THIS in production tests
+Thread.sleep(5000);  // Hard-coded 5 second pause</code></pre>
+<ul>
+<li><strong>Wastes time:</strong> Always waits the full duration even if element is ready sooner.</li>
+<li><strong>Flaky:</strong> May not wait long enough on slow networks.</li>
+<li><strong>Not scalable:</strong> Cannot adjust dynamically to page load conditions.</li>
+</ul>
+
+<h3>Implicit Wait</h3>
+<pre><code>driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));</code></pre>
+<p><strong>How it works:</strong> When findElement() is called, if the element is not immediately found, Selenium polls the DOM repeatedly (default every 500ms) until the element appears or the timeout expires.</p>
+<ul>
+<li><strong>Set once</strong> per driver session — applies to all subsequent findElement/findElements calls.</li>
+<li><strong>Pros:</strong> Simple, global, no extra code per element.</li>
+<li><strong>Cons:</strong> Applies same timeout to all elements; cannot wait for specific conditions (clickable, visible); slows down tests when elements don't exist.</li>
+</ul>
+
+<h3>Explicit Wait</h3>
+<pre><code>import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import java.time.Duration;
+
+WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+WebElement element = wait.until(
+    ExpectedConditions.visibilityOfElementLocated(By.id("dashboard"))
+);</code></pre>
+
+<h4>Common ExpectedConditions</h4>
+<pre><code>WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+// Element visible in DOM and displayed
+wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("result")));
+
+// Element present in DOM (may not be visible)
+wait.until(ExpectedConditions.presenceOfElementLocated(By.id("hidden-div")));
+
+// Element visible AND enabled (ready to click)
+wait.until(ExpectedConditions.elementToBeClickable(By.id("submit")));
+
+// Element disappears
+wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("spinner")));
+
+// Specific text appears in element
+wait.until(ExpectedConditions.textToBePresentInElementLocated(
+    By.id("status"), "Success"));
+
+// Page title checks
+wait.until(ExpectedConditions.titleContains("Dashboard"));
+wait.until(ExpectedConditions.titleIs("My App - Dashboard"));
+
+// Alert appears
+wait.until(ExpectedConditions.alertIsPresent());
+
+// Frame available and switch to it
+wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt("iframe-id"));
+
+// Number of browser windows
+wait.until(ExpectedConditions.numberOfWindowsToBe(2));
+
+// Element becomes stale (removed from DOM)
+wait.until(ExpectedConditions.stalenessOf(oldElement));
+
+// URL checks
+wait.until(ExpectedConditions.urlContains("/dashboard"));
+wait.until(ExpectedConditions.urlToBe("https://app.example.com/dashboard"));</code></pre>
+
+<h4>Custom ExpectedCondition</h4>
+<pre><code>// Wait until list has at least 5 items
+wait.until(driver -> driver.findElements(By.cssSelector("li.item")).size() >= 5);
+
+// Wait until element text changes
+wait.until(driver -> {
+    WebElement el = driver.findElement(By.id("counter"));
+    return Integer.parseInt(el.getText()) > 0;
+});</code></pre>
+
+<h3>Fluent Wait</h3>
+<pre><code>import org.openqa.selenium.support.ui.FluentWait;
+import org.openqa.selenium.NoSuchElementException;
+
+FluentWait&lt;WebDriver&gt; fluentWait = new FluentWait&lt;&gt;(driver)
+    .withTimeout(Duration.ofSeconds(30))
+    .pollingEvery(Duration.ofMillis(500))
+    .ignoring(NoSuchElementException.class)
+    .ignoring(StaleElementReferenceException.class);
+
+WebElement element = fluentWait.until(driver ->
+    driver.findElement(By.id("dynamic-content"))
+);</code></pre>
+<p><strong>When to use:</strong> Irregular load times, animations, elements that may throw transient exceptions during loading.</p>
+
+<h3>Wait Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Implicit Wait</th><th>Explicit Wait</th><th>Fluent Wait</th></tr>
+</thead>
+<tbody>
+<tr><td>Scope</td><td>Global (all findElement calls)</td><td>Specific element/condition</td><td>Specific element/condition</td></tr>
+<tr><td>Configuration</td><td>Single timeout value</td><td>Timeout + ExpectedCondition</td><td>Timeout + polling + ignored exceptions</td></tr>
+<tr><td>Polling interval</td><td>500ms (fixed)</td><td>500ms (fixed)</td><td>Customizable</td></tr>
+<tr><td>Condition types</td><td>Element presence only</td><td>Any condition (visible, clickable, text, etc.)</td><td>Custom lambda conditions</td></tr>
+<tr><td>Exception handling</td><td>Throws on timeout</td><td>Throws on timeout</td><td>Can ignore specific exceptions</td></tr>
+<tr><td>Performance</td><td>Slows all lookups</td><td>Efficient — waits only when needed</td><td>Efficient with custom polling</td></tr>
+<tr><td>Recommended?</td><td>Set low (0-5s) or zero</td><td>Yes — primary strategy</td><td>For special cases</td></tr>
+<tr><td>Mix with others?</td><td>Never mix with explicit</td><td>Best used alone</td><td>Never mix with implicit</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<p><strong>NEVER mix implicit and explicit waits!</strong> They add together unpredictably. If implicit wait is 10s and explicit wait is 10s, a single explicit wait call could take up to 20s. Set implicit wait to 0 when using explicit waits.</p>
+</div>
+
+<h3>WaitUtils Utility Class</h3>
+<pre><code>import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.*;
+import java.time.Duration;
+
+public class WaitUtils {
+    private WebDriver driver;
+    private WebDriverWait wait;
+
+    public WaitUtils(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+    }
+
+    public WebElement waitForVisible(By locator) {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+    }
+
+    public WebElement waitForClickable(By locator) {
+        return wait.until(ExpectedConditions.elementToBeClickable(locator));
+    }
+
+    public WebElement waitForPresence(By locator) {
+        return wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+    }
+
+    public boolean waitForInvisible(By locator) {
+        return wait.until(ExpectedConditions.invisibilityOfElementLocated(locator));
+    }
+
+    public boolean waitForText(By locator, String text) {
+        return wait.until(ExpectedConditions.textToBePresentInElementLocated(locator, text));
+    }
+
+    public Alert waitForAlert() {
+        return wait.until(ExpectedConditions.alertIsPresent());
+    }
+
+    public void waitForUrlContains(String partialUrl) {
+        wait.until(ExpectedConditions.urlContains(partialUrl));
+    }
+
+    public void waitForTitleContains(String title) {
+        wait.until(ExpectedConditions.titleContains(title));
+    }
+
+    public void waitForFrameAndSwitch(String frameId) {
+        wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(frameId));
+    }
+
+    public void waitForWindowCount(int count) {
+        wait.until(ExpectedConditions.numberOfWindowsToBe(count));
+    }
+}</code></pre>
+
+<h3>Page Load and Script Timeouts</h3>
+<pre><code>// Page load timeout — max time to wait for page to fully load
+driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
+
+// Script timeout — max time for async JavaScript to execute
+driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(20));</code></pre>
+
+<h3>Interview Q&amp;A — Waits</h3>
+
+<h4>Q1: What are the types of waits in Selenium?</h4>
+<p><strong>A:</strong> Implicit wait, explicit wait (WebDriverWait), and fluent wait (FluentWait). Thread.sleep() is not a Selenium wait — it is a Java pause and should be avoided.</p>
+
+<h4>Q2: What is the difference between implicit and explicit wait?</h4>
+<p><strong>A:</strong> Implicit wait is set globally and polls for element presence on every findElement call. Explicit wait waits for a specific condition on a specific element with a defined timeout.</p>
+
+<h4>Q3: Why should you never use Thread.sleep()?</h4>
+<p><strong>A:</strong> It wastes time (always waits full duration), makes tests flaky (may not wait long enough), and cannot adapt to varying load times.</p>
+
+<h4>Q4: Why should you never mix implicit and explicit waits?</h4>
+<p><strong>A:</strong> Their timeouts add together unpredictably. An explicit wait of 10s with implicit wait of 10s could take up to 20s total, causing tests to hang.</p>
+
+<h4>Q5: What is the difference between visibilityOfElementLocated and presenceOfElementLocated?</h4>
+<p><strong>A:</strong> presenceOfElementLocated checks if element exists in DOM (may be hidden). visibilityOfElementLocated checks if element exists AND is visible (not hidden via CSS).</p>
+
+<h4>Q6: What is elementToBeClickable?</h4>
+<p><strong>A:</strong> Waits until the element is both visible and enabled — ready to receive a click event. Most reliable condition before clicking.</p>
+
+<h4>Q7: What is stalenessOf in ExpectedConditions?</h4>
+<p><strong>A:</strong> Waits until a previously located element is removed from the DOM. Useful after actions that refresh part of the page (e.g., AJAX table refresh).</p>
+
+<h4>Q8: What is FluentWait?</h4>
+<p><strong>A:</strong> A configurable wait with custom polling interval and ability to ignore specific exceptions during polling. More flexible than WebDriverWait.</p>
+
+<h4>Q9: What is the default polling frequency for WebDriverWait?</h4>
+<p><strong>A:</strong> 500 milliseconds — Selenium checks the condition every 500ms until timeout or condition is met.</p>
+
+<h4>Q10: How do you wait for a page to load completely?</h4>
+<p><strong>A:</strong> Set pageLoadTimeout: <code>driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30))</code>. Or use explicit wait on a known element that appears after load.</p>
+
+<h4>Q11: What is a custom ExpectedCondition?</h4>
+<p><strong>A:</strong> A lambda expression passed to wait.until() that returns true when the custom condition is met: <code>wait.until(driver -> driver.findElements(by).size() > 5)</code></p>
+
+<h4>Q12: What happens when an explicit wait times out?</h4>
+<p><strong>A:</strong> Selenium throws TimeoutException. The test should catch this or let the framework report the failure.</p>
+
+<h4>Q13: Should implicit wait be set to zero?</h4>
+<p><strong>A:</strong> Best practice when using explicit waits: set implicit wait to 0 or a very low value (1-2s) to avoid timeout stacking.</p>
+
+<h4>Q14: How do you wait for an element's text to change?</h4>
+<p><strong>A:</strong> Use textToBePresentInElementLocated or a custom condition: <code>wait.until(ExpectedConditions.textToBePresentInElementLocated(by, "Expected Text"))</code></p>
+
+<h4>Q15: What is the recommended wait strategy for a test framework?</h4>
+<p><strong>A:</strong> Set implicit wait to 0. Use explicit waits via a WaitUtils utility class for all element interactions. Use fluent wait only for special cases with irregular timing.</p>
+
+<h4>Q16: How do you wait for an AJAX call to complete?</h4>
+<p><strong>A:</strong> Wait for a loading spinner to disappear: <code>wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("spinner")))</code> or wait for the result element to appear.</p>
+
+<h4>Q17: What is scriptTimeout used for?</h4>
+<p><strong>A:</strong> Sets the maximum time Selenium waits for asynchronous JavaScript (executeAsyncScript) to complete before throwing TimeoutException.</p>
+</section>
+
+<section id="section-20" class="section-card">
+<h2>Section 20: Dropdowns</h2>
+
+<h3>HTML Select Dropdowns — The Select Class</h3>
+<p>For standard HTML <code>&lt;select&gt;</code> elements, Selenium provides the <code>Select</code> class with built-in methods.</p>
+
+<pre><code>import org.openqa.selenium.support.ui.Select;
+
+WebElement dropdownElement = driver.findElement(By.id("country"));
+Select dropdown = new Select(dropdownElement);</code></pre>
+
+<h3>Selection Methods</h3>
+<pre><code>// Select by visible text (exact match)
+dropdown.selectByVisibleText("United States");
+
+// Select by value attribute
+dropdown.selectByValue("US");
+
+// Select by index (0-based)
+dropdown.selectByIndex(0);  // First option</code></pre>
+
+<h3>Deselection Methods (Multi-select only)</h3>
+<pre><code>// Deselect all selected options
+dropdown.deselectAll();
+
+// Deselect by visible text
+dropdown.deselectByVisibleText("United States");
+
+// Deselect by value
+dropdown.deselectByValue("US");
+
+// Deselect by index
+dropdown.deselectByIndex(0);</code></pre>
+
+<h3>Getter Methods</h3>
+<pre><code>// All options in the dropdown
+List&lt;WebElement&gt; allOptions = dropdown.getOptions();
+
+// All currently selected options
+List&lt;WebElement&gt; selected = dropdown.getAllSelectedOptions();
+
+// First selected option (single-select)
+WebElement firstSelected = dropdown.getFirstSelectedOption();
+String selectedText = firstSelected.getText();
+
+// Check if multi-select
+boolean isMulti = dropdown.isMultiple();</code></pre>
+
+<h3>Multi-Select Dropdowns</h3>
+<pre><code>WebElement multiSelect = driver.findElement(By.id("skills"));
+Select skills = new Select(multiSelect);
+
+if (skills.isMultiple()) {
+    skills.selectByVisibleText("Java");
+    skills.selectByVisibleText("Python");
+    skills.selectByVisibleText("Selenium");
+
+    List&lt;WebElement&gt; selected = skills.getAllSelectedOptions();
+    System.out.println("Selected: " + selected.size() + " skills");
+}</code></pre>
+
+<h3>Non-Select Dropdowns (Bootstrap / React / Custom)</h3>
+<p>Modern frameworks use <code>&lt;div&gt;</code> or <code>&lt;ul&gt;</code> elements instead of <code>&lt;select&gt;</code>. The Select class does not work — handle with click actions.</p>
+
+<pre><code>// Step 1: Click to open the dropdown
+WebElement dropdownTrigger = driver.findElement(By.id("custom-dropdown"));
+dropdownTrigger.click();
+
+// Step 2: Wait for options to appear
+WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+WebElement option = wait.until(ExpectedConditions.elementToBeClickable(
+    By.xpath("//ul[@class='dropdown-menu']//li[text()='Option 2']")
+));
+
+// Step 3: Click the desired option
+option.click();</code></pre>
+
+<h3>Auto-Suggest / Typeahead Dropdowns</h3>
+<pre><code>WebElement searchInput = driver.findElement(By.id("city-search"));
+
+// Type to trigger suggestions
+searchInput.sendKeys("New Y");
+
+// Wait for suggestions to appear
+WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+WebElement suggestion = wait.until(ExpectedConditions.elementToBeClickable(
+    By.xpath("//ul[@class='suggestions']//li[contains(text(),'New York')]")
+));
+
+// Select the suggestion
+suggestion.click();</code></pre>
+
+<h3>Complete Example — All Dropdown Types</h3>
+<pre><code>import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.*;
+import java.time.Duration;
+import java.util.List;
+
+public class DropdownHandler {
+    WebDriver driver;
+    WebDriverWait wait;
+
+    public DropdownHandler(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    // Standard HTML select dropdown
+    public void selectByText(By locator, String text) {
+        Select select = new Select(driver.findElement(locator));
+        select.selectByVisibleText(text);
+    }
+
+    public void selectByValue(By locator, String value) {
+        Select select = new Select(driver.findElement(locator));
+        select.selectByValue(value);
+    }
+
+    // Custom/Bootstrap dropdown
+    public void selectCustomOption(By dropdownLocator, String optionText) {
+        driver.findElement(dropdownLocator).click();
+        By optionLocator = By.xpath(
+            "//ul[contains(@class,'dropdown')]//li[normalize-space()='" + optionText + "']"
+        );
+        wait.until(ExpectedConditions.elementToBeClickable(optionLocator)).click();
+    }
+
+    // Auto-suggest dropdown
+    public void selectAutoSuggest(By inputLocator, String partialText, String fullText) {
+        WebElement input = driver.findElement(inputLocator);
+        input.clear();
+        input.sendKeys(partialText);
+        By suggestion = By.xpath(
+            "//ul[contains(@class,'suggest')]//li[contains(text(),'" + fullText + "')]"
+        );
+        wait.until(ExpectedConditions.elementToBeClickable(suggestion)).click();
+    }
+
+    // Get all options from standard select
+    public List&lt;String&gt; getAllOptions(By locator) {
+        Select select = new Select(driver.findElement(locator));
+        return select.getOptions().stream()
+            .map(WebElement::getText)
+            .toList();
+    }
+}</code></pre>
+
+<h3>Interview Q&amp;A — Dropdowns</h3>
+
+<h4>Q1: How do you handle dropdowns in Selenium?</h4>
+<p><strong>A:</strong> For HTML &lt;select&gt; elements, use the Select class. For custom/Bootstrap dropdowns, click to open and then click the desired option.</p>
+
+<h4>Q2: What are the three ways to select an option in a dropdown?</h4>
+<p><strong>A:</strong> selectByVisibleText(), selectByValue(), and selectByIndex().</p>
+
+<h4>Q3: Can you use Select class on a div-based dropdown?</h4>
+<p><strong>A:</strong> No. Select class only works with HTML &lt;select&gt; elements. Div/ul-based dropdowns require click-based interaction.</p>
+
+<h4>Q4: How do you handle multi-select dropdowns?</h4>
+<p><strong>A:</strong> Check isMultiple(), then call selectByVisibleText() multiple times for each option. Use getAllSelectedOptions() to verify.</p>
+
+<h4>Q5: How do you get all options from a dropdown?</h4>
+<p><strong>A:</strong> <code>dropdown.getOptions()</code> returns a List&lt;WebElement&gt; of all options.</p>
+
+<h4>Q6: What happens if you call deselectAll() on a single-select dropdown?</h4>
+<p><strong>A:</strong> Selenium throws UnsupportedOperationException because single-select dropdowns cannot be deselected.</p>
+
+<h4>Q7: How do you handle auto-suggest dropdowns?</h4>
+<p><strong>A:</strong> Type partial text with sendKeys(), wait for suggestions to appear, then click the matching suggestion element.</p>
+
+<h4>Q8: How do you verify the selected option in a dropdown?</h4>
+<p><strong>A:</strong> <code>dropdown.getFirstSelectedOption().getText()</code> for single-select, or getAllSelectedOptions() for multi-select.</p>
+
+<h4>Q9: What is the difference between selectByVisibleText and selectByValue?</h4>
+<p><strong>A:</strong> selectByVisibleText matches the displayed text between &lt;option&gt; tags. selectByValue matches the value attribute of the &lt;option&gt; element.</p>
+
+<h4>Q10: How do you select an option that is not visible (needs scrolling)?</h4>
+<p><strong>A:</strong> Use selectByValue() or selectByIndex() which don't require the option to be visible. Or scroll the dropdown first using JavaScript.</p>
+</section>
+
+<section id="section-21" class="section-card">
+<h2>Section 21: Alerts</h2>
+
+<h3>Alert Types</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Alert Type</th><th>Description</th><th>Methods Available</th></tr>
+</thead>
+<tbody>
+<tr><td>Simple Alert</td><td>Message + OK button</td><td>accept(), getText()</td></tr>
+<tr><td>Confirmation Alert</td><td>Message + OK + Cancel</td><td>accept(), dismiss(), getText()</td></tr>
+<tr><td>Prompt Alert</td><td>Message + text input + OK + Cancel</td><td>accept(), dismiss(), getText(), sendKeys()</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Switching to Alert</h3>
+<pre><code>// Switch to alert — MUST do this before interacting
+Alert alert = driver.switchTo().alert();</code></pre>
+
+<h3>Alert Methods</h3>
+<pre><code>Alert alert = driver.switchTo().alert();
+
+// Get alert message text
+String message = alert.getText();
+System.out.println("Alert says: " + message);
+
+// Click OK button
+alert.accept();
+
+// Click Cancel button (confirmation/prompt only)
+alert.dismiss();
+
+// Type text in prompt alert
+alert.sendKeys("My input text");
+alert.accept();</code></pre>
+
+<h3>Complete Alert Handling Examples</h3>
+<pre><code>import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.*;
+import java.time.Duration;
+
+public class AlertHandler {
+    WebDriver driver;
+    WebDriverWait wait;
+
+    public AlertHandler(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    // Handle simple alert — click OK
+    public String handleSimpleAlert() {
+        Alert alert = wait.until(ExpectedConditions.alertIsPresent());
+        String text = alert.getText();
+        alert.accept();
+        return text;
+    }
+
+    // Handle confirmation alert — click OK or Cancel
+    public void handleConfirmationAlert(boolean accept) {
+        Alert alert = wait.until(ExpectedConditions.alertIsPresent());
+        if (accept) {
+            alert.accept();
+        } else {
+            alert.dismiss();
+        }
+    }
+
+    // Handle prompt alert — enter text and submit
+    public void handlePromptAlert(String inputText) {
+        Alert alert = wait.until(ExpectedConditions.alertIsPresent());
+        alert.sendKeys(inputText);
+        alert.accept();
+    }
+}</code></pre>
+
+<h3>Wait for Alert</h3>
+<pre><code>WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+Alert alert = wait.until(ExpectedConditions.alertIsPresent());
+alert.accept();</code></pre>
+
+<h3>JavaScript Alerts vs Authentication Popups</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>JavaScript Alert</th><th>Authentication Popup</th></tr>
+</thead>
+<tbody>
+<tr><td>Triggered by</td><td>JavaScript alert(), confirm(), prompt()</td><td>HTTP Basic/Digest Auth</td></tr>
+<tr><td>Handled by</td><td>driver.switchTo().alert()</td><td>URL embedding: https://user:pass@host</td></tr>
+<tr><td>Appearance</td><td>Browser-native dialog</td><td>Browser login dialog</td></tr>
+<tr><td>Selenium support</td><td>Full Alert API</td><td>Not via Alert API — use URL or CDP</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Handling Unexpected Alerts</h3>
+<pre><code>try {
+    driver.findElement(By.id("submit")).click();
+    // Perform actions...
+} catch (UnhandledAlertException e) {
+    // Unexpected alert appeared — dismiss it
+    driver.switchTo().alert().dismiss();
+    // Retry or log the issue
+}</code></pre>
+
+<h3>Sweet Alert / Bootstrap Modals — Not Real Alerts</h3>
+<div class="callout">
+<p><strong>Important:</strong> SweetAlert, Bootstrap modals, and custom popup dialogs are NOT JavaScript alerts. They are regular HTML elements in the DOM. Handle them with normal locators — do NOT use switchTo().alert().</p>
+</div>
+
+<pre><code>// SweetAlert / Bootstrap modal — use regular locators
+WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+
+// Wait for modal to appear
+WebElement modal = wait.until(ExpectedConditions.visibilityOfElementLocated(
+    By.cssSelector(".swal2-popup, .modal-dialog")
+));
+
+// Read modal text
+String modalText = modal.findElement(By.cssSelector(".swal2-content, .modal-body")).getText();
+
+// Click OK/Confirm button
+modal.findElement(By.cssSelector(".swal2-confirm, .btn-primary")).click();</code></pre>
+
+<h3>Interview Q&amp;A — Alerts</h3>
+
+<h4>Q1: How do you handle alerts in Selenium?</h4>
+<p><strong>A:</strong> Switch to the alert using <code>driver.switchTo().alert()</code>, then use accept(), dismiss(), getText(), or sendKeys() as needed.</p>
+
+<h4>Q2: What are the three types of JavaScript alerts?</h4>
+<p><strong>A:</strong> Simple alert (OK only), confirmation alert (OK + Cancel), and prompt alert (text input + OK + Cancel).</p>
+
+<h4>Q3: What is the difference between accept() and dismiss()?</h4>
+<p><strong>A:</strong> accept() clicks OK. dismiss() clicks Cancel. dismiss() only works on confirmation and prompt alerts.</p>
+
+<h4>Q4: How do you enter text in a prompt alert?</h4>
+<p><strong>A:</strong> <code>alert.sendKeys("text")</code> followed by <code>alert.accept()</code>.</p>
+
+<h4>Q5: What is UnhandledAlertException?</h4>
+<p><strong>A:</strong> Thrown when an unexpected alert appears while Selenium is trying to interact with the page. Handle by switching to alert and dismissing it.</p>
+
+<h4>Q6: Can you use switchTo().alert() for Bootstrap modals?</h4>
+<p><strong>A:</strong> No. Bootstrap modals and SweetAlert are HTML elements, not JavaScript alerts. Use regular findElement locators to interact with them.</p>
+
+<h4>Q7: How do you wait for an alert to appear?</h4>
+<p><strong>A:</strong> <code>wait.until(ExpectedConditions.alertIsPresent())</code></p>
+
+<h4>Q8: How do you handle HTTP authentication popups?</h4>
+<p><strong>A:</strong> Embed credentials in the URL: <code>https://username:password@example.com</code>. Or use Selenium 4 CDP to handle authentication.</p>
+
+<h4>Q9: What happens if you try to find an element while an alert is open?</h4>
+<p><strong>A:</strong> Selenium throws UnhandledAlertException because the alert blocks interaction with the page DOM.</p>
+
+<h4>Q10: How do you verify alert text in a test?</h4>
+<p><strong>A:</strong> <code>String alertText = driver.switchTo().alert().getText();</code> then assert against expected text before accepting/dismissing.</p>
+</section>
+
+<section id="section-22" class="section-card">
+<h2>Section 22: Frames &amp; Windows</h2>
+
+<h3>Frames (iFrames)</h3>
+<p>A frame (iframe) is an embedded HTML document within another HTML page. Selenium can only interact with elements in the currently focused frame — you must switch to a frame before locating elements inside it.</p>
+
+<h3>Switching to Frames</h3>
+<pre><code>// By index (0-based)
+driver.switchTo().frame(0);   // First frame on page
+driver.switchTo().frame(1);   // Second frame
+
+// By name or ID attribute
+driver.switchTo().frame("frameName");
+driver.switchTo().frame("iframe-id");
+
+// By WebElement reference
+WebElement frameElement = driver.findElement(By.id("my-frame"));
+driver.switchTo().frame(frameElement);</code></pre>
+
+<h3>Switching Back</h3>
+<pre><code>// Return to main page content (top-level)
+driver.switchTo().defaultContent();
+
+// Return to parent frame (one level up)
+driver.switchTo().parentFrame();</code></pre>
+
+<pre class="ascii-diagram">
+Main Page (defaultContent)
+├── iframe#header (frame 0)
+├── iframe#content (frame 1)
+│   └── iframe#inner-form (nested frame)
+│       └── &lt;input id="email"&gt;  ← Must switch: defaultContent → frame 1 → inner-form
+└── iframe#footer (frame 2)
+</pre>
+
+<h3>Nested Frame Handling</h3>
+<pre><code>// Switch to outer frame first, then inner frame
+driver.switchTo().frame("content-frame");
+driver.switchTo().frame("inner-form");
+
+// Now interact with elements inside nested frame
+driver.findElement(By.id("email")).sendKeys("test@example.com");
+
+// Switch back to outer frame
+driver.switchTo().parentFrame();
+
+// Switch back to main page
+driver.switchTo().defaultContent();</code></pre>
+
+<h3>Wait for Frame</h3>
+<pre><code>WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+// Wait for frame and switch in one step
+wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt("frame-id"));
+wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(0));
+wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(
+    By.id("my-frame")
+));</code></pre>
+
+<h3>Complete Frame Handling Code</h3>
+<pre><code>import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.*;
+import java.time.Duration;
+
+public class FrameHandler {
+    WebDriver driver;
+    WebDriverWait wait;
+
+    public FrameHandler(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    public void interactWithNestedFrame() {
+        // Switch to outer frame
+        wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt("outer-frame"));
+
+        // Switch to inner frame
+        wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt("inner-frame"));
+
+        // Interact with element inside nested frame
+        WebElement email = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(By.id("email"))
+        );
+        email.sendKeys("user@example.com");
+
+        WebElement submit = driver.findElement(By.id("submit"));
+        submit.click();
+
+        // Navigate back up
+        driver.switchTo().parentFrame();  // Back to outer frame
+        driver.switchTo().defaultContent(); // Back to main page
+    }
+
+    public void switchToFrameByElement(By locator) {
+        WebElement frame = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+        driver.switchTo().frame(frame);
+    }
+}</code></pre>
+
+<h3>Windows and Tabs</h3>
+
+<h4>Window Handles</h4>
+<pre><code>// Current window handle
+String currentHandle = driver.getWindowHandle();
+
+// All open window handles
+Set&lt;String&gt; allHandles = driver.getWindowHandles();
+System.out.println("Open windows: " + allHandles.size());</code></pre>
+
+<h4>Switching Windows</h4>
+<pre><code>// Store parent window handle
+String parentHandle = driver.getWindowHandle();
+
+// Click link that opens new window/tab
+driver.findElement(By.linkText("Open New Window")).click();
+
+// Wait for new window
+WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+wait.until(ExpectedConditions.numberOfWindowsToBe(2));
+
+// Switch to new window
+for (String handle : driver.getWindowHandles()) {
+    if (!handle.equals(parentHandle)) {
+        driver.switchTo().window(handle);
+        break;
+    }
+}
+
+// Perform actions in new window
+System.out.println("New window title: " + driver.getTitle());
+driver.findElement(By.id("action-btn")).click();
+
+// Close new window and switch back to parent
+driver.close();
+driver.switchTo().window(parentHandle);</code></pre>
+
+<h4>New Window/Tab (Selenium 4)</h4>
+<pre><code>// Open a new tab
+driver.switchTo().newWindow(WindowType.TAB);
+driver.get("https://example.com");
+
+// Open a new window
+driver.switchTo().newWindow(WindowType.WINDOW);
+driver.get("https://google.com");</code></pre>
+
+<h4>close() vs quit()</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Method</th><th>Scope</th><th>Session</th><th>Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td>close()</td><td>Current window/tab only</td><td>Session remains active</td><td>Close popup after handling</td></tr>
+<tr><td>quit()</td><td>All windows/tabs</td><td>Session terminated</td><td>End of test — always in @AfterMethod</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Complete Multi-Window Handling</h3>
+<pre><code>import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.*;
+import java.time.Duration;
+import java.util.Set;
+
+public class WindowHandler {
+    WebDriver driver;
+    WebDriverWait wait;
+
+    public WindowHandler(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    public void handlePopupWindow(By triggerLocator) {
+        String parentHandle = driver.getWindowHandle();
+
+        // Click element that opens new window
+        driver.findElement(triggerLocator).click();
+
+        // Wait for new window to open
+        wait.until(ExpectedConditions.numberOfWindowsToBe(2));
+
+        // Switch to new window
+        switchToNewWindow(parentHandle);
+
+        // Perform actions in popup
+        System.out.println("Popup title: " + driver.getTitle());
+        driver.findElement(By.id("confirm-btn")).click();
+
+        // Close popup and return to parent
+        driver.close();
+        driver.switchTo().window(parentHandle);
+    }
+
+    private void switchToNewWindow(String parentHandle) {
+        Set&lt;String&gt; handles = driver.getWindowHandles();
+        for (String handle : handles) {
+            if (!handle.equals(parentHandle)) {
+                driver.switchTo().window(handle);
+                return;
+            }
+        }
+        throw new NoSuchWindowException("New window not found");
+    }
+
+    public void closeAllExcept(String keepHandle) {
+        for (String handle : driver.getWindowHandles()) {
+            if (!handle.equals(keepHandle)) {
+                driver.switchTo().window(handle);
+                driver.close();
+            }
+        }
+        driver.switchTo().window(keepHandle);
+    }
+}</code></pre>
+
+<h3>Handling Popups (Child Windows)</h3>
+<pre><code>// Common pattern: store parent, switch to popup, act, close, return
+String mainWindow = driver.getWindowHandle();
+driver.findElement(By.id("print-preview")).click();
+
+wait.until(ExpectedConditions.numberOfWindowsToBe(2));
+
+for (String handle : driver.getWindowHandles()) {
+    if (!handle.equals(mainWindow)) {
+        driver.switchTo().window(handle);
+        // Verify popup content
+        assert driver.getTitle().contains("Print Preview");
+        driver.close();
+    }
+}
+driver.switchTo().window(mainWindow);</code></pre>
+
+<h3>Interview Q&amp;A — Frames &amp; Windows</h3>
+
+<h4>Q1: What is an iframe and why must you switch to it?</h4>
+<p><strong>A:</strong> An iframe embeds a separate HTML document inside a page. Selenium's findElement only searches the current context — you must switchTo().frame() to access elements inside.</p>
+
+<h4>Q2: What are the three ways to switch to a frame?</h4>
+<p><strong>A:</strong> By index (int), by name/id (String), or by WebElement reference.</p>
+
+<h4>Q3: What is the difference between defaultContent() and parentFrame()?</h4>
+<p><strong>A:</strong> defaultContent() returns to the top-level page. parentFrame() returns one level up to the immediate parent frame.</p>
+
+<h4>Q4: How do you handle nested frames?</h4>
+<p><strong>A:</strong> Switch to outer frame first, then inner frame. To exit, use parentFrame() to go up one level, or defaultContent() to return to the main page.</p>
+
+<h4>Q5: What is a window handle?</h4>
+<p><strong>A:</strong> A unique string identifier assigned by the browser to each window/tab. Used with switchTo().window(handle) to switch between windows.</p>
+
+<h4>Q6: What is the difference between close() and quit()?</h4>
+<p><strong>A:</strong> close() closes the current window only. quit() closes all windows and terminates the WebDriver session.</p>
+
+<h4>Q7: How do you open a new tab in Selenium 4?</h4>
+<p><strong>A:</strong> <code>driver.switchTo().newWindow(WindowType.TAB)</code> then navigate with driver.get().</p>
+
+<h4>Q8: How do you switch to a newly opened window?</h4>
+<p><strong>A:</strong> Store the parent handle, wait for numberOfWindowsToBe(2), iterate getWindowHandles(), switch to the handle that is not the parent.</p>
+
+<h4>Q9: What happens if you try to find an element inside a frame without switching?</h4>
+<p><strong>A:</strong> Selenium throws NoSuchElementException because it searches the current context (main page), not the frame content.</p>
+
+<h4>Q10: How do you wait for a frame to load before switching?</h4>
+<p><strong>A:</strong> <code>wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt("frame-id"))</code></p>
+
+<h4>Q11: Can a page have multiple frames?</h4>
+<p><strong>A:</strong> Yes. Use index, name/id, or WebElement to switch to the specific frame you need. Always switch back to defaultContent when done.</p>
+
+<h4>Q12: How do you close all popup windows and return to the main window?</h4>
+<p><strong>A:</strong> Store main handle, iterate all handles, close each non-main window, then switchTo().window(mainHandle).</p>
+
+<h4>Q13: What is NoSuchWindowException?</h4>
+<p><strong>A:</strong> Thrown when trying to switch to a window handle that no longer exists (already closed) or is invalid.</p>
+
+<h4>Q14: How do you get the total number of open windows?</h4>
+<p><strong>A:</strong> <code>driver.getWindowHandles().size()</code></p>
+</section>

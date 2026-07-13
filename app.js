@@ -668,7 +668,14 @@
       'unix_linux.html': 21,
       'api_testing_notes.html': 14,
       'dipali_notes.html': 12,
-      'sql_database_notes.html': 20
+      'sql_database_notes.html': 20,
+      'testing_agile_jira_notes.html': 19,
+      'cicd_jenkins_notes.html': 22,
+      'testng_cucumber_notes.html': 35,
+      'java_selenium_notes.html': 42,
+      'java_automation_notes.html': 25,
+      'cicd_automation_notes.html': 31,
+      'addon_topics_notes.html': 7
     },
 
     init() {

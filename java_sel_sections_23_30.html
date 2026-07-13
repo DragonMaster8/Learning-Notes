@@ -1,0 +1,1559 @@
+<section id="section-23" class="section-card">
+<h2>Section 23: Actions Class</h2>
+
+<h3>What Is the Actions Class?</h3>
+<p>The <code>Actions</code> class in Selenium WebDriver provides a low-level, user-like way to perform advanced interactions that go beyond simple <code>element.click()</code> or <code>sendKeys()</code>. It simulates real mouse movements, keyboard input, and composite gestures — hover menus, drag-and-drop, sliders, right-click context menus, and multi-key combinations.</p>
+
+<div class="callout">
+<strong>Key idea:</strong> Actions builds a queue of interaction steps. Nothing happens until you call <code>.perform()</code> (or <code>.build().perform()</code>).
+</div>
+
+<h3>Creating an Actions Object</h3>
+<pre><code>import org.openqa.selenium.interactions.Actions;
+
+Actions actions = new Actions(driver);</code></pre>
+
+<h3>Mouse Actions</h3>
+
+<h4>moveToElement() — Hover</h4>
+<p><strong>Syntax:</strong> <code>actions.moveToElement(element).perform();</code></p>
+<pre><code>WebElement menu = driver.findElement(By.id("products-menu"));
+actions.moveToElement(menu).perform();</code></pre>
+<p><strong>Real scenario:</strong> Hover over a navigation menu item so a submenu appears, then click a submenu link.</p>
+
+<h4>click() — Alternative Click</h4>
+<p><strong>Syntax:</strong> <code>actions.click(element).perform();</code></p>
+<pre><code>WebElement submitBtn = driver.findElement(By.id("submit"));
+actions.click(submitBtn).perform();</code></pre>
+<p><strong>Real scenario:</strong> Use when a standard click is intercepted by an overlay or another element.</p>
+
+<h4>doubleClick()</h4>
+<p><strong>Syntax:</strong> <code>actions.doubleClick(element).perform();</code></p>
+<pre><code>WebElement fileItem = driver.findElement(By.xpath("//span[text()='report.pdf']"));
+actions.doubleClick(fileItem).perform();</code></pre>
+<p><strong>Real scenario:</strong> Open a file in a file manager, or select a word in a text editor.</p>
+
+<h4>contextClick() — Right-Click</h4>
+<p><strong>Syntax:</strong> <code>actions.contextClick(element).perform();</code></p>
+<pre><code>WebElement row = driver.findElement(By.xpath("//tr[td='John Doe']"));
+actions.contextClick(row).perform();</code></pre>
+<p><strong>Real scenario:</strong> Open a context menu to copy, delete, or edit a table row.</p>
+
+<h4>clickAndHold() + release() — Slider / Drag</h4>
+<p><strong>Syntax:</strong></p>
+<pre><code>actions.clickAndHold(slider).moveByOffset(200, 0).release().perform();</code></pre>
+<p><strong>Real scenario:</strong> Drag a price-range slider or resize a panel.</p>
+
+<h4>dragAndDrop(source, target)</h4>
+<p><strong>Syntax:</strong> <code>actions.dragAndDrop(source, target).perform();</code></p>
+<pre><code>WebElement source = driver.findElement(By.id("task-1"));
+WebElement target = driver.findElement(By.id("done-column"));
+actions.dragAndDrop(source, target).perform();</code></pre>
+<p><strong>Real scenario:</strong> Move a Kanban card from "To Do" to "Done".</p>
+
+<h4>dragAndDropBy(source, xOffset, yOffset)</h4>
+<p><strong>Syntax:</strong> <code>actions.dragAndDropBy(source, xOffset, yOffset).perform();</code></p>
+<pre><code>WebElement handle = driver.findElement(By.className("slider-handle"));
+actions.dragAndDropBy(handle, 150, 0).perform();</code></pre>
+<p><strong>Real scenario:</strong> Pixel-precise drag when there is no explicit drop target element.</p>
+
+<h3>Keyboard Actions</h3>
+
+<h4>sendKeys(Keys.ENTER) — Submit Form</h4>
+<pre><code>WebElement searchBox = driver.findElement(By.name("q"));
+actions.sendKeys(searchBox, "Selenium").sendKeys(Keys.ENTER).perform();</code></pre>
+
+<h4>keyDown + click + keyUp — Multi-Select</h4>
+<pre><code>WebElement item1 = driver.findElement(By.id("item-1"));
+WebElement item2 = driver.findElement(By.id("item-2"));
+actions.keyDown(Keys.CONTROL).click(item1).click(item2).keyUp(Keys.CONTROL).perform();</code></pre>
+
+<h4>sendKeys(Keys.chord(...)) — Select All</h4>
+<pre><code>WebElement textArea = driver.findElement(By.id("editor"));
+actions.click(textArea).sendKeys(Keys.chord(Keys.CONTROL, "a")).perform();</code></pre>
+
+<h4>Common Keys: TAB, ESCAPE, ARROW_DOWN</h4>
+<pre><code>actions.sendKeys(Keys.TAB).perform();           // move focus
+actions.sendKeys(Keys.ESCAPE).perform();        // close modal
+actions.sendKeys(Keys.ARROW_DOWN).perform();    // navigate dropdown</code></pre>
+
+<h3>Action Chains</h3>
+<p>Chain multiple steps into one user flow:</p>
+<pre><code>WebElement menu    = driver.findElement(By.id("products"));
+WebElement submenu = driver.findElement(By.linkText("Laptops"));
+
+actions.moveToElement(menu).click(submenu).perform();</code></pre>
+
+<div class="callout">
+<strong>Critical:</strong> You MUST call <code>.perform()</code> or <code>.build().perform()</code>. Without it, the queued actions never execute.
+</div>
+
+<h3>Selenium 4 New Scroll Actions</h3>
+<pre><code>// Scroll element into view
+actions.scrollToElement(element).perform();
+
+// Scroll by pixel amount (x, y)
+actions.scrollByAmount(0, 500).perform();</code></pre>
+
+<h3>Complete Example — Menu Hover, Drag-Drop, Slider, Right-Click</h3>
+<pre><code>import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Actions;
+import java.time.Duration;
+
+public class ActionsDemo {
+    public static void main(String[] args) {
+        WebDriver driver = new ChromeDriver();
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        driver.get("https://example.com/app");
+        Actions actions = new Actions(driver);
+
+        // 1. Hover menu → click submenu
+        WebElement menu = driver.findElement(By.id("nav-products"));
+        WebElement submenu = driver.findElement(By.linkText("Electronics"));
+        actions.moveToElement(menu).pause(Duration.ofMillis(500))
+               .click(submenu).perform();
+
+        // 2. Drag and drop
+        WebElement source = driver.findElement(By.id("drag-item"));
+        WebElement target = driver.findElement(By.id("drop-zone"));
+        actions.dragAndDrop(source, target).perform();
+
+        // 3. Slider via clickAndHold
+        WebElement slider = driver.findElement(By.className("slider-thumb"));
+        actions.clickAndHold(slider).moveByOffset(200, 0).release().perform();
+
+        // 4. Right-click context menu
+        WebElement row = driver.findElement(By.xpath("//tr[td='Invoice-101']"));
+        actions.contextClick(row).perform();
+
+        driver.quit();
+    }
+}</code></pre>
+
+<h3>Interview Q&amp;A (10+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>What is the Actions class?</td><td>A Selenium API for advanced user interactions — mouse, keyboard, and composite gestures.</td></tr>
+<tr><td>2</td><td>Why must you call perform()?</td><td>Actions queues steps; perform() executes the entire chain in one atomic user gesture.</td></tr>
+<tr><td>3</td><td>Difference between click() and Actions click()?</td><td>Actions click moves the mouse to the element first; useful when elements need focus or hover state.</td></tr>
+<tr><td>4</td><td>How do you hover over an element?</td><td><code>actions.moveToElement(element).perform();</code></td></tr>
+<tr><td>5</td><td>How to perform drag and drop?</td><td><code>actions.dragAndDrop(source, target).perform();</code></td></tr>
+<tr><td>6</td><td>dragAndDrop vs dragAndDropBy?</td><td>dragAndDrop needs a target element; dragAndDropBy moves by pixel offset from source.</td></tr>
+<tr><td>7</td><td>How to multi-select with keyboard?</td><td><code>keyDown(CONTROL).click(...).click(...).keyUp(CONTROL).perform()</code></td></tr>
+<tr><td>8</td><td>What is Keys.chord()?</td><td>Combines multiple keys into one sendKeys call, e.g. Ctrl+A.</td></tr>
+<tr><td>9</td><td>Can Actions handle iframes?</td><td>You must switch to the iframe first; Actions operates on the current browsing context.</td></tr>
+<tr><td>10</td><td>Selenium 4 scroll actions?</td><td><code>scrollToElement()</code> and <code>scrollByAmount(x, y)</code> replace many JS scroll hacks.</td></tr>
+<tr><td>11</td><td>build() vs perform()?</td><td>build() returns Action object for reuse; perform() executes immediately (internally calls build().perform()).</td></tr>
+<tr><td>12</td><td>When does Actions fail?</td><td>Element not visible, out of viewport, covered by overlay, or stale reference.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section id="section-24" class="section-card">
+<h2>Section 24: JavaScript Executor</h2>
+
+<h3>What Is JavascriptExecutor?</h3>
+<p><code>JavascriptExecutor</code> is a Selenium interface that lets you execute JavaScript directly in the browser's context. Use it when standard WebDriver commands cannot interact with an element — hidden inputs, read-only fields, elements blocked by overlays, or custom widgets.</p>
+
+<h3>Casting the Driver</h3>
+<pre><code>JavascriptExecutor js = (JavascriptExecutor) driver;</code></pre>
+
+<h3>Common Operations</h3>
+
+<h4>Click Element (when regular click fails)</h4>
+<pre><code>WebElement btn = driver.findElement(By.id("hidden-submit"));
+js.executeScript("arguments[0].click();", btn);</code></pre>
+
+<h4>Scroll to Element</h4>
+<pre><code>WebElement footer = driver.findElement(By.id("footer"));
+js.executeScript("arguments[0].scrollIntoView(true);", footer);</code></pre>
+
+<h4>Scroll to Bottom of Page</h4>
+<pre><code>js.executeScript("window.scrollTo(0, document.body.scrollHeight)");</code></pre>
+
+<h4>Scroll by Pixels</h4>
+<pre><code>js.executeScript("window.scrollBy(0, 500)");</code></pre>
+
+<h4>Highlight Element (debugging)</h4>
+<pre><code>js.executeScript("arguments[0].style.border='3px solid red'", element);</code></pre>
+
+<h4>Get Text from Element</h4>
+<pre><code>String text = (String) js.executeScript("return arguments[0].innerText", element);</code></pre>
+
+<h4>Set Value (hidden inputs, read-only fields)</h4>
+<pre><code>js.executeScript("arguments[0].value='admin@example.com'", element);</code></pre>
+
+<h4>Get Page Title</h4>
+<pre><code>String title = (String) js.executeScript("return document.title");</code></pre>
+
+<h4>Get Domain</h4>
+<pre><code>String domain = (String) js.executeScript("return document.domain");</code></pre>
+
+<h4>Remove Attribute (e.g., readonly)</h4>
+<pre><code>js.executeScript("arguments[0].removeAttribute('readonly')", dateField);</code></pre>
+
+<h4>Trigger Change Event (after setting value)</h4>
+<pre><code>js.executeScript(
+    "arguments[0].value='2026-07-14';" +
+    "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
+    dateField
+);</code></pre>
+
+<h3>When to Use JSExecutor vs Regular Selenium</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Scenario</th><th>Regular Selenium</th><th>JavascriptExecutor</th></tr></thead>
+<tbody>
+<tr><td>Visible button click</td><td>Preferred</td><td>Overkill</td></tr>
+<tr><td>Element covered by overlay</td><td>May fail</td><td>JS click works</td></tr>
+<tr><td>Hidden / disabled input</td><td>Cannot type</td><td>Set value via JS</td></tr>
+<tr><td>Read-only date picker</td><td>Blocked</td><td>Remove attribute + set value</td></tr>
+<tr><td>Scroll into view</td><td>Actions / native</td><td>scrollIntoView reliable</td></tr>
+<tr><td>User-like interaction testing</td><td>Preferred (realistic)</td><td>Bypasses UI events</td></tr>
+<tr><td>Get computed styles</td><td>Limited</td><td>Full DOM access</td></tr>
+<tr><td>Async page logic</td><td>Waits</td><td>executeAsyncScript</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>executeAsyncScript — Async Operations</h3>
+<p>Use when JavaScript returns a result after a delay (AJAX, setTimeout):</p>
+<pre><code>Long result = (Long) js.executeAsyncScript(
+    "var callback = arguments[arguments.length - 1];" +
+    "setTimeout(function(){ callback(document.querySelectorAll('li').length); }, 2000);"
+);
+System.out.println("List items: " + result);</code></pre>
+
+<div class="callout">
+<strong>Rule of thumb:</strong> Prefer regular Selenium for user-facing tests. Use JSExecutor as a fallback or for DOM manipulation that WebDriver cannot reach.
+</div>
+
+<h3>Interview Q&amp;A (10+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>What is JavascriptExecutor?</td><td>Selenium interface to run JS in the browser context via the driver.</td></tr>
+<tr><td>2</td><td>How do you cast the driver?</td><td><code>JavascriptExecutor js = (JavascriptExecutor) driver;</code></td></tr>
+<tr><td>3</td><td>Why use JS click?</td><td>When element is not clickable (overlay, off-screen, display:none parent).</td></tr>
+<tr><td>4</td><td>What is arguments[0]?</td><td>First parameter passed from Java to the JS script — typically a WebElement.</td></tr>
+<tr><td>5</td><td>executeScript vs executeAsyncScript?</td><td>Sync returns immediately; async waits for a callback before returning.</td></tr>
+<tr><td>6</td><td>Can JSExecutor work in all browsers?</td><td>Yes — all WebDriver implementations support it.</td></tr>
+<tr><td>7</td><td>Downside of JS click?</td><td>Skips real user events; may miss bugs in click handlers.</td></tr>
+<tr><td>8</td><td>How to scroll to bottom?</td><td><code>window.scrollTo(0, document.body.scrollHeight)</code></td></tr>
+<tr><td>9</td><td>How to set readonly field value?</td><td>Remove readonly attribute, set value, dispatch change event.</td></tr>
+<tr><td>10</td><td>Return types from executeScript?</td><td>String, Long, Boolean, WebElement, List, or null — cast appropriately.</td></tr>
+<tr><td>11</td><td>Does JSExecutor work in iframes?</td><td>Only after switching to the iframe context.</td></tr>
+<tr><td>12</td><td>Is JSExecutor cross-browser?</td><td>Yes, but JS DOM APIs must be supported by the target browser.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section id="section-25" class="section-card">
+<h2>Section 25: Web Tables</h2>
+
+<h3>Static vs Dynamic Tables</h3>
+<p><strong>Static tables</strong> have a fixed number of rows and columns defined in HTML. <strong>Dynamic tables</strong> load data from a server via AJAX; row count varies and pagination may apply.</p>
+
+<h3>Table HTML Structure</h3>
+<pre><code>&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;&lt;th&gt;Name&lt;/th&gt;&lt;th&gt;Role&lt;/th&gt;&lt;th&gt;Action&lt;/th&gt;&lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;&lt;td&gt;Alice&lt;/td&gt;&lt;td&gt;Admin&lt;/td&gt;&lt;td&gt;&lt;button&gt;Edit&lt;/button&gt;&lt;/td&gt;&lt;/tr&gt;
+    &lt;tr&gt;&lt;td&gt;Bob&lt;/td&gt;&lt;td&gt;User&lt;/td&gt;&lt;td&gt;&lt;button&gt;Edit&lt;/button&gt;&lt;/td&gt;&lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+
+<h3>Common Table Operations</h3>
+
+<h4>Get Row Count</h4>
+<pre><code>int rowCount = driver.findElements(By.xpath("//table//tbody/tr")).size();</code></pre>
+
+<h4>Get Column Count</h4>
+<pre><code>int colCount = driver.findElements(By.xpath("//table//thead/tr/th")).size();</code></pre>
+
+<h4>Get Cell Value (row, col — 1-based)</h4>
+<pre><code>String cell = driver.findElement(
+    By.xpath("//table//tbody/tr[2]/td[3]")
+).getText();</code></pre>
+
+<h4>Get Entire Row</h4>
+<pre><code>WebElement row = driver.findElement(By.xpath("//table//tbody/tr[1]"));
+List&lt;WebElement&gt; cells = row.findElements(By.tagName("td"));
+for (WebElement cell : cells) {
+    System.out.println(cell.getText());
+}</code></pre>
+
+<h4>Search for Value in Table</h4>
+<pre><code>List&lt;WebElement&gt; rows = driver.findElements(By.xpath("//table//tbody/tr"));
+for (int i = 0; i &lt; rows.size(); i++) {
+    if (rows.get(i).getText().contains("Alice")) {
+        System.out.println("Found at row: " + (i + 1));
+    }
+}</code></pre>
+
+<h4>Click Action in Specific Row</h4>
+<pre><code>// Find row by text, click button in same row
+WebElement row = driver.findElement(By.xpath("//table//tbody/tr[td='Alice']"));
+row.findElement(By.tagName("button")).click();</code></pre>
+
+<h3>Complete Utility Class — WebTableUtils</h3>
+<pre><code>import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
+public class WebTableUtils {
+    private WebDriver driver;
+    private WebDriverWait wait;
+    private static final String TABLE_XPATH = "//table[@id='data-table']";
+
+    public WebTableUtils(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    public int getRowCount() {
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(TABLE_XPATH)));
+        return driver.findElements(By.xpath(TABLE_XPATH + "//tbody/tr")).size();
+    }
+
+    public int getColumnCount() {
+        return driver.findElements(By.xpath(TABLE_XPATH + "//thead/tr/th")).size();
+    }
+
+    public String getCellValue(int row, int col) {
+        String xpath = TABLE_XPATH + "//tbody/tr[" + row + "]/td[" + col + "]";
+        return driver.findElement(By.xpath(xpath)).getText().trim();
+    }
+
+    public List&lt;String&gt; getColumnData(int colIndex) {
+        List&lt;String&gt; columnData = new ArrayList&lt;&gt;();
+        int rows = getRowCount();
+        for (int i = 1; i &lt;= rows; i++) {
+            columnData.add(getCellValue(i, colIndex));
+        }
+        return columnData;
+    }
+
+    public int searchTable(String searchText) {
+        List&lt;WebElement&gt; rows = driver.findElements(By.xpath(TABLE_XPATH + "//tbody/tr"));
+        for (int i = 0; i &lt; rows.size(); i++) {
+            if (rows.get(i).getText().contains(searchText)) {
+                return i + 1; // 1-based row number
+            }
+        }
+        return -1;
+    }
+
+    public void clickActionInRow(String searchText, int actionColIndex) {
+        int rowNum = searchTable(searchText);
+        if (rowNum == -1) throw new NoSuchElementException("Row not found: " + searchText);
+        String xpath = TABLE_XPATH + "//tbody/tr[" + rowNum + "]/td[" + actionColIndex + "]//button";
+        driver.findElement(By.xpath(xpath)).click();
+    }
+}</code></pre>
+
+<h3>Pagination Handling</h3>
+<pre><code>while (true) {
+    // process current page rows
+    List&lt;WebElement&gt; rows = driver.findElements(By.xpath("//table//tbody/tr"));
+    for (WebElement row : rows) { /* read data */ }
+
+    List&lt;WebElement&gt; nextBtn = driver.findElements(By.xpath("//a[text()='Next']"));
+    if (nextBtn.isEmpty() || nextBtn.get(0).getAttribute("class").contains("disabled")) break;
+    nextBtn.get(0).click();
+}</code></pre>
+
+<h3>Sorting Validation</h3>
+<pre><code>WebTableUtils table = new WebTableUtils(driver);
+List&lt;String&gt; names = table.getColumnData(1);
+List&lt;String&gt; sorted = new ArrayList&lt;&gt;(names);
+sorted.sort(String.CASE_INSENSITIVE_ORDER);
+Assert.assertEquals(names, sorted, "Column is not sorted A-Z");</code></pre>
+
+<h3>Real Examples</h3>
+<h4>Employee Table</h4>
+<pre><code>// Verify employee "John Doe" has role "Manager"
+int row = table.searchTable("John Doe");
+Assert.assertEquals(table.getCellValue(row, 2), "Manager");</code></pre>
+
+<h4>Order Table</h4>
+<pre><code>// Click "View" for order ORD-9876
+table.clickActionInRow("ORD-9876", 5);</code></pre>
+
+<h3>Interview Q&amp;A (10+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Static vs dynamic table?</td><td>Static: fixed HTML rows. Dynamic: AJAX-loaded, row count changes.</td></tr>
+<tr><td>2</td><td>XPath for row count?</td><td><code>//table//tbody/tr</code> — use findElements().size()</td></tr>
+<tr><td>3</td><td>How to get cell by row/col?</td><td><code>//table//tbody/tr[row]/td[col]</code> (1-based index)</td></tr>
+<tr><td>4</td><td>How to click button in a row?</td><td>Find row by text, then find button within that row element.</td></tr>
+<tr><td>5</td><td>Are row indexes 0-based in XPath?</td><td>No — XPath indexes are 1-based.</td></tr>
+<tr><td>6</td><td>How to handle pagination?</td><td>Loop pages, process rows, click Next until disabled or absent.</td></tr>
+<tr><td>7</td><td>How to validate sorting?</td><td>Extract column data into List, compare with sorted copy.</td></tr>
+<tr><td>8</td><td>Nested tables?</td><td>Use more specific XPath; scope search within parent table element.</td></tr>
+<tr><td>9</td><td>Table without thead?</td><td>Use first tbody row for column count or known structure.</td></tr>
+<tr><td>10</td><td>Best locator strategy for tables?</td><td>Relative XPath from table id; avoid absolute paths.</td></tr>
+<tr><td>11</td><td>How to wait for dynamic table?</td><td>WebDriverWait for row presence or expected row count.</td></tr>
+<tr><td>12</td><td>Can we use CSS for tables?</td><td>Yes, but XPath is more natural for row/column indexing.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section id="section-26" class="section-card">
+<h2>Section 26: Screenshot Capture</h2>
+
+<h3>TakesScreenshot Interface</h3>
+<p>Selenium captures screenshots via the <code>TakesScreenshot</code> interface. Cast the driver and save the output as a file, bytes, or Base64.</p>
+<pre><code>import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import java.io.File;
+import org.apache.commons.io.FileUtils;
+
+File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+FileUtils.copyFile(screenshot, new File("screenshot.png"));</code></pre>
+
+<h3>Full Page Screenshot</h3>
+<pre><code>public static void captureFullPage(WebDriver driver, String path) throws IOException {
+    File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+    FileUtils.copyFile(src, new File(path));
+}</code></pre>
+
+<h3>Element Screenshot (Selenium 4)</h3>
+<p>Selenium 4 allows screenshots directly on a <code>WebElement</code>:</p>
+<pre><code>WebElement element = driver.findElement(By.id("chart-panel"));
+File elementShot = element.getScreenshotAs(OutputType.FILE);
+FileUtils.copyFile(elementShot, new File("chart.png"));</code></pre>
+
+<h3>Screenshot Utility Class</h3>
+<pre><code>import org.openqa.selenium.*;
+import org.apache.commons.io.FileUtils;
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class ScreenshotUtils {
+    private static final String BASE_DIR = "screenshots/";
+
+    public static String capture(WebDriver driver, String testName) {
+        String timestamp = LocalDateTime.now()
+            .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String folder = BASE_DIR + testName + "/";
+        new File(folder).mkdirs();
+        String filePath = folder + testName + "_" + timestamp + ".png";
+
+        try {
+            File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+            FileUtils.copyFile(src, new File(filePath));
+        } catch (IOException e) {
+            throw new RuntimeException("Screenshot failed: " + e.getMessage());
+        }
+        return filePath;
+    }
+
+    public static String captureElement(WebElement element, String testName) {
+        String timestamp = LocalDateTime.now()
+            .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String filePath = BASE_DIR + testName + "/element_" + timestamp + ".png";
+        new File(BASE_DIR + testName + "/").mkdirs();
+        try {
+            File src = element.getScreenshotAs(OutputType.FILE);
+            FileUtils.copyFile(src, new File(filePath));
+        } catch (IOException e) {
+            throw new RuntimeException("Element screenshot failed", e);
+        }
+        return filePath;
+    }
+}</code></pre>
+
+<h3>TestNG Listener — Screenshot on Failure</h3>
+<pre><code>import org.testng.ITestListener;
+import org.testng.ITestResult;
+
+public class ScreenshotListener implements ITestListener {
+    @Override
+    public void onTestFailure(ITestResult result) {
+        WebDriver driver = (WebDriver) result.getTestContext()
+            .getAttribute("driver");
+        if (driver != null) {
+            String path = ScreenshotUtils.capture(driver, result.getName());
+            result.setAttribute("screenshot", path);
+            System.out.println("Screenshot saved: " + path);
+        }
+    }
+}</code></pre>
+
+<h3>Cucumber Integration — Scenario.attach()</h3>
+<pre><code>import io.cucumber.java.After;
+import io.cucumber.java.Scenario;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+
+public class Hooks {
+    @After
+    public void afterScenario(Scenario scenario) {
+        if (scenario.isFailed()) {
+            byte[] screenshot = ((TakesScreenshot) driver)
+                .getScreenshotAs(OutputType.BYTES);
+            scenario.attach(screenshot, "image/png", "Failure Screenshot");
+        }
+    }
+}</code></pre>
+
+<h3>Extent Reports Integration</h3>
+<pre><code>// Inside TestListener onTestFailure
+String path = ScreenshotUtils.capture(driver, result.getName());
+test.addScreenCaptureFromPath(path);</code></pre>
+
+<h3>Ashot Library — Full Page with Scrolling</h3>
+<pre><code>// Maven: ru.yandex.qatools.ashot:ashot
+import ru.yandex.qatools.ashot.AShot;
+import ru.yandex.qatools.ashot.shooting.ShootingStrategies;
+import javax.imageio.ImageIO;
+import java.io.File;
+
+public static void fullPageAshot(WebDriver driver, String path) throws Exception {
+    BufferedImage image = new AShot()
+        .shootingStrategy(ShootingStrategies.viewportPasting(1000))
+        .takeScreenshot(driver);
+    ImageIO.write(image, "PNG", new File(path));
+}</code></pre>
+
+<div class="callout">
+<strong>Best practice:</strong> Capture screenshots on failure only in CI to save disk space. Use timestamped folders per test for easy debugging.
+</div>
+
+<h3>Interview Q&amp;A (8+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>How to take a screenshot in Selenium?</td><td>Cast driver to TakesScreenshot, call getScreenshotAs(OutputType.FILE).</td></tr>
+<tr><td>2</td><td>OutputType options?</td><td>FILE, BYTES, BASE64 — choose based on storage or reporting needs.</td></tr>
+<tr><td>3</td><td>Element screenshot in Selenium 4?</td><td><code>element.getScreenshotAs(OutputType.FILE)</code> — no third-party lib needed.</td></tr>
+<tr><td>4</td><td>When to capture screenshots?</td><td>On test failure, critical checkpoints, or visual regression.</td></tr>
+<tr><td>5</td><td>TestNG listener for screenshots?</td><td>Implement ITestListener.onTestFailure(), capture and attach path.</td></tr>
+<tr><td>6</td><td>Cucumber screenshot attach?</td><td><code>scenario.attach(bytes, "image/png", "name")</code> in @After hook.</td></tr>
+<tr><td>7</td><td>Why use Ashot?</td><td>Captures full scrollable page; native screenshot is viewport-only.</td></tr>
+<tr><td>8</td><td>Does TakesScreenshot work on RemoteWebDriver?</td><td>Yes — works with Grid and cloud providers.</td></tr>
+<tr><td>9</td><td>Headless screenshot?</td><td>Yes — headless browsers support TakesScreenshot normally.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section id="section-27" class="section-card">
+<h2>Section 27: Page Object Model (POM)</h2>
+
+<h3>What Is POM?</h3>
+<p>The <strong>Page Object Model</strong> is a design pattern that separates page structure (locators and UI actions) from test logic (assertions and workflows). Each web page gets a dedicated Java class encapsulating its elements and interactions.</p>
+
+<h3>Why POM?</h3>
+<ul>
+<li><strong>Maintainability:</strong> Locator changes happen in one place.</li>
+<li><strong>Reusability:</strong> Page methods shared across multiple tests.</li>
+<li><strong>Readability:</strong> Tests read like business scenarios.</li>
+</ul>
+
+<h3>POM Architecture</h3>
+<div class="ascii-diagram">
+<pre>┌─────────────┐     calls      ┌──────────────┐     uses     ┌────────────┐     drives    ┌──────────┐
+│  Test Class │ ──────────────▶│  Page Object │ ───────────▶│ WebElement │ ────────────▶│   Page   │
+│ LoginTest   │                │  LoginPage   │             │  locators  │             │ Browser  │
+└─────────────┘                └──────────────┘             └────────────┘             └──────────┘</pre>
+</div>
+
+<h3>POM Rules</h3>
+<ol>
+<li>One page class per web page (or major view).</li>
+<li>All locators live inside the page class — never in tests.</li>
+<li>All page interactions are exposed as methods.</li>
+<li>Return type: next page object (navigation) or void (action).</li>
+<li>No assertions inside page objects — tests assert outcomes.</li>
+</ol>
+
+<h3>Without POM vs With POM</h3>
+<h4>Without POM (anti-pattern)</h4>
+<pre><code>@Test
+public void loginTest() {
+    driver.findElement(By.id("username")).sendKeys("admin");
+    driver.findElement(By.id("password")).sendKeys("pass123");
+    driver.findElement(By.id("loginBtn")).click();
+    Assert.assertEquals(driver.getTitle(), "Home");
+}</code></pre>
+
+<h4>With POM (recommended)</h4>
+<pre><code>@Test
+public void loginTest() {
+    HomePage home = new LoginPage(driver)
+        .enterUsername("admin")
+        .enterPassword("pass123")
+        .clickLogin();
+    Assert.assertTrue(home.verifyHomePage());
+}</code></pre>
+
+<h3>Complete POM Example</h3>
+
+<h4>LoginPage.java</h4>
+<pre><code>import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
+
+public class LoginPage {
+    private WebDriver driver;
+
+    @FindBy(id = "username") private WebElement usernameField;
+    @FindBy(id = "password") private WebElement passwordField;
+    @FindBy(id = "loginBtn")  private WebElement loginButton;
+
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+        PageFactory.initElements(driver, this);
+    }
+
+    public LoginPage enterUsername(String username) {
+        usernameField.clear();
+        usernameField.sendKeys(username);
+        return this;
+    }
+
+    public LoginPage enterPassword(String password) {
+        passwordField.clear();
+        passwordField.sendKeys(password);
+        return this;
+    }
+
+    public HomePage clickLogin() {
+        loginButton.click();
+        return new HomePage(driver);
+    }
+
+    public void login(String user, String pass) {
+        enterUsername(user).enterPassword(pass).clickLogin();
+    }
+}</code></pre>
+
+<h4>HomePage.java</h4>
+<pre><code>public class HomePage {
+    private WebDriver driver;
+
+    @FindBy(className = "welcome-msg") private WebElement welcomeText;
+    @FindBy(id = "dashboard")         private WebElement dashboard;
+
+    public HomePage(WebDriver driver) {
+        this.driver = driver;
+        PageFactory.initElements(driver, this);
+    }
+
+    public boolean verifyHomePage() {
+        return dashboard.isDisplayed();
+    }
+
+    public String getWelcomeText() {
+        return welcomeText.getText();
+    }
+}</code></pre>
+
+<h4>LoginTest.java</h4>
+<pre><code>import org.testng.Assert;
+import org.testng.annotations.Test;
+
+public class LoginTest extends BaseTest {
+    @Test
+    public void validLogin() {
+        LoginPage loginPage = new LoginPage(driver);
+        HomePage home = loginPage
+            .enterUsername("admin")
+            .enterPassword("pass123")
+            .clickLogin();
+        Assert.assertTrue(home.verifyHomePage());
+        Assert.assertEquals(home.getWelcomeText(), "Welcome, admin!");
+    }
+}</code></pre>
+
+<h3>Method Chaining (Fluent Interface)</h3>
+<pre><code>loginPage.enterUsername("admin").enterPassword("pass").clickLogin();</code></pre>
+<p>Each method returns <code>this</code> (same page) or the next page object (navigation), enabling readable fluent chains.</p>
+
+<h3>POM for Complex Pages — Components</h3>
+<pre><code>public class DashboardPage {
+    private HeaderComponent header;
+    private SidebarComponent sidebar;
+
+    public DashboardPage(WebDriver driver) {
+        this.header  = new HeaderComponent(driver);
+        this.sidebar = new SidebarComponent(driver);
+    }
+
+    public HeaderComponent getHeader() { return header; }
+    public SidebarComponent getSidebar() { return sidebar; }
+}</code></pre>
+
+<h3>POM Best Practices (10 Points)</h3>
+<ol>
+<li>One class per page or major UI section.</li>
+<li>Use meaningful method names reflecting user actions.</li>
+<li>Keep locators private; expose behavior, not elements.</li>
+<li>Return next page object after navigation.</li>
+<li>Never put assertions in page classes.</li>
+<li>Extend a BasePage for shared waits and utilities.</li>
+<li>Avoid hardcoded test data — pass via method parameters.</li>
+<li>Split large pages into component classes.</li>
+<li>Use explicit waits inside page methods.</li>
+<li>Keep page objects free of TestNG/JUnit annotations.</li>
+</ol>
+
+<h3>POM Anti-Patterns</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Anti-Pattern</th><th>Problem</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>God Page Object</td><td>One class for entire app</td><td>Split by page/component</td></tr>
+<tr><td>Assertions in pages</td><td>Mixes UI logic with test logic</td><td>Assert only in test classes</td></tr>
+<tr><td>Hardcoded data</td><td>Not reusable across tests</td><td>Parameterize methods</td></tr>
+<tr><td>Public WebElements</td><td>Tests bypass page methods</td><td>Keep elements private</td></tr>
+<tr><td>Driver in tests</td><td>Tests interact with DOM directly</td><td>All interaction via page objects</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A (12+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>What is POM?</td><td>Design pattern separating page locators/actions from test logic.</td></tr>
+<tr><td>2</td><td>Why use POM?</td><td>Maintainability, reusability, readability, reduced duplication.</td></tr>
+<tr><td>3</td><td>Can page objects contain assertions?</td><td>No — assertions belong in test classes.</td></tr>
+<tr><td>4</td><td>What should a page method return?</td><td>Next page object after navigation, or this/void for actions.</td></tr>
+<tr><td>5</td><td>What is method chaining?</td><td>Fluent interface — methods return this or next page for chaining.</td></tr>
+<tr><td>6</td><td>One page class per what?</td><td>Per web page or distinct UI view/section.</td></tr>
+<tr><td>7</td><td>What is a God Page Object?</td><td>Anti-pattern: one massive class handling entire application.</td></tr>
+<tr><td>8</td><td>How to handle shared headers/footers?</td><td>Extract into reusable component classes.</td></tr>
+<tr><td>9</td><td>POM vs PageFactory?</td><td>POM is the pattern; PageFactory is an implementation using @FindBy.</td></tr>
+<tr><td>10</td><td>Where do waits go?</td><td>Inside page methods or BasePage — not scattered in tests.</td></tr>
+<tr><td>11</td><td>Should tests access WebElements?</td><td>No — always go through page object methods.</td></tr>
+<tr><td>12</td><td>How does POM help maintenance?</td><td>Locator change in one file updates all tests using that page.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section id="section-28" class="section-card">
+<h2>Section 28: Page Factory</h2>
+
+<h3>What Is Page Factory?</h3>
+<p>Page Factory is Selenium's built-in implementation of POM using <code>@FindBy</code> annotations. It initializes WebElements lazily via <code>PageFactory.initElements()</code>, reducing boilerplate locator code.</p>
+
+<h3>@FindBy Annotation</h3>
+<pre><code>@FindBy(id = "email")
+WebElement emailField;</code></pre>
+
+<h3>Other @FindBy Locator Strategies</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Strategy</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>id</td><td><code>@FindBy(id = "submit")</code></td></tr>
+<tr><td>name</td><td><code>@FindBy(name = "username")</code></td></tr>
+<tr><td>className</td><td><code>@FindBy(className = "btn-primary")</code></td></tr>
+<tr><td>css</td><td><code>@FindBy(css = "input[type='email']")</code></td></tr>
+<tr><td>xpath</td><td><code>@FindBy(xpath = "//button[text()='Login']")</code></td></tr>
+<tr><td>linkText</td><td><code>@FindBy(linkText = "Forgot Password")</code></td></tr>
+<tr><td>partialLinkText</td><td><code>@FindBy(partialLinkText = "Forgot")</code></td></tr>
+<tr><td>tagName</td><td><code>@FindBy(tagName = "textarea")</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>@FindBys — AND Condition</h3>
+<p>All locators must match (element must satisfy every condition):</p>
+<pre><code>@FindBys({
+    @FindBy(id = "login-form"),
+    @FindBy(tagName = "input")
+})
+WebElement usernameInForm;</code></pre>
+
+<h3>@FindAll — OR Condition</h3>
+<p>Any locator match returns the element:</p>
+<pre><code>@FindAll({
+    @FindBy(id = "submit-btn"),
+    @FindBy(css = "button[type='submit']")
+})
+WebElement submitButton;</code></pre>
+
+<h3>initElements</h3>
+<pre><code>public LoginPage(WebDriver driver) {
+    this.driver = driver;
+    PageFactory.initElements(driver, this);
+}</code></pre>
+<p>Call in the constructor (or @BeforeMethod) to bind annotated fields to live WebElements.</p>
+
+<h3>@CacheLookup</h3>
+<pre><code>@CacheLookup
+@FindBy(id = "app-logo")
+WebElement logo;</code></pre>
+<div class="callout">
+<strong>Warning:</strong> Use <code>@CacheLookup</code> only for static elements that never change. Dynamic elements cause <code>StaleElementReferenceException</code>.
+</div>
+
+<h3>Complete PageFactory Example</h3>
+<pre><code>import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
+
+public class LoginPage {
+    private WebDriver driver;
+
+    @FindBy(id = "username")   private WebElement usernameField;
+    @FindBy(id = "password")   private WebElement passwordField;
+    @FindBy(id = "loginBtn")    private WebElement loginButton;
+    @FindBy(className = "error") private WebElement errorMessage;
+
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+        PageFactory.initElements(driver, this);
+    }
+
+    public void enterUsername(String username) {
+        usernameField.clear();
+        usernameField.sendKeys(username);
+    }
+
+    public void enterPassword(String password) {
+        passwordField.sendKeys(password);
+    }
+
+    public HomePage clickLogin() {
+        loginButton.click();
+        return new HomePage(driver);
+    }
+
+    public String getErrorMessage() {
+        return errorMessage.getText();
+    }
+}</code></pre>
+
+<h3>POM vs PageFactory Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>Manual POM</th><th>PageFactory</th></tr></thead>
+<tbody>
+<tr><td>Locator declaration</td><td><code>By.id("email")</code> in code</td><td><code>@FindBy(id="email")</code> annotation</td></tr>
+<tr><td>Element initialization</td><td>findElement() each call</td><td>Lazy init via initElements()</td></tr>
+<tr><td>Boilerplate</td><td>More verbose</td><td>Less verbose</td></tr>
+<tr><td>Dynamic locators</td><td>Full support</td><td>Not supported natively</td></tr>
+<tr><td>Caching</td><td>Manual</td><td>@CacheLookup built-in</td></tr>
+<tr><td>Stale element risk</td><td>Lower (re-find each time)</td><td>Higher with @CacheLookup</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>PageFactory Limitations</h3>
+<ul>
+<li><strong>StaleElementReferenceException</strong> with <code>@CacheLookup</code> on dynamic/AJAX elements.</li>
+<li><strong>No dynamic locators</strong> — cannot parameterize @FindBy at runtime.</li>
+<li><strong>Deprecation discussion</strong> — Selenium team has discussed deprecating PageFactory; manual POM remains fully supported.</li>
+</ul>
+
+<h3>When to Use POM vs PageFactory</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Criteria</th><th>Manual POM</th><th>PageFactory</th></tr></thead>
+<tbody>
+<tr><td>Dynamic/AJAX pages</td><td>Preferred</td><td>Use cautiously</td></tr>
+<tr><td>Static forms</td><td>Either</td><td>PageFactory is fine</td></tr>
+<tr><td>Parameterized locators</td><td>Manual POM</td><td>Not suitable</td></tr>
+<tr><td>Large team, annotations</td><td>Either</td><td>PageFactory readable</td></tr>
+<tr><td>Long-term Selenium 4+</td><td>Manual POM safer</td><td>Monitor deprecation</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A (10+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>What is Page Factory?</td><td>Selenium's @FindBy-based POM implementation with initElements().</td></tr>
+<tr><td>2</td><td>What does initElements do?</td><td>Scans @FindBy fields and creates lazy WebElement proxies.</td></tr>
+<tr><td>3</td><td>@FindBys vs @FindAll?</td><td>@FindBys = AND (all match); @FindAll = OR (any match).</td></tr>
+<tr><td>4</td><td>What is @CacheLookup?</td><td>Caches element reference after first find — static elements only.</td></tr>
+<tr><td>5</td><td>When does @CacheLookup fail?</td><td>When DOM refreshes and cached reference becomes stale.</td></tr>
+<tr><td>6</td><td>Can @FindBy use XPath?</td><td>Yes — <code>@FindBy(xpath = "...")</code></td></tr>
+<tr><td>7</td><td>PageFactory vs manual POM?</td><td>PageFactory uses annotations; manual POM uses By locators in code.</td></tr>
+<tr><td>8</td><td>Is PageFactory deprecated?</td><td>Discussed for deprecation; check current Selenium release notes.</td></tr>
+<tr><td>9</td><td>Dynamic locator with PageFactory?</td><td>Not supported — use manual findElement with parameters.</td></tr>
+<tr><td>10</td><td>Where to call initElements?</td><td>Page object constructor or test setup before interaction.</td></tr>
+<tr><td>11</td><td>Are PageFactory elements lazy?</td><td>Yes — located on first use, not at initElements time.</td></tr>
+<tr><td>12</td><td>Can private fields use @FindBy?</td><td>Yes — recommended to encapsulate elements.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section id="section-29" class="section-card">
+<h2>Section 29: Hybrid Automation Framework</h2>
+
+<h3>What Is a Hybrid Framework?</h3>
+<p>A <strong>Hybrid Framework</strong> combines multiple automation approaches: <strong>POM</strong> for page structure, <strong>Data-Driven</strong> testing via Excel/JSON, <strong>Keyword-Driven</strong> reusable actions, and <strong>TestNG</strong> for execution, reporting, and parallel runs.</p>
+
+<h3>Framework Design Principles</h3>
+<ul>
+<li><strong>DRY</strong> — Don't Repeat Yourself; shared utilities in one place.</li>
+<li><strong>SRP</strong> — Single Responsibility; each class has one job.</li>
+<li><strong>OCP</strong> — Open/Closed; extend via new pages/tests without modifying core.</li>
+<li><strong>Loose coupling</strong> — Tests depend on page interfaces, not driver details.</li>
+<li><strong>High cohesion</strong> — Related logic grouped (pages, utils, config).</li>
+</ul>
+
+<h3>Complete Project Structure</h3>
+<div class="ascii-diagram">
+<pre>automation-framework/
+├── src/
+│   ├── main/java/
+│   │   └── com/framework/
+│   │       ├── base/
+│   │       │   └── BasePage.java
+│   │       ├── config/
+│   │       │   └── ConfigReader.java
+│   │       ├── constants/
+│   │       │   └── Constants.java
+│   │       ├── driver/
+│   │       │   ├── DriverManager.java
+│   │       │   └── DriverFactory.java
+│   │       ├── enums/
+│   │       │   ├── BrowserType.java
+│   │       │   └── WaitType.java
+│   │       ├── pages/
+│   │       │   ├── LoginPage.java
+│   │       │   ├── HomePage.java
+│   │       │   └── DashboardPage.java
+│   │       ├── reports/
+│   │       │   └── ExtentReportManager.java
+│   │       └── utils/
+│   │           ├── WaitUtils.java
+│   │           ├── ExcelUtils.java
+│   │           ├── ScreenshotUtils.java
+│   │           └── LogUtils.java
+│   └── resources/
+│       └── config.properties
+├── src/test/java/
+│   └── com/framework/
+│       ├── base/
+│       │   └── BaseTest.java
+│       ├── tests/
+│       │   ├── LoginTest.java
+│       │   └── HomeTest.java
+│       ├── listeners/
+│       │   ├── TestListener.java
+│       │   └── RetryAnalyzer.java
+│       └── dataproviders/
+│           └── LoginDataProvider.java
+├── src/test/resources/
+│   ├── testdata/
+│   │   └── loginData.xlsx
+│   └── suites/
+│       ├── smoke.xml
+│       └── regression.xml
+├── pom.xml
+└── Jenkinsfile</pre>
+</div>
+
+<h3>Framework Layers Diagram</h3>
+<div class="ascii-diagram">
+<pre>┌─────────────────────────────────────────────────────────┐
+│                    Test Layer (TestNG)                   │
+│  LoginTest, HomeTest, DataProviders, Listeners           │
+├─────────────────────────────────────────────────────────┤
+│                   Page Object Layer (POM)                │
+│  LoginPage, HomePage, DashboardPage, BasePage            │
+├─────────────────────────────────────────────────────────┤
+│                   Utility / Core Layer                   │
+│  DriverManager, WaitUtils, ScreenshotUtils, ExcelUtils   │
+├─────────────────────────────────────────────────────────┤
+│                   Config / Report Layer                  │
+│  ConfigReader, ExtentReportManager, config.properties    │
+├─────────────────────────────────────────────────────────┤
+│                   WebDriver / Browser                    │
+│  Chrome, Firefox, Edge via DriverFactory                 │
+└─────────────────────────────────────────────────────────┘</pre>
+</div>
+
+<h3>1. DriverManager.java</h3>
+<pre><code>package com.framework.driver;
+
+import com.framework.enums.BrowserType;
+import org.openqa.selenium.WebDriver;
+
+public class DriverManager {
+    private static ThreadLocal&lt;WebDriver&gt; driver = new ThreadLocal&lt;&gt;();
+
+    public static WebDriver getDriver() {
+        return driver.get();
+    }
+
+    public static void setDriver(BrowserType browser) {
+        driver.set(DriverFactory.createDriver(browser));
+    }
+
+    public static void quitDriver() {
+        if (driver.get() != null) {
+            driver.get().quit();
+            driver.remove();
+        }
+    }
+}</code></pre>
+
+<h3>2. ConfigReader.java</h3>
+<pre><code>package com.framework.config;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+public class ConfigReader {
+    private static ConfigReader instance;
+    private Properties properties = new Properties();
+
+    private ConfigReader() {
+        try (InputStream is = getClass().getClassLoader()
+                .getResourceAsStream("config.properties")) {
+            properties.load(is);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load config.properties", e);
+        }
+    }
+
+    public static synchronized ConfigReader getInstance() {
+        if (instance == null) instance = new ConfigReader();
+        return instance;
+    }
+
+    public String get(String key) {
+        return properties.getProperty(key);
+    }
+
+    public int getInt(String key) {
+        return Integer.parseInt(properties.getProperty(key));
+    }
+}</code></pre>
+
+<h3>3. BasePage.java</h3>
+<pre><code>package com.framework.base;
+
+import com.framework.driver.DriverManager;
+import com.framework.utils.WaitUtils;
+import org.openqa.selenium.*;
+import org.openqa.selenium.interactions.Actions;
+
+public class BasePage {
+    protected WebDriver driver;
+    protected WaitUtils waitUtils;
+
+    public BasePage() {
+        this.driver = DriverManager.getDriver();
+        this.waitUtils = new WaitUtils(driver);
+    }
+
+    protected void click(WebElement element) {
+        waitUtils.waitForClickable(element);
+        element.click();
+    }
+
+    protected void type(WebElement element, String text) {
+        waitUtils.waitForVisible(element);
+        element.clear();
+        element.sendKeys(text);
+    }
+
+    protected void scrollTo(WebElement element) {
+        new Actions(driver).scrollToElement(element).perform();
+    }
+
+    protected String getText(WebElement element) {
+        waitUtils.waitForVisible(element);
+        return element.getText();
+    }
+}</code></pre>
+
+<h3>4. BaseTest.java</h3>
+<pre><code>package com.framework.base;
+
+import com.framework.config.ConfigReader;
+import com.framework.driver.DriverManager;
+import com.framework.enums.BrowserType;
+import com.framework.reports.ExtentReportManager;
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.*;
+
+public class BaseTest {
+    protected WebDriver driver;
+    protected ConfigReader config = ConfigReader.getInstance();
+
+    @BeforeSuite
+    public void initReports() {
+        ExtentReportManager.initReport();
+    }
+
+    @BeforeMethod
+    public void setUp() {
+        BrowserType browser = BrowserType.valueOf(config.get("browser").toUpperCase());
+        DriverManager.setDriver(browser);
+        driver = DriverManager.getDriver();
+        driver.manage().window().maximize();
+        driver.get(config.get("url"));
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        DriverManager.quitDriver();
+    }
+
+    @AfterSuite
+    public void flushReports() {
+        ExtentReportManager.flushReport();
+    }
+}</code></pre>
+
+<h3>5. LoginPage.java</h3>
+<pre><code>package com.framework.pages;
+
+import com.framework.base.BasePage;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
+
+public class LoginPage extends BasePage {
+
+    @FindBy(id = "username") private WebElement usernameField;
+    @FindBy(id = "password") private WebElement passwordField;
+    @FindBy(id = "loginBtn")  private WebElement loginButton;
+    @FindBy(className = "error-msg") private WebElement errorMsg;
+
+    public LoginPage() {
+        PageFactory.initElements(driver, this);
+    }
+
+    public LoginPage enterUsername(String username) {
+        type(usernameField, username);
+        return this;
+    }
+
+    public LoginPage enterPassword(String password) {
+        type(passwordField, password);
+        return this;
+    }
+
+    public HomePage clickLogin() {
+        click(loginButton);
+        return new HomePage();
+    }
+
+    public HomePage login(String user, String pass) {
+        return enterUsername(user).enterPassword(pass).clickLogin();
+    }
+
+    public String getErrorMessage() {
+        return getText(errorMsg);
+    }
+}</code></pre>
+
+<h3>6. LoginTest.java</h3>
+<pre><code>package com.framework.tests;
+
+import com.framework.base.BaseTest;
+import com.framework.pages.HomePage;
+import com.framework.pages.LoginPage;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+public class LoginTest extends BaseTest {
+
+    @Test(dataProvider = "loginData", dataProviderClass = LoginDataProvider.class,
+          groups = {"smoke"})
+    public void testLogin(String username, String password, boolean expectedSuccess) {
+        LoginPage loginPage = new LoginPage();
+        if (expectedSuccess) {
+            HomePage home = loginPage.login(username, password);
+            Assert.assertTrue(home.isDashboardDisplayed());
+        } else {
+            loginPage.login(username, password);
+            Assert.assertTrue(loginPage.getErrorMessage().contains("Invalid"));
+        }
+    }
+}</code></pre>
+
+<h3>7. TestListener.java</h3>
+<pre><code>package com.framework.listeners;
+
+import com.framework.driver.DriverManager;
+import com.framework.reports.ExtentReportManager;
+import com.framework.utils.ScreenshotUtils;
+import com.aventstack.extentreports.ExtentTest;
+import org.openqa.selenium.WebDriver;
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+
+public class TestListener implements ITestListener {
+    @Override
+    public void onTestStart(ITestResult result) {
+        ExtentReportManager.createTest(result.getMethod().getMethodName());
+    }
+
+    @Override
+    public void onTestFailure(ITestResult result) {
+        WebDriver driver = DriverManager.getDriver();
+        ExtentTest test = ExtentReportManager.getTest();
+        if (driver != null) {
+            String path = ScreenshotUtils.capture(driver, result.getName());
+            test.addScreenCaptureFromPath(path);
+            test.fail(result.getThrowable());
+        }
+    }
+
+    @Override
+    public void onTestSuccess(ITestResult result) {
+        ExtentReportManager.getTest().pass("Test passed");
+    }
+}</code></pre>
+
+<h3>8. config.properties</h3>
+<pre><code>url=https://example.com/login
+browser=chrome
+timeout=10
+env=qa
+report.path=reports/extent-report.html</code></pre>
+
+<h3>9. pom.xml</h3>
+<pre><code>&lt;project&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;groupId&gt;com.framework&lt;/groupId&gt;
+  &lt;artifactId&gt;automation-framework&lt;/artifactId&gt;
+  &lt;version&gt;1.0.0&lt;/version&gt;
+
+  &lt;properties&gt;
+    &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
+    &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
+    &lt;selenium.version&gt;4.18.0&lt;/selenium.version&gt;
+  &lt;/properties&gt;
+
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.seleniumhq.selenium&lt;/groupId&gt;
+      &lt;artifactId&gt;selenium-java&lt;/artifactId&gt;
+      &lt;version&gt;${selenium.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.testng&lt;/groupId&gt;
+      &lt;artifactId&gt;testng&lt;/artifactId&gt;
+      &lt;version&gt;7.9.0&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.aventstack&lt;/groupId&gt;
+      &lt;artifactId&gt;extentreports&lt;/artifactId&gt;
+      &lt;version&gt;5.1.1&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.apache.poi&lt;/groupId&gt;
+      &lt;artifactId&gt;poi-ooxml&lt;/artifactId&gt;
+      &lt;version&gt;5.2.5&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;
+      &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;
+      &lt;version&gt;2.22.1&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;commons-io&lt;/groupId&gt;
+      &lt;artifactId&gt;commons-io&lt;/artifactId&gt;
+      &lt;version&gt;2.15.1&lt;/version&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+&lt;/project&gt;</code></pre>
+
+<h3>10. smoke.xml</h3>
+<pre><code>&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="Smoke Suite" parallel="tests" thread-count="2"&gt;
+  &lt;listeners&gt;
+    &lt;listener class-name="com.framework.listeners.TestListener"/&gt;
+  &lt;/listeners&gt;
+  &lt;test name="Smoke Tests"&gt;
+    &lt;groups&gt;
+      &lt;run&gt;
+        &lt;include name="smoke"/&gt;
+      &lt;/run&gt;
+    &lt;/groups&gt;
+    &lt;classes&gt;
+      &lt;class name="com.framework.tests.LoginTest"/&gt;
+    &lt;/classes&gt;
+  &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<h3>Design Patterns Used</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Pattern</th><th>Where</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Page Object Model</td><td>pages/ package</td><td>Separate UI from test logic</td></tr>
+<tr><td>Singleton</td><td>ConfigReader, ExtentReportManager</td><td>Single config/report instance</td></tr>
+<tr><td>Factory</td><td>DriverFactory</td><td>Create browser-specific drivers</td></tr>
+<tr><td>ThreadLocal</td><td>DriverManager</td><td>Thread-safe parallel execution</td></tr>
+<tr><td>Fluent Interface</td><td>LoginPage methods</td><td>Readable method chaining</td></tr>
+<tr><td>Listener (Observer)</td><td>TestListener</td><td>Decouple reporting from tests</td></tr>
+<tr><td>Data-Driven</td><td>DataProvider + Excel</td><td>Run same test with multiple datasets</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A (12+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>What is a Hybrid Framework?</td><td>Combines POM, Data-Driven, Keyword-Driven, and TestNG.</td></tr>
+<tr><td>2</td><td>Why ThreadLocal for WebDriver?</td><td>Each parallel thread gets its own driver instance safely.</td></tr>
+<tr><td>3</td><td>Role of BasePage?</td><td>Shared actions: click, type, wait, scroll for all pages.</td></tr>
+<tr><td>4</td><td>Role of BaseTest?</td><td>Setup/teardown, driver init, report lifecycle.</td></tr>
+<tr><td>5</td><td>Why ConfigReader singleton?</td><td>Load properties once, access globally.</td></tr>
+<tr><td>6</td><td>What is DriverFactory?</td><td>Creates Chrome/Firefox/Edge WebDriver based on config.</td></tr>
+<tr><td>7</td><td>How does data-driven work?</td><td>@DataProvider reads Excel, feeds rows to @Test method.</td></tr>
+<tr><td>8</td><td>Where do screenshots go on failure?</td><td>TestListener captures and attaches to Extent Report.</td></tr>
+<tr><td>9</td><td>DRY in framework context?</td><td>Reusable utils — no duplicate wait/click code in tests.</td></tr>
+<tr><td>10</td><td>smoke.xml purpose?</td><td>Run smoke group tests with parallel execution config.</td></tr>
+<tr><td>11</td><td>How to add a new page?</td><td>Create page class extending BasePage, add to tests.</td></tr>
+<tr><td>12</td><td>Loose coupling example?</td><td>Tests use LoginPage methods, not raw findElement calls.</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section id="section-30" class="section-card">
+<h2>Section 30: Selenium + TestNG Integration</h2>
+
+<h3>Why TestNG with Selenium?</h3>
+<ul>
+<li><strong>Annotations</strong> — structured test lifecycle (@BeforeMethod, @Test, etc.).</li>
+<li><strong>Parallel execution</strong> — run tests concurrently via testng.xml.</li>
+<li><strong>Grouping</strong> — smoke, regression, sanity test suites.</li>
+<li><strong>Data-driven</strong> — @DataProvider feeds multiple datasets to one test.</li>
+<li><strong>Reporting</strong> — listeners, HTML reports, Extent integration.</li>
+</ul>
+
+<h3>Annotations Mapping to Selenium Lifecycle</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Annotation</th><th>Selenium Action</th></tr></thead>
+<tbody>
+<tr><td>@BeforeSuite</td><td>Initialize reports, load global config</td></tr>
+<tr><td>@BeforeTest</td><td>Load environment-specific config</td></tr>
+<tr><td>@BeforeClass</td><td>Launch browser (or per-method in BaseTest)</td></tr>
+<tr><td>@BeforeMethod</td><td>Navigate to base URL, start test timer</td></tr>
+<tr><td>@Test</td><td>Execute automation steps via page objects</td></tr>
+<tr><td>@AfterMethod</td><td>Screenshot on failure, logout, close tabs</td></tr>
+<tr><td>@AfterClass</td><td>Close browser session</td></tr>
+<tr><td>@AfterSuite</td><td>Flush reports, cleanup temp files</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>DataProvider with Selenium — Excel DataProvider</h3>
+<pre><code>import com.framework.utils.ExcelUtils;
+import org.testng.annotations.DataProvider;
+
+public class LoginDataProvider {
+
+    @DataProvider(name = "loginData")
+    public Object[][] getLoginData() {
+        ExcelUtils excel = new ExcelUtils("src/test/resources/testdata/loginData.xlsx");
+        int rows = excel.getRowCount("Login");
+        Object[][] data = new Object[rows - 1][3];
+        for (int i = 1; i &lt; rows; i++) {
+            data[i - 1][0] = excel.getCellData("Login", i, 0); // username
+            data[i - 1][1] = excel.getCellData("Login", i, 1); // password
+            data[i - 1][2] = Boolean.parseBoolean(excel.getCellData("Login", i, 2));
+        }
+        return data;
+    }
+}</code></pre>
+
+<h3>Multiple Data Sets for Login Testing</h3>
+<pre><code>@DataProvider(name = "loginScenarios")
+public Object[][] loginScenarios() {
+    return new Object[][] {
+        {"admin",   "admin123",  true},
+        {"guest",   "guest123",  true},
+        {"invalid", "wrong",     false},
+        {"",        "pass",      false},
+        {"admin",   "",          false}
+    };
+}</code></pre>
+
+<h3>Assertions in Selenium</h3>
+
+<h4>Hard Assertions</h4>
+<pre><code>// Stops test immediately on failure
+Assert.assertEquals(driver.getTitle(), "Dashboard");
+Assert.assertTrue(driver.getCurrentUrl().contains("/home"));
+Assert.assertEquals(element.getText(), "Welcome, admin!");</code></pre>
+
+<h4>Soft Assertions</h4>
+<pre><code>import org.testng.asserts.SoftAssert;
+
+SoftAssert soft = new SoftAssert();
+soft.assertEquals(header.getText(), "Dashboard");
+soft.assertTrue(footer.isDisplayed());
+soft.assertEquals(sidebar.getMenuCount(), 5);
+soft.assertAll(); // report all failures at end</code></pre>
+
+<h3>Parallel Execution</h3>
+<pre><code>&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="Parallel Suite" parallel="tests" thread-count="3"&gt;
+  &lt;test name="Chrome Tests"&gt;
+    &lt;parameter name="browser" value="chrome"/&gt;
+    &lt;classes&gt;&lt;class name="com.framework.tests.LoginTest"/&gt;&lt;/classes&gt;
+  &lt;/test&gt;
+  &lt;test name="Firefox Tests"&gt;
+    &lt;parameter name="browser" value="firefox"/&gt;
+    &lt;classes&gt;&lt;class name="com.framework.tests.LoginTest"/&gt;&lt;/classes&gt;
+  &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<div class="callout">
+<strong>Essential:</strong> Use <code>ThreadLocal&lt;WebDriver&gt;</code> in DriverManager — without it, parallel tests share one driver and fail unpredictably.
+</div>
+
+<h3>Cross-Browser Parallel Example</h3>
+<pre><code>@BeforeMethod
+@Parameters("browser")
+public void setUp(String browser) {
+    DriverManager.setDriver(BrowserType.valueOf(browser.toUpperCase()));
+    driver = DriverManager.getDriver();
+    driver.get(config.get("url"));
+}</code></pre>
+
+<h3>Listeners</h3>
+
+<h4>Screenshot on Failure</h4>
+<pre><code>public class TestListener implements ITestListener {
+    @Override
+    public void onTestFailure(ITestResult result) {
+        String path = ScreenshotUtils.capture(DriverManager.getDriver(), result.getName());
+        ExtentReportManager.getTest().addScreenCaptureFromPath(path);
+    }
+}</code></pre>
+
+<h4>Retry Failed Tests</h4>
+<pre><code>public class RetryAnalyzer implements IRetryAnalyzer {
+    private int count = 0;
+    private static final int MAX = 2;
+
+    @Override
+    public boolean retry(ITestResult result) {
+        if (count &lt; MAX) { count++; return true; }
+        return false;
+    }
+}
+
+// Usage: @Test(retryAnalyzer = RetryAnalyzer.class)</code></pre>
+
+<h4>Custom Reporting</h4>
+<pre><code>@Override
+public void onFinish(ITestContext context) {
+    ExtentReportManager.flushReport();
+}</code></pre>
+
+<h3>Groups — Smoke / Regression</h3>
+<pre><code>@Test(groups = {"smoke"})
+public void validLogin() { /* ... */ }
+
+@Test(groups = {"regression"})
+public void invalidLogin() { /* ... */ }</code></pre>
+
+<pre><code>&lt;!-- testng.xml --&gt;
+&lt;groups&gt;
+  &lt;run&gt;
+    &lt;include name="smoke"/&gt;
+    &lt;exclude name="regression"/&gt;
+  &lt;/run&gt;
+&lt;/groups&gt;</code></pre>
+
+<h3>Complete Integration Example — LoginTest</h3>
+<pre><code>package com.framework.tests;
+
+import com.framework.base.BaseTest;
+import com.framework.dataproviders.LoginDataProvider;
+import com.framework.listeners.RetryAnalyzer;
+import com.framework.pages.HomePage;
+import com.framework.pages.LoginPage;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+import org.testng.asserts.SoftAssert;
+
+public class LoginTest extends BaseTest {
+
+    @Test(dataProvider = "loginData", dataProviderClass = LoginDataProvider.class,
+          groups = {"smoke"}, retryAnalyzer = RetryAnalyzer.class,
+          description = "Verify login with valid and invalid credentials")
+    public void testLogin(String username, String password, boolean expectedSuccess) {
+        LoginPage loginPage = new LoginPage();
+
+        if (expectedSuccess) {
+            HomePage home = loginPage.login(username, password);
+            SoftAssert soft = new SoftAssert();
+            soft.assertTrue(home.isDashboardDisplayed(), "Dashboard not displayed");
+            soft.assertEquals(home.getWelcomeText(), "Welcome, " + username + "!");
+            soft.assertAll();
+        } else {
+            loginPage.login(username, password);
+            Assert.assertTrue(loginPage.getErrorMessage().contains("Invalid"),
+                "Expected error message not shown");
+        }
+    }
+
+    @Test(groups = {"regression"}, dependsOnGroups = {"smoke"})
+    public void testLogout() {
+        new LoginPage().login("admin", "admin123");
+        HomePage home = new HomePage();
+        home.clickLogout();
+        Assert.assertTrue(new LoginPage().isLoginPageDisplayed());
+    }
+}</code></pre>
+
+<h3>Interview Q&amp;A (10+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Why TestNG over JUnit for Selenium?</td><td>Better parallel, groups, DataProvider, listeners, XML suites.</td></tr>
+<tr><td>2</td><td>@BeforeMethod vs @BeforeClass?</td><td>BeforeMethod runs before each test; BeforeClass once per class.</td></tr>
+<tr><td>3</td><td>What is @DataProvider?</td><td>Supplies multiple data sets to a single @Test method.</td></tr>
+<tr><td>4</td><td>Hard vs Soft assert?</td><td>Hard stops immediately; Soft collects failures, reports at assertAll().</td></tr>
+<tr><td>5</td><td>How to run tests in parallel?</td><td>testng.xml parallel="tests" thread-count="N" + ThreadLocal driver.</td></tr>
+<tr><td>6</td><td>Why ThreadLocal WebDriver?</td><td>Prevents driver sharing across parallel threads.</td></tr>
+<tr><td>7</td><td>What are TestNG groups?</td><td>Tag tests (smoke/regression); include/exclude in XML.</td></tr>
+<tr><td>8</td><td>How to retry failed tests?</td><td>Implement IRetryAnalyzer, attach via @Test(retryAnalyzer=...).</td></tr>
+<tr><td>9</td><td>What is ITestListener?</td><td>Interface for test lifecycle hooks — failure screenshots, reporting.</td></tr>
+<tr><td>10</td><td>@Parameters vs @DataProvider?</td><td>Parameters from XML (static); DataProvider from method (dynamic).</td></tr>
+<tr><td>11</td><td>dependsOnGroups usage?</td><td>Run test only after specified groups pass.</td></tr>
+<tr><td>12</td><td>How to pass browser to tests?</td><td>@Parameters in testng.xml + @BeforeMethod @Parameters("browser").</td></tr>
+</tbody>
+</table>
+</div>
+</section>

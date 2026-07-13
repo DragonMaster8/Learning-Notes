@@ -1,0 +1,2624 @@
+﻿<section id="section-18" class="section-card">
+<h2>Section 18: Real-Time Project Implementation</h2>
+
+<p>This section walks through a complete, production-grade <strong>E-Commerce Automation Framework</strong> — the kind of end-to-end project you should be able to whiteboard in a Senior QA / SDET interview. You will see project structure, full code samples, CI/CD pipeline, Docker setup, execution flow, dashboard metrics, and interview questions tied to real implementation decisions.</p>
+
+<h3>Project Overview</h3>
+<p><strong>Goal:</strong> Automate critical e-commerce flows (login, product search, cart, checkout, order confirmation) with a maintainable Page Object Model (POM) framework, API validation layer, parallel cross-browser execution, and Jenkins CI/CD integration with Allure reporting.</p>
+
+<div class="callout">
+<strong>Why This Project Matters in Interviews</strong>
+<p>Interviewers at the 4+ year level don't want to hear "I know Selenium." They want evidence you can design a framework, integrate it into a pipeline, handle environments, generate reports, and collaborate with DevOps. This project demonstrates all of that in one cohesive example.</p>
+</div>
+
+<h3>Project Structure</h3>
+<pre class="ascii-diagram"><code>
+ecommerce-automation/
+├── src/
+│   ├── main/java/
+│   │   ├── pages/         (Page Objects)
+│   │   ├── utils/         (Utilities)
+│   │   └── config/        (Configuration)
+│   └── test/java/
+│       ├── tests/         (Test Classes)
+│       ├── listeners/     (TestNG Listeners)
+│       └── dataproviders/ (Test Data)
+├── testng-suites/
+│   ├── smoke.xml
+│   ├── regression.xml
+│   └── full-suite.xml
+├── pom.xml
+├── Jenkinsfile
+├── Dockerfile
+├── docker-compose.yml
+└── .gitignore
+</code></pre>
+
+<h3>1. pom.xml — Complete Dependencies</h3>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+    &lt;groupId&gt;com.ecommerce&lt;/groupId&gt;
+    &lt;artifactId&gt;ecommerce-automation&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
+    &lt;packaging&gt;jar&lt;/packaging&gt;
+    &lt;name&gt;E-Commerce Automation Framework&lt;/name&gt;
+
+    &lt;properties&gt;
+        &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
+        &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
+        &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+        &lt;selenium.version&gt;4.18.1&lt;/selenium.version&gt;
+        &lt;testng.version&gt;7.9.0&lt;/testng.version&gt;
+        &lt;restassured.version&gt;5.4.0&lt;/restassured.version&gt;
+        &lt;allure.version&gt;2.25.0&lt;/allure.version&gt;
+        &lt;webdrivermanager.version&gt;5.7.0&lt;/webdrivermanager.version&gt;
+        &lt;suiteXmlFile&gt;testng-suites/smoke.xml&lt;/suiteXmlFile&gt;
+    &lt;/properties&gt;
+
+    &lt;dependencies&gt;
+        &lt;!-- Selenium WebDriver --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.seleniumhq.selenium&lt;/groupId&gt;
+            &lt;artifactId&gt;selenium-java&lt;/artifactId&gt;
+            &lt;version&gt;${selenium.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+
+        &lt;!-- TestNG --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.testng&lt;/groupId&gt;
+            &lt;artifactId&gt;testng&lt;/artifactId&gt;
+            &lt;version&gt;${testng.version}&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+
+        &lt;!-- REST Assured for API tests --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.rest-assured&lt;/groupId&gt;
+            &lt;artifactId&gt;rest-assured&lt;/artifactId&gt;
+            &lt;version&gt;${restassured.version}&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+
+        &lt;!-- WebDriverManager --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.github.bonigarcia&lt;/groupId&gt;
+            &lt;artifactId&gt;webdrivermanager&lt;/artifactId&gt;
+            &lt;version&gt;${webdrivermanager.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+
+        &lt;!-- Allure TestNG --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+            &lt;artifactId&gt;allure-testng&lt;/artifactId&gt;
+            &lt;version&gt;${allure.version}&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+
+        &lt;!-- SLF4J + Logback --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;ch.qos.logback&lt;/groupId&gt;
+            &lt;artifactId&gt;logback-classic&lt;/artifactId&gt;
+            &lt;version&gt;1.4.14&lt;/version&gt;
+        &lt;/dependency&gt;
+
+        &lt;!-- Apache Commons --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.commons&lt;/groupId&gt;
+            &lt;artifactId&gt;commons-lang3&lt;/artifactId&gt;
+            &lt;version&gt;3.14.0&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.2.5&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;suiteXmlFiles&gt;
+                        &lt;suiteXmlFile&gt;${suiteXmlFile}&lt;/suiteXmlFile&gt;
+                    &lt;/suiteXmlFiles&gt;
+                    &lt;argLine&gt;
+                        -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/1.9.21/aspectjweaver-1.9.21.jar"
+                    &lt;/argLine&gt;
+                    &lt;systemPropertyVariables&gt;
+                        &lt;allure.results.directory&gt;${project.build.directory}/allure-results&lt;/allure.results.directory&gt;
+                    &lt;/systemPropertyVariables&gt;
+                &lt;/configuration&gt;
+                &lt;dependencies&gt;
+                    &lt;dependency&gt;
+                        &lt;groupId&gt;org.aspectj&lt;/groupId&gt;
+                        &lt;artifactId&gt;aspectjweaver&lt;/artifactId&gt;
+                        &lt;version&gt;1.9.21&lt;/version&gt;
+                    &lt;/dependency&gt;
+                &lt;/dependencies&gt;
+            &lt;/plugin&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+                &lt;artifactId&gt;allure-maven&lt;/artifactId&gt;
+                &lt;version&gt;2.12.0&lt;/version&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+
+    &lt;profiles&gt;
+        &lt;profile&gt;
+            &lt;id&gt;smoke&lt;/id&gt;
+            &lt;properties&gt;&lt;suiteXmlFile&gt;testng-suites/smoke.xml&lt;/suiteXmlFile&gt;&lt;/properties&gt;
+        &lt;/profile&gt;
+        &lt;profile&gt;
+            &lt;id&gt;regression&lt;/id&gt;
+            &lt;properties&gt;&lt;suiteXmlFile&gt;testng-suites/regression.xml&lt;/suiteXmlFile&gt;&lt;/properties&gt;
+        &lt;/profile&gt;
+        &lt;profile&gt;
+            &lt;id&gt;full&lt;/id&gt;
+            &lt;properties&gt;&lt;suiteXmlFile&gt;testng-suites/full-suite.xml&lt;/suiteXmlFile&gt;&lt;/properties&gt;
+        &lt;/profile&gt;
+    &lt;/profiles&gt;
+&lt;/project&gt;
+</code></pre>
+
+<h3>2. config.properties — Environment Configuration</h3>
+<pre><code># Default environment
+env=qa
+
+# QA Environment
+qa.baseUrl=https://qa-shop.example.com
+qa.browser=chrome
+qa.timeout=15
+qa.headless=false
+qa.grid.url=
+
+# Staging Environment
+staging.baseUrl=https://staging-shop.example.com
+staging.browser=chrome
+staging.timeout=20
+staging.headless=true
+staging.grid.url=http://selenium-hub:4444/wd/hub
+
+# Production (read-only smoke)
+prod.baseUrl=https://shop.example.com
+prod.browser=chrome
+prod.timeout=10
+prod.headless=true
+prod.grid.url=http://selenium-hub:4444/wd/hub
+
+# API Configuration
+api.baseUrl=https://api-qa.example.com/v1
+api.timeout=30
+
+# Credentials (override via Jenkins credentials)
+test.user.email=${TEST_USER_EMAIL}
+test.user.password=${TEST_USER_PASSWORD}
+</code></pre>
+
+<h3>3. ConfigReader Utility</h3>
+<pre><code>package com.ecommerce.config;
+
+import java.io.InputStream;
+import java.util.Properties;
+
+public class ConfigReader {
+    private static final Properties props = new Properties();
+
+    static {
+        try (InputStream is = ConfigReader.class.getClassLoader()
+                .getResourceAsStream("config.properties")) {
+            props.load(is);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load config.properties", e);
+        }
+    }
+
+    public static String getEnv() {
+        return System.getProperty("env", props.getProperty("env", "qa"));
+    }
+
+    public static String get(String key) {
+        String env = getEnv();
+        String envKey = env + "." + key;
+        return System.getProperty(key, props.getProperty(envKey,
+                props.getProperty(key)));
+    }
+
+    public static int getTimeout() {
+        return Integer.parseInt(get("timeout"));
+    }
+}
+</code></pre>
+
+<h3>4. Sample Page Object — LoginPage</h3>
+<pre><code>package com.ecommerce.pages;
+
+import com.ecommerce.config.ConfigReader;
+import io.qameta.allure.Step;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.time.Duration;
+
+public class LoginPage {
+    private final WebDriver driver;
+    private final WebDriverWait wait;
+
+    private final By emailField   = By.id("email");
+    private final By passwordField = By.id("password");
+    private final By loginButton  = By.cssSelector("button[type='submit']");
+    private final By errorMessage = By.cssSelector(".alert-danger");
+
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver,
+            Duration.ofSeconds(ConfigReader.getTimeout()));
+    }
+
+    @Step("Navigate to login page")
+    public LoginPage open() {
+        driver.get(ConfigReader.get("baseUrl") + "/login");
+        return this;
+    }
+
+    @Step("Enter email: {email}")
+    public LoginPage enterEmail(String email) {
+        wait.until(ExpectedConditions.visibilityOfElementLocated(emailField))
+            .sendKeys(email);
+        return this;
+    }
+
+    @Step("Enter password")
+    public LoginPage enterPassword(String password) {
+        driver.findElement(passwordField).sendKeys(password);
+        return this;
+    }
+
+    @Step("Click login button")
+    public HomePage clickLogin() {
+        driver.findElement(loginButton).click();
+        return new HomePage(driver);
+    }
+
+    public String getErrorMessage() {
+        WebElement el = wait.until(
+            ExpectedConditions.visibilityOfElementLocated(errorMessage));
+        return el.getText();
+    }
+
+    @Step("Login with credentials")
+    public HomePage loginAs(String email, String password) {
+        return open().enterEmail(email).enterPassword(password).clickLogin();
+    }
+}
+</code></pre>
+
+<h3>5. DriverFactory Utility</h3>
+<pre><code>package com.ecommerce.utils;
+
+import com.ecommerce.config.ConfigReader;
+import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.remote.RemoteWebDriver;
+
+import java.net.URL;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+public class DriverFactory {
+    public static WebDriver createDriver() {
+        String browser = ConfigReader.get("browser");
+        boolean headless = Boolean.parseBoolean(ConfigReader.get("headless"));
+        String gridUrl = ConfigReader.get("grid.url");
+
+        WebDriver driver;
+        if (gridUrl != null &amp;&amp; !gridUrl.isBlank()) {
+            ChromeOptions options = buildChromeOptions(headless);
+            try {
+                driver = new RemoteWebDriver(new URL(gridUrl), options);
+            } catch (Exception e) {
+                throw new RuntimeException("Grid connection failed", e);
+            }
+        } else {
+            WebDriverManager.chromedriver().setup();
+            ChromeOptions options = buildChromeOptions(headless);
+            driver = new org.openqa.selenium.chrome.ChromeDriver(options);
+        }
+        driver.manage().timeouts().implicitlyWait(
+            Duration.ofSeconds(ConfigReader.getTimeout()));
+        driver.manage().window().maximize();
+        return driver;
+    }
+
+    private static ChromeOptions buildChromeOptions(boolean headless) {
+        ChromeOptions options = new ChromeOptions();
+        if (headless) {
+            options.addArguments("--headless=new", "--disable-gpu",
+                "--window-size=1920,1080");
+        }
+        Map&lt;String, Object&gt; prefs = new HashMap&lt;&gt;();
+        prefs.put("profile.default_content_setting_values.notifications", 2);
+        options.setExperimentalOption("prefs", prefs);
+        return options;
+    }
+}
+</code></pre>
+
+<h3>6. Sample Test Class — LoginTest</h3>
+<pre><code>package com.ecommerce.tests;
+
+import com.ecommerce.pages.HomePage;
+import com.ecommerce.pages.LoginPage;
+import com.ecommerce.utils.DriverFactory;
+import io.qameta.allure.*;
+import org.openqa.selenium.WebDriver;
+import org.testng.Assert;
+import org.testng.annotations.*;
+
+@Epic("Authentication")
+@Feature("Login")
+public class LoginTest {
+    private WebDriver driver;
+
+    @BeforeMethod(alwaysRun = true)
+    public void setUp() {
+        driver = DriverFactory.createDriver();
+    }
+
+    @AfterMethod(alwaysRun = true)
+    public void tearDown() {
+        if (driver != null) driver.quit();
+    }
+
+    @Test(groups = {"smoke"}, priority = 1,
+          description = "Valid user can login successfully")
+    @Story("Valid Login")
+    @Severity(SeverityLevel.CRITICAL)
+    public void testValidLogin() {
+        HomePage home = new LoginPage(driver)
+            .loginAs("qa.user@example.com", "SecurePass123!");
+        Assert.assertTrue(home.isUserLoggedIn(),
+            "User should be logged in after valid credentials");
+        Assert.assertEquals(home.getWelcomeMessage(),
+            "Welcome, QA User!");
+    }
+
+    @Test(groups = {"regression"}, priority = 2,
+          description = "Invalid password shows error message")
+    @Story("Invalid Login")
+    @Severity(SeverityLevel.NORMAL)
+    public void testInvalidPassword() {
+        LoginPage loginPage = new LoginPage(driver)
+            .open()
+            .enterEmail("qa.user@example.com")
+            .enterPassword("WrongPassword!");
+        loginPage.clickLogin();
+        Assert.assertTrue(
+            loginPage.getErrorMessage().contains("Invalid credentials"),
+            "Error message should indicate invalid credentials");
+    }
+
+    @Test(groups = {"regression"}, dataProvider = "invalidEmails",
+          dataProviderClass = com.ecommerce.dataproviders.LoginDataProvider.class)
+    public void testInvalidEmailFormats(String email, String expectedError) {
+        LoginPage loginPage = new LoginPage(driver)
+            .open().enterEmail(email).enterPassword("any");
+        loginPage.clickLogin();
+        Assert.assertEquals(loginPage.getErrorMessage(), expectedError);
+    }
+}
+</code></pre>
+
+<h3>7. TestNG Smoke Suite — smoke.xml</h3>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd"&gt;
+&lt;suite name="Smoke Suite" parallel="tests" thread-count="2" verbose="1"&gt;
+    &lt;listeners&gt;
+        &lt;listener class-name="com.ecommerce.listeners.AllureListener"/&gt;
+        &lt;listener class-name="com.ecommerce.listeners.TestListener"/&gt;
+    &lt;/listeners&gt;
+
+    &lt;test name="Smoke - Chrome"&gt;
+        &lt;parameter name="browser" value="chrome"/&gt;
+        &lt;groups&gt;
+            &lt;run&gt;
+                &lt;include name="smoke"/&gt;
+            &lt;/run&gt;
+        &lt;/groups&gt;
+        &lt;classes&gt;
+            &lt;class name="com.ecommerce.tests.LoginTest"/&gt;
+            &lt;class name="com.ecommerce.tests.ProductSearchTest"/&gt;
+            &lt;class name="com.ecommerce.tests.CartTest"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;
+</code></pre>
+
+<h3>8. Complete Jenkinsfile — Declarative Pipeline</h3>
+<pre><code>pipeline {
+    agent any
+
+    tools {
+        maven 'Maven-3.9'
+        jdk   'JDK-17'
+    }
+
+    environment {
+        ALLURE_RESULTS = 'target/allure-results'
+        TEST_ENV       = "${params.ENVIRONMENT ?: 'qa'}"
+    }
+
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['qa', 'staging'], description: 'Target environment')
+        booleanParam(name: 'RUN_REGRESSION', defaultValue: true, description: 'Run regression suite')
+        booleanParam(name: 'DEPLOY_STAGING', defaultValue: false, description: 'Deploy to staging after approval')
+    }
+
+    triggers {
+        pollSCM('H/5 * * * *')
+        githubPush()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    env.GIT_SHORT = sh(returnStdout: true,
+                        script: 'git rev-parse --short HEAD').trim()
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean compile -DskipTests -B'
+            }
+        }
+
+        stage('Run Smoke Tests') {
+            steps {
+                sh """
+                    mvn test -Psmoke -Denv=${TEST_ENV} -B \
+                        -Dtest.user.email=\${TEST_USER_EMAIL} \
+                        -Dtest.user.password=\${TEST_USER_PASSWORD}
+                """
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                    archiveArtifacts artifacts: 'target/surefire-reports/**', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Run Regression Tests') {
+            when { expression { params.RUN_REGRESSION } }
+            parallel {
+                stage('Chrome') {
+                    steps {
+                        sh 'mvn test -Pregression -Denv=${TEST_ENV} -Dbrowser=chrome -B'
+                    }
+                }
+                stage('Firefox') {
+                    steps {
+                        sh 'mvn test -Pregression -Denv=${TEST_ENV} -Dbrowser=firefox -B'
+                    }
+                }
+                stage('Edge') {
+                    steps {
+                        sh 'mvn test -Pregression -Denv=${TEST_ENV} -Dbrowser=edge -B'
+                    }
+                }
+            }
+        }
+
+        stage('Generate Allure Report') {
+            steps {
+                allure includeProperties: false, jdk: '',
+                    results: [[path: "${ALLURE_RESULTS}"]]
+            }
+        }
+
+        stage('Approval for Staging Deployment') {
+            when { expression { params.DEPLOY_STAGING } }
+            steps {
+                timeout(time: 30, unit: 'MINUTES') {
+                    input message: 'Deploy to staging?', ok: 'Deploy',
+                          submitterParameter: 'APPROVER'
+                }
+            }
+        }
+
+        stage('Deploy to Staging') {
+            when { expression { params.DEPLOY_STAGING } }
+            steps {
+                sh './scripts/deploy-staging.sh ${GIT_SHORT}'
+            }
+        }
+    }
+
+    post {
+        success {
+            emailext (
+                subject: "BUILD SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+                    Build: ${env.BUILD_URL}
+                    Commit: ${env.GIT_COMMIT}
+                    Environment: ${TEST_ENV}
+                    Allure: ${env.BUILD_URL}allure/
+                """,
+                to: '${DEFAULT_RECIPIENTS}',
+                attachLog: true
+            )
+        }
+        failure {
+            emailext (
+                subject: "BUILD FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Build failed. Check: ${env.BUILD_URL}console",
+                to: '${DEFAULT_RECIPIENTS}',
+                attachLog: true
+            )
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
+</code></pre>
+
+<h3>9. Dockerfile — Headless Test Execution</h3>
+<pre><code>FROM maven:3.9-eclipse-temurin-17
+
+# Install Chrome for headless UI tests
+RUN apt-get update &amp;&amp; apt-get install -y wget gnupg unzip \
+    &amp;&amp; wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    &amp;&amp; echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
+       &gt; /etc/apt/sources.list.d/google-chrome.list \
+    &amp;&amp; apt-get update &amp;&amp; apt-get install -y google-chrome-stable \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+COPY . .
+ENV env=staging
+ENV headless=true
+
+CMD ["mvn", "test", "-Psmoke", "-B", \
+     "-Denv=staging", "-Dheadless=true", \
+     "-Dtest.user.email=${TEST_USER_EMAIL}", \
+     "-Dtest.user.password=${TEST_USER_PASSWORD}"]
+</code></pre>
+
+<h3>10. docker-compose.yml — Selenium Grid</h3>
+<pre><code>version: '3.8'
+
+services:
+  selenium-hub:
+    image: selenium/hub:4.18.1
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"
+    environment:
+      - SE_SESSION_REQUEST_TIMEOUT=300
+      - SE_NODE_MAX_SESSIONS=4
+
+  chrome-node:
+    image: selenium/node-chrome:4.18.1
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=2
+    shm_size: '2gb'
+    scale: 2
+
+  firefox-node:
+    image: selenium/node-firefox:4.18.1
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    shm_size: '2gb'
+
+  test-runner:
+    build: .
+    depends_on:
+      - selenium-hub
+      - chrome-node
+    environment:
+      - env=staging
+      - grid.url=http://selenium-hub:4444/wd/hub
+      - headless=true
+      - TEST_USER_EMAIL=${TEST_USER_EMAIL}
+      - TEST_USER_PASSWORD=${TEST_USER_PASSWORD}
+    volumes:
+      - ./target/allure-results:/app/target/allure-results
+</code></pre>
+
+<h3>End-to-End Execution Flow</h3>
+<pre class="ascii-diagram"><code>
+ Developer                    GitHub                    Jenkins                  Test Infra
+     │                          │                          │                         │
+     │  git push (feature)      │                          │                         │
+     │─────────────────────────►│                          │                         │
+     │                          │  webhook POST            │                         │
+     │                          │─────────────────────────►│                         │
+     │                          │                          │  1. Checkout SCM        │
+     │                          │                          │  2. mvn compile         │
+     │                          │                          │                         │
+     │                          │                          │  3. Smoke Tests         │
+     │                          │                          │────────────────────────►│
+     │                          │                          │     (Selenium Grid)     │
+     │                          │                          │◄────────────────────────│
+     │                          │                          │  4. Regression (parallel│
+     │                          │                          │     Chrome/Firefox/Edge)│
+     │                          │                          │────────────────────────►│
+     │                          │                          │◄────────────────────────│
+     │                          │                          │                         │
+     │                          │                          │  5. Allure Report Gen   │
+     │                          │                          │  6. Email Notification  │
+     │                          │                          │──────────┐              │
+     │                          │                          │          ▼              │
+     │◄───────────────────────────────────────────────────│   QA Team Review       │
+     │   Email: Build #142 PASS │                          │                         │
+     │                          │                          │  7. Manual Approval     │
+     │                          │                          │◄─── (Staging Deploy)    │
+     │                          │                          │  8. Deploy to Staging   │
+     │                          │                          │─────────────────────────►
+</code></pre>
+
+<h3>CI/CD Dashboard Metrics to Track</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Metric</th><th>Definition</th><th>Target (Healthy Pipeline)</th><th>Tool</th></tr>
+</thead>
+<tbody>
+<tr><td>Build Success Rate</td><td>% of builds that complete without failure</td><td>&gt; 95%</td><td>Jenkins Dashboard / Grafana</td></tr>
+<tr><td>Test Pass Rate</td><td>Passed tests / Total executed tests</td><td>&gt; 98% (excluding known flakes)</td><td>Allure / Surefire reports</td></tr>
+<tr><td>Average Build Time</td><td>Mean duration from checkout to post-actions</td><td>&lt; 15 min (smoke), &lt; 45 min (full regression)</td><td>Jenkins Build Time Trend</td></tr>
+<tr><td>Test Execution Trend</td><td>Pass/fail count over time (daily/weekly)</td><td>Stable or improving; no upward fail trend</td><td>Allure Trend Graph</td></tr>
+<tr><td>Flaky Test Rate</td><td>Tests that pass/fail inconsistently without code change</td><td>&lt; 2% of suite</td><td>Custom listener + dashboard</td></tr>
+<tr><td>Mean Time to Feedback</td><td>Time from commit push to test results available</td><td>&lt; 10 minutes for PR builds</td><td>GitHub Checks + Jenkins</td></tr>
+<tr><td>Code Coverage</td><td>Line/branch coverage from unit + integration tests</td><td>&gt; 80% (team-defined threshold)</td><td>JaCoCo + SonarQube</td></tr>
+<tr><td>Deployment Frequency</td><td>How often staging/production receives deploys</td><td>Daily (staging), weekly (prod)</td><td>Release tracking</td></tr>
+<tr><td>Change Failure Rate</td><td>% of deployments causing incidents/rollbacks</td><td>&lt; 15%</td><td>Incident tracker correlation</td></tr>
+<tr><td>Pipeline Queue Time</td><td>Wait time before agent picks up build</td><td>&lt; 2 minutes</td><td>Jenkins Queue Monitor</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Section 18 — Interview Questions (Implementation-Focused)</h3>
+
+<h4>Q1: Walk me through your automation framework architecture.</h4>
+<p><strong>Answer:</strong> Our framework follows Page Object Model with a clear separation: pages handle locators and UI actions, tests contain assertions and business scenarios, utils manage driver lifecycle and config, and listeners handle reporting/retries. Configuration is externalized in properties files with environment-specific overrides via Jenkins parameters. Tests are organized by feature and tagged with TestNG groups (smoke/regression) for selective execution in CI.</p>
+<p><strong>Interviewer expects:</strong> Layered design, separation of concerns, and CI integration awareness — not just "I use POM."</p>
+
+<h4>Q2: How do you handle test data in this project?</h4>
+<p><strong>Answer:</strong> Static edge-case data lives in TestNG DataProviders (JSON/Excel via Apache POI). Dynamic data (unique orders, users) is created via REST Assured API calls in @BeforeClass setup and cleaned up in @AfterClass. Credentials come from Jenkins credential store, never hardcoded. For staging, we use masked production-like data refreshed weekly.</p>
+<p><strong>Interviewer expects:</strong> Data isolation, no hardcoded secrets, and setup/teardown strategy.</p>
+
+<h4>Q3: Why parallel execution at the test level vs method level?</h4>
+<p><strong>Answer:</strong> We parallelize at the test (class) level in TestNG because each test class gets its own WebDriver instance, avoiding session conflicts. Method-level parallel within the same class would share driver state and cause race conditions. For API tests, method-level parallel is safe and faster.</p>
+<p><strong>Interviewer expects:</strong> Understanding of WebDriver thread safety and parallel strategy trade-offs.</p>
+
+<h4>Q4: How does your Jenkins pipeline gate deployments?</h4>
+<p><strong>Answer:</strong> Smoke tests run on every commit and must pass before merge (via branch protection + Jenkins GitHub check). Regression runs post-merge on main. Staging deployment requires manual approval via Jenkins input step after all tests pass and Allure report is generated. Production deploys use a separate pipeline with stricter gates.</p>
+<p><strong>Interviewer expects:</strong> Quality gates, not "we run all tests always."</p>
+
+<h4>Q5: How do you run tests in Docker vs Selenium Grid?</h4>
+<p><strong>Answer:</strong> Dockerfile packages the test code + Maven + Chrome for standalone headless runs — ideal for CI agents without browsers installed. docker-compose adds Selenium Grid (hub + nodes) for parallel cross-browser execution. The test-runner container points grid.url to the hub. Locally, developers run without Grid using WebDriverManager.</p>
+<p><strong>Interviewer expects:</strong> Container purpose clarity and when to use Grid vs local drivers.</p>
+
+<h4>Q6: What happens when a smoke test fails in the pipeline?</h4>
+<p><strong>Answer:</strong> Jenkins marks the build FAILED, sends email with console link and failed test names, publishes JUnit + Allure results for triage, and blocks downstream stages (regression, deploy). The developer gets GitHub commit status failure. We don't auto-deploy on red builds. Flaky failures are quarantined after 3 inconsistent runs.</p>
+<p><strong>Interviewer expects:</strong> Fail-fast behavior and clear escalation path.</p>
+
+<h4>Q7: How do you integrate Allure reporting?</h4>
+<p><strong>Answer:</strong> allure-testng dependency captures steps via @Step annotations. Surefire plugin sets allure.results.directory. AspectJ weaver enables @Step on page object methods. Jenkins Allure plugin publishes interactive reports per build. We attach screenshots on failure via a TestNG listener using Allure.addAttachment().</p>
+<p><strong>Interviewer expects:</strong> End-to-end reporting pipeline, not just "we use Allure plugin."</p>
+
+<h4>Q8: How do you manage environment-specific configuration?</h4>
+<p><strong>Answer:</strong> config.properties uses env-prefixed keys (qa.baseUrl, staging.baseUrl). ConfigReader resolves based on -Denv JVM property set by Jenkins parameter. Secrets override via environment variables bound to Jenkins credentials. No environment-specific code branches — only config changes.</p>
+<p><strong>Interviewer expects:</strong> Twelve-factor config principles applied to test automation.</p>
+
+<h4>Q9: What is in your .gitignore for this project?</h4>
+<p><strong>Answer:</strong> target/, .idea/, *.iml, allure-results/, allure-report/, .DS_Store, local config overrides, screenshots/videos from failed runs, and any files containing credentials. We commit testng-suites, Jenkinsfile, and Dockerfile — not generated artifacts.</p>
+<p><strong>Interviewer expects:</strong> Awareness of what should never enter version control.</p>
+
+<h4>Q10: How would you scale this framework for 500+ tests?</h4>
+<p><strong>Answer:</strong> Split suites by domain (checkout, catalog, account) with separate Jenkins parallel stages. Use Selenium Grid with auto-scaling nodes (K8s). Implement test tagging for selective runs on PR vs nightly. Add retry logic only for known infra failures. Monitor flaky test rate and enforce ownership per squad.</p>
+<p><strong>Interviewer expects:</strong> Scalability thinking — suite splitting, infra, and maintenance strategy.</p>
+
+<h4>Q11: How do you version and release test framework changes?</h4>
+<p><strong>Answer:</strong> Framework code lives in the same repo as tests (or a shared library module for multi-repo). Changes go through PR review with CI validation. Breaking changes to page objects require updating all dependent tests in the same PR. We tag releases aligned with app version for traceability.</p>
+<p><strong>Interviewer expects:</strong> Framework treated as production code with proper change management.</p>
+
+<h4>Q12: Describe your API + UI hybrid testing approach.</h4>
+<p><strong>Answer:</strong> API tests (REST Assured) validate backend contracts fast — product CRUD, cart operations, order placement. UI tests cover critical user journeys and visual flows API alone can't verify. We use API setup to seed UI test preconditions (create product, add to cart) to reduce UI test execution time by 40%.</p>
+<p><strong>Interviewer expects:</strong> Test pyramid awareness and pragmatic API/UI split.</p>
+
+</section>
+
+<section id="section-19" class="section-card">
+<h2>Section 19: CI/CD Cheat Sheet</h2>
+
+<p>Quick-reference tables for Senior QA / SDET interviews. Memorize definitions; understand usage in context.</p>
+
+<h3>DevOps Concepts — One-Line Definitions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concept</th><th>Definition</th></tr></thead>
+<tbody>
+<tr><td>CI (Continuous Integration)</td><td>Developers merge code frequently; each merge triggers automated build and test.</td></tr>
+<tr><td>CD (Continuous Delivery)</td><td>Code is always in a deployable state; release to production is a manual decision.</td></tr>
+<tr><td>CD (Continuous Deployment)</td><td>Every passing build automatically deploys to production without manual gate.</td></tr>
+<tr><td>IaC (Infrastructure as Code)</td><td>Provisioning and managing infrastructure through version-controlled config files.</td></tr>
+<tr><td>Monitoring</td><td>Collecting metrics, logs, and traces to observe system health in real time.</td></tr>
+<tr><td>Observability</td><td>Ability to understand internal system state from external outputs (metrics, logs, traces).</td></tr>
+<tr><td>DevSecOps</td><td>Integrating security practices into every stage of the DevOps pipeline.</td></tr>
+<tr><td>GitOps</td><td>Using Git as the single source of truth for declarative infrastructure and deployments.</td></tr>
+<tr><td>Shift-Left</td><td>Moving testing, security, and quality activities earlier in the development lifecycle.</td></tr>
+<tr><td>Immutable Infrastructure</td><td>Servers/containers are replaced, never patched in place.</td></tr>
+<tr><td>Configuration Management</td><td>Automating setup and maintenance of servers (Ansible, Chef, Puppet).</td></tr>
+<tr><td>Containerization</td><td>Packaging app + dependencies into portable, isolated units (Docker).</td></tr>
+<tr><td>Orchestration</td><td>Automating deployment, scaling, and management of containers (Kubernetes).</td></tr>
+<tr><td>Blue-Green Deployment</td><td>Two identical environments; traffic switches from old (blue) to new (green).</td></tr>
+<tr><td>Canary Deployment</td><td>Roll out new version to a small subset of users before full release.</td></tr>
+<tr><td>Rollback</td><td>Reverting to a previous known-good version after a failed deployment.</td></tr>
+<tr><td>Artifact</td><td>Immutable output of a build (JAR, WAR, Docker image, test report).</td></tr>
+<tr><td>Pipeline as Code</td><td>Defining CI/CD pipelines in version-controlled files (Jenkinsfile).</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>CI/CD Terms</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Term</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Pipeline</td><td>Automated sequence of stages that code passes through from commit to deploy.</td></tr>
+<tr><td>Stage</td><td>Logical grouping of steps (Build, Test, Deploy) in a pipeline.</td></tr>
+<tr><td>Step</td><td>Single atomic action within a stage (e.g., mvn test, docker push).</td></tr>
+<tr><td>Agent</td><td>Machine/process that executes pipeline jobs (Jenkins agent/slave).</td></tr>
+<tr><td>Node</td><td>In Jenkins Pipeline, a block specifying where stages run (agent label).</td></tr>
+<tr><td>Executor</td><td>Single concurrent job slot on an agent; one executor = one running build.</td></tr>
+<tr><td>Artifact</td><td>File archived from a build for downstream use or audit.</td></tr>
+<tr><td>Workspace</td><td>Directory on agent where Jenkins checks out code and runs build.</td></tr>
+<tr><td>Trigger</td><td>Event that starts a pipeline (webhook, cron, manual, upstream).</td></tr>
+<tr><td>Quality Gate</td><td>Automated check that must pass before proceeding (coverage, test pass rate).</td></tr>
+<tr><td>Build</td><td>Single execution instance of a pipeline job.</td></tr>
+<tr><td>Runner</td><td>Generic term for execution environment (GitHub Actions runner, GitLab runner).</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Git Commands (20+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>git clone &lt;url&gt;</code></td><td>Copy remote repository to local machine.</td></tr>
+<tr><td><code>git init</code></td><td>Initialize a new local Git repository.</td></tr>
+<tr><td><code>git status</code></td><td>Show working tree status (modified, staged, untracked).</td></tr>
+<tr><td><code>git add &lt;file&gt;</code></td><td>Stage file(s) for next commit.</td></tr>
+<tr><td><code>git add .</code></td><td>Stage all changes in current directory.</td></tr>
+<tr><td><code>git commit -m "msg"</code></td><td>Create commit with staged changes.</td></tr>
+<tr><td><code>git push origin &lt;branch&gt;</code></td><td>Push local commits to remote branch.</td></tr>
+<tr><td><code>git pull</code></td><td>Fetch and merge remote changes into current branch.</td></tr>
+<tr><td><code>git fetch</code></td><td>Download remote changes without merging.</td></tr>
+<tr><td><code>git branch</code></td><td>List local branches.</td></tr>
+<tr><td><code>git branch &lt;name&gt;</code></td><td>Create new branch.</td></tr>
+<tr><td><code>git checkout &lt;branch&gt;</code></td><td>Switch to branch.</td></tr>
+<tr><td><code>git switch -c &lt;branch&gt;</code></td><td>Create and switch to new branch (modern).</td></tr>
+<tr><td><code>git merge &lt;branch&gt;</code></td><td>Merge specified branch into current branch.</td></tr>
+<tr><td><code>git rebase &lt;branch&gt;</code></td><td>Replay commits on top of another branch.</td></tr>
+<tr><td><code>git log --oneline</code></td><td>Compact commit history.</td></tr>
+<tr><td><code>git diff</code></td><td>Show unstaged changes.</td></tr>
+<tr><td><code>git diff --staged</code></td><td>Show staged changes.</td></tr>
+<tr><td><code>git stash</code></td><td>Temporarily save uncommitted changes.</td></tr>
+<tr><td><code>git stash pop</code></td><td>Restore most recent stash and remove it.</td></tr>
+<tr><td><code>git cherry-pick &lt;hash&gt;</code></td><td>Apply specific commit to current branch.</td></tr>
+<tr><td><code>git reset --soft HEAD~1</code></td><td>Undo last commit, keep changes staged.</td></tr>
+<tr><td><code>git reset --hard HEAD~1</code></td><td>Undo last commit, discard changes (destructive).</td></tr>
+<tr><td><code>git remote -v</code></td><td>List configured remotes.</td></tr>
+<tr><td><code>git tag v1.0.0</code></td><td>Create lightweight tag at current commit.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Jenkins Terms (15+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Term</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Controller (Master)</td><td>Central Jenkins server managing jobs, scheduling, and UI.</td></tr>
+<tr><td>Agent (Slave/Node)</td><td>Worker machine that executes build steps.</td></tr>
+<tr><td>Job / Project</td><td>Configured unit of work (Freestyle, Pipeline, Multibranch).</td></tr>
+<tr><td>Build</td><td>Single execution of a job (#42, #43...).</td></tr>
+<tr><td>Plugin</td><td>Extension adding functionality (Git, Maven, Allure, Email).</td></tr>
+<tr><td>Credential</td><td>Securely stored secret (username/password, SSH key, token).</td></tr>
+<tr><td>Freestyle Job</td><td>UI-configured job without Pipeline script.</td></tr>
+<tr><td>Pipeline Job</td><td>Job defined by Jenkinsfile (Declarative or Scripted).</td></tr>
+<tr><td>Multibranch Pipeline</td><td>Auto-creates pipelines per branch/PR from Jenkinsfile.</td></tr>
+<tr><td>Shared Library</td><td>Reusable Groovy code imported across pipelines.</td></tr>
+<tr><td>Blue Ocean</td><td>Modern Jenkins UI for visualizing pipelines.</td></tr>
+<tr><td>Executor</td><td>Slot on agent for one concurrent build.</td></tr>
+<tr><td>Label</td><td>Tag on agent for routing jobs (linux, docker, maven).</td></tr>
+<tr><td>Upstream/Downstream</td><td>Job that triggers another / job triggered by another.</td></tr>
+<tr><td>SCM Polling</td><td>Jenkins periodically checks repo for changes.</td></tr>
+<tr><td>Webhook</td><td>GitHub/GitLab pushes event to Jenkins instantly on commit.</td></tr>
+<tr><td>Artifact Archiver</td><td>Post-build step saving files (reports, JARs).</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Maven Commands (10+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td><code>mvn clean</code></td><td>Delete target/ directory.</td></tr>
+<tr><td><code>mvn compile</code></td><td>Compile main source code.</td></tr>
+<tr><td><code>mvn test</code></td><td>Compile and run unit/integration tests.</td></tr>
+<tr><td><code>mvn package</code></td><td>Compile, test, and create JAR/WAR.</td></tr>
+<tr><td><code>mvn install</code></td><td>Package and install to local ~/.m2 repository.</td></tr>
+<tr><td><code>mvn deploy</code></td><td>Install and push artifact to remote repository.</td></tr>
+<tr><td><code>mvn verify</code></td><td>Run all checks including integration tests.</td></tr>
+<tr><td><code>mvn clean test -B</code></td><td>Clean, run tests in batch mode (CI-friendly).</td></tr>
+<tr><td><code>mvn test -DsuiteXmlFile=smoke.xml</code></td><td>Run specific TestNG suite.</td></tr>
+<tr><td><code>mvn test -Psmoke</code></td><td>Activate Maven profile named smoke.</td></tr>
+<tr><td><code>mvn dependency:tree</code></td><td>Show dependency hierarchy (conflict debugging).</td></tr>
+<tr><td><code>mvn versions:display-dependency-updates</code></td><td>Check for newer dependency versions.</td></tr>
+<tr><td><code>mvn -DskipTests package</code></td><td>Build without running tests.</td></tr>
+<tr><td><code>mvn surefire:test -Dtest=LoginTest</code></td><td>Run single test class.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Docker Commands (15+)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>docker build -t name:tag .</code></td><td>Build image from Dockerfile in current dir.</td></tr>
+<tr><td><code>docker images</code></td><td>List local images.</td></tr>
+<tr><td><code>docker run -d -p 8080:80 image</code></td><td>Run container detached, map port.</td></tr>
+<tr><td><code>docker ps</code></td><td>List running containers.</td></tr>
+<tr><td><code>docker ps -a</code></td><td>List all containers (including stopped).</td></tr>
+<tr><td><code>docker stop &lt;id&gt;</code></td><td>Gracefully stop running container.</td></tr>
+<tr><td><code>docker rm &lt;id&gt;</code></td><td>Remove stopped container.</td></tr>
+<tr><td><code>docker rmi &lt;image&gt;</code></td><td>Remove image.</td></tr>
+<tr><td><code>docker logs &lt;id&gt;</code></td><td>View container stdout/stderr.</td></tr>
+<tr><td><code>docker exec -it &lt;id&gt; bash</code></td><td>Open interactive shell inside container.</td></tr>
+<tr><td><code>docker-compose up -d</code></td><td>Start all services defined in compose file.</td></tr>
+<tr><td><code>docker-compose down</code></td><td>Stop and remove compose services.</td></tr>
+<tr><td><code>docker pull &lt;image&gt;</code></td><td>Download image from registry.</td></tr>
+<tr><td><code>docker push &lt;image&gt;</code></td><td>Upload image to registry.</td></tr>
+<tr><td><code>docker system prune -a</code></td><td>Remove unused images, containers, networks.</td></tr>
+<tr><td><code>docker inspect &lt;id&gt;</code></td><td>Detailed JSON metadata about container/image.</td></tr>
+<tr><td><code>docker network ls</code></td><td>List Docker networks.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Kubernetes Commands (10+ kubectl)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Command</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>kubectl get pods</code></td><td>List pods in current namespace.</td></tr>
+<tr><td><code>kubectl get pods -A</code></td><td>List pods in all namespaces.</td></tr>
+<tr><td><code>kubectl describe pod &lt;name&gt;</code></td><td>Detailed pod info including events.</td></tr>
+<tr><td><code>kubectl logs &lt;pod&gt;</code></td><td>View container logs.</td></tr>
+<tr><td><code>kubectl apply -f manifest.yaml</code></td><td>Create/update resources from YAML.</td></tr>
+<tr><td><code>kubectl delete -f manifest.yaml</code></td><td>Delete resources defined in YAML.</td></tr>
+<tr><td><code>kubectl get deployments</code></td><td>List deployments.</td></tr>
+<tr><td><code>kubectl scale deploy/&lt;name&gt; --replicas=3</code></td><td>Scale deployment replicas.</td></tr>
+<tr><td><code>kubectl exec -it &lt;pod&gt; -- bash</code></td><td>Shell into running pod.</td></tr>
+<tr><td><code>kubectl get svc</code></td><td>List services.</td></tr>
+<tr><td><code>kubectl port-forward pod/&lt;name&gt; 8080:80</code></td><td>Forward local port to pod.</td></tr>
+<tr><td><code>kubectl config current-context</code></td><td>Show active cluster context.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Pipeline Directives (Declarative Jenkinsfile)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Directive</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>agent</code></td><td>Where pipeline/stage runs (any, none, label, docker, kubernetes).</td></tr>
+<tr><td><code>stages</code></td><td>Container for all pipeline stages.</td></tr>
+<tr><td><code>stage</code></td><td>Single logical phase (Build, Test, Deploy).</td></tr>
+<tr><td><code>steps</code></td><td>Sequence of commands inside a stage.</td></tr>
+<tr><td><code>post</code></td><td Actions after stage/pipeline (always, success, failure, unstable).</td></tr>
+<tr><td><code>environment</code></td><td>Define environment variables.</td></tr>
+<tr><td><code>tools</code></td><td>Auto-install/configure tools (JDK, Maven, Node).</td></tr>
+<tr><td><code>parameters</code></td><td>User inputs at build time (choice, boolean, string).</td></tr>
+<tr><td><code>triggers</code></td><td>Automated build triggers (cron, pollSCM, upstream).</td></tr>
+<tr><td><code>when</code></td><td>Conditional stage execution.</td></tr>
+<tr><td><code>options</code></td><td>Pipeline-level settings (timeout, retry, timestamps).</td></tr>
+<tr><td><code>parallel</code></td><td>Run stages concurrently.</td></tr>
+<tr><td><code>input</code></td><td>Manual approval gate.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Cron Syntax for Jenkins</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Expression</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>H * * * *</code></td><td>Every hour (hash spreads load across hour)</td></tr>
+<tr><td><code>H/15 * * * *</code></td><td>Every 15 minutes</td></tr>
+<tr><td><code>H 2 * * 1-5</code></td><td>Weekdays at ~2 AM</td></tr>
+<tr><td><code>H H(0-7) * * *</code></td><td>Once daily between midnight and 7 AM</td></tr>
+<tr><td><code>H 8 * * 1</code></td><td>Every Monday at ~8 AM</td></tr>
+<tr><td><code>H 0 1 * *</code></td><td>First day of every month at midnight</td></tr>
+<tr><td><code>*/5 * * * *</code></td><td>Every 5 minutes (exact; avoid on controller)</td></tr>
+<tr><td><code>H 9-17 * * 1-5</code></td><td>Hourly during business hours, weekdays</td></tr>
+<tr><td><code>H 22 * * 0</code></td><td>Every Sunday at ~10 PM</td></tr>
+<tr><td><code>@daily</code></td><td>Once a day at midnight (alias)</td></tr>
+</tbody>
+</table>
+</div>
+<p><em>Format: MINUTE HOUR DOM MONTH DOW. Jenkins uses <code>H</code> (hash) to avoid thundering herd on the hour.</em></p>
+
+<h3>Pipeline Snippets</h3>
+<h4>Git Checkout</h4>
+<pre><code>stage('Checkout') {
+    steps { checkout scm }
+}</code></pre>
+
+<h4>Maven Build</h4>
+<pre><code>stage('Build') {
+    steps { sh 'mvn clean package -DskipTests -B' }
+}</code></pre>
+
+<h4>Run Tests</h4>
+<pre><code>stage('Test') {
+    steps { sh 'mvn test -Pregression -B' }
+    post { always { junit 'target/surefire-reports/*.xml' } }
+}</code></pre>
+
+<h4>Allure Report</h4>
+<pre><code>stage('Allure') {
+    steps { allure results: [[path: 'target/allure-results']] }
+}</code></pre>
+
+<h4>Email Notification</h4>
+<pre><code>post {
+    failure { emailext subject: "FAILED: ${env.JOB_NAME}", body: "${env.BUILD_URL}", to: 'team@example.com' }
+}</code></pre>
+
+<h3>Common Troubleshooting Quick Reference</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Error</th><th>Likely Cause</th><th>Quick Fix</th></tr></thead>
+<tbody>
+<tr><td>Build stuck in queue</td><td>No available executor / offline agents</td><td>Check agent status; add executor or bring agent online</td></tr>
+<tr><td>Permission denied (Git)</td><td>Missing or expired credentials</td><td>Update Jenkins credential; verify SSH key or token</td></tr>
+<tr><td>mvn: command not found</td><td>Maven not in PATH / tools block missing</td><td>Add tools { maven 'Maven-3.9' } or install on agent</td></tr>
+<tr><td>Tests pass locally, fail in CI</td><td>Environment diff, headless issues, timing</td><td>Match browser/env; increase waits; run headless locally</td></tr>
+<tr><td>OutOfMemoryError in build</td><td>Insufficient JVM heap</td><td>Set MAVEN_OPTS="-Xmx2048m" in pipeline environment</td></tr>
+<tr><td>Allure report empty</td><td>Results path mismatch</td><td>Verify allure.results.directory matches plugin path</td></tr>
+<tr><td>Docker agent fails to start</td><td>Docker daemon not running on agent</td><td>Ensure agent has Docker socket access</td></tr>
+<tr><td>Webhook not triggering build</td><td>Wrong URL, firewall, or secret mismatch</td><td>Test webhook delivery in GitHub settings; check Jenkins log</td></tr>
+<tr><td>Concurrent modification in parallel tests</td><td>Shared WebDriver or static state</td><td>Isolate driver per thread; use ThreadLocal</td></tr>
+<tr><td>Artifact not found</td><td>Wrong archive path or build failed early</td><td>Check target/ exists; use archiveArtifacts with allowEmptyArchive</td></tr>
+<tr><td>Credential not found in pipeline</td><td>Wrong credential ID or scope</td><td>Match credentials('id') with Jenkins store ID exactly</td></tr>
+<tr><td>Port already in use</td><td>Previous container not stopped</td><td>docker-compose down; kill stale process</td></tr>
+<tr><td>Selenium Grid session timeout</td><td>Hub/node mismatch or insufficient nodes</td><td>Check node registration; increase SE_SESSION_REQUEST_TIMEOUT</td></tr>
+<tr><td>Flaky tests fail randomly</td><td>Implicit waits, AJAX timing, test order dependency</td><td>Explicit waits; remove test interdependencies; quarantine flakes</td></tr>
+<tr><td>Pipeline syntax error</td><td>Groovy syntax / missing bracket</td><td>Use Pipeline Syntax Generator; run Replay with fix</td></tr>
+<tr><td>JDK version mismatch</td><td>Agent uses different JDK than pom.xml</td><td>Align tools { jdk } with maven.compiler.source</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Environment Variables in Jenkins</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Variable</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>BUILD_NUMBER</td><td>Current build number (integer, increments per build)</td></tr>
+<tr><td>BUILD_ID</td><td>Unique build ID (deprecated; use BUILD_NUMBER)</td></tr>
+<tr><td>BUILD_URL</td><td>Full URL to this build's page</td></tr>
+<tr><td>JOB_NAME</td><td>Name of the Jenkins job/project</td></tr>
+<tr><td>JOB_BASE_NAME</td><td>Job name without folder path</td></tr>
+<tr><td>WORKSPACE</td><td>Absolute path to build workspace on agent</td></tr>
+<tr><td>EXECUTOR_NUMBER</td><td>Executor slot number on agent</td></tr>
+<tr><td>NODE_NAME</td><td>Name of agent running the build</td></tr>
+<tr><td>GIT_COMMIT</td><td>Git commit SHA of checked-out code</td></tr>
+<tr><td>GIT_BRANCH</td><td>Branch name being built</td></tr>
+<tr><td>GIT_URL</td><td>Remote repository URL</td></tr>
+<tr><td>CHANGE_ID</td><td>PR number (Multibranch PR builds)</td></tr>
+<tr><td>CHANGE_URL</td><td>URL to the pull request</td></tr>
+<tr><td>BUILD_DISPLAY_NAME</td><td>Display name (often #123)</td></tr>
+<tr><td>RUN_DISPLAY_URL</td><td>Blue Ocean run URL</td></tr>
+<tr><td>JENKINS_URL</td><td>Base URL of Jenkins controller</td></tr>
+</tbody>
+</table>
+</div>
+
+</section>
+<section id="section-20" class="section-card">
+<h2>Section 20: Interview Questions</h2>
+<p>350 questions with answers for Senior QA / SDET interviews at 4+ years experience. Every entry includes what the interviewer is evaluating.</p>
+<h3>CI/CD Questions — Top 100</h3>
+<h4>Beginner (30)</h4>
+
+<h4>Q1: What is CI/CD?</h4>
+<p><strong>Answer:</strong> CI (Continuous Integration) merges code frequently with automated build and test on each change. CD extends this to keep code deployable (Delivery) or auto-deploy (Deployment). Together they reduce integration risk and speed feedback.</p>
+<p><strong>Interviewer expects:</strong> Clear distinction between CI and both meanings of CD.</p>
+<h4>Q2: What are the benefits of CI/CD?</h4>
+<p><strong>Answer:</strong> Faster feedback loops, early bug detection, reduced manual effort, consistent builds, improved collaboration, and ability to release smaller changes more frequently with lower risk.</p>
+<p><strong>Interviewer expects:</strong> Business and technical benefits, not just automation is good.</p>
+<h4>Q3: Name the typical stages of a CI/CD pipeline.</h4>
+<p><strong>Answer:</strong> Checkout, Build, Unit Test, Integration Test, Code Analysis, Package, Deploy to QA, E2E Tests, Deploy to Staging, Approval, Deploy to Production, Monitor.</p>
+<p><strong>Interviewer expects:</strong> Logical ordering and awareness of test placement.</p>
+<h4>Q4: What triggers a CI/CD pipeline?</h4>
+<p><strong>Answer:</strong> Git push or webhook, pull request creation, scheduled cron, manual trigger, upstream job completion, or tag or release creation.</p>
+<p><strong>Interviewer expects:</strong> Multiple trigger types with real examples.</p>
+<h4>Q5: What is a build artifact?</h4>
+<p><strong>Answer:</strong> An immutable output of the build process such as JAR, WAR, Docker image, or test report stored for deployment or audit.</p>
+<p><strong>Interviewer expects:</strong> Concrete examples relevant to their stack.</p>
+<h4>Q6: What is Continuous Integration?</h4>
+<p><strong>Answer:</strong> Practice where developers integrate code into a shared repo multiple times daily with automated builds and tests validating each integration.</p>
+<p><strong>Interviewer expects:</strong> Emphasis on frequency and automation.</p>
+<h4>Q7: What is Continuous Delivery?</h4>
+<p><strong>Answer:</strong> Extension of CI where code is always in a deployable state; production release is a business decision triggered manually.</p>
+<p><strong>Interviewer expects:</strong> Deployable vs deployed distinction.</p>
+<h4>Q8: What is Continuous Deployment?</h4>
+<p><strong>Answer:</strong> Every change passing all automated tests is automatically released to production without manual approval.</p>
+<p><strong>Interviewer expects:</strong> When this is appropriate vs risky.</p>
+<h4>Q9: What is a pipeline?</h4>
+<p><strong>Answer:</strong> An automated workflow defining stages and steps code passes through from commit to production deployment.</p>
+<p><strong>Interviewer expects:</strong> Stages, steps, and automation.</p>
+<h4>Q10: What is shift-left testing?</h4>
+<p><strong>Answer:</strong> Moving testing activities earlier in SDLC during requirements, design, and development to find defects when cheapest to fix.</p>
+<p><strong>Interviewer expects:</strong> QA role in shift-left, not just dev unit tests.</p>
+<h4>Q11: What is a quality gate?</h4>
+<p><strong>Answer:</strong> Automated checkpoint that must pass before pipeline proceeds such as coverage threshold, zero critical issues, all smoke tests green.</p>
+<p><strong>Interviewer expects:</strong> Specific measurable gates they have used.</p>
+<h4>Q12: What is the test pyramid?</h4>
+<p><strong>Answer:</strong> Many fast unit tests at base, fewer integration tests in middle, fewest slow E2E tests at top. Optimizes feedback speed vs confidence.</p>
+<p><strong>Interviewer expects:</strong> Why E2E alone does not scale.</p>
+<h4>Q13: What is trunk-based development?</h4>
+<p><strong>Answer:</strong> Developers commit small changes directly to main branch or very short-lived branches with feature flags for incomplete work.</p>
+<p><strong>Interviewer expects:</strong> Contrast with long-lived feature branches.</p>
+<h4>Q14: What is feature branching?</h4>
+<p><strong>Answer:</strong> Each feature developed on a separate branch, merged via PR after review and CI pass. Common in GitFlow.</p>
+<p><strong>Interviewer expects:</strong> Trade-offs vs trunk-based.</p>
+<h4>Q15: What is GitFlow?</h4>
+<p><strong>Answer:</strong> Branching model with main, develop, feature, release, and hotfix branches. Structured but can slow CI/CD.</p>
+<p><strong>Interviewer expects:</strong> When appropriate vs overkill.</p>
+<h4>Q16: What is a pull request?</h4>
+<p><strong>Answer:</strong> Mechanism to propose code merge; triggers code review and CI validation before integration into target branch.</p>
+<p><strong>Interviewer expects:</strong> PR as quality gate.</p>
+<h4>Q17: What is code review in CI context?</h4>
+<p><strong>Answer:</strong> Human review of changes before merge complemented by automated checks like lint, tests, and security scan.</p>
+<p><strong>Interviewer expects:</strong> Review plus automation together.</p>
+<h4>Q18: What is build automation?</h4>
+<p><strong>Answer:</strong> Automated compilation, dependency resolution, and packaging triggered by code changes without manual steps.</p>
+<p><strong>Interviewer expects:</strong> Tools they have used such as Maven or Gradle.</p>
+<h4>Q19: What is deployment automation?</h4>
+<p><strong>Answer:</strong> Automated promotion of artifacts to environments using scripts, pipelines, or IaC with no manual copy paste.</p>
+<p><strong>Interviewer expects:</strong> Repeatable, auditable deploys.</p>
+<h4>Q20: What is environment parity?</h4>
+<p><strong>Answer:</strong> Dev, QA, staging, and prod configured identically via IaC or containers to eliminate works on my machine issues.</p>
+<p><strong>Interviewer expects:</strong> Containers or IaC as enabler.</p>
+<h4>Q21: What is rollback?</h4>
+<p><strong>Answer:</strong> Reverting to a previous known-good deployment after a failed release, ideally automated.</p>
+<p><strong>Interviewer expects:</strong> Rollback strategy they know.</p>
+<h4>Q22: What is blue-green deployment?</h4>
+<p><strong>Answer:</strong> Two identical environments; traffic switches from old blue to new green instantly; old kept for quick rollback.</p>
+<p><strong>Interviewer expects:</strong> Zero-downtime deploy concept.</p>
+<h4>Q23: What is canary deployment?</h4>
+<p><strong>Answer:</strong> New version released to small user subset first; metrics monitored before full rollout.</p>
+<p><strong>Interviewer expects:</strong> Risk reduction strategy.</p>
+<h4>Q24: What is a smoke test?</h4>
+<p><strong>Answer:</strong> Minimal fast test suite validating critical paths after deploy. Runs in minutes.</p>
+<p><strong>Interviewer expects:</strong> Smoke vs regression distinction.</p>
+<h4>Q25: What is a regression test?</h4>
+<p><strong>Answer:</strong> Tests verifying existing functionality still works after changes. Broader and slower than smoke.</p>
+<p><strong>Interviewer expects:</strong> Suite organization in CI.</p>
+<h4>Q26: What is a flaky test?</h4>
+<p><strong>Answer:</strong> Test that passes and fails intermittently without code changes due to timing, data, or environment issues.</p>
+<p><strong>Interviewer expects:</strong> Triage and quarantine approach.</p>
+<h4>Q27: What is test parallelization in CI?</h4>
+<p><strong>Answer:</strong> Running tests concurrently across threads, processes, or machines to reduce pipeline duration.</p>
+<p><strong>Interviewer expects:</strong> Thread safety awareness for UI tests.</p>
+<h4>Q28: What are DORA metrics?</h4>
+<p><strong>Answer:</strong> DevOps Research metrics: Deployment Frequency, Lead Time for Changes, Change Failure Rate, Mean Time to Recovery.</p>
+<p><strong>Interviewer expects:</strong> Know all four names and meaning.</p>
+<h4>Q29: What is lead time for changes?</h4>
+<p><strong>Answer:</strong> Time from code commit to successfully running in production. Elite teams achieve under one hour.</p>
+<p><strong>Interviewer expects:</strong> Measurement and improvement examples.</p>
+<h4>Q30: What is deployment frequency?</h4>
+<p><strong>Answer:</strong> How often an organization deploys to production. Elite performers deploy on demand multiple times per day.</p>
+<p><strong>Interviewer expects:</strong> DORA metric with benchmark awareness.</p><h4>Intermediate (35)</h4>
+
+<h4>Q31: What is Pipeline as Code?</h4>
+<p><strong>Answer:</strong> Defining CI/CD pipelines in version-controlled files like Jenkinsfile rather than UI clicks. Enables review, reuse, and audit trail.</p>
+<p><strong>Interviewer expects:</strong> Jenkinsfile example from their experience.</p>
+<h4>Q32: Declarative vs Scripted pipeline difference?</h4>
+<p><strong>Answer:</strong> Declarative uses structured syntax with built-in validation and is recommended for most cases. Scripted is full Groovy offering maximum flexibility but harder to maintain.</p>
+<p><strong>Interviewer expects:</strong> When to choose each.</p>
+<h4>Q33: How do you implement parallel test execution in Jenkins?</h4>
+<p><strong>Answer:</strong> Use parallel block in Declarative pipeline with separate stages per browser or shard, or TestNG parallel attribute with sufficient agents.</p>
+<p><strong>Interviewer expects:</strong> Agent capacity consideration.</p>
+<h4>Q34: What deployment strategies do you know?</h4>
+<p><strong>Answer:</strong> Rolling, blue-green, canary, recreate, A/B testing, feature flags. Choice depends on downtime tolerance and rollback needs.</p>
+<p><strong>Interviewer expects:</strong> Trade-offs for each.</p>
+<h4>Q35: What is a Jenkinsfile?</h4>
+<p><strong>Answer:</strong> Text file defining Jenkins Pipeline stages stored in repo root. Jenkins loads it on checkout.</p>
+<p><strong>Interviewer expects:</strong> Has written or maintained one.</p>
+<h4>Q36: How do you gate deployments on test results?</h4>
+<p><strong>Answer:</strong> Fail pipeline on test failure, branch protection rules, required GitHub checks, manual approval input step.</p>
+<p><strong>Interviewer expects:</strong> Multi-layer gating.</p>
+<h4>Q37: What is SonarQube quality gate?</h4>
+<p><strong>Answer:</strong> Automated pass or fail based on code coverage, bugs, vulnerabilities, code smells. Pipeline fails if gate not met.</p>
+<p><strong>Interviewer expects:</strong> Specific thresholds used.</p>
+<h4>Q38: What is artifact repository?</h4>
+<p><strong>Answer:</strong> Central storage for build outputs like Nexus, Artifactory, ECR. Enables traceability and consistent deploys.</p>
+<p><strong>Interviewer expects:</strong> Why not store JARs in Git.</p>
+<h4>Q39: How do you manage secrets in CI/CD?</h4>
+<p><strong>Answer:</strong> Jenkins credentials, HashiCorp Vault, AWS Secrets Manager. Never in source code or Jenkinsfile plaintext.</p>
+<p><strong>Interviewer expects:</strong> Credential binding in pipeline.</p>
+<h4>Q40: What is semantic versioning?</h4>
+<p><strong>Answer:</strong> Version format MAJOR.MINOR.PATCH. Major for breaking changes, minor for features, patch for fixes.</p>
+<p><strong>Interviewer expects:</strong> How versions tag artifacts.</p>
+<h4>Q41: What is release pipeline vs build pipeline?</h4>
+<p><strong>Answer:</strong> Build pipeline compiles and tests on every commit. Release pipeline promotes validated artifact through environments to production.</p>
+<p><strong>Interviewer expects:</strong> Separation of concerns.</p>
+<h4>Q42: How do you handle database migrations in CI/CD?</h4>
+<p><strong>Answer:</strong> Migration scripts in repo run automatically in deploy stage via Flyway or Liquibase, tested in staging before prod.</p>
+<p><strong>Interviewer expects:</strong> Rollback plan for schema changes.</p>
+<h4>Q43: What is infrastructure as code in CI/CD?</h4>
+<p><strong>Answer:</strong> Provisioning test or deploy environments via Terraform or CloudFormation in pipeline ensuring reproducible infra.</p>
+<p><strong>Interviewer expects:</strong> QA env spin-up example.</p>
+<h4>Q44: What is environment promotion?</h4>
+<p><strong>Answer:</strong> Moving same artifact through dev to QA to staging to prod without rebuilding. Build once, deploy many.</p>
+<p><strong>Interviewer expects:</strong> Immutable artifact principle.</p>
+<h4>Q45: Monorepo vs polyrepo impact on CI?</h4>
+<p><strong>Answer:</strong> Monorepo needs change detection to run only affected tests. Polyrepo has separate pipelines per service with contract testing.</p>
+<p><strong>Interviewer expects:</strong> Practical CI implications.</p>
+<h4>Q46: How do you run different test suites per branch?</h4>
+<p><strong>Answer:</strong> Multibranch pipeline with when branch conditions or Maven profiles activated by branch name.</p>
+<p><strong>Interviewer expects:</strong> PR runs smoke; main runs full.</p>
+<h4>Q47: What is test impact analysis?</h4>
+<p><strong>Answer:</strong> Running only tests affected by changed code to speed CI. Requires dependency mapping or tooling.</p>
+<p><strong>Interviewer expects:</strong> Speed vs coverage trade-off.</p>
+<h4>Q48: What is a service mesh in deployment context?</h4>
+<p><strong>Answer:</strong> Infrastructure layer like Istio managing service-to-service communication useful for canary routing.</p>
+<p><strong>Interviewer expects:</strong> Awareness at SDET level.</p>
+<h4>Q49: How do you integrate security scanning in pipeline?</h4>
+<p><strong>Answer:</strong> SAST on commit, dependency scan via OWASP Dependency-Check or Snyk, DAST on staging.</p>
+<p><strong>Interviewer expects:</strong> DevSecOps pipeline stages.</p>
+<h4>Q50: What is OWASP Dependency-Check?</h4>
+<p><strong>Answer:</strong> Tool scanning project dependencies for known CVEs integrated as Maven plugin or pipeline stage.</p>
+<p><strong>Interviewer expects:</strong> Fail build on critical CVE.</p>
+<h4>Q51: What is DAST vs SAST?</h4>
+<p><strong>Answer:</strong> SAST analyzes source code statically; DAST tests running application dynamically for vulnerabilities.</p>
+<p><strong>Interviewer expects:</strong> When each runs in pipeline.</p>
+<h4>Q52: How do you version Docker images in CI?</h4>
+<p><strong>Answer:</strong> Tag with BUILD_NUMBER, GIT_COMMIT SHA, and semantic version. Push to registry in pipeline.</p>
+<p><strong>Interviewer expects:</strong> Immutable tags, not latest only.</p>
+<h4>Q53: What is a Helm chart in deployment?</h4>
+<p><strong>Answer:</strong> Kubernetes package manager format for deploying applications. Pipeline runs helm upgrade on staging or prod.</p>
+<p><strong>Interviewer expects:</strong> K8s deploy awareness.</p>
+<h4>Q54: What is GitOps deployment model?</h4>
+<p><strong>Answer:</strong> Git repo is desired state; controller like ArgoCD reconciles cluster to match. PR merges trigger deploy.</p>
+<p><strong>Interviewer expects:</strong> Git as single source of truth.</p>
+<h4>Q55: What is a build matrix?</h4>
+<p><strong>Answer:</strong> Running same pipeline across multiple configurations like OS, browser, Java version in parallel.</p>
+<p><strong>Interviewer expects:</strong> Cross-browser CI example.</p>
+<h4>Q56: How do you handle long-running E2E tests in CI?</h4>
+<p><strong>Answer:</strong> Split suites, run smoke on PR, full regression nightly, use Grid or K8s for parallelization, set pipeline timeout.</p>
+<p><strong>Interviewer expects:</strong> Practical time management.</p>
+<h4>Q57: What is pipeline caching?</h4>
+<p><strong>Answer:</strong> Storing dependencies like Maven .m2 between builds to speed up subsequent runs.</p>
+<p><strong>Interviewer expects:</strong> Jenkins cache or Docker layer cache.</p>
+<h4>Q58: Failed build vs unstable build?</h4>
+<p><strong>Answer:</strong> Failed stops pipeline on stage error. Unstable continues but marks build unstable when tests fail per junit config.</p>
+<p><strong>Interviewer expects:</strong> Jenkins-specific distinction.</p>
+<h4>Q59: What is change failure rate?</h4>
+<p><strong>Answer:</strong> Percentage of deployments causing production failure requiring rollback. DORA metric; elite teams under 15 percent.</p>
+<p><strong>Interviewer expects:</strong> How to measure and reduce.</p>
+<h4>Q60: What is MTTR?</h4>
+<p><strong>Answer:</strong> Mean Time To Recovery is average time to restore service after incident. DevOps goal is under one hour.</p>
+<p><strong>Interviewer expects:</strong> Incident response plus automation.</p>
+<h4>Q61: What is feature flag in CI/CD?</h4>
+<p><strong>Answer:</strong> Toggle to enable or disable features at runtime without redeploy. Decouples deployment from release.</p>
+<p><strong>Interviewer expects:</strong> Progressive rollout enabler.</p>
+<h4>Q62: What is contract testing?</h4>
+<p><strong>Answer:</strong> Consumer-driven contracts like Pact verify API compatibility between services without full integration environment.</p>
+<p><strong>Interviewer expects:</strong> Microservices CI strategy.</p>
+<h4>Q63: What is staging environment purpose?</h4>
+<p><strong>Answer:</strong> Production-like environment for final validation before prod deploy. Same config, masked data, full E2E suite.</p>
+<p><strong>Interviewer expects:</strong> Not a dev playground.</p>
+<h4>Q64: How do you handle config per environment?</h4>
+<p><strong>Answer:</strong> Externalized config via properties, env vars, ConfigMaps injected at deploy time never hardcoded.</p>
+<p><strong>Interviewer expects:</strong> Twelve-factor app principle.</p>
+<h4>Q65: What is immutable infrastructure?</h4>
+<p><strong>Answer:</strong> Servers and containers replaced not patched in place. New version means new instance from same image.</p>
+<p><strong>Interviewer expects:</strong> Pairs with CI/CD artifact promotion.</p><h4>Advanced (35)</h4>
+
+<h4>Q66: How do you optimize a slow CI pipeline?</h4>
+<p><strong>Answer:</strong> Profile bottlenecks, parallelize tests, cache dependencies, split suites by trigger, use faster agents, skip unchanged modules.</p>
+<p><strong>Interviewer expects:</strong> Data-driven optimization not guessing.</p>
+<h4>Q67: What are Jenkins shared libraries?</h4>
+<p><strong>Answer:</strong> Reusable Groovy functions in separate repo imported via @Library. Standardize common pipeline steps across teams.</p>
+<p><strong>Interviewer expects:</strong> Has created or consumed shared lib.</p>
+<h4>Q68: How do you implement multi-branch pipelines?</h4>
+<p><strong>Answer:</strong> Multibranch Pipeline job scans repo branches and PRs creating child pipeline per branch from Jenkinsfile automatically.</p>
+<p><strong>Interviewer expects:</strong> PR builds vs main builds.</p>
+<h4>Q69: How do you secure Jenkins pipeline?</h4>
+<p><strong>Answer:</strong> RBAC, credential binding, no secrets in logs, agent isolation, approved script sandbox, regular plugin updates.</p>
+<p><strong>Interviewer expects:</strong> Security mindset not just functions.</p>
+<h4>Q70: Pipeline replay vs restart?</h4>
+<p><strong>Answer:</strong> Replay re-runs failed pipeline with modified Jenkinsfile for debug. Restart re-runs same pipeline from beginning without changes.</p>
+<p><strong>Interviewer expects:</strong> Debugging workflow.</p>
+<h4>Q71: Pipeline failures in distributed teams?</h4>
+<p><strong>Answer:</strong> Slack notifications, Allure reports linked in PR, blameless triage, flaky test dashboard, ownership per squad.</p>
+<p><strong>Interviewer expects:</strong> Communication and process.</p>
+<h4>Q72: What is pod template in K8s Jenkins agent?</h4>
+<p><strong>Answer:</strong> YAML defining Jenkins agent pod spec with containers and resources for dynamic agents on Kubernetes cluster.</p>
+<p><strong>Interviewer expects:</strong> Cloud-native CI pattern.</p>
+<h4>Q73: Dynamic agents on Kubernetes?</h4>
+<p><strong>Answer:</strong> Kubernetes plugin spins up pod per build with requested resources destroyed after completion.</p>
+<p><strong>Interviewer expects:</strong> Cost and isolation benefits.</p>
+<h4>Q74: What is pipeline durability?</h4>
+<p><strong>Answer:</strong> Jenkins feature persisting pipeline state to survive controller restart. PERMISSIVE vs MAX_SURVIVABILITY modes.</p>
+<p><strong>Interviewer expects:</strong> Enterprise reliability.</p>
+<h4>Q75: Manage plugin compatibility?</h4>
+<p><strong>Answer:</strong> Pin plugin versions, test upgrades in staging controller, use plugin BOM, avoid unnecessary plugins.</p>
+<p><strong>Interviewer expects:</strong> Controller stability.</p>
+<h4>Q76: Configuration as code for Jenkins?</h4>
+<p><strong>Answer:</strong> JCasC defines controller config in YAML version-controlled and reproducible.</p>
+<p><strong>Interviewer expects:</strong> Infrastructure as code for Jenkins.</p>
+<h4>Q77: Cross-repo pipeline triggers?</h4>
+<p><strong>Answer:</strong> build job step, Generic Webhook Trigger, or GitHub org webhook triggering downstream jobs on artifact publish.</p>
+<p><strong>Interviewer expects:</strong> Microservices coordination.</p>
+<h4>Q78: Artifact promotion without rebuild?</h4>
+<p><strong>Answer:</strong> Same Docker image or JAR tagged as dev then retagged and promoted to staging or prod registries without recompilation.</p>
+<p><strong>Interviewer expects:</strong> Immutable artifact flow.</p>
+<h4>Q79: Pipeline compliance gates?</h4>
+<p><strong>Answer:</strong> Mandatory stages for security scan, license check, approval from specific role, audit trail archived with build.</p>
+<p><strong>Interviewer expects:</strong> Regulated industry awareness.</p>
+<h4>Q80: Supply chain security in CI/CD?</h4>
+<p><strong>Answer:</strong> Signed commits, SBOM generation, image signing via Cosign, verified base images, dependency pinning.</p>
+<p><strong>Interviewer expects:</strong> SLSA framework awareness.</p>
+<h4>Q81: What is SLSA framework?</h4>
+<p><strong>Answer:</strong> Supply-chain Levels for Software Artifacts framework for securing build pipeline integrity from source to deploy.</p>
+<p><strong>Interviewer expects:</strong> Know levels conceptually.</p>
+<h4>Q82: Test result trending?</h4>
+<p><strong>Answer:</strong> Store Surefire XML historically, Grafana dashboard, Allure trend, or custom DB parsing build artifacts.</p>
+<p><strong>Interviewer expects:</strong> Metrics for quality over time.</p>
+<h4>Q83: Pipeline parallelization limit?</h4>
+<p><strong>Answer:</strong> Constrained by agent executors, license costs, shared resource contention. Diminishing returns beyond optimal point.</p>
+<p><strong>Interviewer expects:</strong> Practical capacity planning.</p>
+<h4>Q84: Monorepo CI at scale?</h4>
+<p><strong>Answer:</strong> Bazel, Gradle build cache, affected-target detection, remote execution, shard tests across many agents.</p>
+<p><strong>Interviewer expects:</strong> Large scale patterns.</p>
+<h4>Q85: Remote cache for builds?</h4>
+<p><strong>Answer:</strong> Shared cache storing compilation outputs reused across developers and CI reducing build time.</p>
+<p><strong>Interviewer expects:</strong> Build time reduction technique.</p>
+<h4>Q86: Automated canary analysis?</h4>
+<p><strong>Answer:</strong> Compare error rate and latency of canary vs baseline using Prometheus; auto-rollback if threshold exceeded.</p>
+<p><strong>Interviewer expects:</strong> Progressive delivery automation.</p>
+<h4>Q87: Spinnaker vs Jenkins?</h4>
+<p><strong>Answer:</strong> Spinnaker is CD-focused multi-cloud deployment platform. Jenkins is general CI/CD. Often used together.</p>
+<p><strong>Interviewer expects:</strong> Tool selection rationale.</p>
+<h4>Q88: Pipeline templates?</h4>
+<p><strong>Answer:</strong> Shared library with call entry point, Organization Folder templates, or GitHub Actions reusable workflows.</p>
+<p><strong>Interviewer expects:</strong> DRY principle for pipelines.</p>
+<h4>Q89: Throttling in Jenkins?</h4>
+<p><strong>Answer:</strong> Limiting concurrent runs of same job to prevent resource exhaustion via disableConcurrentBuilds option.</p>
+<p><strong>Interviewer expects:</strong> Resource management.</p>
+<h4>Q90: Debug Groovy CPS errors?</h4>
+<p><strong>Answer:</strong> Avoid non-serializable objects in pipeline, use @NonCCP for complex Groovy, move logic to shared library or shell.</p>
+<p><strong>Interviewer expects:</strong> Common Jenkins pipeline pitfall.</p>
+<h4>Q91: Agent connectivity troubleshooting?</h4>
+<p><strong>Answer:</strong> Check JNLP or WebSocket connection, firewall, agent clock sync, remoting version mismatch, SSH key expiry.</p>
+<p><strong>Interviewer expects:</strong> Systematic agent debugging.</p>
+<h4>Q92: Zero-downtime database migration with CD?</h4>
+<p><strong>Answer:</strong> Expand-contract pattern: add column expand, dual-write, migrate data, switch reads, remove old contract.</p>
+<p><strong>Interviewer expects:</strong> Advanced CD for schema.</p>
+<h4>Q93: Pipeline observability?</h4>
+<p><strong>Answer:</strong> Tracing pipeline stages via OpenTelemetry, build analytics, DORA dashboard, alerting on pipeline SLA breach.</p>
+<p><strong>Interviewer expects:</strong> Treat pipeline as product.</p>
+<h4>Q94: Build reproducibility?</h4>
+<p><strong>Answer:</strong> Same commit always produces identical artifact via locked dependencies, pinned base images, deterministic builds.</p>
+<p><strong>Interviewer expects:</strong> Audit and compliance requirement.</p>
+<h4>Q95: Hermetic build?</h4>
+<p><strong>Answer:</strong> Build isolated from external network using only declared dependencies. Bazel default ensures reproducibility.</p>
+<p><strong>Interviewer expects:</strong> Advanced build engineering.</p>
+<h4>Q96: AI/ML model CI/CD MLOps?</h4>
+<p><strong>Answer:</strong> Data validation, model training pipeline, model registry, A/B deployment, drift monitoring extends CI/CD for ML artifacts.</p>
+<p><strong>Interviewer expects:</strong> Awareness of MLOps extension.</p>
+<h4>Q97: Policy as code in pipeline?</h4>
+<p><strong>Answer:</strong> Open Policy Agent or Conftest validating manifests or Terraform against rules before apply.</p>
+<p><strong>Interviewer expects:</strong> Automated compliance.</p>
+<h4>Q98: Cost-optimize CI infrastructure?</h4>
+<p><strong>Answer:</strong> Spot instances for agents, auto-scale to zero, right-size pods, schedule heavy jobs off-peak, cache aggressively.</p>
+<p><strong>Interviewer expects:</strong> FinOps for CI/CD.</p>
+<h4>Q99: Pipeline disaster recovery?</h4>
+<p><strong>Answer:</strong> Backup Jenkins home, JCasC for config, pipeline code in Git, artifact registry replication, documented rebuild procedure.</p>
+<p><strong>Interviewer expects:</strong> Business continuity thinking.</p>
+<h4>Q100: Implement idempotent deploy scripts?</h4>
+<p><strong>Answer:</strong> Scripts produce same result regardless of how many times run. Critical for reliable CD rollback and retry.</p>
+<p><strong>Interviewer expects:</strong> Script design for CD reliability.</p><h3>Jenkins Questions — Top 100</h3>
+<h4>Beginner (30)</h4>
+
+<h4>Q101: What is Jenkins?</h4>
+<p><strong>Answer:</strong> Open-source automation server for building, testing, and deploying software. Orchestrates CI/CD pipelines via jobs and plugins.</p>
+<p><strong>Interviewer expects:</strong> More than just a build tool.</p>
+<h4>Q102: How do you install Jenkins?</h4>
+<p><strong>Answer:</strong> WAR file on Java, Docker image jenkins/jenkins:lts, or OS package. Requires JDK 11 or 17 and initial admin password from setup wizard.</p>
+<p><strong>Interviewer expects:</strong> Know LTS vs weekly.</p>
+<h4>Q103: What is a Jenkins job?</h4>
+<p><strong>Answer:</strong> Configured unit of work that runs build steps. Types include Freestyle, Pipeline, Multibranch Pipeline.</p>
+<p><strong>Interviewer expects:</strong> Job vs build distinction.</p>
+<h4>Q104: Freestyle vs Pipeline job?</h4>
+<p><strong>Answer:</strong> Freestyle configured via UI with limited flexibility. Pipeline defined in Jenkinsfile as code with full stage control.</p>
+<p><strong>Interviewer expects:</strong> Prefer Pipeline for new projects.</p>
+<h4>Q105: What is a Jenkins plugin?</h4>
+<p><strong>Answer:</strong> Extension adding functionality. Examples: Git, Maven, Allure, Email Extension, Blue Ocean, Kubernetes.</p>
+<p><strong>Interviewer expects:</strong> Plugins enable ecosystem.</p>
+<h4>Q106: What is Jenkins controller?</h4>
+<p><strong>Answer:</strong> Central server managing jobs, scheduling, security, and UI. Formerly called master.</p>
+<p><strong>Interviewer expects:</strong> Controller-agent architecture.</p>
+<h4>Q107: What is a Jenkins agent?</h4>
+<p><strong>Answer:</strong> Worker machine executing build steps. Can be permanent or ephemeral Docker or K8s pod.</p>
+<p><strong>Interviewer expects:</strong> Agent must be online with executors.</p>
+<h4>Q108: What is an executor?</h4>
+<p><strong>Answer:</strong> Single concurrent job slot on an agent. Agent with 4 executors runs 4 builds simultaneously.</p>
+<p><strong>Interviewer expects:</strong> Executor vs agent count.</p>
+<h4>Q109: What is Jenkins workspace?</h4>
+<p><strong>Answer:</strong> Directory on agent where code is checked out and build runs. Cleaned by cleanWs post action.</p>
+<p><strong>Interviewer expects:</strong> Unique per build typically.</p>
+<h4>Q110: How do you create a Pipeline job?</h4>
+<p><strong>Answer:</strong> New Item, select Pipeline, point to Jenkinsfile in SCM or paste script directly for testing.</p>
+<p><strong>Interviewer expects:</strong> SCM-based is best practice.</p>
+<h4>Q111: What is the Jenkins initial setup wizard?</h4>
+<p><strong>Answer:</strong> First-run wizard installing suggested plugins, creating admin user, configuring Jenkins URL.</p>
+<p><strong>Interviewer expects:</strong> Security hardening after setup.</p>
+<h4>Q112: What is build history in Jenkins?</h4>
+<p><strong>Answer:</strong> List of all build executions with status, duration, timestamp. Clickable for console log and artifacts.</p>
+<p><strong>Interviewer expects:</strong> Trend analysis from history.</p>
+<h4>Q113: What is console output?</h4>
+<p><strong>Answer:</strong> Real-time log of build execution showing each step output and errors.</p>
+<p><strong>Interviewer expects:</strong> First place to debug failures.</p>
+<h4>Q114: What is artifact archiver?</h4>
+<p><strong>Answer:</strong> Post-build action saving files from workspace like JARs or reports for download or downstream jobs.</p>
+<p><strong>Interviewer expects:</strong> Archive test reports.</p>
+<h4>Q115: What is downstream job?</h4>
+<p><strong>Answer:</strong> Job triggered by another job upon completion. Enables pipeline chaining.</p>
+<p><strong>Interviewer expects:</strong> build job step usage.</p>
+<h4>Q116: What is upstream job?</h4>
+<p><strong>Answer:</strong> Job that triggers current job. Useful for dependency tracking.</p>
+<p><strong>Interviewer expects:</strong> Pipeline orchestration.</p>
+<h4>Q117: What is Jenkins credential?</h4>
+<p><strong>Answer:</strong> Securely stored secret referenced by ID in pipeline via credentials helper.</p>
+<p><strong>Interviewer expects:</strong> Never echo secrets in logs.</p>
+<h4>Q118: What is poll SCM?</h4>
+<p><strong>Answer:</strong> Jenkins periodically checks repository for changes and triggers build if changes detected.</p>
+<p><strong>Interviewer expects:</strong> Less efficient than webhook.</p>
+<h4>Q119: What is GitHub webhook for Jenkins?</h4>
+<p><strong>Answer:</strong> GitHub sends POST to Jenkins on push or PR instantly triggering build without polling delay.</p>
+<p><strong>Interviewer expects:</strong> Preferred trigger method.</p>
+<h4>Q120: What is Blue Ocean?</h4>
+<p><strong>Answer:</strong> Modern Jenkins UI providing visual pipeline editor and run visualization.</p>
+<p><strong>Interviewer expects:</strong> Better UX than classic UI.</p>
+<h4>Q121: What is Jenkins home directory?</h4>
+<p><strong>Answer:</strong> JENKINS_HOME stores config, jobs, plugins, credentials, build history. Must be backed up.</p>
+<p><strong>Interviewer expects:</strong> Critical for disaster recovery.</p>
+<h4>Q122: What is a label in Jenkins?</h4>
+<p><strong>Answer:</strong> Tag on agent like linux or docker routing jobs to appropriate machines via agent label.</p>
+<p><strong>Interviewer expects:</strong> Label-based job routing.</p>
+<h4>Q123: What is parameterized build?</h4>
+<p><strong>Answer:</strong> Build accepting user inputs at trigger time like environment choice or boolean flags via parameters block.</p>
+<p><strong>Interviewer expects:</strong> Flexibility without code change.</p>
+<h4>Q124: What is build discarder?</h4>
+<p><strong>Answer:</strong> Log Rotator deleting old builds to save disk space keeping last N builds or M days.</p>
+<p><strong>Interviewer expects:</strong> Housekeeping configuration.</p>
+<h4>Q125: What is timestamper plugin?</h4>
+<p><strong>Answer:</strong> Adds timestamps to console output aiding debugging of slow steps.</p>
+<p><strong>Interviewer expects:</strong> options timestamps in pipeline.</p>
+<h4>Q126: What is workspace cleanup?</h4>
+<p><strong>Answer:</strong> cleanWs in post always block removes workspace files after build preventing disk fill.</p>
+<p><strong>Interviewer expects:</strong> Always clean in CI.</p>
+<h4>Q127: What is JUnit plugin?</h4>
+<p><strong>Answer:</strong> Publishes test results from XML parsing pass fail skip counts and marking build unstable or failed.</p>
+<p><strong>Interviewer expects:</strong> junit step in pipeline post.</p>
+<h4>Q128: What is Email Extension plugin?</h4>
+<p><strong>Answer:</strong> Rich email notifications with templates for success failure unstable with attachments.</p>
+<p><strong>Interviewer expects:</strong> emailext in post block.</p>
+<h4>Q129: What is Maven integration in Jenkins?</h4>
+<p><strong>Answer:</strong> tools block auto-configures Maven path; sh mvn commands run with configured version.</p>
+<p><strong>Interviewer expects:</strong> Global tool configuration.</p>
+<h4>Q130: What is JDK tool in Jenkins?</h4>
+<p><strong>Answer:</strong> Global Tool Configuration defining JDK installations referenced in pipeline tools block.</p>
+<p><strong>Interviewer expects:</strong> Match JDK with project requirement.</p><h4>Intermediate (35)</h4>
+
+<h4>Q131: Declarative Pipeline syntax basics?</h4>
+<p><strong>Answer:</strong> pipeline block contains agent, stages with stage and steps, post actions. Structured and validated.</p>
+<p><strong>Interviewer expects:</strong> Know minimal working Jenkinsfile.</p>
+<h4>Q132: Scripted Pipeline syntax?</h4>
+<p><strong>Answer:</strong> node block with full Groovy freedom. stage and steps defined procedurally. Legacy but still supported.</p>
+<p><strong>Interviewer expects:</strong> When Declarative insufficient.</p>
+<h4>Q133: How do agents work in Pipeline?</h4>
+<p><strong>Answer:</strong> agent any runs on any available executor. agent label routes to specific agent. agent docker runs in container.</p>
+<p><strong>Interviewer expects:</strong> Choose agent per stage.</p>
+<h4>Q134: How do you use credentials in Pipeline?</h4>
+<p><strong>Answer:</strong> withCredentials binding or credentials helper in environment or git step credentialsId parameter.</p>
+<p><strong>Interviewer expects:</strong> Secure secret injection.</p>
+<h4>Q135: How do you publish test reports?</h4>
+<p><strong>Answer:</strong> post always block with junit targeting surefire-reports XML path.</p>
+<p><strong>Interviewer expects:</strong> Reports visible in Jenkins UI.</p>
+<h4>Q136: How do you send email from Pipeline?</h4>
+<p><strong>Answer:</strong> post success or failure with emailext specifying subject body recipients attachLog.</p>
+<p><strong>Interviewer expects:</strong> Notify team on failure.</p>
+<h4>Q137: What is when directive?</h4>
+<p><strong>Answer:</strong> Conditional stage execution based on branch, environment, expression, or change request.</p>
+<p><strong>Interviewer expects:</strong> Skip deploy on feature branch.</p>
+<h4>Q138: What is parallel in Pipeline?</h4>
+<p><strong>Answer:</strong> Runs multiple stages concurrently reducing total pipeline time.</p>
+<p><strong>Interviewer expects:</strong> Cross-browser parallel example.</p>
+<h4>Q139: What is input step?</h4>
+<p><strong>Answer:</strong> Manual approval gate pausing pipeline until user approves. Used for production deploy approval.</p>
+<p><strong>Interviewer expects:</strong> timeout on input recommended.</p>
+<h4>Q140: What is post block?</h4>
+<p><strong>Answer:</strong> Actions after stage or pipeline completion: always, success, failure, unstable, changed, cleanup.</p>
+<p><strong>Interviewer expects:</strong> always archive artifacts.</p>
+<h4>Q141: What is environment block?</h4>
+<p><strong>Answer:</strong> Defines env vars available to all stages. Can reference credentials and params.</p>
+<p><strong>Interviewer expects:</strong> TEST_ENV from params.</p>
+<h4>Q142: What is tools block?</h4>
+<p><strong>Answer:</strong> Auto-installs and adds to PATH tools like Maven JDK Node from Global Tool Configuration.</p>
+<p><strong>Interviewer expects:</strong> Consistent tool versions.</p>
+<h4>Q143: What is options block?</h4>
+<p><strong>Answer:</strong> Pipeline settings: timeout, retry, timestamps, disableConcurrentBuilds, buildDiscarder.</p>
+<p><strong>Interviewer expects:</strong> Prevent hung builds.</p>
+<h4>Q144: What is triggers block?</h4>
+<p><strong>Answer:</strong> cron pollSCM upstream in Declarative pipeline automating build start.</p>
+<p><strong>Interviewer expects:</strong> H/15 pollSCM every 15 min.</p>
+<h4>Q145: What is stash and unstash?</h4>
+<p><strong>Answer:</strong> Stash saves files across nodes when stages run on different agents. Unstash retrieves them.</p>
+<p><strong>Interviewer expects:</strong> Multi-agent pipeline pattern.</p>
+<h4>Q146: What is checkout scm?</h4>
+<p><strong>Answer:</strong> Checks out source code from SCM configured in job using multibranch or pipeline job settings.</p>
+<p><strong>Interviewer expects:</strong> Standard first stage step.</p>
+<h4>Q147: Allure report in Jenkins?</h4>
+<p><strong>Answer:</strong> Install Allure plugin, allure step pointing to results directory, view report in build page.</p>
+<p><strong>Interviewer expects:</strong> Integrated test reporting.</p>
+<h4>Q148: Multibranch Pipeline setup?</h4>
+<p><strong>Answer:</strong> Create Multibranch Pipeline item, configure branch source GitHub, Jenkins discovers branches with Jenkinsfile.</p>
+<p><strong>Interviewer expects:</strong> Auto PR builds.</p>
+<h4>Q149: How to skip CI for docs-only changes?</h4>
+<p><strong>Answer:</strong> when changeset excluding certain paths or custom logic in Jenkinsfile checking git diff.</p>
+<p><strong>Interviewer expects:</strong> Optimize CI resources.</p>
+<h4>Q150: Pipeline from SCM vs inline?</h4>
+<p><strong>Answer:</strong> SCM loads Jenkinsfile from repo enabling version control. Inline for prototyping only.</p>
+<p><strong>Interviewer expects:</strong> Always prefer SCM.</p>
+<h4>Q151: What is Generic Webhook Trigger?</h4>
+<p><strong>Answer:</strong> Plugin accepting any JSON webhook payload triggering parameterized builds.</p>
+<p><strong>Interviewer expects:</strong> Integrate non-GitHub systems.</p>
+<h4>Q152: How do you archive artifacts in Pipeline?</h4>
+<p><strong>Answer:</strong> archiveArtifacts artifacts path fingerprint optional allowEmptyArchive.</p>
+<p><strong>Interviewer expects:</strong> Preserve JAR and reports.</p>
+<h4>Q153: What is fingerprinting?</h4>
+<p><strong>Answer:</strong> Tracks artifact usage across jobs ensuring same binary promoted through pipeline.</p>
+<p><strong>Interviewer expects:</strong> Traceability in CD.</p>
+<h4>Q154: Pipeline Syntax Generator?</h4>
+<p><strong>Answer:</strong> Jenkins built-in tool generating Declarative snippet for common steps. Helps learn syntax.</p>
+<p><strong>Interviewer expects:</strong> Practical learning resource.</p>
+<h4>Q155: How do you run Pipeline on schedule?</h4>
+<p><strong>Answer:</strong> triggers cron H 2 star star 1-5 for weekday nightly builds.</p>
+<p><strong>Interviewer expects:</strong> Off-peak heavy test runs.</p>
+<h4>Q156: What is build user vars plugin?</h4>
+<p><strong>Answer:</strong> Exposes who triggered build for audit and notification personalization.</p>
+<p><strong>Interviewer expects:</strong> Manual trigger accountability.</p>
+<h4>Q157: SonarQube Jenkins integration?</h4>
+<p><strong>Answer:</strong> withSonarQubeEnv wrapping mvn sonar:sonar then waitForQualityGate aborting on fail.</p>
+<p><strong>Interviewer expects:</strong> Quality gate in pipeline.</p>
+<h4>Q158: Docker agent in Pipeline?</h4>
+<p><strong>Answer:</strong> agent docker image maven:3.9 runs entire pipeline inside container with clean env each build.</p>
+<p><strong>Interviewer expects:</strong> Consistent build environment.</p>
+<h4>Q159: How to retry failed stage?</h4>
+<p><strong>Answer:</strong> options retry 3 on stage or step level for transient failures like network blips.</p>
+<p><strong>Interviewer expects:</strong> Not for test failures.</p>
+<h4>Q160: Pipeline stage view?</h4>
+<p><strong>Answer:</strong> Classic UI shows stage-by-stage status and duration. Blue Ocean provides visual graph.</p>
+<p><strong>Interviewer expects:</strong> Identify slow failing stage.</p>
+<h4>Q161: Credentials scope in Jenkins?</h4>
+<p><strong>Answer:</strong> Global, System, or Folder scoped. Folder scope limits credential visibility per team.</p>
+<p><strong>Interviewer expects:</strong> Principle of least privilege.</p>
+<h4>Q162: Git plugin branch specifiers?</h4>
+<p><strong>Answer:</strong> Multibranch uses include exclude patterns for which branches get pipelines.</p>
+<p><strong>Interviewer expects:</strong> Ignore archived branches.</p>
+<h4>Q163: How to pass params between stages?</h4>
+<p><strong>Answer:</strong> script block setting env vars or using params and environment blocks.</p>
+<p><strong>Interviewer expects:</strong> Groovy scoping awareness.</p>
+<h4>Q164: What is milestone step?</h4>
+<p><strong>Answer:</strong> Prevents older builds from proceeding when newer build started avoiding out-of-order deploy.</p>
+<p><strong>Interviewer expects:</strong> Concurrent build safety.</p>
+<h4>Q165: JUnit unstable vs failed threshold?</h4>
+<p><strong>Answer:</strong> Configure fail build on test failure or mark unstable allowing pipeline to continue.</p>
+<p><strong>Interviewer expects:</strong> Team policy decision.</p><h4>Advanced (35)</h4>
+
+<h4>Q166: Distributed builds architecture?</h4>
+<p><strong>Answer:</strong> Controller schedules jobs on agents via JNLP, SSH, or WebSocket. Agents can be cloud auto-scaled.</p>
+<p><strong>Interviewer expects:</strong> Scale horizontally with agents.</p>
+<h4>Q167: Docker agents best practices?</h4>
+<p><strong>Answer:</strong> Use specific image tags, mount Docker socket only if needed, set resource limits, clean up containers.</p>
+<p><strong>Interviewer expects:</strong> Security isolation.</p>
+<h4>Q168: Kubernetes Jenkins integration?</h4>
+<p><strong>Answer:</strong> Kubernetes plugin creates dynamic pod agents per build with container templates defined in YAML.</p>
+<p><strong>Interviewer expects:</strong> Cloud-native scalable CI.</p>
+<h4>Q169: Pipeline troubleshooting methodology?</h4>
+<p><strong>Answer:</strong> Check console log, identify failing stage, reproduce locally, check agent env, verify credentials, replay with fix.</p>
+<p><strong>Interviewer expects:</strong> Systematic not random.</p>
+<h4>Q170: Performance tuning Jenkins controller?</h4>
+<p><strong>Answer:</strong> Increase executors on agents not controller, move heavy jobs off controller, optimize plugins, use external artifact storage.</p>
+<p><strong>Interviewer expects:</strong> Controller should not run builds.</p>
+<h4>Q171: Shared library structure?</h4>
+<p><strong>Answer:</strong> vars for global steps, src for Groovy classes, resources for files. Versioned repo with @Library annotation.</p>
+<p><strong>Interviewer expects:</strong> Reusable org-wide pipelines.</p>
+<h4>Q172: Shared library call vs define?</h4>
+<p><strong>Answer:</strong> call method in vars/myStep.groovy makes it invokable as myStep() in Jenkinsfile.</p>
+<p><strong>Interviewer expects:</strong> Encapsulate deploy logic.</p>
+<h4>Q173: JCasC benefits?</h4>
+<p><strong>Answer:</strong> Controller config in Git, reproducible disaster recovery, no manual UI drift, PR review for config changes.</p>
+<p><strong>Interviewer expects:</strong> Enterprise Jenkins management.</p>
+<h4>Q174: Agent disconnect root causes?</h4>
+<p><strong>Answer:</strong> Network timeout, OOM kill, Java version mismatch, firewall blocking JNLP port, clock skew.</p>
+<p><strong>Interviewer expects:</strong> Check agent log and controller log.</p>
+<h4>Q175: Pipeline memory issues Groovy?</h4>
+<p><strong>Answer:</strong> Large collections in pipeline cause serialization errors. Use @NonCPS or external scripts.</p>
+<p><strong>Interviewer expects:</strong> CPS sandbox limitations.</p>
+<h4>Q176: Secure Jenkins controller?</h4>
+<p><strong>Answer:</strong> Disable anonymous read, enable Matrix or Role-Based Auth, restrict script approval, keep plugins updated, use HTTPS.</p>
+<p><strong>Interviewer expects:</strong> Security hardening checklist.</p>
+<h4>Q177: Backup and restore Jenkins?</h4>
+<p><strong>Answer:</strong> Backup JENKINS_HOME and JCasC YAML. Restore on fresh controller, reload config, reconnect agents.</p>
+<p><strong>Interviewer expects:</strong> DR runbook exists.</p>
+<h4>Q178: Plugin dependency conflicts?</h4>
+<p><strong>Answer:</strong> Use plugin manager CLI or BOM to resolve. Test in staging controller before prod upgrade.</p>
+<p><strong>Interviewer expects:</strong> Avoid upgrade surprises.</p>
+<h4>Q179: Pipeline unit testing?</h4>
+<p><strong>Answer:</strong> Jenkins Pipeline Unit framework mocks steps testing shared library logic without full Jenkins.</p>
+<p><strong>Interviewer expects:</strong> Test pipeline code quality.</p>
+<h4>Q180: Immutable Jenkins agents?</h4>
+<p><strong>Answer:</strong> Ephemeral agents from AMI or Docker image destroyed after each build ensuring clean state.</p>
+<p><strong>Interviewer expects:</strong> No state leakage between builds.</p>
+<h4>Q181: Controller high availability?</h4>
+<p><strong>Answer:</strong> Active-passive with shared JENKINS_HOME on NFS or K8s operator with persistent volume and regular backup.</p>
+<p><strong>Interviewer expects:</strong> Enterprise availability.</p>
+<h4>Q182: Build queue optimization?</h4>
+<p><strong>Answer:</strong> Priority sorter plugin, separate agents for fast smoke vs slow regression, throttle concurrent deploys.</p>
+<p><strong>Interviewer expects:</strong> Queue time SLA.</p>
+<h4>Q183: Cross-region agent setup?</h4>
+<p><strong>Answer:</strong> Agents in same region as artifact registry and test env to reduce latency and egress cost.</p>
+<p><strong>Interviewer expects:</strong> Geographic distribution.</p>
+<h4>Q184: Pipeline audit compliance?</h4>
+<p><strong>Answer:</strong> Audit Trail plugin logs who changed what. Build cause tracks trigger source. Archive logs with retention policy.</p>
+<p><strong>Interviewer expects:</strong> Regulated environments.</p>
+<h4>Q185: Integrate Jenkins with Slack?</h4>
+<p><strong>Answer:</strong> Slack Notification plugin or pipeline slackSend step on post failure with build link.</p>
+<p><strong>Interviewer expects:</strong> Real-time team alerts.</p>
+<h4>Q186: Integrate Jenkins with Jira?</h4>
+<p><strong>Answer:</strong> Jira plugin creates updates tickets from build results linking commits to issues.</p>
+<p><strong>Interviewer expects:</strong> Traceability to requirements.</p>
+<h4>Q187: Custom workspace path?</h4>
+<p><strong>Answer:</strong> customWorkspace in agent block for specific directory needs or parallel isolation.</p>
+<p><strong>Interviewer expects:</strong> Advanced workspace control.</p>
+<h4>Q188: Lockable resources plugin?</h4>
+<p><strong>Answer:</strong> Serialize access to shared resource like test environment preventing concurrent deploy conflicts.</p>
+<p><strong>Interviewer expects:</strong> Environment mutex.</p>
+<h4>Q189: Pipeline restart from stage?</h4>
+<p><strong>Answer:</strong> Declarative restart from stage feature resumes from failed stage not entire pipeline.</p>
+<p><strong>Interviewer expects:</strong> Save time on retry.</p>
+<h4>Q190: Declarative linter?</h4>
+<p><strong>Answer:</strong> Validate Jenkinsfile before commit using VS Code extension or jenkinsfile-runner locally.</p>
+<p><strong>Interviewer expects:</strong> Catch syntax errors early.</p>
+<h4>Q191: Monitor Jenkins health?</h4>
+<p><strong>Answer:</strong> Prometheus plugin exposes metrics, Grafana dashboards for queue length, executor utilization, build duration.</p>
+<p><strong>Interviewer expects:</strong> Proactive ops monitoring.</p>
+<h4>Q192: Agent provisioning with EC2?</h4>
+<p><strong>Answer:</strong> EC2 Fleet plugin launches agents on demand scaling to zero when idle saving cost.</p>
+<p><strong>Interviewer expects:</strong> Cloud elastic agents.</p>
+<h4>Q193: Pipeline secrets scanning?</h4>
+<p><strong>Answer:</strong> Prevent credentials in Jenkinsfile using credential store and pre-commit hooks scanning for secrets.</p>
+<p><strong>Interviewer expects:</strong> Shift-left security.</p>
+<h4>Q194: Handling large artifacts?</h4>
+<p><strong>Answer:</strong> Use external storage S3 Artifactory instead of archiving huge files in Jenkins home.</p>
+<p><strong>Interviewer expects:</strong> Disk management.</p>
+<h4>Q195: Orphaned build cleanup?</h4>
+<p><strong>Answer:</strong> Abort builds when branch deleted in multibranch. Build discarder for old PR builds.</p>
+<p><strong>Interviewer expects:</strong> Housekeeping automation.</p>
+<h4>Q196: Pipeline concurrency control?</h4>
+<p><strong>Answer:</strong> disableConcurrentBuilds abortPrevious true cancels older running build when new one starts.</p>
+<p><strong>Interviewer expects:</strong> Latest code priority.</p>
+<h4>Q197: Debug agent environment?</h4>
+<p><strong>Answer:</strong> Add sh env or printenv step, verify tool versions, check disk space and memory on agent.</p>
+<p><strong>Interviewer expects:</strong> Environment diff diagnosis.</p>
+<h4>Q198: Groovy sandbox approval?</h4>
+<p><strong>Answer:</strong> Script Security plugin requires admin approval for new Groovy methods in shared libraries.</p>
+<p><strong>Interviewer expects:</strong> Security vs velocity balance.</p>
+<h4>Q199: Migrate Freestyle to Pipeline?</h4>
+<p><strong>Answer:</strong> Install Pipeline Migration Assistant plugin or manually convert steps to Declarative stages incrementally.</p>
+<p><strong>Interviewer expects:</strong> Modernization path.</p>
+<h4>Q200: Controller upgrade strategy?</h4>
+<p><strong>Answer:</strong> Read LTS changelog, backup, upgrade staging controller, test plugins, upgrade prod during maintenance window.</p>
+<p><strong>Interviewer expects:</strong> Zero surprise upgrades.</p>
+<h4>Q201: Build failure categorization?</h4>
+<p><strong>Answer:</strong> Tag failures as code bug, infra, flaky test, config using custom listener or log parsing for metrics.</p>
+<p><strong>Interviewer expects:</strong> Quality engineering maturity.</p><h3>Git Questions — Top 50</h3>
+<h4>Basics (20)</h4>
+
+<h4>Q202: What is Git?</h4>
+<p><strong>Answer:</strong> Distributed version control system tracking file changes enabling collaboration branching and merging.</p>
+<p><strong>Interviewer expects:</strong> Foundation of CI/CD.</p>
+<h4>Q203: git clone purpose?</h4>
+<p><strong>Answer:</strong> Creates local copy of remote repository including full history and branches.</p>
+<p><strong>Interviewer expects:</strong> Starting point for development.</p>
+<h4>Q204: git add purpose?</h4>
+<p><strong>Answer:</strong> Stages changes marking them for inclusion in next commit.</p>
+<p><strong>Interviewer expects:</strong> Staging area concept.</p>
+<h4>Q205: git commit purpose?</h4>
+<p><strong>Answer:</strong> Records snapshot of staged changes with message creating immutable history entry.</p>
+<p><strong>Interviewer expects:</strong> Atomic meaningful commits.</p>
+<h4>Q206: git push purpose?</h4>
+<p><strong>Answer:</strong> Uploads local commits to remote repository sharing changes with team.</p>
+<p><strong>Interviewer expects:</strong> Triggers CI webhook.</p>
+<h4>Q207: git pull purpose?</h4>
+<p><strong>Answer:</strong> Fetches remote changes and merges into current branch updating local copy.</p>
+<p><strong>Interviewer expects:</strong> Pull before push to avoid conflicts.</p>
+<h4>Q208: What is a branch?</h4>
+<p><strong>Answer:</strong> Independent line of development diverging from main allowing parallel work.</p>
+<p><strong>Interviewer expects:</strong> Feature branch workflow.</p>
+<h4>Q209: git merge vs rebase?</h4>
+<p><strong>Answer:</strong> Merge creates merge commit combining histories. Rebase replays commits on top of target linear history.</p>
+<p><strong>Interviewer expects:</strong> Team policy on rebase.</p>
+<h4>Q210: What is merge conflict?</h4>
+<p><strong>Answer:</strong> When same lines changed differently in two branches Git cannot auto-merge requiring manual resolution.</p>
+<p><strong>Interviewer expects:</strong> Conflict resolution process.</p>
+<h4>Q211: What is git log?</h4>
+<p><strong>Answer:</strong> Shows commit history with hash author date message.</p>
+<p><strong>Interviewer expects:</strong> Audit and bisect usage.</p>
+<h4>Q212: What is git diff?</h4>
+<p><strong>Answer:</strong> Shows line-by-line changes between working directory staging area or commits.</p>
+<p><strong>Interviewer expects:</strong> Review before commit.</p>
+<h4>Q213: What is git status?</h4>
+<p><strong>Answer:</strong> Shows current branch staged unstaged untracked files.</p>
+<p><strong>Interviewer expects:</strong> First diagnostic command.</p>
+<h4>Q214: What is remote in Git?</h4>
+<p><strong>Answer:</strong> Reference to repository hosted elsewhere like origin on GitHub.</p>
+<p><strong>Interviewer expects:</strong> git remote -v lists remotes.</p>
+<h4>Q215: What is origin?</h4>
+<p><strong>Answer:</strong> Default name for primary remote repository cloned from.</p>
+<p><strong>Interviewer expects:</strong> Convention not requirement.</p>
+<h4>Q216: What is git fetch?</h4>
+<p><strong>Answer:</strong> Downloads remote changes without merging allowing inspection before integration.</p>
+<p><strong>Interviewer expects:</strong> Safer than blind pull.</p>
+<h4>Q217: What is HEAD?</h4>
+<p><strong>Answer:</strong> Pointer to current commit usually tip of current branch.</p>
+<p><strong>Interviewer expects:</strong> Detached HEAD state awareness.</p>
+<h4>Q218: What is main or master?</h4>
+<p><strong>Answer:</strong> Primary branch containing production-ready code.</p>
+<p><strong>Interviewer expects:</strong> Trunk-based target branch.</p>
+<h4>Q219: What is .gitignore?</h4>
+<p><strong>Answer:</strong> File listing patterns Git should not track like target node_modules secrets.</p>
+<p><strong>Interviewer expects:</strong> Keep artifacts out of repo.</p>
+<h4>Q220: What is git tag?</h4>
+<p><strong>Answer:</strong> Named pointer to specific commit marking releases like v1.0.0.</p>
+<p><strong>Interviewer expects:</strong> Tags trigger release pipelines.</p>
+<h4>Q221: What is fork?</h4>
+<p><strong>Answer:</strong> Copy of repository under different account enabling contribution via PR without direct access.</p>
+<p><strong>Interviewer expects:</strong> Open source workflow.</p><h4>Advanced (30)</h4>
+
+<h4>Q222: git rebase interactive?</h4>
+<p><strong>Answer:</strong> git rebase -i allows squashing reordering editing commits before merging for clean history.</p>
+<p><strong>Interviewer expects:</strong> Use on local branches only.</p>
+<h4>Q223: git cherry-pick use case?</h4>
+<p><strong>Answer:</strong> Apply specific commit from one branch to another without merging entire branch.</p>
+<p><strong>Interviewer expects:</strong> Hotfix backport scenario.</p>
+<h4>Q224: git stash workflow?</h4>
+<p><strong>Answer:</strong> Temporarily saves uncommitted changes allowing branch switch then git stash pop restores.</p>
+<p><strong>Interviewer expects:</strong> Context switching helper.</p>
+<h4>Q225: git reset soft mixed hard?</h4>
+<p><strong>Answer:</strong> Soft keeps changes staged. Mixed unstages but keeps files. Hard discards all changes destructive.</p>
+<p><strong>Interviewer expects:</strong> Never hard reset shared branches.</p>
+<h4>Q226: git revert vs reset?</h4>
+<p><strong>Answer:</strong> Revert creates new commit undoing changes safe for shared history. Reset rewrites history locally.</p>
+<p><strong>Interviewer expects:</strong> Public branch use revert.</p>
+<h4>Q227: Resolve merge conflict steps?</h4>
+<p><strong>Answer:</strong> Open conflicted files, edit markers, git add resolved files, git commit or continue rebase.</p>
+<p><strong>Interviewer expects:</strong> Communicate with team on conflicts.</p>
+<h4>Q228: What are Git hooks?</h4>
+<p><strong>Answer:</strong> Scripts triggered by Git events like pre-commit pre-push for linting tests secret scan.</p>
+<p><strong>Interviewer expects:</strong> Client-side quality gates.</p>
+<h4>Q229: pre-commit hook for CI?</h4>
+<p><strong>Answer:</strong> Run linter and unit tests before commit preventing bad code entering repo.</p>
+<p><strong>Interviewer expects:</strong> Shift-left locally.</p>
+<h4>Q230: Git branching strategies?</h4>
+<p><strong>Answer:</strong> GitFlow, GitHub Flow, trunk-based. Choice based on release cadence and team size.</p>
+<p><strong>Interviewer expects:</strong> Match strategy to CI/CD model.</p>
+<h4>Q231: GitHub Flow?</h4>
+<p><strong>Answer:</strong> Main always deployable, feature branches with PR, merge triggers CI and deploy.</p>
+<p><strong>Interviewer expects:</strong> Simple CI/CD friendly.</p>
+<h4>Q232: What is git bisect?</h4>
+<p><strong>Answer:</strong> Binary search through commits to find which commit introduced bug.</p>
+<p><strong>Interviewer expects:</strong> Systematic regression finding.</p>
+<h4>Q233: What is git submodule?</h4>
+<p><strong>Answer:</strong> Embedded repo within repo pointing to specific commit of dependency.</p>
+<p><strong>Interviewer expects:</strong> Prefer package manager over submodules.</p>
+<h4>Q234: Signed commits GPG?</h4>
+<p><strong>Answer:</strong> Cryptographically verify commit author identity using GPG key.</p>
+<p><strong>Interviewer expects:</strong> Supply chain security.</p>
+<h4>Q235: Protected branches?</h4>
+<p><strong>Answer:</strong> GitHub rules requiring PR review passing CI status checks before merge to main.</p>
+<p><strong>Interviewer expects:</strong> Enforce quality gates.</p>
+<h4>Q236: git reflog?</h4>
+<p><strong>Answer:</strong> Recovery log of HEAD movements allowing undo of accidental reset.</p>
+<p><strong>Interviewer expects:</strong> Safety net for mistakes.</p>
+<h4>Q237: Squash merge vs merge commit?</h4>
+<p><strong>Answer:</strong> Squash combines PR commits into one on main. Merge commit preserves full PR history.</p>
+<p><strong>Interviewer expects:</strong> Team history preference.</p>
+<h4>Q238: Monorepo Git challenges?</h4>
+<p><strong>Answer:</strong> Large clone size, many contributors, need sparse checkout and path filters in CI.</p>
+<p><strong>Interviewer expects:</strong> Scale considerations.</p>
+<h4>Q239: git worktree?</h4>
+<p><strong>Answer:</strong> Multiple working directories from same repo different branches simultaneously.</p>
+<p><strong>Interviewer expects:</strong> Parallel branch work locally.</p>
+<h4>Q240: Shallow clone?</h4>
+<p><strong>Answer:</strong> git clone --depth 1 fetches only recent history faster for CI agents.</p>
+<p><strong>Interviewer expects:</strong> CI optimization.</p>
+<h4>Q241: git blame?</h4>
+<p><strong>Answer:</strong> Shows who last modified each line useful for understanding code context.</p>
+<p><strong>Interviewer expects:</strong> Code archaeology.</p>
+<h4>Q242: Merge vs squash for CI?</h4>
+<p><strong>Answer:</strong> Squash gives clean main history but loses granular bisect. Merge preserves commit-level CI correlation.</p>
+<p><strong>Interviewer expects:</strong> Trade-off awareness.</p>
+<h4>Q243: PR template and CI?</h4>
+<p><strong>Answer:</strong> PR template checklist ensures tests added docs updated before CI runs.</p>
+<p><strong>Interviewer expects:</strong> Process plus automation.</p>
+<h4>Q244: git clean?</h4>
+<p><strong>Answer:</strong> Removes untracked files. git clean -fd dangerous but useful for reset workspace.</p>
+<p><strong>Interviewer expects:</strong> Use with caution.</p>
+<h4>Q245: Conflict in Jenkinsfile merge?</h4>
+<p><strong>Answer:</strong> Careful manual merge preserving both pipeline changes test locally with replay.</p>
+<p><strong>Interviewer expects:</strong> Pipeline merge expertise.</p>
+<h4>Q246: BFG vs filter-branch?</h4>
+<p><strong>Answer:</strong> Tools for removing secrets from Git history. Rotate compromised secrets after cleanup.</p>
+<p><strong>Interviewer expects:</strong> Incident response knowledge.</p>
+<h4>Q247: git sparse-checkout?</h4>
+<p><strong>Answer:</strong> Clone or checkout only specific directories reducing workspace size in monorepo CI.</p>
+<p><strong>Interviewer expects:</strong> Monorepo CI optimization.</p>
+<h4>Q248: Renormalize line endings?</h4>
+<p><strong>Answer:</strong> git attributes and core.autocrlf prevent cross-platform diff noise in CI.</p>
+<p><strong>Interviewer expects:</strong> Windows Linux team issue.</p>
+<h4>Q249: Tag vs branch for release?</h4>
+<p><strong>Answer:</strong> Tags mark point-in-time release immutable. Release branches allow patches. Tags trigger CD.</p>
+<p><strong>Interviewer expects:</strong> Release workflow clarity.</p>
+<h4>Q250: git fetch --prune?</h4>
+<p><strong>Answer:</strong> Removes stale remote-tracking branches after remote branch deleted.</p>
+<p><strong>Interviewer expects:</strong> Keep local repo clean.</p>
+<h4>Q251: Two-factor and tokens for CI?</h4>
+<p><strong>Answer:</strong> Use PAT or deploy keys for Jenkins Git access not personal password.</p>
+<p><strong>Interviewer expects:</strong> Secure automation access.</p><h3>Maven Questions — Top 50</h3>
+<h4>Basics (20)</h4>
+
+<h4>Q252: What is Maven?</h4>
+<p><strong>Answer:</strong> Build automation and dependency management tool for Java using pom.xml and convention over configuration.</p>
+<p><strong>Interviewer expects:</strong> Standard Java CI build tool.</p>
+<h4>Q253: What is pom.xml?</h4>
+<p><strong>Answer:</strong> Project Object Model defining project coordinates dependencies plugins and build configuration.</p>
+<p><strong>Interviewer expects:</strong> Heart of Maven project.</p>
+<h4>Q254: Maven coordinates?</h4>
+<p><strong>Answer:</strong> groupId artifactId version uniquely identify artifact like com.ecommerce automation 1.0.0.</p>
+<p><strong>Interviewer expects:</strong> GAV notation.</p>
+<h4>Q255: Maven lifecycle phases?</h4>
+<p><strong>Answer:</strong> default: validate compile test package verify install deploy. clean and site are other lifecycles.</p>
+<p><strong>Interviewer expects:</strong> Phase order matters.</p>
+<h4>Q256: compile vs test vs package?</h4>
+<p><strong>Answer:</strong> compile builds main code. test compiles and runs tests. package creates JAR WAR.</p>
+<p><strong>Interviewer expects:</strong> Know what each phase does.</p>
+<h4>Q257: What is Maven repository?</h4>
+<p><strong>Answer:</strong> Storage for dependencies. Local ~/.m2 remote Maven Central or Nexus.</p>
+<p><strong>Interviewer expects:</strong> Dependency resolution flow.</p>
+<h4>Q258: What is dependency scope?</h4>
+<p><strong>Answer:</strong> compile default, test test-only, provided container provides, runtime not needed compile.</p>
+<p><strong>Interviewer expects:</strong> Scope affects classpath.</p>
+<h4>Q259: What is Maven plugin?</h4>
+<p><strong>Answer:</strong> Extends Maven functionality. surefire runs tests, compiler compiles, jar packages.</p>
+<p><strong>Interviewer expects:</strong> Plugin goals bound to phases.</p>
+<h4>Q260: mvn clean purpose?</h4>
+<p><strong>Answer:</strong> Deletes target directory ensuring fresh build.</p>
+<p><strong>Interviewer expects:</strong> Always clean in CI for reproducibility.</p>
+<h4>Q261: mvn install purpose?</h4>
+<p><strong>Answer:</strong> Packages artifact and installs to local repository for other modules to depend on.</p>
+<p><strong>Interviewer expects:</strong> Multi-module local dev.</p>
+<h4>Q262: What is transitive dependency?</h4>
+<p><strong>Answer:</strong> Dependency of your dependency automatically included unless excluded.</p>
+<p><strong>Interviewer expects:</strong> dependency:tree to inspect.</p>
+<h4>Q263: What is parent POM?</h4>
+<p><strong>Answer:</strong> Shared configuration inherited by child modules reducing duplication.</p>
+<p><strong>Interviewer expects:</strong> Spring Boot parent example.</p>
+<h4>Q264: What is BOM?</h4>
+<p><strong>Answer:</strong> Bill of Materials POM importing managed dependency versions without adding deps.</p>
+<p><strong>Interviewer expects:</strong> Version alignment.</p>
+<h4>Q265: Surefire plugin role?</h4>
+<p><strong>Answer:</strong> Runs unit and integration tests during test phase producing XML reports for Jenkins.</p>
+<p><strong>Interviewer expects:</strong> TestNG JUnit integration.</p>
+<h4>Q266: mvn -DskipTests?</h4>
+<p><strong>Answer:</strong> Compiles tests but does not run them. Faster build when tests run separately.</p>
+<p><strong>Interviewer expects:</strong> CI split build test stages.</p>
+<h4>Q267: mvn -Dmaven.test.skip=true?</h4>
+<p><strong>Answer:</strong> Skips test compilation and execution entirely.</p>
+<p><strong>Interviewer expects:</strong> Difference from skipTests.</p>
+<h4>Q268: What is archetype?</h4>
+<p><strong>Answer:</strong> Maven project template generating standard directory structure via mvn archetype:generate.</p>
+<p><strong>Interviewer expects:</strong> Quick project bootstrap.</p>
+<h4>Q269: Standard directory layout?</h4>
+<p><strong>Answer:</strong> src/main/java, src/test/java, src/main/resources standard convention.</p>
+<p><strong>Interviewer expects:</strong> Convention over configuration.</p>
+<h4>Q270: What is SNAPSHOT version?</h4>
+<p><strong>Answer:</strong> Development version like 1.0-SNAPSHOT replaced on each deploy to repo not immutable.</p>
+<p><strong>Interviewer expects:</strong> Release vs snapshot repos.</p>
+<h4>Q271: What is Maven wrapper?</h4>
+<p><strong>Answer:</strong> mvnw scripts ensuring team uses same Maven version without local install.</p>
+<p><strong>Interviewer expects:</strong> CI reproducibility.</p><h4>Advanced (30)</h4>
+
+<h4>Q272: Maven profiles?</h4>
+<p><strong>Answer:</strong> Conditional config activated by -P flag or env like dev qa prod changing properties plugins.</p>
+<p><strong>Interviewer expects:</strong> Environment-specific builds.</p>
+<h4>Q273: Multi-module project?</h4>
+<p><strong>Answer:</strong> Parent pom with modules subdirectories built together sharing dependency management.</p>
+<p><strong>Interviewer expects:</strong> Microservice or layered architecture.</p>
+<h4>Q274: dependencyManagement section?</h4>
+<p><strong>Answer:</strong> Centralizes version numbers without adding dependency to all modules.</p>
+<p><strong>Interviewer expects:</strong> Parent POM pattern.</p>
+<h4>Q275: Dependency conflict resolution?</h4>
+<p><strong>Answer:</strong> Nearest definition wins. Use dependency:tree and exclusions or dependencyManagement to force version.</p>
+<p><strong>Interviewer expects:</strong> NoClassDefFoundError debugging.</p>
+<h4>Q276: Surefire TestNG configuration?</h4>
+<p><strong>Answer:</strong> suiteXmlFiles in surefire plugin config pointing to testng.xml for suite execution.</p>
+<p><strong>Interviewer expects:</strong> CI runs specific suite.</p>
+<h4>Q277: Surefire parallel execution?</h4>
+<p><strong>Answer:</strong> parallel methods classes configured in surefire for faster test runs.</p>
+<p><strong>Interviewer expects:</strong> Thread count tuning.</p>
+<h4>Q278: Failsafe vs Surefire?</h4>
+<p><strong>Answer:</strong> Surefire for unit tests during test phase. Failsafe for integration tests during verify phase.</p>
+<p><strong>Interviewer expects:</strong> Test pyramid in Maven.</p>
+<h4>Q279: JaCoCo code coverage?</h4>
+<p><strong>Answer:</strong> Plugin instrumenting code reporting coverage threshold in verify phase quality gate.</p>
+<p><strong>Interviewer expects:</strong> Coverage in CI pipeline.</p>
+<h4>Q280: Maven enforcer plugin?</h4>
+<p><strong>Answer:</strong> Rules requiring Java version, banning duplicate dependencies, enforcing standards.</p>
+<p><strong>Interviewer expects:</strong> Build policy automation.</p>
+<h4>Q281: Flatten plugin?</h4>
+<p><strong>Answer:</strong> Resolves CI-friendly versions replacing SNAPSHOT in deployed POM.</p>
+<p><strong>Interviewer expects:</strong> Release pipeline usage.</p>
+<h4>Q282: Release plugin?</h4>
+<p><strong>Answer:</strong> Automates version bump tag and deploy for releases mvn release:prepare perform.</p>
+<p><strong>Interviewer expects:</strong> Release automation.</p>
+<h4>Q283: Deploy to Nexus?</h4>
+<p><strong>Answer:</strong> distributionManagement in pom mvn deploy pushes to corporate repository.</p>
+<p><strong>Interviewer expects:</strong> Artifact promotion source.</p>
+<h4>Q284: Offline build?</h4>
+<p><strong>Answer:</strong> mvn -o uses only local repo for air-gapped or reproducible builds.</p>
+<p><strong>Interviewer expects:</strong> Dependency go-offline in Docker.</p>
+<h4>Q285: Troubleshoot dependency not found?</h4>
+<p><strong>Answer:</strong> Check repo URL settings.xml mirror, VPN access, typo in coordinates.</p>
+<p><strong>Interviewer expects:</strong> settings.xml configuration.</p>
+<h4>Q286: Effective POM?</h4>
+<p><strong>Answer:</strong> mvn help:effective-pom shows fully resolved POM after inheritance and profiles.</p>
+<p><strong>Interviewer expects:</strong> Debug config inheritance.</p>
+<h4>Q287: Plugin version pinning?</h4>
+<p><strong>Answer:</strong> Always specify plugin version in pom not relying on Maven default for reproducibility.</p>
+<p><strong>Interviewer expects:</strong> CI stability best practice.</p>
+<h4>Q288: Resource filtering?</h4>
+<p><strong>Answer:</strong> Replace placeholders in properties files at build time with profile-specific values.</p>
+<p><strong>Interviewer expects:</strong> Environment config injection.</p>
+<h4>Q289: Build cache?</h4>
+<p><strong>Answer:</strong> Maven 3.9+ build cache reuses outputs from previous builds speeding CI.</p>
+<p><strong>Interviewer expects:</strong> Modern Maven optimization.</p>
+<h4>Q290: Custom plugin development?</h4>
+<p><strong>Answer:</strong> Extend AbstractMojo for org-specific build steps packaged as plugin.</p>
+<p><strong>Interviewer expects:</strong> Advanced Maven extension.</p>
+<h4>Q291: Parallel module build?</h4>
+<p><strong>Answer:</strong> mvn -T 4 builds multi-module projects with 4 threads.</p>
+<p><strong>Interviewer expects:</strong> Multi-module CI speed.</p>
+<h4>Q292: Test failure continue?</h4>
+<p><strong>Answer:</strong> maven.test.failure.ignore true continues build marking tests failed not recommended for CI.</p>
+<p><strong>Interviewer expects:</strong> CI should fail on test fail.</p>
+<h4>Q293: Annotation processor config?</h4>
+<p><strong>Answer:</strong> compiler plugin annotationProcessorPaths for Lombok MapStruct in Maven.</p>
+<p><strong>Interviewer expects:</strong> Modern Java project setup.</p>
+<h4>Q294: Shade plugin?</h4>
+<p><strong>Answer:</strong> Creates uber-JAR bundling dependencies for standalone deployment.</p>
+<p><strong>Interviewer expects:</strong> Fat JAR packaging.</p>
+<h4>Q295: Assembly plugin?</h4>
+<p><strong>Answer:</strong> Custom archive layouts combining artifacts resources configs.</p>
+<p><strong>Interviewer expects:</strong> Distribution packaging.</p>
+<h4>Q296: Properties in pom vs file?</h4>
+<p><strong>Answer:</strong> filtering resources vs config.properties externalized for test automation framework.</p>
+<p><strong>Interviewer expects:</strong> QA framework config pattern.</p>
+<h4>Q297: Maven vs Gradle?</h4>
+<p><strong>Answer:</strong> Maven XML declarative convention. Gradle Groovy/Kotlin DSL flexible faster incremental builds.</p>
+<p><strong>Interviewer expects:</strong> Know both exist.</p>
+<h4>Q298: Corporate settings.xml?</h4>
+<p><strong>Answer:</strong> Mirrors credentials server IDs for Nexus authentication in CI.</p>
+<p><strong>Interviewer expects:</strong> Jenkins mounts settings.xml.</p>
+<h4>Q299: Reactor build order?</h4>
+<p><strong>Answer:</strong> Maven calculates module build order based on inter-module dependencies.</p>
+<p><strong>Interviewer expects:</strong> Multi-module understanding.</p>
+<h4>Q300: Optional dependencies?</h4>
+<p><strong>Answer:</strong> Not transitive by default used when consumer may not need feature.</p>
+<p><strong>Interviewer expects:</strong> Library design pattern.</p>
+<h4>Q301: Milestone and release repos?</h4>
+<p><strong>Answer:</strong> Separate Nexus repos for snapshots vs releases with different promotion policies.</p>
+<p><strong>Interviewer expects:</strong> Enterprise artifact flow.</p><h3>DevOps Questions — Top 50</h3>
+<h4>Basics (20)</h4>
+
+<h4>Q302: What is DevOps?</h4>
+<p><strong>Answer:</strong> Culture and practice uniting development and operations to deliver software faster with shared ownership of quality and reliability.</p>
+<p><strong>Interviewer expects:</strong> Culture not just tools.</p>
+<h4>Q303: DevOps vs Agile?</h4>
+<p><strong>Answer:</strong> Agile focuses on development iteration. DevOps extends through deployment operations and monitoring.</p>
+<p><strong>Interviewer expects:</strong> Complementary not replacement.</p>
+<h4>Q304: What is CALMS?</h4>
+<p><strong>Answer:</strong> Culture Automation Lean Measurement Sharing DevOps framework pillars.</p>
+<p><strong>Interviewer expects:</strong> Holistic DevOps view.</p>
+<h4>Q305: What is IaC?</h4>
+<p><strong>Answer:</strong> Managing infrastructure through version-controlled code Terraform CloudFormation Ansible.</p>
+<p><strong>Interviewer expects:</strong> Reproducible environments.</p>
+<h4>Q306: What is configuration management?</h4>
+<p><strong>Answer:</strong> Automating server config with Ansible Chef Puppet ensuring desired state.</p>
+<p><strong>Interviewer expects:</strong> IaC complement.</p>
+<h4>Q307: What is containerization?</h4>
+<p><strong>Answer:</strong> Packaging app with dependencies into portable isolated units Docker.</p>
+<p><strong>Interviewer expects:</strong> Foundation of modern deploy.</p>
+<h4>Q308: What is orchestration?</h4>
+<p><strong>Answer:</strong> Managing container lifecycle at scale Kubernetes Docker Swarm.</p>
+<p><strong>Interviewer expects:</strong> Production container management.</p>
+<h4>Q309: What is monitoring?</h4>
+<p><strong>Answer:</strong> Collecting metrics logs alerts on system health Prometheus Grafana Datadog.</p>
+<p><strong>Interviewer expects:</strong> Observe production behavior.</p>
+<h4>Q310: What is logging?</h4>
+<p><strong>Answer:</strong> Centralized log aggregation ELK stack CloudWatch for troubleshooting.</p>
+<p><strong>Interviewer expects:</strong> Correlate logs with incidents.</p>
+<h4>Q311: What is alerting?</h4>
+<p><strong>Answer:</strong> Automated notification when metrics exceed thresholds PagerDuty Opsgenie.</p>
+<p><strong>Interviewer expects:</strong> On-call integration.</p>
+<h4>Q312: What is SLA SLO SLI?</h4>
+<p><strong>Answer:</strong> SLA contract with customer. SLO internal target. SLI measured metric.</p>
+<p><strong>Interviewer expects:</strong> Reliability terminology.</p>
+<h4>Q313: What is incident management?</h4>
+<p><strong>Answer:</strong> Structured response to production issues detect triage resolve postmortem.</p>
+<p><strong>Interviewer expects:</strong> Blameless postmortem culture.</p>
+<h4>Q314: What is runbook?</h4>
+<p><strong>Answer:</strong> Documented procedure for common operational tasks and incident response.</p>
+<p><strong>Interviewer expects:</strong> Automation candidate.</p>
+<h4>Q315: What is toil?</h4>
+<p><strong>Answer:</strong> Manual repetitive operational work that should be automated Google SRE concept.</p>
+<p><strong>Interviewer expects:</strong> Reduce toil via automation.</p>
+<h4>Q316: What is SRE?</h4>
+<p><strong>Answer:</strong> Site Reliability Engineering applies software engineering to operations problems.</p>
+<p><strong>Interviewer expects:</strong> DevOps implementation at scale.</p>
+<h4>Q317: What is cloud computing?</h4>
+<p><strong>Answer:</strong> On-demand computing resources IaaS PaaS SaaS AWS Azure GCP.</p>
+<p><strong>Interviewer expects:</strong> CI/CD runs in cloud.</p>
+<h4>Q318: What is AWS?</h4>
+<p><strong>Answer:</strong> Amazon Web Services leading cloud provider EC2 S3 Lambda EKS.</p>
+<p><strong>Interviewer expects:</strong> Basic service awareness.</p>
+<h4>Q319: What is microservices?</h4>
+<p><strong>Answer:</strong> Architecture decomposing app into small independently deployable services.</p>
+<p><strong>Interviewer expects:</strong> CI/CD per service.</p>
+<h4>Q320: What is API gateway?</h4>
+<p><strong>Answer:</strong> Single entry point routing requests to microservices handling auth rate limiting.</p>
+<p><strong>Interviewer expects:</strong> Testing through gateway.</p>
+<h4>Q321: What is load balancer?</h4>
+<p><strong>Answer:</strong> Distributes traffic across multiple instances NGINX ALB ensuring availability.</p>
+<p><strong>Interviewer expects:</strong> Performance testing context.</p><h4>Advanced (30)</h4>
+
+<h4>Q322: Docker architecture?</h4>
+<p><strong>Answer:</strong> Docker daemon builds images. Client CLI communicates. Containers run from images. Registry stores images.</p>
+<p><strong>Interviewer expects:</strong> Image vs container clarity.</p>
+<h4>Q323: Dockerfile best practices?</h4>
+<p><strong>Answer:</strong> Multi-stage builds, non-root user, minimal base alpine, .dockerignore, pin versions, layer caching order.</p>
+<p><strong>Interviewer expects:</strong> Security and size optimization.</p>
+<h4>Q324: Kubernetes architecture?</h4>
+<p><strong>Answer:</strong> Control plane API etcd scheduler controller manager. Nodes run kubelet and pods.</p>
+<p><strong>Interviewer expects:</strong> Cluster components knowledge.</p>
+<h4>Q325: Pod vs Deployment?</h4>
+<p><strong>Answer:</strong> Pod is smallest unit one or more containers. Deployment manages replica sets rolling updates.</p>
+<p><strong>Interviewer expects:</strong> K8s resource hierarchy.</p>
+<h4>Q326: Service types in K8s?</h4>
+<p><strong>Answer:</strong> ClusterIP internal, NodePort external port, LoadBalancer cloud LB, Ingress HTTP routing.</p>
+<p><strong>Interviewer expects:</strong> Expose app for testing.</p>
+<h4>Q327: ConfigMap vs Secret?</h4>
+<p><strong>Answer:</strong> ConfigMap non-sensitive config. Secret sensitive base64 encoded data.</p>
+<p><strong>Interviewer expects:</strong> Test config injection.</p>
+<h4>Q328: Horizontal Pod Autoscaler?</h4>
+<p><strong>Answer:</strong> Scales pods based on CPU memory custom metrics.</p>
+<p><strong>Interviewer expects:</strong> Performance under load.</p>
+<h4>Q329: Terraform basics?</h4>
+<p><strong>Answer:</strong> Declarative IaC plan apply destroy managing cloud resources state file tracks reality.</p>
+<p><strong>Interviewer expects:</strong> Plan before apply.</p>
+<h4>Q330: Terraform state?</h4>
+<p><strong>Answer:</strong> Tracks managed resources. Remote state in S3 with locking for team use.</p>
+<p><strong>Interviewer expects:</strong> State is critical asset.</p>
+<h4>Q331: Ansible vs Terraform?</h4>
+<p><strong>Answer:</strong> Terraform provisions infra. Ansible configures servers agentless SSH.</p>
+<p><strong>Interviewer expects:</strong> Complementary tools.</p>
+<h4>Q332: Prometheus metrics?</h4>
+<p><strong>Answer:</strong> Pull-based time-series metrics scraping endpoints. PromQL queries alerts.</p>
+<p><strong>Interviewer expects:</strong> CI/CD pipeline metrics too.</p>
+<h4>Q333: Grafana dashboards?</h4>
+<p><strong>Answer:</strong> Visualization layer for Prometheus and other data sources.</p>
+<p><strong>Interviewer expects:</strong> Build success rate dashboard.</p>
+<h4>Q334: ELK stack?</h4>
+<p><strong>Answer:</strong> Elasticsearch Logstash Kibana centralized logging search visualization.</p>
+<p><strong>Interviewer expects:</strong> Debug production issues.</p>
+<h4>Q335: CloudWatch?</h4>
+<p><strong>Answer:</strong> AWS monitoring logs metrics alarms integrated with AWS services.</p>
+<p><strong>Interviewer expects:</strong> AWS-native observability.</p>
+<h4>Q336: DevSecOps practices?</h4>
+<p><strong>Answer:</strong> Security scanning in pipeline, least privilege IAM, secrets management, compliance as code.</p>
+<p><strong>Interviewer expects:</strong> Security embedded not bolted.</p>
+<h4>Q337: IAM least privilege?</h4>
+<p><strong>Answer:</strong> Grant minimum permissions needed reducing blast radius of compromised credentials.</p>
+<p><strong>Interviewer expects:</strong> CI service account design.</p>
+<h4>Q338: VPC networking basics?</h4>
+<p><strong>Answer:</strong> Subnets security groups route tables isolating resources in cloud.</p>
+<p><strong>Interviewer expects:</strong> Test env network setup.</p>
+<h4>Q339: EC2 vs Lambda?</h4>
+<p><strong>Answer:</strong> EC2 virtual servers always on. Lambda serverless event-driven pay per invocation.</p>
+<p><strong>Interviewer expects:</strong> When each fits.</p>
+<h4>Q340: EKS managed Kubernetes?</h4>
+<p><strong>Answer:</strong> AWS managed K8s control plane running containerized CI agents and apps.</p>
+<p><strong>Interviewer expects:</strong> Cloud K8s for QA infra.</p>
+<h4>Q341: S3 artifact storage?</h4>
+<p><strong>Answer:</strong> Store build artifacts test reports backups with versioning lifecycle policies.</p>
+<p><strong>Interviewer expects:</strong> Cheap durable storage.</p>
+<h4>Q342: CDN CloudFront?</h4>
+<p><strong>Answer:</strong> Edge caching reducing latency for static assets globally.</p>
+<p><strong>Interviewer expects:</strong> Performance testing consideration.</p>
+<h4>Q343: Disaster recovery RTO RPO?</h4>
+<p><strong>Answer:</strong> RTO recovery time objective. RPO recovery point objective data loss tolerance.</p>
+<p><strong>Interviewer expects:</strong> Business continuity metrics.</p>
+<h4>Q344: Chaos engineering?</h4>
+<p><strong>Answer:</strong> Intentionally inject failures Netflix Chaos Monkey validating resilience.</p>
+<p><strong>Interviewer expects:</strong> Advanced reliability practice.</p>
+<h4>Q345: Service level error budget?</h4>
+<p><strong>Answer:</strong> Allowed downtime derived from SLO. Stop features fix reliability when budget exhausted.</p>
+<p><strong>Interviewer expects:</strong> SRE prioritization.</p>
+<h4>Q346: GitOps with ArgoCD?</h4>
+<p><strong>Answer:</strong> K8s deployment synced from Git repo automated drift detection self-healing.</p>
+<p><strong>Interviewer expects:</strong> Modern CD pattern.</p>
+<h4>Q347: Helm chart testing?</h4>
+<p><strong>Answer:</strong> helm test runs pods validating deployment in CI pipeline after install.</p>
+<p><strong>Interviewer expects:</strong> K8s deploy validation.</p>
+<h4>Q348: Network policies K8s?</h4>
+<p><strong>Answer:</strong> Firewall rules controlling pod-to-pod traffic.</p>
+<p><strong>Interviewer expects:</strong> Security in test clusters.</p>
+<h4>Q349: Cost allocation tags?</h4>
+<p><strong>Answer:</strong> Tag cloud resources by team project for FinOps chargeback.</p>
+<p><strong>Interviewer expects:</strong> CI infra cost awareness.</p>
+<h4>Q350: Multi-cloud strategy?</h4>
+<p><strong>Answer:</strong> Avoid vendor lock-in run workloads across AWS Azure GCP increased complexity.</p>
+<p><strong>Interviewer expects:</strong> Strategic trade-off.</p>
+</section>
+<section id="section-21" class="section-card">
+<h2>Section 21: 1-Day Revision Notes</h2>
+
+<p>Condensed revision for Senior QA / SDET interviews. Review this the morning before your interview.</p>
+
+<h3>Top 25 Most Asked Jenkins Questions</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Question</th><th>One-Line Answer</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>What is Jenkins?</td><td>Open-source automation server for CI/CD pipelines.</td></tr>
+<tr><td>2</td><td>Controller vs Agent?</td><td>Controller schedules; agents execute build steps.</td></tr>
+<tr><td>3</td><td>What is a Jenkinsfile?</td><td>Pipeline-as-code file defining stages in Groovy.</td></tr>
+<tr><td>4</td><td>Declarative vs Scripted?</td><td>Declarative is structured and validated; Scripted is free-form Groovy.</td></tr>
+<tr><td>5</td><td>What is an executor?</td><td>One concurrent job slot on an agent.</td></tr>
+<tr><td>6</td><td>How to trigger builds automatically?</td><td>Webhook (preferred), pollSCM, cron, or upstream job.</td></tr>
+<tr><td>7</td><td>What is WORKSPACE?</td><td>Directory on agent where build runs.</td></tr>
+<tr><td>8</td><td>How to use secrets?</td><td>Jenkins Credentials bound via withCredentials or credentials().</td></tr>
+<tr><td>9</td><td>What is post block?</td><td>Actions after build: always, success, failure, unstable.</td></tr>
+<tr><td>10</td><td>How to parallelize stages?</td><td>parallel { stage('A'){} stage('B'){} } block.</td></tr>
+<tr><td>11</td><td>What is Multibranch Pipeline?</td><td>Auto-creates pipeline per branch/PR from Jenkinsfile.</td></tr>
+<tr><td>12</td><td>How to publish JUnit results?</td><td>junit 'target/surefire-reports/*.xml' in post always.</td></tr>
+<tr><td>13</td><td>What is input step?</td><td>Manual approval gate pausing pipeline.</td></tr>
+<tr><td>14</td><td>What is shared library?</td><td>Reusable Groovy pipeline code in separate repo.</td></tr>
+<tr><td>15</td><td>Failed vs Unstable?</td><td>Failed stops pipeline; unstable continues with warning status.</td></tr>
+<tr><td>16</td><td>What is agent any?</td><td>Run on any available executor.</td></tr>
+<tr><td>17</td><td>Docker agent benefit?</td><td>Clean, consistent, isolated build environment per run.</td></tr>
+<tr><td>18</td><td>What is BUILD_NUMBER?</td><td>Incrementing integer identifying each build.</td></tr>
+<tr><td>19</td><td>How to archive artifacts?</td><td>archiveArtifacts artifacts: 'target/*.jar'.</td></tr>
+<tr><td>20</td><td>What is cleanWs?</td><td>Deletes workspace after build to free disk.</td></tr>
+<tr><td>21</td><td>What is when directive?</td><td>Conditional stage execution by branch or expression.</td></tr>
+<tr><td>22</td><td>How to send email on failure?</td><td>emailext in post failure block.</td></tr>
+<tr><td>23</td><td>What is JCasC?</td><td>Jenkins Configuration as Code — YAML-based setup.</td></tr>
+<tr><td>24</td><td>How to debug pipeline?</td><td>Console log → failing stage → replay with fix.</td></tr>
+<tr><td>25</td><td>Why not run builds on controller?</td><td>Controller should orchestrate only; agents handle load.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Top 15 CI/CD Quick Q&amp;A</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>CI vs CD?</td><td>CI = integrate and test frequently; CD = keep deployable or auto-deploy.</td></tr>
+<tr><td>What is a pipeline stage?</td><td>Logical phase: Build, Test, Deploy.</td></tr>
+<tr><td>What is a quality gate?</td><td>Automated checkpoint before promotion (coverage, tests, scan).</td></tr>
+<tr><td>Build once deploy many?</td><td>Same artifact promoted across environments without rebuild.</td></tr>
+<tr><td>Blue-green vs canary?</td><td>Blue-green switches all traffic; canary rolls out to subset first.</td></tr>
+<tr><td>What is shift-left?</td><td>Test and validate earlier in SDLC.</td></tr>
+<tr><td>Smoke vs regression?</td><td>Smoke = fast critical path; regression = broad existing feature coverage.</td></tr>
+<tr><td>What is flaky test?</td><td>Intermittent pass/fail without code change.</td></tr>
+<tr><td>DORA metrics?</td><td>Deployment frequency, lead time, change failure rate, MTTR.</td></tr>
+<tr><td>Pipeline as code benefit?</td><td>Version controlled, reviewable, reproducible pipelines.</td></tr>
+<tr><td>What triggers CI?</td><td>Push, PR, cron, manual, upstream job.</td></tr>
+<tr><td>What is artifact?</td><td>Immutable build output (JAR, Docker image, report).</td></tr>
+<tr><td>Feature flag purpose?</td><td>Decouple deployment from feature release.</td></tr>
+<tr><td>GitOps?</td><td>Git as desired state; automated reconciliation to infra.</td></tr>
+<tr><td>DevSecOps?</td><td>Security integrated into every pipeline stage.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Top 10 Git Quick Q&amp;A</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>merge vs rebase?</td><td>Merge preserves history with merge commit; rebase replays commits linearly.</td></tr>
+<tr><td>reset vs revert?</td><td>Reset rewrites history (local); revert adds undo commit (safe for shared branches).</td></tr>
+<tr><td>What is stash?</td><td>Temporarily shelve uncommitted changes.</td></tr>
+<tr><td>cherry-pick use?</td><td>Apply one specific commit to another branch.</td></tr>
+<tr><td>Protected branch?</td><td>Requires PR review and passing CI before merge.</td></tr>
+<tr><td>What is .gitignore?</td><td>Excludes files from tracking (target/, secrets).</td></tr>
+<tr><td>fetch vs pull?</td><td>Fetch downloads only; pull downloads and merges.</td></tr>
+<tr><td>What is tag?</td><td>Immutable marker for release (v1.0.0).</td></tr>
+<tr><td>Merge conflict fix?</td><td>Edit conflict markers, git add, commit.</td></tr>
+<tr><td>Git hooks?</td><td>Scripts on Git events (pre-commit, pre-push).</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Top 10 Maven Quick Q&amp;A</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>Lifecycle order?</td><td>validate → compile → test → package → verify → install → deploy.</td></tr>
+<tr><td>compile vs test vs package?</td><td>compile = main code; test = run tests; package = create JAR.</td></tr>
+<tr><td>What is pom.xml?</td><td>Project config: dependencies, plugins, coordinates.</td></tr>
+<tr><td>-DskipTests vs -Dmaven.test.skip?</td><td>skipTests compiles tests; maven.test.skip skips compilation too.</td></tr>
+<tr><td>What is Surefire?</td><td>Plugin running unit/integration tests in test phase.</td></tr>
+<tr><td>What is profile?</td><td>Conditional config activated by -P flag (smoke, qa, prod).</td></tr>
+<tr><td>Transitive dependency?</td><td>Dependency pulled in by your dependency automatically.</td></tr>
+<tr><td>dependency:tree?</td><td>Shows dependency hierarchy for conflict debugging.</td></tr>
+<tr><td>Multi-module project?</td><td>Parent POM with child modules built together.</td></tr>
+<tr><td>SNAPSHOT vs RELEASE?</td><td>SNAPSHOT = dev mutable; RELEASE = immutable version.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Top 10 Docker Quick Q&amp;A</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>Image vs container?</td><td>Image = template; container = running instance of image.</td></tr>
+<tr><td>docker build vs run?</td><td>build creates image; run starts container from image.</td></tr>
+<tr><td>What is Dockerfile?</td><td>Instructions to build image (FROM, COPY, RUN, CMD).</td></tr>
+<tr><td>docker-compose purpose?</td><td>Define and run multi-container apps (app + DB + Grid).</td></tr>
+<tr><td>Port mapping?</td><td>-p 8080:80 maps host port 8080 to container port 80.</td></tr>
+<tr><td>What is volume?</td><td>Persistent storage mounted into container.</td></tr>
+<tr><td>docker ps vs ps -a?</td><td>ps = running; ps -a = all including stopped.</td></tr>
+<tr><td>Why multi-stage build?</td><td>Smaller final image by separating build and runtime stages.</td></tr>
+<tr><td>Container vs VM?</td><td>Container shares OS kernel; VM has full OS — containers are lighter.</td></tr>
+<tr><td>docker system prune?</td><td>Remove unused images, containers, networks.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>50 Quick Revision Points</h3>
+<ol>
+<li>CI integrates code frequently with automated build and test.</li>
+<li>Continuous Delivery = always deployable; Continuous Deployment = auto-deploy.</li>
+<li>Pipeline stages: Checkout → Build → Test → Deploy → Monitor.</li>
+<li>Jenkinsfile should live in source control, not pasted inline.</li>
+<li>Never store passwords in Jenkinsfile — use Credentials.</li>
+<li>Smoke tests run fast on every commit; regression runs broader suite.</li>
+<li>Test pyramid: many unit, fewer integration, fewest E2E.</li>
+<li>Parallel UI tests need separate WebDriver per thread.</li>
+<li>Allure @Step annotations enrich reports with readable steps.</li>
+<li>JUnit XML published in Jenkins makes trends visible.</li>
+<li>Blue-green = instant switch; canary = gradual rollout.</li>
+<li>Rollback should be automated and tested regularly.</li>
+<li>Same artifact promoted across environments — no rebuild per env.</li>
+<li>Flaky tests must be quarantined, not ignored.</li>
+<li>DORA: deployment frequency, lead time, failure rate, MTTR.</li>
+<li>Webhook beats pollSCM for faster CI feedback.</li>
+<li>Multibranch Pipeline auto-builds feature branches and PRs.</li>
+<li>agent { docker 'maven:3.9' } gives clean build env.</li>
+<li>post { always { cleanWs() } } prevents disk exhaustion.</li>
+<li>Shared libraries DRY up common pipeline steps.</li>
+<li>GitFlow vs trunk-based — know when each fits.</li>
+<li>Protected branches enforce review + CI before merge.</li>
+<li>git revert for shared branches; git reset only locally.</li>
+<li>Maven -B flag = batch mode for CI (non-interactive).</li>
+<li>Maven profiles select testng suite per environment.</li>
+<li>Surefire produces XML that Jenkins junit step consumes.</li>
+<li>dependency:tree resolves version conflict mysteries.</li>
+<li>Docker image tagged with git SHA for traceability.</li>
+<li>Selenium Grid hub routes tests to browser nodes.</li>
+<li>docker-compose up starts Grid + test runner together.</li>
+<li>K8s Pod = one or more containers; Deployment manages replicas.</li>
+<li>ConfigMap for config; Secret for credentials in K8s.</li>
+<li>Terraform plan before apply — always review changes.</li>
+<li>Prometheus + Grafana = metrics collection + visualization.</li>
+<li>DevSecOps: SAST + dependency scan + DAST in pipeline.</li>
+<li>Quality gate in SonarQube can fail the build.</li>
+<li>Feature flags decouple deploy from release.</li>
+<li>Manual input step gates production deploy.</li>
+<li>BUILD_URL and BUILD_NUMBER useful in notification emails.</li>
+<li>Immutable infrastructure: replace, don't patch.</li>
+<li>IaC ensures dev/QA/staging/prod parity.</li>
+<li>MTTR measures how fast you recover from incidents.</li>
+<li>Shift-left = QA involved in requirements and design.</li>
+<li>Contract testing (Pact) for microservices.</li>
+<li>Page Object Model separates locators from test logic.</li>
+<li>WebDriverManager auto-downloads matching driver binaries.</li>
+<li>Headless Chrome in Docker for CI without display.</li>
+<li>TestNG groups (smoke/regression) control suite scope.</li>
+<li>Environment variables override config.properties in CI.</li>
+<li>Pipeline timeout prevents hung builds consuming agents.</li>
+</ol>
+
+<h3>Common Mistakes in CI/CD Interviews</h3>
+<ol>
+<li><strong>Confusing CI with CD</strong> — saying they're the same thing without distinguishing delivery vs deployment.</li>
+<li><strong>No real project example</strong> — describing tools theoretically without referencing actual framework or pipeline you built.</li>
+<li><strong>Ignoring test strategy</strong> — talking only about build/deploy without explaining which tests run when.</li>
+<li><strong>Hardcoded secrets</strong> — suggesting passwords in Jenkinsfile or config files committed to Git.</li>
+<li><strong>Running everything sequentially</strong> — not mentioning parallelization for cross-browser or sharded suites.</li>
+<li><strong>Skipping failure handling</strong> — no mention of notifications, reports, or rollback on red builds.</li>
+<li><strong>Tool name-dropping</strong> — listing Jenkins, Docker, K8s without explaining how they connect in a flow.</li>
+<li><strong>Underestimating flaky tests</strong> — saying "re-run until green" instead of root cause analysis and quarantine.</li>
+<li><strong>Wrong Git commands</strong> — recommending git push --force to main or git reset --hard on shared branches.</li>
+<li><strong>No metrics</strong> — unable to cite build success rate, pass rate, or pipeline duration improvements you achieved.</li>
+</ol>
+
+<h3>Interview Tips for 4+ Years QA</h3>
+<ol>
+<li><strong>Use STAR format with metrics.</strong> Example: "I reduced regression suite time from 90 to 25 minutes by parallelizing across 4 Grid nodes and splitting by TestNG group."</li>
+<li><strong>Draw the pipeline.</strong> When asked about CI/CD, sketch stages on paper: commit → build → smoke → regression → report → deploy. Interviewers love visual thinkers.</li>
+<li><strong>Own the framework story.</strong> Be ready to explain why POM, how you handle waits, reporting, config, and CI integration — as one cohesive system.</li>
+<li><strong>Discuss trade-offs.</strong> "We chose Declarative over Scripted because our team needed validation and simpler onboarding" shows maturity.</li>
+<li><strong>Mention collaboration.</strong> Example: "I paired with DevOps to add Selenium Grid to docker-compose so QA and CI used identical infra."</li>
+<li><strong>Prepare failure stories.</strong> "Our pipeline broke when Nexus was down — we added retry logic and local .m2 cache warming" shows production experience.</li>
+<li><strong>Connect testing to business.</strong> "Smoke suite gates production deploy — 12 tests covering revenue-critical checkout flow" links QA to business risk.</li>
+<li><strong>Know your Jenkinsfile cold.</strong> Walk through agent, stages, post, credentials — line by line if asked.</li>
+<li><strong>Ask clarifying questions.</strong> "Are you running tests in Docker agents or on bare-metal agents?" shows senior-level engagement.</li>
+<li><strong>Stay current.</strong> Mention K8s agents, GitOps, or Allure trends briefly to show you evolve beyond Selenium-only thinking.</li>
+</ol>
+
+<h3>Frequently Confused Concepts</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concept A</th><th>Concept B</th><th>Key Difference</th></tr></thead>
+<tbody>
+<tr><td>CI (Integration)</td><td>CD (Delivery)</td><td>CI merges and tests; CD ensures code is always releasable but deploy is manual.</td></tr>
+<tr><td>CD (Delivery)</td><td>CD (Deployment)</td><td>Delivery = manual prod release; Deployment = automatic prod release on green build.</td></tr>
+<tr><td>Declarative Pipeline</td><td>Scripted Pipeline</td><td>Declarative = structured, validated syntax; Scripted = full Groovy freedom.</td></tr>
+<tr><td>Docker Image</td><td>Docker Container</td><td>Image = read-only template; Container = mutable running instance.</td></tr>
+<tr><td>Pod</td><td>Container</td><td>Pod = K8s wrapper (1+ containers sharing network/storage); Container = process in pod.</td></tr>
+<tr><td>Maven compile</td><td>Maven test</td><td>compile = build main code; test = compile test code AND execute tests.</td></tr>
+<tr><td>Maven test</td><td>Maven install</td><td>test = run tests; install = package JAR and put in local ~/.m2 repo.</td></tr>
+<tr><td>Webhook</td><td>Poll SCM</td><td>Webhook = instant push notification; Poll SCM = Jenkins checks periodically (delayed).</td></tr>
+<tr><td>Agent</td><td>Node</td><td>In Jenkins: Agent = machine; Node = Pipeline block synonym for where stage runs.</td></tr>
+<tr><td>Agent</td><td>Executor</td><td>Agent = whole machine; Executor = one job slot on that machine.</td></tr>
+<tr><td>Node</td><td>Executor</td><td>Node often means agent machine; Executor is concurrent capacity on it.</td></tr>
+<tr><td>merge</td><td>rebase</td><td>merge = join histories; rebase = replay commits on tip of target branch.</td></tr>
+<tr><td>reset</td><td>revert</td><td>reset = rewrite history; revert = new commit undoing changes (safe shared).</td></tr>
+<tr><td>Freestyle Job</td><td>Pipeline Job</td><td>Freestyle = UI config; Pipeline = Jenkinsfile as code.</td></tr>
+<tr><td>Failed Build</td><td>Unstable Build</td><td>Failed = pipeline error; Unstable = completed but tests failed (config-dependent).</td></tr>
+</tbody>
+</table>
+</div>
+
+</section>
+
+<section id="section-22" class="section-card">
+<h2>Section 22: SDET Career Roadmap</h2>
+
+<p>Career progression guide for Automation Engineers with 4 years experience targeting Senior QA, SDET, Lead, or DevOps-adjacent roles.</p>
+
+<h3>Current Level: Automation Engineer (4 Years) — Expected Skills</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Skill Area</th><th>Expected at 4 Years</th><th>Evidence in Interview</th></tr></thead>
+<tbody>
+<tr><td>Test Automation</td><td>Solid POM framework, TestNG/JUnit, cross-browser, parallel execution</td><td>Walk through framework architecture with code samples</td></tr>
+<tr><td>Programming</td><td>Java or Python proficiency, OOP, collections, exceptions</td><td>Live coding or explain design patterns used</td></tr>
+<tr><td>API Testing</td><td>REST Assured or Postman, JSON validation, auth flows</td><td>API + UI hybrid strategy example</td></tr>
+<tr><td>CI/CD</td><td>Jenkins Pipeline, GitHub integration, quality gates</td><td>Explain complete Jenkinsfile you maintained</td></tr>
+<tr><td>SQL</td><td>JOINs, aggregations, test data validation queries</td><td>Validate backend state after UI action</td></tr>
+<tr><td>Git</td><td>Branching, PR workflow, conflict resolution</td><td>Describe team branching strategy</td></tr>
+<tr><td>Docker</td><td>Run tests in containers, basic Dockerfile, compose for Grid</td><td>Demo docker-compose test setup</td></tr>
+<tr><td>Reporting</td><td>Allure or ExtentReports integrated in CI</td><td>Show sample report with steps and attachments</td></tr>
+<tr><td>Soft Skills</td><td>Mentor juniors, estimate automation effort, triage failures</td><td>STAR stories with team impact</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Career Path 1: Senior Automation Engineer → Lead QA → QA Manager</h3>
+<pre class="ascii-diagram"><code>
+Automation Engineer (4 yr)
+        │
+        ▼
+Senior Automation Engineer (5-7 yr)
+  • Own framework architecture
+  • Define automation standards
+  • CI/CD pipeline ownership
+        │
+        ▼
+Lead QA / QA Architect (7-10 yr)
+  • Cross-team quality strategy
+  • Tool selection & governance
+  • Hire and mentor team
+        │
+        ▼
+QA Manager / Director (10+ yr)
+  • Budget, hiring, roadmap
+  • Stakeholder management
+  • Quality metrics for org
+</code></pre>
+<p><strong>Focus areas:</strong> Deep testing expertise, team leadership, quality strategy, stakeholder communication. Less hands-on coding over time, more architecture and people management.</p>
+
+<h3>Career Path 2: SDET II → SDET III → Staff SDET → Principal SDET</h3>
+<pre class="ascii-diagram"><code>
+SDET / Automation Engineer (4 yr)
+        │
+        ▼
+SDET II (5-7 yr)
+  • Framework + platform tooling
+  • Test infra (Grid, Docker, CI)
+  • Performance test basics
+        │
+        ▼
+SDET III / Senior SDET (7-10 yr)
+  • Test platform engineering
+  • Shared libraries, developer tooling
+  • System design for testability
+        │
+        ▼
+Staff SDET (10-13 yr)
+  • Org-wide test strategy
+  • Cross-team technical leadership
+  • Influence without authority
+        │
+        ▼
+Principal SDET (13+ yr)
+  • Industry-level expertise
+  • Open source / conference presence
+  • Define engineering quality culture
+</code></pre>
+<p><strong>Focus areas:</strong> Deep technical expertise retained throughout. Build test platforms, developer experience tools, and quality infrastructure at scale.</p>
+
+<h3>Career Path 3: DevOps Engineer → SRE → Platform Engineer</h3>
+<pre class="ascii-diagram"><code>
+QA Automation Engineer (4 yr)
+  + CI/CD + Docker + scripting
+        │
+        ▼
+DevOps Engineer (5-8 yr)
+  • Pipeline design for all teams
+  • IaC (Terraform), K8s deploys
+  • Monitoring & incident response
+        │
+        ▼
+SRE (8-12 yr)
+  • Reliability, SLI/SLO, error budgets
+  • On-call, postmortems, toil reduction
+  • Performance & capacity planning
+        │
+        ▼
+Platform Engineer (10+ yr)
+  • Internal developer platform (IDP)
+  • Self-service CI/CD environments
+  • Golden paths for microservices
+</code></pre>
+<p><strong>Focus areas:</strong> Transition from testing mindset to infrastructure, reliability, and enabling developer productivity. Your QA background is a superpower for quality gates and test infra.</p>
+
+<h3>Skills Matrix by Level</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Skill</th><th>Junior (0-2 yr)</th><th>Mid (2-4 yr)</th><th>Senior (4-7 yr)</th><th>Architect (7+ yr)</th></tr>
+</thead>
+<tbody>
+<tr><td>Automation</td><td>Record/playback, basic scripts</td><td>POM framework, data-driven tests</td><td>Framework design, parallel Grid</td><td>Org-wide test platform strategy</td></tr>
+<tr><td>API Testing</td><td>Postman manual calls</td><td>REST Assured automated suites</td><td>Contract testing, auth flows</td><td>API test platform, mock services</td></tr>
+<tr><td>SQL</td><td>SELECT, WHERE</td><td>JOINs, GROUP BY, subqueries</td><td>Complex queries, data validation</td><td>DB test data strategy, masking</td></tr>
+<tr><td>CI/CD</td><td>Run existing pipeline</td><td>Modify Jenkinsfile, add stages</td><td>Design pipeline, quality gates</td><td>Org pipeline standards, GitOps</td></tr>
+<tr><td>Jenkins</td><td>Trigger builds, read logs</td><td>Write Declarative Pipeline</td><td>Shared libs, multibranch, Docker agents</td><td>JCasC, HA, K8s plugin architecture</td></tr>
+<tr><td>Docker</td><td>docker run basics</td><td>Dockerfile for tests, compose</td><td>Multi-stage builds, Grid in compose</td><td>Container strategy for all QA infra</td></tr>
+<tr><td>Kubernetes</td><td>Know concept</td><td>kubectl get logs basics</td><td>Deploy test apps, K8s Jenkins agents</td><td>Test cluster design, Helm charts</td></tr>
+<tr><td>AWS/Cloud</td><td>Know EC2, S3 names</td><td>Run tests on cloud agents</td><td>EC2 Fleet agents, S3 reports, ECR images</td><td>Multi-account CI/CD architecture</td></tr>
+<tr><td>Performance</td><td>Know JMeter exists</td><td>Basic load test scripts</td><td>JMeter/Gatling in CI pipeline</td><td>Performance test platform, SLAs</td></tr>
+<tr><td>AI Testing</td><td>—</td><td>Aware of AI test tools</td><td>Evaluate AI for test gen/maintenance</td><td>AI-assisted QA strategy</td></tr>
+<tr><td>Leadership</td><td>Follow tasks</td><td>Own feature test coverage</td><td>Mentor juniors, lead initiatives</td><td>Cross-team quality governance</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>CI/CD Skills Required at Each Level</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>CI/CD Expectations</th></tr></thead>
+<tbody>
+<tr><td>Junior</td><td>Push code, verify CI status checks pass, read console logs</td></tr>
+<tr><td>Mid</td><td>Add test stages to Jenkinsfile, configure TestNG suites via Maven profiles, publish JUnit/Allure</td></tr>
+<tr><td>Senior</td><td>Design full pipeline (build → smoke → regression → report → notify), Docker/Grid integration, parallel cross-browser, quality gates</td></tr>
+<tr><td>Architect</td><td>Multi-team pipeline templates, shared libraries, JCasC, K8s dynamic agents, DORA metrics dashboard, DevSecOps integration</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Recommended Certifications</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Certification</th><th>Provider</th><th>Relevance</th><th>Difficulty</th></tr></thead>
+<tbody>
+<tr><td>Certified Jenkins Engineer (CJE)</td><td>CloudBees</td><td>Direct Jenkins pipeline credibility</td><td>Medium</td></tr>
+<tr><td>AWS Certified DevOps Engineer – Professional</td><td>Amazon</td><td>Cloud CI/CD, CodePipeline, ECS/EKS</td><td>High</td></tr>
+<tr><td>CKA (Certified Kubernetes Administrator)</td><td>CNCF/Linux Foundation</td><td>K8s test infra and deploy skills</td><td>High</td></tr>
+<tr><td>Docker Certified Associate (DCA)</td><td>Docker</td><td>Container fundamentals for test execution</td><td>Medium</td></tr>
+<tr><td>ISTQB Advanced Test Automation Engineer</td><td>ISTQB</td><td>Formal test automation methodology</td><td>Medium</td></tr>
+<tr><td>Azure DevOps Engineer Expert</td><td>Microsoft</td><td>If target company uses Azure Pipelines</td><td>High</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Salary Benchmarks (2025-2026, USD, varies by location)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Role</th><th>India (LPA)</th><th>US ($)</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>QA Automation Engineer (3-5 yr)</td><td>12-22</td><td>90K-130K</td><td>Your current bracket</td></tr>
+<tr><td>Senior QA / SDET II (5-7 yr)</td><td>22-35</td><td>130K-170K</td><td>Target after this prep</td></tr>
+<tr><td>Lead QA / SDET III (7-10 yr)</td><td>35-50</td><td>170K-210K</td><td>Leadership + deep tech</td></tr>
+<tr><td>Staff SDET / QA Architect</td><td>50-70+</td><td>210K-280K</td><td>Top tech companies</td></tr>
+<tr><td>DevOps Engineer (transition)</td><td>18-35</td><td>120K-180K</td><td>CI/CD skills transfer well</td></tr>
+<tr><td>SRE / Platform Engineer</td><td>30-55</td><td>160K-250K</td><td>Requires infra depth</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Learning Resources</h3>
+<h4>Blogs &amp; Documentation</h4>
+<ul>
+<li><strong>Jenkins.io documentation</strong> — Pipeline syntax, plugins, best practices</li>
+<li><strong>TestAutomationUniversity (Applitools)</strong> — Free courses on Selenium, CI, API</li>
+<li><strong>Ministry of Testing</strong> — Community articles on modern QA practices</li>
+<li><strong>Google Testing Blog</strong> — Industry-scale testing insights</li>
+<li><strong>martinfowler.com</strong> — CI, CD, microservices, test pyramid articles</li>
+</ul>
+
+<h4>YouTube Channels</h4>
+<ul>
+<li><strong>Automation Step by Step (Raghav Pal)</strong> — Selenium, TestNG, Jenkins tutorials</li>
+<li><strong>TechWorld with Nana</strong> — DevOps, Docker, K8s, Jenkins, Terraform</li>
+<li><strong>Continuous Delivery (Dave Farley)</strong> — CI/CD best practices from a pioneer</li>
+<li><strong>Execute Automation</strong> — C#, Selenium, API, BDD</li>
+<li><strong>DevOps Toolkit (Victor Farcic)</strong> — K8s, GitOps, advanced DevOps</li>
+</ul>
+
+<h4>Books</h4>
+<ul>
+<li><em>Continuous Delivery</em> — Humble &amp; Farley (CI/CD bible)</li>
+<li><em>The DevOps Handbook</em> — Kim, Humble, Debois, Willis</li>
+<li><em>Leading Quality</em> — Bush &amp; Parnell (QA leadership)</li>
+<li><em>Accelerate</em> — Forsgren, Humble, Kim (DORA research)</li>
+<li><em>Selenium WebDriver 3 Practical Guide</em> — Ashraf (framework patterns)</li>
+</ul>
+
+<h4>Practice Platforms</h4>
+<ul>
+<li><strong>practice.automationtesting.in</strong> — E-commerce demo site for automation</li>
+<li><strong>demoqa.com</strong> — Forms, widgets, interactions practice</li>
+<li><strong>reqres.in</strong> — Free API for REST Assured practice</li>
+<li><strong>Katacoda / Killercoda</strong> — Interactive Docker and K8s scenarios</li>
+<li><strong>GitHub Actions / Jenkins on local Docker</strong> — Build your own CI lab</li>
+</ul>
+
+<h3>4-Week Interview Preparation Plan (Senior / SDET)</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Week</th><th>Focus</th><th>Daily Tasks (2-3 hrs/day)</th></tr></thead>
+<tbody>
+<tr>
+<td><strong>Week 1: CI/CD + Jenkins Deep Dive</strong></td>
+<td>Pipeline design, Jenkinsfile mastery</td>
+<td>
+Day 1-2: Review Sections 1-17 of this handbook<br>
+Day 3-4: Write Jenkinsfile from scratch for sample project<br>
+Day 5: Practice explaining pipeline whiteboard-style<br>
+Day 6-7: Answer all 100 CI/CD + 100 Jenkins questions (Section 20)
+</td>
+</tr>
+<tr>
+<td><strong>Week 2: Framework + Git + Maven</strong></td>
+<td>End-to-end project, build tooling</td>
+<td>
+Day 1-2: Build mini e-commerce framework (Section 18 code)<br>
+Day 3: Docker + docker-compose for Grid execution<br>
+Day 4: Git branching scenarios (merge conflict, rebase, cherry-pick)<br>
+Day 5: Maven profiles, Surefire, dependency troubleshooting<br>
+Day 6-7: Answer Git (50) + Maven (50) questions from Section 20
+</td>
+</tr>
+<tr>
+<td><strong>Week 3: DevOps + System Design</strong></td>
+<td>Docker, K8s, cloud, architecture</td>
+<td>
+Day 1-2: Docker commands hands-on; build test runner image<br>
+Day 3: kubectl basics; deploy sample app to minikube<br>
+Day 4: DevOps concepts + 50 DevOps questions (Section 20)<br>
+Day 5: Design "test platform for 50 microservices" on whiteboard<br>
+Day 6-7: Mock interviews with peer; record and review
+</td>
+</tr>
+<tr>
+<td><strong>Week 4: Revision + Mock Interviews</strong></td>
+<td>Consolidate, practice delivery</td>
+<td>
+Day 1: Section 21 full revision (1-day notes)<br>
+Day 2: 50 quick revision points — recite from memory<br>
+Day 3: Prepare 5 STAR stories (pipeline optimization, flaky test fix, framework migration, CI setup, mentoring)<br>
+Day 4: Mock interview #1 — focus on CI/CD + Jenkins<br>
+Day 5: Mock interview #2 — focus on framework + coding<br>
+Day 6: Review weak areas identified in mocks<br>
+Day 7: Light revision, rest, prepare questions to ask interviewer
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Final Advice at 4 Years Experience</strong>
+<p>You are not expected to know everything about Kubernetes or Terraform at the SDET II level — but you <em>must</em> confidently explain a complete CI/CD pipeline you built, defend framework design decisions, and demonstrate that you think about quality as an engineering discipline, not a phase. Lead with your project story (Section 18), support with cheat sheet facts (Section 19), and drill interview Q&amp;A (Section 20) until answers flow naturally.</p>
+</div>
+
+</section>

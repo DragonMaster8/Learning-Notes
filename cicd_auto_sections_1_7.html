@@ -1,0 +1,1562 @@
+<!-- CI/CD for Automation Engineers - Sections 1-7 -->
+<!-- Section content only - no head/body/sidebar -->
+
+<section id="section-1" class="section-card">
+<h2>Section 1: DevOps Fundamentals for Automation Engineers</h2>
+
+<h3>What Is DevOps?</h3>
+<p>DevOps is a culture and set of practices that bridge development and operations teams to deliver software faster, more reliably, and with continuous feedback. It is not a single tool or a job title—it is a mindset where everyone shares ownership of quality, from the first line of code to production monitoring.</p>
+<p>For automation engineers, DevOps matters because your Selenium, REST Assured, TestNG, and Cucumber suites do not run in isolation. They execute inside CI/CD pipelines triggered by developer commits, scheduled Jenkins jobs, and pull request validations. Understanding DevOps helps you configure those pipelines, interpret build failures, and collaborate effectively with developers and release managers.</p>
+
+<div class="callout">
+<strong>Automation Engineer Tip:</strong> You are not "just writing tests." You are building quality infrastructure that lives inside the same DevOps toolchain as application code. Your framework is a product that must compile, version, and deploy reliably.
+</div>
+
+<h3>Why Automation Engineers Need DevOps Knowledge</h3>
+<ul>
+<li><strong>Frameworks run in CI/CD:</strong> TestNG suites and Cucumber features are invoked by Maven in Jenkins, GitHub Actions, or Azure DevOps after every merge.</li>
+<li><strong>Pipeline configuration:</strong> You configure stages, parameters (<code>-Dbrowser=chrome</code>, <code>-Denv=qa</code>), and artifact publishing (Allure reports, screenshots).</li>
+<li><strong>Debug build failures:</strong> When a pipeline turns red, you must distinguish compile errors, dependency conflicts, environment issues, and genuine test failures.</li>
+<li><strong>Shift-left participation:</strong> You join sprint planning, review PRs for testability, and add API checks before UI automation exists.</li>
+<li><strong>Environment validation:</strong> Before regression runs, you verify QA URLs, database seeds, and test account availability.</li>
+</ul>
+
+<h3>Traditional SDLC vs DevOps</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Traditional SDLC</th><th>DevOps</th></tr>
+</thead>
+<tbody>
+<tr><td>Testing Phase</td><td>Testing happens late, often in a dedicated QA phase after development "freezes"</td><td>Testing is continuous—unit, API, and UI automation run on every commit and merge</td></tr>
+<tr><td>Feedback</td><td>Feedback arrives days or weeks after code is written</td><td>Feedback within minutes via CI smoke tests and PR checks</td></tr>
+<tr><td>Deployment</td><td>Manual, infrequent, often weekend releases with long checklists</td><td>Automated deployment to QA/staging; production may deploy multiple times per day</td></tr>
+<tr><td>Releases</td><td>Large batch releases (quarterly/monthly) with high regression risk</td><td>Small, incremental releases with automated regression gates</td></tr>
+<tr><td>Collaboration</td><td>Silos—Dev hands off to QA, QA hands off to Ops</td><td>Shared ownership—automation engineers pair with devs on pipeline and test design</td></tr>
+<tr><td>Tools</td><td>Separate tools for dev, test, and ops with manual handoffs</td><td>Integrated toolchain: Git → Maven → Jenkins → Docker → Allure → Slack</td></tr>
+<tr><td>Speed</td><td>Slow cycle from requirement to production</td><td>Rapid iteration—smoke suite in 5 min, nightly full regression automated</td></tr>
+<tr><td>Risk</td><td>High risk concentrated at release time ("big bang")</td><td>Risk distributed—quality gates catch issues early; rollback is automated</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>DevOps Lifecycle from a QA Perspective</h3>
+<p>The DevOps infinity loop has eight phases. As an automation engineer, your primary zone is <strong>Test</strong>, but you touch every stage:</p>
+<ul>
+<li><strong>Plan:</strong> Define test strategy, identify automatable scenarios, estimate automation effort in sprint planning.</li>
+<li><strong>Code:</strong> Write and review test code (Page Objects, step definitions, API helpers) in Git feature branches.</li>
+<li><strong>Build:</strong> Maven compiles your framework; CI validates that test code builds alongside application code.</li>
+<li><strong>Test:</strong> <em>Your primary zone</em>—smoke, API, UI regression, Cucumber BDD scenarios execute in pipeline stages.</li>
+<li><strong>Release:</strong> Regression pass rate and quality gates determine whether a release candidate proceeds.</li>
+<li><strong>Deploy:</strong> Post-deploy smoke tests validate the deployment; you verify environment-specific configs.</li>
+<li><strong>Operate:</strong> Production monitoring tests (synthetic checks) confirm critical user journeys work live.</li>
+<li><strong>Monitor:</strong> Analyze flaky test trends, failure patterns, and Allure dashboards to improve suite health.</li>
+</ul>
+
+<pre class="ascii-diagram">
+  PLAN ──────► CODE ──────► BUILD ──────► TEST ◄── QA PRIMARY ZONE
+   ▲              │              │              │
+   │         [QA: review        [QA: Maven     [QA: Smoke/API/UI
+   │          testability]      compile OK]    TestNG/Cucumber]
+   │              │              │              │
+   │              ▼              ▼              ▼
+ MONITOR ◄── OPERATE ◄── DEPLOY ◄── RELEASE ◄──┘
+   ▲              │              │              │
+   │         [QA: synthetic   [QA: post-     [QA: regression
+   │          prod checks]     deploy smoke]  gate pass/fail]
+   │              │              │              │
+   └──────── [QA: flaky test analytics, Allure trends] ────────┘
+</pre>
+
+<h3>DevOps Tools Map for Automation Engineers</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Phase</th><th>Tool</th><th>QA Usage</th></tr>
+</thead>
+<tbody>
+<tr><td>Version Control</td><td>Git</td><td>Store Selenium Page Objects, Cucumber features, REST Assured tests; branch per feature</td></tr>
+<tr><td>Build</td><td>Maven</td><td>Manage Selenium/TestNG/Cucumber dependencies; run <code>mvn clean test</code> in CI</td></tr>
+<tr><td>CI/CD</td><td>Jenkins</td><td>Schedule nightly regression, trigger smoke on PR merge, publish Allure reports</td></tr>
+<tr><td>Containerization</td><td>Docker</td><td>Run tests in consistent Selenium Grid or standalone Chrome containers</td></tr>
+<tr><td>UI Automation</td><td>Selenium</td><td>Cross-browser UI regression executed in pipeline with WebDriverManager</td></tr>
+<tr><td>Test Framework</td><td>TestNG</td><td>Suite XML for smoke/regression; parallel execution; CI-friendly listeners</td></tr>
+<tr><td>Reporting</td><td>Allure</td><td>Rich HTML reports attached as Jenkins artifacts; trend analysis for flaky tests</td></tr>
+<tr><td>Code Quality</td><td>SonarQube</td><td>Static analysis on automation framework code; enforce coding standards</td></tr>
+<tr><td>Project Tracking</td><td>JIRA</td><td>Link test cases to stories; track automation backlog and defects from CI failures</td></tr>
+<tr><td>Communication</td><td>Slack</td><td>Pipeline failure notifications with build link, failed test summary, and screenshot attachments</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Shift-Left Testing</h3>
+<h4>What</h4>
+<p>Shift-left testing means moving quality activities earlier in the software lifecycle—before code reaches QA environments or production. Instead of waiting for a complete build, tests and quality checks happen during development.</p>
+<h4>Why</h4>
+<ul>
+<li>Defects found in development cost 10–100× less to fix than in production.</li>
+<li>CI pipelines fail fast on smoke tests, preventing broken code from reaching regression suites.</li>
+<li>Automation engineers influence API design and testability before UI work begins.</li>
+</ul>
+<h4>How Automation Engineers Practice It</h4>
+<ul>
+<li>Write REST Assured API tests before UI automation—APIs are stable and fast in CI.</li>
+<li>Add Cucumber scenarios during sprint planning so acceptance criteria become executable specs.</li>
+<li>Configure PR-level smoke suites (&lt;5 min) that run on every pull request.</li>
+<li>Participate in code reviews—flag missing <code>data-testid</code> attributes and untestable designs.</li>
+<li>Run static analysis (SonarQube) on framework code in the same pipeline as application code.</li>
+</ul>
+
+<h3>QA's Role in DevOps</h3>
+<h4>Pipeline Configuration</h4>
+<p>Automation engineers define Jenkins pipeline stages: checkout → Maven compile → smoke TestNG suite → API validation → UI regression → Allure publish. You set parameters for browser, environment, and Cucumber tags.</p>
+<h4>Test Execution</h4>
+<p>Maintain tiered suites—smoke (<code>smoke.xml</code>), regression (<code>regression.xml</code>), API-only. Configure parallel execution in Surefire for faster CI feedback.</p>
+<h4>Reporting</h4>
+<p>Integrate Allure, ExtentReports, or TestNG HTML reports as pipeline artifacts. Send Slack notifications with pass/fail summary and links to failed test screenshots.</p>
+<h4>Environment Validation</h4>
+<p>Before triggering regression, verify QA environment health—URL reachable, test data seeded, third-party services mocked or available. A green build on a broken environment wastes everyone's time.</p>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is DevOps, and why should an automation engineer care?</strong><br>DevOps bridges dev and ops through culture and automation. Automation engineers care because test frameworks run inside CI/CD pipelines—you configure, maintain, and debug them.</li>
+<li><strong>How does DevOps change the role of QA compared to traditional SDLC?</strong><br>QA shifts from a late-phase gatekeeper to a continuous quality partner involved in planning, coding test infrastructure, and monitoring production.</li>
+<li><strong>What is shift-left testing? Give an automation example.</strong><br>Testing earlier in the lifecycle. Example: REST Assured API tests run on every PR before UI tests exist.</li>
+<li><strong>Which DevOps lifecycle phase is QA's primary zone?</strong><br>Test—but QA also contributes to Plan, Code, Build, Release, Deploy, Operate, and Monitor.</li>
+<li><strong>Name three DevOps tools you use daily as an automation engineer.</strong><br>Git (version control), Maven (build/dependencies), Jenkins (CI execution).</li>
+<li><strong>How do you reduce release risk in a DevOps model?</strong><br>Automated quality gates: smoke on PR, API validation on merge, full regression nightly, post-deploy smoke in staging.</li>
+<li><strong>What is the difference between CI and DevOps?</strong><br>CI is a practice (frequent integration with automated builds/tests). DevOps is broader culture encompassing CI, CD, collaboration, and monitoring.</li>
+<li><strong>How do you handle test failures in a fast-release DevOps team?</strong><br>Triage quickly: environment vs. genuine defect vs. flaky test. Quarantine flaky tests, fix or revert, and communicate via Slack/JIRA.</li>
+<li><strong>What metrics do you track for automation in DevOps?</strong><br>Pass rate, execution time, flaky test count, coverage of critical paths, mean time to detect (MTTD) failures.</li>
+<li><strong>How does Docker help automation engineers in DevOps?</strong><br>Consistent test environments—same Chrome version, same OS—eliminating "works on my machine" failures in CI.</li>
+<li><strong>What is your role when a developer's PR fails your smoke suite?</strong><br>Provide failure logs, screenshots, and Allure report links. Collaborate to determine if it's a code defect, test issue, or environment problem.</li>
+<li><strong>How do you integrate Allure reporting into a DevOps pipeline?</strong><br>Generate Allure results during <code>mvn test</code>, archive raw results as artifacts, use Allure Jenkins plugin to render trend graphs.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p><strong>Scenario:</strong> E-commerce team migrating from quarterly releases to bi-weekly sprints with Jenkins CI.</p>
+<p><strong>Automation engineer actions:</strong></p>
+<ul>
+<li>Created Git repo <code>automation-framework</code> with Maven, Selenium 4, TestNG, Cucumber, REST Assured.</li>
+<li>Configured Jenkins multibranch pipeline: PR → smoke suite (12 tests, 4 min); merge to develop → API + smoke (45 tests, 12 min); nightly → full regression (320 tests, 90 min).</li>
+<li>Added Allure reporting and Slack notifications to <code>#qa-automation</code> channel.</li>
+<li>Shift-left: REST Assured payment API tests added before checkout UI automation.</li>
+<li>Result: Release cycle reduced from 12 weeks to 2 weeks; production defects dropped 40% in first quarter.</li>
+</ul>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Treating automation as separate from DevOps—framework not in Git or not built by Maven in CI.</li>
+<li>Running only manual testing in sprint while expecting CI to "catch everything" with a brittle smoke suite.</li>
+<li>Ignoring environment validation—regression runs against stale QA data and produces false failures.</li>
+<li>Not participating in sprint planning—automation always lags one sprint behind development.</li>
+<li>Blaming developers for all red builds without checking framework compile errors or dependency conflicts.</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Red build, unclear cause:</strong> Check Maven compile first, then Surefire test output, then environment connectivity.</li>
+<li><strong>Tests pass locally, fail in CI:</strong> Compare Java version, browser/driver versions, environment URLs, and headless vs. headed mode.</li>
+<li><strong>Pipeline too slow:</strong> Split suites by tier; run API tests before UI; enable TestNG parallel execution.</li>
+<li><strong>Too many Slack alerts:</strong> Notify only on merge/regression failures, not every PR smoke failure (or use separate channels).</li>
+<li><strong>Framework won't compile in CI:</strong> Run <code>mvn dependency:tree</code> locally; ensure all dependencies are in pom.xml, not IDE-only.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>DevOps = culture + practices bridging Dev and Ops; not just tools.</li>
+<li>Automation engineers live in CI/CD—Git, Maven, Jenkins, Docker, Allure.</li>
+<li>QA primary zone = Test phase; but touch all 8 lifecycle stages.</li>
+<li>Shift-left = test early: API before UI, smoke on PR, review for testability.</li>
+<li>QA DevOps roles: pipeline config, test execution, reporting, env validation.</li>
+<li>Traditional SDLC = late testing, slow feedback; DevOps = continuous automated quality.</li>
+</ul>
+</section>
+
+<section id="section-2" class="section-card">
+<h2>Section 2: CI/CD Fundamentals</h2>
+
+<h3>Continuous Integration (CI)</h3>
+<h4>Definition</h4>
+<p>Continuous Integration is the practice of frequently merging code changes into a shared repository, where each merge triggers an automated build and automated tests. The goal is to detect integration problems early—when they are cheapest to fix.</p>
+<h4>What Happens in CI (Automation Engineer's View)</h4>
+<ol>
+<li><strong>Commit:</strong> Developer pushes code to Git (or opens a PR).</li>
+<li><strong>Webhook:</strong> Git notifies Jenkins/GitHub Actions of the change.</li>
+<li><strong>Build:</strong> CI checks out code, runs <code>mvn clean compile</code>.</li>
+<li><strong>Smoke Tests:</strong> CI runs <code>mvn test -Dsurefire.suiteXmlFiles=smoke.xml</code>—TestNG login and navigation tests.</li>
+<li><strong>Report:</strong> Allure/HTML report published; Slack notification sent if failed.</li>
+</ol>
+<h4>QA Role in CI</h4>
+<ul>
+<li>Maintain the automation suite—keep smoke tests fast (&lt;5 min) and reliable (&gt;98% pass rate).</li>
+<li>Ensure tests run in CI on every merge—not just locally.</li>
+<li>Fix flaky tests immediately; a flaky smoke suite destroys CI trust.</li>
+<li>Review test failures within SLA (e.g., 2 hours) and classify: defect, test bug, or environment issue.</li>
+</ul>
+
+<h3>Continuous Delivery (CDel)</h3>
+<h4>Definition</h4>
+<p>Continuous Delivery means code is always in a deployable state. Every build that passes all automated stages can be released to production, but a <strong>manual approval gate</strong> controls the final production deployment.</p>
+<h4>QA Role in Continuous Delivery</h4>
+<ul>
+<li><strong>Regression gates:</strong> Full regression must pass before release candidate is promoted.</li>
+<li><strong>Environment validation:</strong> Verify staging mirrors production config before UAT sign-off.</li>
+<li><strong>Release notes:</strong> Confirm automated test coverage for new features in the release branch.</li>
+<li><strong>UAT support:</strong> Cucumber BDD scenarios serve as living documentation for business UAT.</li>
+</ul>
+
+<h3>Continuous Deployment (CDep)</h3>
+<h4>Definition</h4>
+<p>Continuous Deployment goes one step further: every build that passes all automated quality gates is <strong>automatically deployed to production</strong> without manual intervention.</p>
+<h4>QA Role in Continuous Deployment</h4>
+<ul>
+<li><strong>Automated quality gates:</strong> Strict pass rate (&gt;99%), zero blocker failures, code coverage thresholds.</li>
+<li><strong>Production monitoring tests:</strong> Synthetic Selenium checks every 15 minutes on live URLs.</li>
+<li><strong>Canary validation:</strong> Automated smoke runs against canary deployment before full traffic shift.</li>
+<li><strong>Rollback triggers:</strong> Production test failures automatically halt deployment pipeline.</li>
+</ul>
+
+<div class="callout">
+<strong>Key Distinction:</strong> Continuous Delivery = automated path to production with manual release button. Continuous Deployment = no manual button; quality gates must be extremely robust.
+</div>
+
+<h3>CI vs CD Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Continuous Integration (CI)</th><th>Continuous Delivery/Deployment (CD)</th></tr>
+</thead>
+<tbody>
+<tr><td>Primary Focus</td><td>Build + test on every commit</td><td>Automated deployment to environments</td></tr>
+<tr><td>Trigger</td><td>Git push, PR, merge</td><td>Successful CI build + quality gates</td></tr>
+<tr><td>Output</td><td>Build artifact (JAR) + test report</td><td>Deployed application in target environment</td></tr>
+<tr><td>QA Involvement</td><td>Smoke, API, unit test execution</td><td>Regression gates, UAT, prod monitoring</td></tr>
+<tr><td>Frequency</td><td>Every commit (multiple times daily)</td><td>Every passing build (Delivery: on demand; Deployment: automatic)</td></tr>
+<tr><td>Tools</td><td>Jenkins, GitHub Actions, Maven, TestNG</td><td>Same + deployment plugins, Docker, Kubernetes</td></tr>
+<tr><td>Failure Impact</td><td>Blocks merge; developer fixes code</td><td>Blocks release or triggers rollback</td></tr>
+<tr><td>Automation Engineer Task</td><td>Maintain smoke/API suites, fix flaky tests</td><td>Configure regression gates, post-deploy smoke, synthetic monitoring</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Continuous Delivery vs Continuous Deployment</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Continuous Delivery</th><th>Continuous Deployment</th></tr>
+</thead>
+<tbody>
+<tr><td>Production Release</td><td>Manual approval required</td><td>Fully automatic after quality gates</td></tr>
+<tr><td>Release Frequency</td><td>On business schedule (weekly/bi-weekly)</td><td>Multiple times per day possible</td></tr>
+<tr><td>QA Sign-off</td><td>Human UAT/business approval typical</td><td>Automated gates replace most manual sign-off</td></tr>
+<tr><td>Risk Tolerance</td><td>Moderate—human gate absorbs risk</td><td>Low tolerance—requires exceptional test coverage</td></tr>
+<tr><td>Best For</td><td>Regulated industries, enterprise releases</td><td>SaaS products with strong automation maturity</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>CI/CD Pipeline — Automation Touchpoints</h3>
+<pre class="ascii-diagram">
+ Developer Commit
+       │
+       ▼
+  ┌─────────┐   QA: Verify branch triggers correct Jenkins job
+  │  BUILD  │   QA: Maven compile must include test sources
+  └────┬────┘
+       ▼
+  ┌─────────┐   QA: Dev-owned; automation engineer monitors coverage
+  │  UNIT   │
+  │  TEST   │
+  └────┬────┘
+       ▼
+  ┌─────────┐   QA: REST Assured API tests — fast, stable
+  │  INTEG  │   QA: Validate service contracts, auth, data setup
+  │  TEST   │
+  └────┬────┘
+       ▼
+  ┌─────────┐   QA: TestNG smoke.xml — &lt;5 min, critical paths
+  │  SMOKE  │   QA: Login, checkout, search — must be rock-solid
+  │  TEST   │
+  └────┬────┘
+       ▼
+  ┌─────────┐   QA: Full TestNG/Cucumber regression — nightly
+  │REGRESSION│  QA: Allure report, flaky test quarantine
+  └────┬────┘
+       ▼
+  ┌─────────┐   QA: Post-deploy smoke on QA environment
+  │ DEPLOY  │   QA: Validate env URL, test data, browser grid
+  │  TO QA  │
+  └────┬────┘
+       ▼
+  ┌─────────┐   QA: Cucumber BDD scenarios for business UAT
+  │   UAT   │   QA: Support manual testers with automated evidence
+  └────┬────┘
+       ▼
+  ┌─────────┐   QA: Synthetic monitoring, canary smoke tests
+  │  PROD   │   QA: Alert on production test failures via Slack/PagerDuty
+  └─────────┘
+
+ Commit → Build → Unit Test → Integration Test → Smoke Test → Regression → Deploy to QA → UAT → Production
+</pre>
+
+<h3>CI/CD Tools Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Jenkins</th><th>GitHub Actions</th><th>Azure DevOps</th><th>GitLab CI</th></tr>
+</thead>
+<tbody>
+<tr><td>Hosting</td><td>Self-hosted (on-prem/cloud)</td><td>Cloud (GitHub-hosted runners)</td><td>Cloud or self-hosted agents</td><td>Cloud or self-hosted runners</td></tr>
+<tr><td>Configuration</td><td>Jenkinsfile (Declarative/Scripted)</td><td>YAML workflows in <code>.github/workflows/</code></td><td>YAML pipelines in repo</td><td><code>.gitlab-ci.yml</code></td></tr>
+<tr><td>Maven/TestNG Integration</td><td>Maven plugin, Surefire publisher</td><td>Shell step: <code>mvn clean test</code></td><td>Built-in Maven task</td><td>Native Maven CI template</td></tr>
+<tr><td>Parallel Agents</td><td>Master-Agent with labels (Windows/Linux)</td><td>Matrix strategy across OS/browsers</td><td>Agent pools with capabilities</td><td>Runner tags for OS/browser</td></tr>
+<tr><td>Allure Reporting</td><td>Allure Jenkins plugin</td><td>Upload artifact + GitHub Pages</td><td>Publish build artifacts</td><td>Allure report in pipeline artifacts</td></tr>
+<tr><td>PR Integration</td><td>Multibranch Pipeline + GitHub webhook</td><td>Native PR checks and status</td><td>Branch policies + PR builds</td><td>Merge request pipelines</td></tr>
+<tr><td>Learning Curve</td><td>High—plugin ecosystem, self-maintained</td><td>Low-Medium—YAML, tight Git integration</td><td>Medium—enterprise features</td><td>Medium—all-in-one DevOps platform</td></tr>
+<tr><td>Best For Automation Teams</td><td>Large teams needing custom agents (Selenium Grid)</td><td>GitHub-centric teams, open-source projects</td><td>Microsoft/.NET shops with mixed stacks</td><td>Teams wanting Git + CI + registry in one tool</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is Continuous Integration?</strong><br>Frequent code merges with automated build and test on each integration. Example: every PR runs Maven compile + TestNG smoke suite.</li>
+<li><strong>What is the difference between Continuous Delivery and Continuous Deployment?</strong><br>Delivery requires manual approval for production; Deployment is fully automatic after quality gates pass.</li>
+<li><strong>Walk through what happens when a developer commits code in a CI pipeline.</strong><br>Commit → webhook → Jenkins checkout → Maven build → smoke tests → report → notify team.</li>
+<li><strong>What is your role as an automation engineer in CI vs CD?</strong><br>CI: maintain fast reliable smoke/API suites. CD: regression gates, post-deploy validation, production monitoring.</li>
+<li><strong>What quality gates would you set before production deployment?</strong><br>Smoke pass 100%, regression &gt;95%, no blocker defects, API contract tests pass, code coverage threshold met.</li>
+<li><strong>How do you integrate TestNG with CI?</strong><br>Maven Surefire plugin runs suite XML; Jenkins publishes TestNG results and Allure reports as artifacts.</li>
+<li><strong>Why should smoke tests be under 5 minutes?</strong><br>Developers need fast feedback on PRs; slow smoke suites discourage frequent commits.</li>
+<li><strong>Jenkins vs GitHub Actions for Selenium automation?</strong><br>Jenkins: self-hosted agents with specific browsers/OS. GitHub Actions: easy for GitHub repos, matrix for cross-browser, limited custom agent control on free tier.</li>
+<li><strong>What happens when regression fails before a scheduled release?</strong><br>Release blocked; triage failures, fix or quarantine flaky tests, re-run regression, obtain sign-off before promoting.</li>
+<li><strong>How do you run Cucumber tests in CI?</strong><br><code>mvn test -Dcucumber.filter.tags="@smoke"</code> in pipeline; publish Cucumber HTML report as artifact.</li>
+<li><strong>What is a webhook in CI context?</strong><br>HTTP callback from Git to Jenkins/Actions when code is pushed—triggers pipeline automatically.</li>
+<li><strong>How do you handle long-running regression in CI?</strong><br>Run full regression nightly/on schedule, not on every commit; use PR smoke + post-merge expanded suite for fast feedback.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p><strong>Scenario:</strong> Banking API team adopting CI/CD with Jenkins and REST Assured.</p>
+<ul>
+<li><strong>CI (every PR):</strong> Maven build + 20 REST Assured API smoke tests (auth, account, transfer)—3 minutes.</li>
+<li><strong>Post-merge:</strong> Expanded API suite (80 tests) + 15 Selenium UI smoke tests—18 minutes.</li>
+<li><strong>Continuous Delivery:</strong> Nightly full regression (400 tests); release manager manually promotes to production after UAT.</li>
+<li><strong>Pipeline config:</strong> Jenkinsfile with stages: Build → API Smoke → UI Smoke → Deploy to QA → Notify.</li>
+<li><strong>Result:</strong> Integration defects caught within 30 minutes of commit; production incidents reduced 55%.</li>
+</ul>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Confusing Continuous Delivery with Continuous Deployment—they require different QA rigor.</li>
+<li>Running full UI regression on every commit—pipeline takes 2+ hours, developers ignore results.</li>
+<li>No artifact publishing—failures happen but Allure reports are not archived for debugging.</li>
+<li>Manual deployment steps not documented—automation passes but ops deploys wrong build.</li>
+<li>Single monolithic pipeline with no stage separation—cannot identify whether build, API, or UI failed.</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Pipeline not triggering on commit:</strong> Verify webhook URL, credentials, and branch filter in Jenkins job.</li>
+<li><strong>Build passes but wrong tests ran:</strong> Check Surefire suiteXmlFiles parameter and Jenkins job configuration.</li>
+<li><strong>Intermittent CI failures:</strong> Compare timestamps with environment maintenance windows; check for shared test data conflicts.</li>
+<li><strong>Deployment succeeds but tests fail post-deploy:</strong> Verify deployed version matches tested artifact; check environment-specific config (<code>-Denv=qa</code>).</li>
+<li><strong>GitHub Actions timeout:</strong> Split long regression into scheduled workflow; keep PR workflow under 10 minutes.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>CI = frequent merge + automated build + automated tests.</li>
+<li>CD Delivery = deployable anytime, manual prod release.</li>
+<li>CD Deployment = automatic prod release after gates.</li>
+<li>Pipeline flow: Commit → Build → Unit → Integration → Smoke → Regression → Deploy → UAT → Prod.</li>
+<li>QA CI role: maintain suites, ensure tests run, fix flaky tests fast.</li>
+<li>QA CD role: regression gates, env validation, prod monitoring.</li>
+<li>Tools: Jenkins (flexible/self-hosted), GitHub Actions (Git-native), Azure DevOps (enterprise), GitLab CI (all-in-one).</li>
+</ul>
+</section>
+
+<section id="section-3" class="section-card">
+<h2>Section 3: Automation Testing in CI/CD Pipeline</h2>
+
+<h3>Complete Pipeline from an Automation Perspective</h3>
+<p>Every stage in the CI/CD pipeline has explicit QA responsibilities. Understanding this flow helps automation engineers configure Jenkins jobs, debug failures, and design tiered test suites.</p>
+
+<pre class="ascii-diagram">
+ STAGE              │ AUTOMATION ENGINEER RESPONSIBILITY
+ ───────────────────┼──────────────────────────────────────────────────
+ Developer Commit   │ Ensure webhook triggers correct job/branch
+       │            │
+       ▼            │
+ Code Checkout      │ Verify correct branch, submodule, test data repo
+       │            │
+       ▼            │
+ Compile (Maven)    │ Framework must compile; fix dependency errors
+       │            │ before blaming application code
+       ▼            │
+ Smoke Tests        │ TestNG smoke.xml — login, critical path (&lt;5 min)
+       │            │ Zero tolerance for flaky smoke tests
+       ▼            │
+ API Validation     │ REST Assured — auth, CRUD, contracts (fast layer)
+       │            │
+       ▼            │
+ UI Regression      │ Selenium + Cucumber — Page Objects, cross-page flows
+       │            │
+       ▼            │
+ Report             │ Allure/ExtentReports archived as Jenkins artifacts
+       │            │
+       ▼            │
+ Deploy             │ Post-deploy smoke on target environment URL
+                    │ Verify -Denv parameter matches deployed env
+</pre>
+
+<h3>Test Pyramid in CI/CD</h3>
+<p>The test pyramid guides what runs at which pipeline stage. More tests at the bottom (fast, cheap); fewer at the top (slow, expensive).</p>
+
+<pre class="ascii-diagram">
+                    ┌─────────────┐
+                    │  UI Tests   │  ← Few, slow (Selenium/Cucumber)
+                    │  Nightly /  │     5–10% of suite, 1–2 hrs
+                    │   Weekly    │
+                   ┌┴─────────────┴┐
+                   │  API Tests    │  ← Medium speed (REST Assured)
+                   │  Post-merge / │     20–30% of suite, 10–20 min
+                   │   Nightly     │
+                  ┌┴───────────────┴┐
+                  │   Unit Tests    │  ← Many, fast (JUnit/TestNG)
+                  │   Every commit  │     60–70%, seconds
+                  └─────────────────┘
+
+ Pipeline Stage Mapping:
+   Every Commit  → Unit + Smoke (API subset)
+   Post-Merge    → Unit + API Validation + UI Smoke
+   Nightly       → Full API + Full UI Regression
+   Weekly        → Cross-browser Matrix + Performance
+</pre>
+
+<h4>What Runs at Which Pipeline Stage</h4>
+<ul>
+<li><strong>PR validation:</strong> Unit tests + API smoke + 10 UI smoke tests.</li>
+<li><strong>Post-merge to develop:</strong> Expanded API suite + TestNG smoke.xml (30–50 tests).</li>
+<li><strong>Nightly:</strong> Full Cucumber regression + REST Assured contract tests.</li>
+<li><strong>Weekly:</strong> Cross-browser Selenium (Chrome, Firefox, Edge) + optional performance.</li>
+</ul>
+
+<h3>Shift-Left Testing in CI/CD</h3>
+<ul>
+<li><strong>Move testing earlier:</strong> API tests written in same sprint as feature development.</li>
+<li><strong>QA in sprint planning:</strong> Identify automatable acceptance criteria; create Cucumber feature files upfront.</li>
+<li><strong>Early automation:</strong> REST Assured tests before Selenium—APIs stabilize before UI.</li>
+<li><strong>PR-level checks:</strong> Developers cannot merge if smoke suite fails.</li>
+<li><strong>Testability reviews:</strong> Flag missing locators, hard-coded waits, untestable API designs in PR review.</li>
+</ul>
+
+<h3>Test Execution Strategy in CI/CD</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Trigger</th><th>Suite</th><th>Duration</th><th>Scope</th><th>Fail Action</th></tr>
+</thead>
+<tbody>
+<tr><td>PR / Pull Request</td><td>Smoke (<code>smoke.xml</code>)</td><td>&lt;5 min</td><td>Login, critical API, 10 UI paths</td><td>Block merge; notify developer via GitHub/Jenkins status</td></tr>
+<tr><td>Post-merge (develop)</td><td>Expanded smoke + API</td><td>&lt;15 min</td><td>50 API + 25 UI smoke tests</td><td>Alert QA channel; create JIRA ticket; dev fixes or revert</td></tr>
+<tr><td>Nightly (scheduled)</td><td>Full regression</td><td>1–2 hrs</td><td>All TestNG/Cucumber scenarios</td><td>Email report; quarantine flaky; block release if &lt;95% pass</td></tr>
+<tr><td>Weekly (scheduled)</td><td>Cross-browser + perf</td><td>2–4 hrs</td><td>Chrome, Firefox, Edge matrix</td><td>Log browser-specific issues; update WebDriverManager pins</td></tr>
+<tr><td>Pre-release</td><td>Full regression + UAT tags</td><td>1–2 hrs</td><td><code>@regression</code> + <code>@uat</code> Cucumber tags</td><td>Block release promotion; require QA sign-off</td></tr>
+<tr><td>Post-deploy</td><td>Deploy smoke</td><td>&lt;10 min</td><td>Health check + critical journeys on live env</td><td>Trigger rollback alert; notify on-call</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Quality Gates</h3>
+<p>Quality gates are automated checkpoints that determine whether a build passes or fails. Automation engineers define and enforce these thresholds.</p>
+<h4>Pass Rate Threshold</h4>
+<p>Regression must achieve &gt;95% pass rate (some teams require 99% for release branches). Below threshold = build marked unstable or failed.</p>
+<h4>No Critical/Blocker Failures</h4>
+<p>Any test tagged <code>@critical</code> or linked to P1 JIRA story failing = hard gate failure regardless of overall pass rate.</p>
+<h4>Code Coverage Check</h4>
+<p>JaCoCo integrated via Maven reports minimum coverage (e.g., 70% for application code). Automation framework code may have separate threshold.</p>
+<h4>Static Analysis Pass</h4>
+<p>SonarQube gate: no new blocker/critical issues, no security hotspots in test code (hardcoded credentials in tests).</p>
+
+<div class="callout">
+<strong>Example Jenkins Quality Gate:</strong> Stage('Quality Gate') { when { branch 'release/*' } steps { script { if (currentBuild.result == 'UNSTABLE') { error('Pass rate below 95%') } } } }
+</div>
+
+<h3>Flaky Test Management in CI/CD</h3>
+<h4>Retry Mechanism</h4>
+<p>Configure TestNG <code>IRetryAnalyzer</code> or Surefire reruns (max 1–2 retries) for known intermittent tests. Do not retry entire suite—only quarantined tests.</p>
+<h4>Quarantine</h4>
+<p>Move flaky tests to <code>quarantine.xml</code> suite; exclude from smoke/regression gates. Track in JIRA with root-cause analysis deadline.</p>
+<h4>Monitoring</h4>
+<p>Allure history tracks flaky rate per test. Jenkins trend graph shows unstable builds. Alert when same test fails &gt;3 times in 7 days.</p>
+<pre><code>// TestNG RetryAnalyzer example for CI flaky handling
+public class RetryListener implements IRetryAnalyzer {
+    private int count = 0;
+    private static final int MAX = 2;
+    @Override
+    public boolean retry(ITestResult result) {
+        if (count &lt; MAX) { count++; return true; }
+        return false;
+    }
+}</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Describe the complete CI/CD pipeline from an automation engineer's view.</strong><br>Commit → checkout → Maven compile → smoke → API → UI regression → Allure report → deploy → post-deploy smoke.</li>
+<li><strong>What is the test pyramid and how does it map to CI stages?</strong><br>Unit (every commit) → API (post-merge) → UI (nightly). More fast tests early, fewer slow tests later.</li>
+<li><strong>What runs in a PR validation vs nightly build?</strong><br>PR: smoke &lt;5 min. Nightly: full regression 1–2 hrs with all Cucumber/TestNG scenarios.</li>
+<li><strong>What are quality gates? Give three examples.</strong><br>Pass rate &gt;95%, zero @critical failures, SonarQube static analysis pass.</li>
+<li><strong>How do you handle flaky tests in CI?</strong><br>Retry analyzer (limited), quarantine suite, Allure flaky tracking, JIRA ticket for root cause.</li>
+<li><strong>Why run API tests before UI in the pipeline?</strong><br>API tests are faster, more stable, and catch backend defects before expensive Selenium runs.</li>
+<li><strong>How do you configure Cucumber tag filters in CI?</strong><br><code>mvn test -Dcucumber.filter.tags="@smoke and not @wip"</code> in Jenkins pipeline stage.</li>
+<li><strong>What fail action do you take when nightly regression drops below 95%?</strong><br>Block release, triage failures, quarantine flaky, notify team, re-run before sign-off.</li>
+<li><strong>How do you parallelize tests in CI for speed?</strong><br>TestNG parallel="methods" in suite XML; Jenkins runs on multiple agents with suite splitting.</li>
+<li><strong>What is shift-left in CI/CD context?</strong><br>Run tests on PR, write API tests during development, participate in sprint planning for automation.</li>
+<li><strong>How do you publish test reports in Jenkins?</strong><br>Allure plugin + archiveArtifacts for screenshots; HTML Publisher for ExtentReports.</li>
+<li><strong>Difference between unstable and failed build in Jenkins?</strong><br>Failed = hard failure (compile, gate breach). Unstable = tests failed but pipeline continued (configurable).</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p><strong>Scenario:</strong> Healthcare portal with Selenium, Cucumber BDD, REST Assured, Jenkins.</p>
+<ul>
+<li><strong>PR pipeline (4 min):</strong> <code>@smoke</code> Cucumber scenarios + 15 REST Assured API checks.</li>
+<li><strong>Post-merge (14 min):</strong> TestNG <code>api-validation.xml</code> (60 tests) + UI smoke (20 tests).</li>
+<li><strong>Nightly (95 min):</strong> Full regression (280 Cucumber scenarios), parallel=4 on Jenkins agents.</li>
+<li><strong>Quality gate:</strong> Release branch requires 97% pass, zero @patient-data failures.</li>
+<li><strong>Flaky management:</strong> 8 tests in quarantine suite; Allure trend reviewed weekly.</li>
+<li><strong>Result:</strong> Release confidence increased; manual regression reduced from 3 days to 4 hours review.</li>
+</ul>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Running full UI regression on every PR—developers wait 90 minutes for feedback.</li>
+<li>No tiered suites—single testng.xml with 500 tests for all triggers.</li>
+<li>Ignoring flaky tests—team loses trust in CI and starts skipping red builds.</li>
+<li>Hard-coded environment URLs in tests instead of <code>-Denv=qa</code> Maven profiles.</li>
+<li>Not archiving screenshots/logs—cannot debug CI-only failures.</li>
+<li>Quality gates too loose (80% pass)—defects slip into staging regularly.</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Smoke passes locally, fails in CI:</strong> Check headless mode, screen resolution, implicit waits, and grid browser version.</li>
+<li><strong>API tests fail only in CI:</strong> Verify VPN/firewall, test account credentials in Jenkins credentials store, and base URL property.</li>
+<li><strong>Nightly job timing out:</strong> Split suite across agents; increase Jenkins timeout; profile slow tests via Surefire report.</li>
+<li><strong>Pass rate suddenly drops:</strong> Check if application deploy happened mid-run; verify test data seed job ran.</li>
+<li><strong>Allure report empty:</strong> Ensure <code>allure.results.directory</code> property set; results generated before Allure plugin step.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>Pipeline stages each have explicit QA responsibilities—know them all.</li>
+<li>Test pyramid: Unit (many/fast) → API (medium) → UI (few/slow).</li>
+<li>PR smoke &lt;5 min; post-merge &lt;15 min; nightly 1–2 hrs; weekly cross-browser.</li>
+<li>Quality gates: pass rate, no critical failures, coverage, static analysis.</li>
+<li>Flaky tests: retry (limited), quarantine, monitor via Allure trends.</li>
+<li>Shift-left: API before UI, tests on PR, QA in sprint planning.</li>
+</ul>
+</section>
+
+<section id="section-4" class="section-card">
+<h2>Section 4: Git for Automation Engineers</h2>
+
+<h3>Why Git for QA</h3>
+<ul>
+<li><strong>Version control for test code:</strong> Track changes to Page Objects, step definitions, and API helpers over time.</li>
+<li><strong>Collaboration:</strong> Multiple automation engineers work on the same framework without overwriting each other's work.</li>
+<li><strong>Branching for features:</strong> Develop login tests on <code>feature/login-tests</code> while colleague works on checkout tests.</li>
+<li><strong>CI/CD integration:</strong> Jenkins multibranch pipelines build every branch automatically.</li>
+<li><strong>Rollback:</strong> Revert a bad test commit that broke the nightly regression.</li>
+</ul>
+
+<h3>Git Architecture</h3>
+<pre class="ascii-diagram">
+  Working Directory          Staging Area           Local Repo          Remote Repo
+  (your IDE/files)           (git add)              (git commit)        (GitHub/GitLab)
+ ┌─────────────────┐       ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
+ │ LoginTest.java  │ add   │ LoginTest   │commit │ abc1234     │ push  │ origin/main │
+ │ LoginPage.java  │──────►│ LoginPage   │──────►│ "Add login  │──────►│             │
+ │ *.feature files │       │ *.feature   │       │  test cases"│       │ team remote │
+ └─────────────────┘       └─────────────┘       └─────────────┘       └─────────────┘
+        ▲                                              │                      │
+        └──────────────── pull / checkout ─────────────┴──────────────────────┘
+</pre>
+
+<h3>Essential Git Commands</h3>
+
+<h4>git clone</h4>
+<p><strong>Purpose:</strong> Copy a remote repository to your local machine.</p>
+<pre><code>git clone https://github.com/team/automation-framework.git
+cd automation-framework</code></pre>
+<p><strong>Automation example:</strong> New team member clones the framework repo and runs <code>mvn clean test</code> locally.</p>
+
+<h4>git pull</h4>
+<p><strong>Purpose:</strong> Fetch and merge latest changes from remote into your current branch.</p>
+<pre><code>git pull origin develop</code></pre>
+<p><strong>Automation example:</strong> Sync latest Page Object changes before adding new checkout tests.</p>
+
+<h4>git push</h4>
+<p><strong>Purpose:</strong> Upload local commits to remote repository.</p>
+<pre><code>git push origin feature/login-tests</code></pre>
+<p><strong>Automation example:</strong> Push new REST Assured API tests for review.</p>
+
+<h4>git commit</h4>
+<p><strong>Purpose:</strong> Save staged changes to local repository with a descriptive message.</p>
+<pre><code>git add src/test/java/tests/LoginTest.java
+git commit -m "Add login test cases for invalid credentials"</code></pre>
+
+<h4>git fetch</h4>
+<p><strong>Purpose:</strong> Download remote changes without merging—inspect before integrating.</p>
+<pre><code>git fetch origin
+git log origin/develop --oneline -5</code></pre>
+
+<h4>git checkout</h4>
+<p><strong>Purpose:</strong> Switch branches or create a new branch.</p>
+<pre><code>git checkout -b feature/login-tests
+git checkout develop</code></pre>
+
+<h4>git branch</h4>
+<p><strong>Purpose:</strong> List, create, or delete branches.</p>
+<pre><code>git branch                    # list local branches
+git branch feature/api-tests  # create branch
+git branch -d feature/old     # delete merged branch</code></pre>
+
+<h4>git merge</h4>
+<p><strong>Purpose:</strong> Combine feature branch into target branch (e.g., develop).</p>
+<pre><code>git checkout develop
+git merge feature/login-tests</code></pre>
+
+<h4>git rebase</h4>
+<p><strong>Purpose:</strong> Replay your commits on top of latest develop for linear history.</p>
+<pre><code>git checkout feature/login-tests
+git rebase develop</code></pre>
+
+<h4>git stash</h4>
+<p><strong>Purpose:</strong> Temporarily save uncommitted changes.</p>
+<pre><code>git stash
+git checkout develop
+git pull origin develop
+git checkout feature/login-tests
+git stash pop</code></pre>
+
+<h4>git log</h4>
+<p><strong>Purpose:</strong> View commit history.</p>
+<pre><code>git log --oneline -10
+git log --author="qa-engineer" --since="2 weeks ago"</code></pre>
+
+<h4>git diff</h4>
+<p><strong>Purpose:</strong> Compare changes between working directory, staging, or branches.</p>
+<pre><code>git diff                           # unstaged changes
+git diff --staged                  # staged changes
+git diff develop..feature/login-tests</code></pre>
+
+<h3>Branching Strategy for Automation Teams</h3>
+<ul>
+<li><strong>main/master:</strong> Production-ready framework; only tested, reviewed code.</li>
+<li><strong>develop:</strong> Active integration branch; CI runs expanded smoke on merge.</li>
+<li><strong>feature/*:</strong> New test features (e.g., <code>feature/payment-api-tests</code>).</li>
+<li><strong>release/*:</strong> Release preparation; freeze new tests, run full regression.</li>
+<li><strong>hotfix/*:</strong> Urgent fixes (broken smoke test blocking all PRs).</li>
+</ul>
+
+<pre class="ascii-diagram">
+  hotfix/fix-smoke ──► main
+                           ▲
+  feature/login ──► develop ──► release/2.1 ──► main
+  feature/checkout ──► develop
+  feature/api-v2 ──► develop
+</pre>
+
+<h3>Merge vs Rebase</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Merge</th><th>Rebase</th></tr>
+</thead>
+<tbody>
+<tr><td>History</td><td>Preserves branch history with merge commits</td><td>Linear, clean history</td></tr>
+<tr><td>Command</td><td><code>git merge feature/x</code></td><td><code>git rebase develop</code></td></tr>
+<tr><td>Conflict Resolution</td><td>Once at merge time</td><td>May resolve per commit during rebase</td></tr>
+<tr><td>Safe for Shared Branches</td><td>Yes—recommended for develop/main</td><td>No—never rebase public/shared branches</td></tr>
+<tr><td>When to Use (Automation)</td><td>Merging feature branch into develop via PR</td><td>Updating your local feature branch with latest develop before PR</td></tr>
+<tr><td>CI Impact</td><td>Merge commit triggers CI—same as rebase</td><td>Rebased commits re-trigger CI on force push</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Pull Request Workflow for Test Code</h3>
+<ol>
+<li>Create feature branch: <code>git checkout -b feature/search-tests</code></li>
+<li>Write Selenium/Cucumber tests; run <code>mvn clean test</code> locally.</li>
+<li>Commit and push: <code>git push origin feature/search-tests</code></li>
+<li>Open Pull Request on GitHub/GitLab targeting <code>develop</code>.</li>
+<li>CI runs smoke suite automatically on PR.</li>
+<li>Peer review: check locators, waits, test data handling, POM structure.</li>
+<li>Merge after approval + green CI; delete feature branch.</li>
+</ol>
+
+<h3>Git Hooks for Automation</h3>
+<h4>pre-commit Hook</h4>
+<p>Run linting or format checks before commit is allowed.</p>
+<pre><code>#!/bin/sh
+# .git/hooks/pre-commit — run Checkstyle on test sources
+mvn checkstyle:check -q || { echo "Checkstyle failed"; exit 1; }</code></pre>
+<h4>pre-push Hook</h4>
+<p>Run smoke tests before push reaches remote—catches failures before CI.</p>
+<pre><code>#!/bin/sh
+# .git/hooks/pre-push — quick smoke before push
+mvn test -Dtest=SmokeTest -q || { echo "Smoke failed"; exit 1; }</code></pre>
+
+<h3>.gitignore for Automation Projects</h3>
+<pre><code># Maven
+target/
+pom.xml.tag
+
+# IDE
+.idea/
+*.iml
+.classpath
+.settings/
+
+# Test artifacts
+reports/
+screenshots/
+test-output/
+allure-results/
+allure-report/
+*.log
+
+# Compiled
+*.class
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets (never commit)
+config/credentials.properties
+.env</code></pre>
+
+<h3>Merge Conflicts in Test Code</h3>
+<p>Common conflict scenarios and resolution:</p>
+<ul>
+<li><strong>Same Page Object edited by two engineers:</strong> Open conflicted file, keep both locator additions, remove conflict markers (<code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>).</li>
+<li><strong>testng.xml suite modified on both branches:</strong> Merge both test class entries; do not drop tests silently.</li>
+<li><strong>pom.xml dependency version conflict:</strong> Align to higher compatible version; run <code>mvn dependency:tree</code> to verify.</li>
+</ul>
+<pre><code># After resolving conflicts
+git add src/test/java/pages/LoginPage.java
+git commit -m "Resolve merge conflict in LoginPage locators"
+mvn clean test   # Always verify after conflict resolution</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Why do automation engineers need Git?</strong><br>Version control, collaboration, branching for parallel test development, CI/CD integration.</li>
+<li><strong>Explain git clone vs git pull vs git fetch.</strong><br>Clone = initial copy. Pull = fetch + merge. Fetch = download without merging.</li>
+<li><strong>What branching strategy do you use for test frameworks?</strong><br>GitFlow variant: main, develop, feature/*, release/*, hotfix/*.</li>
+<li><strong>Merge vs rebase—when to use each?</strong><br>Merge for integrating PRs into develop. Rebase to update local feature branch before PR.</li>
+<li><strong>How does a PR workflow work for test code?</strong><br>Feature branch → push → PR → CI smoke → code review → merge to develop.</li>
+<li><strong>What goes in .gitignore for a Selenium Maven project?</strong><br>target/, reports/, screenshots/, *.class, .idea/, allure-results/, credentials.</li>
+<li><strong>How do you resolve a merge conflict in a Page Object?</strong><br>Edit file to combine changes, remove markers, git add, commit, run tests.</li>
+<li><strong>What is a git hook? Give an automation example.</strong><br>Script triggered by Git events. pre-push runs smoke tests before code reaches remote.</li>
+<li><strong>Can you explain git stash use case?</strong><br>Save WIP changes temporarily to switch branches for urgent hotfix.</li>
+<li><strong>How do you find who changed a locator last?</strong><br><code>git log -p src/test/java/pages/LoginPage.java</code> or <code>git blame LoginPage.java</code></li>
+<li><strong>What happens if you commit credentials to Git?</strong><br>Security risk; rotate credentials, use git filter-repo to remove from history, add to .gitignore.</li>
+<li><strong>How does Git integrate with Jenkins?</strong><br>Webhook/polling triggers multibranch pipeline on push; Jenkins checks out commit and runs Maven tests.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p><strong>Scenario:</strong> 4-person automation team maintaining 800+ TestNG/Cucumber tests.</p>
+<ul>
+<li>Repo: <code>automation-framework</code> on GitHub with branch protection on <code>main</code> and <code>develop</code>.</li>
+<li>Each engineer creates <code>feature/*</code> branches; PR requires 1 reviewer + green CI smoke.</li>
+<li>pre-push hook runs 12 smoke tests locally (~3 min)—reduces CI noise by 30%.</li>
+<li>Release branch <code>release/3.2</code> created monthly; only bugfix merges allowed.</li>
+<li>Hotfix <code>hotfix/broken-checkout-locator</code> merged to main and develop within 2 hours when smoke blocked all PRs.</li>
+</ul>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Committing <code>target/</code>, screenshots, or Allure reports—bloated repo, merge noise.</li>
+<li>Working directly on <code>develop</code> or <code>main</code>—bypasses review and CI.</li>
+<li>Vague commit messages like "fix test" instead of "Fix stale login button locator after UI redesign".</li>
+<li>Force pushing to shared branches—destroys teammates' work.</li>
+<li>Not pulling latest develop before creating PR—results in unnecessary merge conflicts.</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Permission denied on push:</strong> Check SSH key or personal access token; verify repo write access.</li>
+<li><strong>Merge conflict in pom.xml:</strong> Keep one Selenium version; run <code>mvn dependency:tree</code> after resolution.</li>
+<li><strong>Accidentally committed to wrong branch:</strong> <code>git stash</code>, checkout correct branch, <code>git stash pop</code>.</li>
+<li><strong>Need to undo last commit (not pushed):</strong> <code>git reset --soft HEAD~1</code> keeps changes staged.</li>
+<li><strong>Large binary committed:</strong> Add to .gitignore; use Git LFS for large test data files if needed.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>Git flow: Working Dir → Staging (add) → Local Repo (commit) → Remote (push).</li>
+<li>Branches: main (stable), develop (integration), feature/*, release/*, hotfix/*.</li>
+<li>Merge = integrate with history; Rebase = linear history (local feature only).</li>
+<li>PR workflow: branch → test locally → push → CI → review → merge.</li>
+<li>Hooks: pre-commit (lint), pre-push (smoke).</li>
+<li>.gitignore: target/, reports/, screenshots/, *.class, credentials.</li>
+</ul>
+</section>
+
+<section id="section-5" class="section-card">
+<h2>Section 5: Maven for Automation Frameworks</h2>
+
+<h3>What Is Maven?</h3>
+<p>Maven is a build automation and dependency management tool for Java projects. It uses a Project Object Model (<code>pom.xml</code>) to define project structure, dependencies, plugins, and build lifecycle phases. For automation engineers, Maven is the standard way to compile test code, resolve Selenium/TestNG/Cucumber JARs, and execute tests from CLI and CI.</p>
+
+<h3>Why Maven for Automation</h3>
+<ul>
+<li><strong>Dependency management:</strong> Declares Selenium, TestNG, Cucumber, REST Assured versions once in pom.xml—no manual JAR downloads.</li>
+<li><strong>Standard build lifecycle:</strong> Same commands work locally and in Jenkins: <code>mvn clean test</code>.</li>
+<li><strong>CLI execution:</strong> Run specific tests, suites, tags via command-line parameters—essential for CI pipeline stages.</li>
+<li><strong>Plugin ecosystem:</strong> Surefire for TestNG, Allure for reporting, compiler for Java version.</li>
+<li><strong>Profiles:</strong> Switch environments (qa, staging, prod) without changing code.</li>
+</ul>
+
+<h3>Maven Architecture</h3>
+<pre class="ascii-diagram">
+                    ┌─────────────────────────────────────┐
+                    │           pom.xml (POM)             │
+                    │  groupId, artifactId, dependencies  │
+                    │  plugins, profiles, properties        │
+                    └──────────────┬──────────────────────┘
+                                   │
+           ┌───────────────────────┼───────────────────────┐
+           ▼                       ▼                       ▼
+    ┌─────────────┐        ┌─────────────┐        ┌─────────────┐
+    │   Local     │        │   Central   │        │   Remote    │
+    │ Repository  │◄───────│  Repository │        │ (Nexus/     │
+    │  (~/.m2)    │ download│(Maven Central)│      │ Artifactory)│
+    └─────────────┘        └─────────────┘        └─────────────┘
+           │
+           ▼
+    Build Lifecycle: validate → compile → test → package → verify → install → deploy
+</pre>
+
+<h3>pom.xml Anatomy for Automation Framework</h3>
+<p>Complete example with Selenium 4, TestNG, Cucumber, REST Assured, ExtentReports, Apache POI, Log4j2, and WebDriverManager:</p>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+    &lt;groupId&gt;com.company&lt;/groupId&gt;
+    &lt;artifactId&gt;automation-framework&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
+    &lt;packaging&gt;jar&lt;/packaging&gt;
+    &lt;name&gt;Selenium TestNG Automation Framework&lt;/name&gt;
+
+    &lt;properties&gt;
+        &lt;maven.compiler.source&gt;11&lt;/maven.compiler.source&gt;
+        &lt;maven.compiler.target&gt;11&lt;/maven.compiler.target&gt;
+        &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+        &lt;selenium.version&gt;4.18.1&lt;/selenium.version&gt;
+        &lt;testng.version&gt;7.9.0&lt;/testng.version&gt;
+        &lt;cucumber.version&gt;7.15.0&lt;/cucumber.version&gt;
+        &lt;restassured.version&gt;5.4.0&lt;/restassured.version&gt;
+        &lt;webdrivermanager.version&gt;5.7.0&lt;/webdrivermanager.version&gt;
+        &lt;allure.version&gt;2.25.0&lt;/allure.version&gt;
+    &lt;/properties&gt;
+
+    &lt;dependencies&gt;
+        &lt;!-- Selenium --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.seleniumhq.selenium&lt;/groupId&gt;
+            &lt;artifactId&gt;selenium-java&lt;/artifactId&gt;
+            &lt;version&gt;${selenium.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- WebDriverManager --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.github.bonigarcia&lt;/groupId&gt;
+            &lt;artifactId&gt;webdrivermanager&lt;/artifactId&gt;
+            &lt;version&gt;${webdrivermanager.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- TestNG --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.testng&lt;/groupId&gt;
+            &lt;artifactId&gt;testng&lt;/artifactId&gt;
+            &lt;version&gt;${testng.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- Cucumber --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.cucumber&lt;/groupId&gt;
+            &lt;artifactId&gt;cucumber-java&lt;/artifactId&gt;
+            &lt;version&gt;${cucumber.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.cucumber&lt;/groupId&gt;
+            &lt;artifactId&gt;cucumber-testng&lt;/artifactId&gt;
+            &lt;version&gt;${cucumber.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- REST Assured --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.rest-assured&lt;/groupId&gt;
+            &lt;artifactId&gt;rest-assured&lt;/artifactId&gt;
+            &lt;version&gt;${restassured.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- ExtentReports --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.aventstack&lt;/groupId&gt;
+            &lt;artifactId&gt;extentreports&lt;/artifactId&gt;
+            &lt;version&gt;5.1.1&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- Apache POI (Excel data) --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.poi&lt;/groupId&gt;
+            &lt;artifactId&gt;poi-ooxml&lt;/artifactId&gt;
+            &lt;version&gt;5.2.5&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- Log4j2 --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;
+            &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;
+            &lt;version&gt;2.22.1&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;!-- Allure TestNG --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+            &lt;artifactId&gt;allure-testng&lt;/artifactId&gt;
+            &lt;version&gt;${allure.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.12.1&lt;/version&gt;
+            &lt;/plugin&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.2.5&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;suiteXmlFiles&gt;
+                        &lt;suiteXmlFile&gt;src/test/resources/testng/smoke.xml&lt;/suiteXmlFile&gt;
+                    &lt;/suiteXmlFiles&gt;
+                    &lt;parallel&gt;methods&lt;/parallel&gt;
+                    &lt;threadCount&gt;4&lt;/threadCount&gt;
+                    &lt;systemPropertyVariables&gt;
+                        &lt;allure.results.directory&gt;target/allure-results&lt;/allure.results.directory&gt;
+                    &lt;/systemPropertyVariables&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/project&gt;</code></pre>
+
+<h3>Maven Build Lifecycle</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Phase</th><th>What Happens</th><th>QA Relevance</th></tr>
+</thead>
+<tbody>
+<tr><td>validate</td><td>Verify project structure and pom.xml correctness</td><td>CI fails early if pom.xml is malformed</td></tr>
+<tr><td>compile</td><td>Compile main source code</td><td>Less relevant unless framework has main/ utilities</td></tr>
+<tr><td>test-compile</td><td>Compile test source code (src/test/java)</td><td>Page Objects and test classes must compile before execution</td></tr>
+<tr><td>test</td><td>Run tests via Surefire plugin</td><td><strong>Primary QA phase</strong>—TestNG/Cucumber execution in CI</td></tr>
+<tr><td>package</td><td>Create JAR/WAR artifact</td><td>Package framework as reusable JAR for other projects</td></tr>
+<tr><td>verify</td><td>Run integration checks</td><td>Failsafe plugin for integration tests if configured</td></tr>
+<tr><td>install</td><td>Install artifact to local ~/.m2 repo</td><td>Share framework modules across local projects</td></tr>
+<tr><td>deploy</td><td>Deploy to remote repository (Nexus)</td><td>Publish framework version for enterprise teams</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Essential Maven Commands</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Command</th><th>Purpose</th><th>Automation Context</th></tr>
+</thead>
+<tbody>
+<tr><td><code>mvn clean</code></td><td>Delete target/ directory</td><td>Fresh build before regression; clears old reports/screenshots</td></tr>
+<tr><td><code>mvn compile</code></td><td>Compile main sources</td><td>Verify framework utilities compile</td></tr>
+<tr><td><code>mvn test</code></td><td>Run tests (default lifecycle)</td><td>Standard CI command after checkout</td></tr>
+<tr><td><code>mvn clean test</code></td><td>Clean + run tests</td><td><strong>Most common</strong>—used in Jenkins pipeline</td></tr>
+<tr><td><code>mvn test -Dtest=LoginTest</code></td><td>Run specific test class</td><td>Debug single failing test in CI</td></tr>
+<tr><td><code>mvn test -Dsurefire.suiteXmlFiles=smoke.xml</code></td><td>Run specific suite</td><td>PR smoke stage in pipeline</td></tr>
+<tr><td><code>mvn test -Dbrowser=chrome -Denv=qa</code></td><td>Pass parameters</td><td>Environment-specific CI job configuration</td></tr>
+<tr><td><code>mvn test -Dcucumber.filter.tags="@smoke"</code></td><td>Cucumber tag filter</td><td>Run tagged BDD scenarios in CI stage</td></tr>
+<tr><td><code>mvn package</code></td><td>Create JAR</td><td>Distribute framework as dependency</td></tr>
+<tr><td><code>mvn dependency:tree</code></td><td>View dependency hierarchy</td><td>Debug Selenium version conflicts</td></tr>
+<tr><td><code>mvn versions:display-dependency-updates</code></td><td>Check for updates</td><td>Plan Selenium/TestNG upgrades</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Maven Surefire Plugin — TestNG Integration</h3>
+<pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.2.5&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;!-- TestNG suite XML --&gt;
+        &lt;suiteXmlFiles&gt;
+            &lt;suiteXmlFile&gt;${suiteXmlFile}&lt;/suiteXmlFile&gt;
+        &lt;/suiteXmlFiles&gt;
+        &lt;!-- Parallel execution --&gt;
+        &lt;parallel&gt;methods&lt;/parallel&gt;
+        &lt;threadCount&gt;4&lt;/threadCount&gt;
+        &lt;perCoreThreadCount&gt;true&lt;/perCoreThreadCount&gt;
+        &lt;!-- Fail build on test failure --&gt;
+        &lt;testFailureIgnore&gt;false&lt;/testFailureIgnore&gt;
+        &lt;!-- Pass CI parameters to tests --&gt;
+        &lt;systemPropertyVariables&gt;
+            &lt;browser&gt;${browser}&lt;/browser&gt;
+            &lt;env&gt;${env}&lt;/env&gt;
+            &lt;allure.results.directory&gt;target/allure-results&lt;/allure.results.directory&gt;
+        &lt;/systemPropertyVariables&gt;
+        &lt;!-- Include/exclude patterns --&gt;
+        &lt;includes&gt;
+            &lt;include&gt;**/*Test.java&lt;/include&gt;
+        &lt;/includes&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+
+<h3>Maven Profiles — Environment-Specific Configurations</h3>
+<pre><code>&lt;profiles&gt;
+    &lt;profile&gt;
+        &lt;id&gt;qa&lt;/id&gt;
+        &lt;activation&gt;
+            &lt;activeByDefault&gt;true&lt;/activeByDefault&gt;
+        &lt;/activation&gt;
+        &lt;properties&gt;
+            &lt;env&gt;qa&lt;/env&gt;
+            &lt;base.url&gt;https://qa.example.com&lt;/base.url&gt;
+            &lt;browser&gt;chrome&lt;/browser&gt;
+        &lt;/properties&gt;
+    &lt;/profile&gt;
+    &lt;profile&gt;
+        &lt;id&gt;staging&lt;/id&gt;
+        &lt;properties&gt;
+            &lt;env&gt;staging&lt;/env&gt;
+            &lt;base.url&gt;https://staging.example.com&lt;/base.url&gt;
+            &lt;browser&gt;chrome&lt;/browser&gt;
+        &lt;/properties&gt;
+    &lt;/profile&gt;
+    &lt;profile&gt;
+        &lt;id&gt;prod&lt;/id&gt;
+        &lt;properties&gt;
+            &lt;env&gt;prod&lt;/env&gt;
+            &lt;base.url&gt;https://www.example.com&lt;/base.url&gt;
+            &lt;browser&gt;chrome&lt;/browser&gt;
+        &lt;/properties&gt;
+    &lt;/profile&gt;
+    &lt;profile&gt;
+        &lt;id&gt;smoke&lt;/id&gt;
+        &lt;build&gt;
+            &lt;plugins&gt;
+                &lt;plugin&gt;
+                    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                    &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+                    &lt;configuration&gt;
+                        &lt;suiteXmlFiles&gt;
+                            &lt;suiteXmlFile&gt;src/test/resources/testng/smoke.xml&lt;/suiteXmlFile&gt;
+                        &lt;/suiteXmlFiles&gt;
+                    &lt;/configuration&gt;
+                &lt;/plugin&gt;
+            &lt;/plugins&gt;
+        &lt;/build&gt;
+    &lt;/profile&gt;
+&lt;/profiles&gt;
+
+# CI usage:
+# mvn clean test -Pqa,smoke
+# mvn clean test -Pstaging -Dsurefire.suiteXmlFiles=regression.xml</code></pre>
+
+<h3>Repository Types</h3>
+<ul>
+<li><strong>Local (~/.m2/repository):</strong> Cached JARs on your machine/CI agent. First download from Central; subsequent builds use cache.</li>
+<li><strong>Central (Maven Central):</strong> Public repository for Selenium, TestNG, Cucumber, REST Assured, etc.</li>
+<li><strong>Remote (Nexus/Artifactory):</strong> Corporate proxy/cache; hosts internal framework JARs and approved dependency versions.</li>
+</ul>
+
+<h3>Common Maven Issues for Automation</h3>
+<ul>
+<li><strong>Dependency conflicts:</strong> Two libraries pull different Selenium versions. Fix: <code>mvn dependency:tree</code>, add explicit version or exclusion.</li>
+<li><strong>Plugin version mismatch:</strong> Surefire 2.x vs 3.x behaves differently with TestNG parallel. Pin plugin versions in pom.xml.</li>
+<li><strong>Download failures:</strong> Corporate proxy blocks Maven Central. Configure <code>settings.xml</code> with Nexus mirror.</li>
+<li><strong>Tests not running:</strong> Wrong naming convention—Surefire defaults to *Test.java, *Tests.java, *TestCase.java.</li>
+<li><strong>OutOfMemory in CI:</strong> Increase <code>MAVEN_OPTS=-Xmx1024m</code> on Jenkins agent.</li>
+</ul>
+
+<div class="callout">
+<strong>CI Tip:</strong> Always use <code>mvn clean test</code> in pipelines—not just <code>mvn test</code>. Stale classes in target/ cause "passes locally, fails in CI" mysteries.
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is Maven and why use it for automation?</strong><br>Build automation + dependency management. Standardizes Selenium/TestNG/Cucumber setup and CLI/CI execution.</li>
+<li><strong>Explain groupId, artifactId, and version in pom.xml.</strong><br>groupId = organization (com.company). artifactId = project name (automation-framework). version = release (1.0.0-SNAPSHOT).</li>
+<li><strong>What Maven command runs TestNG tests?</strong><br><code>mvn test</code> or <code>mvn clean test</code>. Surefire plugin invokes TestNG runner.</li>
+<li><strong>How do you run a specific TestNG suite in Maven?</strong><br><code>mvn test -Dsurefire.suiteXmlFiles=src/test/resources/testng/smoke.xml</code></li>
+<li><strong>How do you pass browser and environment to tests?</strong><br><code>mvn test -Dbrowser=firefox -Denv=staging</code> — read via System.getProperty() in test code.</li>
+<li><strong>What is the Surefire plugin?</strong><br>Maven plugin that runs unit/integration tests during the test phase; integrates with TestNG via suite XML.</li>
+<li><strong>How do Maven profiles work?</strong><br>Environment-specific property sets activated by -P flag. Example: <code>mvn test -Pqa</code> sets qa base URL.</li>
+<li><strong>How do you debug dependency conflicts?</strong><br><code>mvn dependency:tree</code> shows transitive dependencies; use &lt;exclusions&gt; to remove conflicts.</li>
+<li><strong>Difference between mvn test and mvn verify?</strong><br>test = Surefire unit/integration tests. verify = test + Failsafe integration tests + additional checks.</li>
+<li><strong>How do you run Cucumber tags via Maven?</strong><br><code>mvn test -Dcucumber.filter.tags="@smoke and not @wip"</code></li>
+<li><strong>What is ~/.m2/repository?</strong><br>Local Maven cache storing downloaded JARs; shared across projects on same machine.</li>
+<li><strong>Why pin dependency versions in pom.xml properties?</strong><br>Single place to upgrade Selenium/TestNG; ensures all team members and CI use same versions.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p><strong>Scenario:</strong> Multi-module automation framework for insurance application.</p>
+<ul>
+<li>Single pom.xml with profiles: qa (default), staging, prod, smoke, regression.</li>
+<li>Jenkins parameterized build: <code>mvn clean test -P${ENV},${SUITE} -Dbrowser=${BROWSER}</code></li>
+<li>Surefire parallel=4 reduced nightly regression from 120 min to 35 min.</li>
+<li>dependency:tree revealed duplicate guava versions causing Selenium Grid connection failures—fixed with exclusion.</li>
+<li>Framework JAR published to Nexus via <code>mvn deploy</code> for reuse by API-only test module.</li>
+</ul>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Hardcoding URLs in tests instead of Maven profile properties.</li>
+<li>Not pinning plugin versions—CI breaks when Maven Central updates Surefire.</li>
+<li>Putting test dependencies in wrong scope—use default compile scope for test JARs in test scope projects.</li>
+<li>Running <code>mvn test</code> without clean in CI—stale compiled classes cause false results.</li>
+<li>Ignoring dependency:tree warnings until Selenium silently fails at runtime.</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Could not find artifact:</strong> Check spelling in pom.xml; verify Nexus proxy; try <code>mvn clean install -U</code> to force update.</li>
+<li><strong>Tests run 0:</strong> Verify test class naming (*Test.java); check Surefire includes/excludes configuration.</li>
+<li><strong>Wrong suite runs:</strong> Command-line <code>-Dsurefire.suiteXmlFiles</code> overrides pom.xml default—check Jenkins parameter.</li>
+<li><strong>Property not reaching test:</strong> Use systemPropertyVariables in Surefire config, not just -D on command line without plugin config.</li>
+<li><strong>Java version mismatch:</strong> Align maven.compiler.source/target with Jenkins agent JDK (11 or 17).</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>Maven = pom.xml + dependencies + lifecycle + plugins.</li>
+<li>Key command: <code>mvn clean test</code> — used in every CI pipeline.</li>
+<li>Surefire plugin runs TestNG suites; configure parallel, suite XML, system properties.</li>
+<li>Profiles (-Pqa) switch environments without code changes.</li>
+<li>Repos: Local (~/.m2), Central (public), Remote (Nexus corporate).</li>
+<li>Debug conflicts: <code>mvn dependency:tree</code>.</li>
+<li>Run specific: -Dtest=ClassName, -DsuiteXmlFiles, -Dcucumber.filter.tags.</li>
+</ul>
+</section>
+
+<section id="section-6" class="section-card">
+<h2>Section 6: Jenkins Fundamentals</h2>
+
+<h3>What Is Jenkins?</h3>
+<p>Jenkins is an open-source automation server that orchestrates CI/CD pipelines. It polls or receives webhooks from Git, triggers builds, runs Maven test commands, publishes reports, and notifies teams. For automation engineers, Jenkins is the execution engine that runs your Selenium, TestNG, Cucumber, and REST Assured suites on schedule or on every commit.</p>
+
+<h3>Why Jenkins for Automation Testing?</h3>
+<ul>
+<li><strong>Schedule tests:</strong> Nightly regression at 2 AM, weekly cross-browser on Sunday.</li>
+<li><strong>Trigger on commits:</strong> Webhook from GitHub/GitLab fires smoke suite on every PR merge.</li>
+<li><strong>Parameterize builds:</strong> Select browser (Chrome/Firefox), environment (qa/staging), suite (smoke/regression) from Jenkins UI.</li>
+<li><strong>Report publishing:</strong> Allure, TestNG HTML, Cucumber reports archived and trended over time.</li>
+<li><strong>Distributed execution:</strong> Run Windows/Chrome tests on Agent 1, Linux/Firefox on Agent 2 in parallel.</li>
+<li><strong>Integration:</strong> Slack notifications, JIRA ticket creation on failure, email summaries.</li>
+</ul>
+
+<h3>Jenkins Architecture</h3>
+<ul>
+<li><strong>Master (Controller):</strong> Scheduling, dispatching jobs to agents, monitoring, web UI, plugin management.</li>
+<li><strong>Agent (Slave/Node):</strong> Machine that executes builds—can be Windows, Linux, Mac, or Docker container.</li>
+<li><strong>Executor:</strong> Single build thread on an agent. Agent with 4 executors runs 4 builds simultaneously.</li>
+<li><strong>Workspace:</strong> Directory on agent where Jenkins checks out code and runs <code>mvn clean test</code>.</li>
+<li><strong>Job (Project):</strong> Configuration defining what to build, how to test, when to trigger.</li>
+<li><strong>Pipeline:</strong> Jenkinsfile defining stages as code—Build, Test, Report, Deploy.</li>
+</ul>
+
+<pre class="ascii-diagram">
+                    ┌─────────────────────────┐
+                    │    JENKINS MASTER       │
+                    │  Dashboard, Scheduling  │
+                    │  Plugin Management, UI  │
+                    └───────────┬─────────────┘
+                                │
+            ┌───────────────────┼───────────────────┐
+            ▼                   ▼                   ▼
+   ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+   │   AGENT 1       │ │   AGENT 2       │ │   AGENT 3       │
+   │   Windows 11    │ │   Linux Ubuntu  │ │   Docker        │
+   │   Chrome/Edge   │ │   Firefox       │ │   Selenium Grid │
+   │   Label: win    │ │   Label: linux  │ │   Label: docker │
+   │   Executors: 2  │ │   Executors: 4  │ │   Executors: 2  │
+   └─────────────────┘ └─────────────────┘ └─────────────────┘
+        │                      │                      │
+        ▼                      ▼                      ▼
+   UI Smoke Tests        API Tests (REST Assured)   Cross-browser
+   mvn test -Pqa         mvn test -Pstaging         Regression Matrix
+</pre>
+
+<h3>Jenkins Master-Agent Architecture in Detail</h3>
+<h4>Why Multiple Agents?</h4>
+<ul>
+<li><strong>Cross-OS testing:</strong> Selenium behaves differently on Windows vs Linux—dedicated agents per OS.</li>
+<li><strong>Parallel execution:</strong> Split TestNG suites across agents; 4 agents × 4 threads = 16 parallel tests.</li>
+<li><strong>Resource isolation:</strong> Heavy regression on Agent 2 doesn't block quick smoke on Agent 1.</li>
+<li><strong>Browser-specific:</strong> Label <code>chrome</code> routes jobs to agents with Chrome installed.</li>
+</ul>
+<h4>Agent Connection Methods</h4>
+<ul>
+<li><strong>SSH:</strong> Master connects to Linux agent via SSH; agent runs Java remoting jar.</li>
+<li><strong>JNLP (Java Web Start):</strong> Agent initiates connection to master—works through firewalls.</li>
+<li><strong>Docker:</strong> Ephemeral agents spun up per build with pre-configured Selenium image; destroyed after run.</li>
+</ul>
+<h4>Labels for Test Assignment</h4>
+<pre><code>// Jenkinsfile — route UI tests to Windows Chrome agent
+pipeline {
+    agent { label 'win-chrome' }
+    stages {
+        stage('UI Smoke') {
+            steps {
+                sh 'mvn clean test -Psmoke -Dbrowser=chrome'
+            }
+        }
+    }
+}</code></pre>
+
+<h3>Jenkins Dashboard Walkthrough</h3>
+<h4>Key UI Elements</h4>
+<ul>
+<li><strong>Build Queue:</strong> Jobs waiting for available executor. Long queue = need more agents or executors.</li>
+<li><strong>Build Executor Status:</strong> Shows which agents are busy/idle. 0/8 idle = all executors busy.</li>
+<li><strong>Job List:</strong> All configured jobs—smoke-daily, regression-nightly, api-validation, release-gate.</li>
+<li><strong>Build History:</strong> Past builds with status icons, duration, and trend.</li>
+<li><strong>Manage Jenkins:</strong> Configure system, manage plugins, manage nodes/agents, credentials.</li>
+</ul>
+<h4>Job Status Icons</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Icon Color</th><th>Status</th><th>Meaning for Automation Engineer</th></tr>
+</thead>
+<tbody>
+<tr><td>Blue</td><td>Success</td><td>All tests passed; build and report published successfully</td></tr>
+<tr><td>Red</td><td>Failure</td><td>Compile error, test failure (with testFailureIgnore=false), or pipeline script error</td></tr>
+<tr><td>Yellow</td><td>Unstable</td><td>Tests failed but pipeline continued (testFailureIgnore=true) or quality gate warning</td></tr>
+<tr><td>Grey</td><td>Disabled</td><td>Job manually disabled—no builds triggered until re-enabled</td></tr>
+<tr><td>Animated</td><td>In Progress</td><td>Build currently running—check console output for live test progress</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Jenkins vs Other CI Tools for Automation</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Criteria</th><th>Jenkins</th><th>GitHub Actions</th><th>Azure DevOps</th><th>GitLab CI</th></tr>
+</thead>
+<tbody>
+<tr><td>Setup Effort</td><td>High—install, plugins, agents</td><td>Low—built into GitHub</td><td>Medium—Azure org setup</td><td>Medium—GitLab runner setup</td></tr>
+<tr><td>Custom Agents</td><td>Full control—any OS, any browser</td><td>Limited on free tier; self-hosted runners available</td><td>Agent pools with capabilities</td><td>Runner tags, Docker executors</td></tr>
+<tr><td>Selenium Grid Integration</td><td>Excellent—dedicated agents, Docker plugin</td><td>Good with self-hosted runners</td><td>Good with VMSS agents</td><td>Good with Docker runners</td></tr>
+<tr><td>Allure Reporting</td><td>Native Allure plugin with trends</td><td>Artifact upload; manual Allure hosting</td><td>Artifact publish</td><td>Pages or artifact hosting</td></tr>
+<tr><td>Parameterized Builds</td><td>Built-in—dropdowns for browser, env, suite</td><td>workflow_dispatch inputs</td><td>Runtime parameters</td><td>CI variables</td></tr>
+<tr><td>Pipeline as Code</td><td>Jenkinsfile (Declarative/Scripted)</td><td>.github/workflows/*.yml</td><td>azure-pipelines.yml</td><td>.gitlab-ci.yml</td></tr>
+<tr><td>Plugin Ecosystem</td><td>1800+ plugins (TestNG, Cucumber, Slack)</td><td>Marketplace actions</td><td>Marketplace extensions</td><td>Built-in + community templates</td></tr>
+<tr><td>Cost</td><td>Free (self-hosted infra cost)</td><td>Free tier + paid minutes</td><td>Free tier + paid parallel jobs</td><td>Free tier + paid runners</td></tr>
+<tr><td>Best For</td><td>Large automation teams, custom Selenium Grid</td><td>GitHub-centric open source/commercial</td><td>Enterprise Microsoft shops</td><td>All-in-one DevOps platform users</td></tr>
+<tr><td>Learning Curve</td><td>Steep—Groovy, plugins, agent management</td><td>Moderate—YAML workflows</td><td>Moderate—YAML + UI</td><td>Moderate—YAML pipelines</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>When to Choose Jenkins:</strong> Your team needs dedicated Windows/Linux agents with specific browser versions, Selenium Grid integration, parameterized nightly/regression jobs, and Allure trend reporting—all with full infrastructure control.
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What is Jenkins and how do automation engineers use it?</strong><br>Open-source CI/CD server. Automation engineers configure jobs/pipelines to run Maven TestNG/Cucumber suites on commit or schedule.</li>
+<li><strong>Explain Jenkins Master-Agent architecture.</strong><br>Master schedules and monitors; agents execute builds. Multiple agents enable parallel cross-OS/browser testing.</li>
+<li><strong>What is an executor?</strong><br>Single build thread on an agent. 4 executors = 4 concurrent builds on that agent.</li>
+<li><strong>What is a Jenkins workspace?</strong><br>Directory on agent where code is checked out and tests run. Cleaned between builds (if configured).</li>
+<li><strong>What do blue, red, yellow, grey build icons mean?</strong><br>Blue=pass, Red=fail, Yellow=unstable, Grey=disabled.</li>
+<li><strong>How do you run tests on a specific OS in Jenkins?</strong><br>Agent labels (win-chrome, linux-firefox) + <code>agent { label 'win-chrome' }</code> in Jenkinsfile.</li>
+<li><strong>What is a Jenkinsfile?</strong><br>Pipeline-as-code defining stages (Build, Test, Report) in Groovy; stored in Git alongside test code.</li>
+<li><strong>How do you parameterize a Jenkins job for automation?</strong><br>Choice parameters: BROWSER (chrome/firefox), ENV (qa/staging), SUITE (smoke/regression). Passed to <code>mvn test -Dbrowser=${BROWSER}</code>.</li>
+<li><strong>Jenkins vs GitHub Actions for Selenium?</strong><br>Jenkins: full agent control, Allure trends, enterprise scale. GitHub Actions: simpler for GitHub repos, less agent customization on free tier.</li>
+<li><strong>What are Jenkins credentials used for?</strong><br>Store Git credentials, API keys, test account passwords securely—referenced in pipeline without hardcoding.</li>
+<li><strong>How do you publish Allure reports in Jenkins?</strong><br>Install Allure plugin; configure path to allure-results; plugin generates trend report on job page.</li>
+<li><strong>What causes Jenkins build queue backlog?</strong><br>Insufficient executors/agents. Fix: add agents, increase executors, or split jobs across time slots.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p><strong>Scenario:</strong> SaaS company running 600+ automated tests across 3 Jenkins agents.</p>
+<ul>
+<li><strong>Master:</strong> AWS EC2 t3.medium; 3 agents: Windows (Chrome/Edge), Linux (Firefox), Docker (Selenium Grid).</li>
+<li><strong>Jobs:</strong> PR-smoke (webhook, 5 min), merge-validation (15 min), nightly-regression (90 min, parallel=4).</li>
+<li><strong>Parameters:</strong> BROWSER, ENV, SUITE dropdowns on regression job for on-demand runs.</li>
+<li><strong>Reporting:</strong> Allure plugin with 90-day trend; Slack notification on nightly failure.</li>
+<li><strong>Labels:</strong> UI tests → <code>win-chrome</code>; API tests → <code>linux</code>; cross-browser → <code>docker-grid</code>.</li>
+<li><strong>Result:</strong> 12 daily builds per developer; regression fully unattended; QA team reduced manual execution by 80%.</li>
+</ul>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Running all tests on master node—resource contention; no browser isolation.</li>
+<li>No workspace cleanup—stale screenshots and reports cause disk full failures.</li>
+<li>Hardcoding credentials in Jenkinsfile instead of Credentials plugin.</li>
+<li>Not setting build timeout— hung Selenium test blocks executor for hours.</li>
+<li>Installing too many plugins—upgrade breakage and security vulnerabilities.</li>
+<li>Ignoring yellow (unstable) builds—team normalizes partial failures.</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Agent offline:</strong> Check agent machine running, JNLP/SSH connection, Java version compatibility.</li>
+<li><strong>Build stuck in queue:</strong> All executors busy—add agents or reduce parallel jobs.</li>
+<li><strong>Tests pass on agent, fail on another:</strong> Compare browser versions, screen resolution, installed fonts, OS locale.</li>
+<li><strong>Workspace disk full:</strong> Enable Workspace Cleanup plugin; schedule <code>mvn clean</code> at pipeline start.</li>
+<li><strong>Plugin upgrade broke pipeline:</strong> Pin plugin versions; test upgrades on staging Jenkins first.</li>
+<li><strong>Console log shows "Cannot connect to Grid":</strong> Verify Selenium Grid URL, agent label routing, and Docker container health.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>Jenkins = CI/CD orchestrator; runs Maven test commands on trigger/schedule.</li>
+<li>Master schedules; Agents execute; Executors = concurrent build threads.</li>
+<li>Labels route jobs to specific OS/browser agents.</li>
+<li>Status: Blue=pass, Red=fail, Yellow=unstable, Grey=disabled.</li>
+<li>Jenkinsfile = pipeline as code (Build → Test → Report stages).</li>
+<li>Parameterize: browser, env, suite for flexible test execution.</li>
+<li>Allure plugin + Slack = reporting and notification essentials.</li>
+</ul>
+</section>
+
+<section id="section-7" class="section-card">
+<h2>Section 7: Jenkins Installation &amp; Setup</h2>
+
+<h3>Prerequisites</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Software</th><th>Version</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>Java (JDK)</td><td>11 or 17 (required)</td><td>Jenkins runtime; same JDK for Maven test compilation</td></tr>
+<tr><td>Maven</td><td>3.8+ recommended</td><td>Build and run automation tests from Jenkins</td></tr>
+<tr><td>Git</td><td>Latest stable</td><td>Checkout automation framework from repository</td></tr>
+<tr><td>Browser + Driver</td><td>Chrome/Firefox + WebDriverManager</td><td>UI test execution on agent machines</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Windows Installation</h3>
+<h4>Step-by-Step</h4>
+<ol>
+<li><strong>Install Java 17:</strong> Download from Adoptium (Eclipse Temurin). Set <code>JAVA_HOME</code> environment variable. Verify: <code>java -version</code>.</li>
+<li><strong>Download Jenkins:</strong> Go to <a href="https://www.jenkins.io/download/">jenkins.io/download</a>. Download the Windows <code>.msi</code> installer (LTS version recommended).</li>
+<li><strong>Run installer:</strong> Execute <code>.msi</code> → choose installation folder → install as Windows Service (recommended for always-on CI server).</li>
+<li><strong>Start Jenkins:</strong> Service starts automatically. Open browser: <code>http://localhost:8080</code>.</li>
+<li><strong>Unlock Jenkins:</strong> Initial admin password located at:<br><code>C:\Program Files\Jenkins\secrets\initialAdminPassword</code><br>Open file in Notepad; copy password; paste into unlock screen.</li>
+<li><strong>Install plugins:</strong> Choose "Install suggested plugins" on the setup wizard.</li>
+<li><strong>Create admin user:</strong> Set username, password, full name, email.</li>
+<li><strong>Configure URL:</strong> Confirm <code>http://localhost:8080</code> (or custom hostname for team access).</li>
+<li><strong>Verify:</strong> Jenkins dashboard loads; create a test Freestyle job to confirm functionality.</li>
+</ol>
+
+<h3>Linux Installation</h3>
+<h4>Debian/Ubuntu</h4>
+<pre><code># Install Java 17
+sudo apt update
+sudo apt install openjdk-17-jdk -y
+java -version
+
+# Add Jenkins repository and install
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | \
+  sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | \
+  sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update
+sudo apt install jenkins -y
+
+# Start and enable on boot
+sudo systemctl start jenkins
+sudo systemctl enable jenkins
+sudo systemctl status jenkins
+
+# Initial password
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+# Access: http://&lt;server-ip&gt;:8080</code></pre>
+<h4>RHEL/CentOS (yum)</h4>
+<pre><code>sudo yum install java-17-openjdk-devel -y
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum install jenkins -y
+sudo systemctl start jenkins
+sudo systemctl enable jenkins</code></pre>
+
+<h3>Docker Installation (Recommended for Practice)</h3>
+<pre><code># Pull and run Jenkins LTS with persistent volume
+docker run -d \
+  --name jenkins \
+  -p 8080:8080 \
+  -p 50000:50000 \
+  -v jenkins_home:/var/jenkins_home \
+  jenkins/jenkins:lts
+
+# Get initial admin password
+docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+
+# Access: http://localhost:8080</code></pre>
+<p><strong>Persistent volume:</strong> <code>jenkins_home</code> Docker volume stores all Jenkins configuration, jobs, plugins, and credentials—survives container restarts.</p>
+<p><strong>Port 50000:</strong> Agent communication (JNLP)—required when connecting build agents.</p>
+
+<div class="callout">
+<strong>Practice Tip:</strong> Docker Jenkins is ideal for learning pipeline configuration without affecting your machine. Tear down with <code>docker rm -f jenkins</code> and start fresh anytime.
+</div>
+
+<h3>Initial Setup Wizard</h3>
+<ol>
+<li><strong>Unlock Jenkins:</strong> Paste initial admin password from file or Docker exec command.</li>
+<li><strong>Customize Jenkins:</strong> Select "Install suggested plugins" (Git, Maven, Pipeline, Credentials, etc.).</li>
+<li><strong>Create First Admin User:</strong> Do not skip—anonymous admin is a security risk.</li>
+<li><strong>Instance Configuration:</strong> Set Jenkins URL (use hostname/IP accessible to team and agents).</li>
+<li><strong>Jenkins is ready:</strong> Start using Jenkins → lands on dashboard.</li>
+</ol>
+
+<h3>Essential Plugins for Automation</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Plugin</th><th>Purpose</th><th>Must Have?</th></tr>
+</thead>
+<tbody>
+<tr><td>Git</td><td>Checkout automation framework from GitHub/GitLab/Bitbucket</td><td>Yes</td></tr>
+<tr><td>Maven Integration</td><td>Native Maven build step; recognizes pom.xml</td><td>Yes</td></tr>
+<tr><td>Pipeline</td><td>Jenkinsfile support; Declarative/Scripted pipelines</td><td>Yes</td></tr>
+<tr><td>Blue Ocean</td><td>Modern pipeline visualization UI</td><td>Recommended</td></tr>
+<tr><td>TestNG Results</td><td>Parse and display TestNG pass/fail/skip on build page</td><td>Yes</td></tr>
+<tr><td>HTML Publisher</td><td>Publish ExtentReports/HTML test reports as build artifact</td><td>Yes</td></tr>
+<tr><td>Allure</td><td>Generate Allure trend reports from test results</td><td>Yes</td></tr>
+<tr><td>Email Extension</td><td>Customizable email on build failure/success with test summary</td><td>Recommended</td></tr>
+<tr><td>Parameterized Trigger</td><td>Trigger downstream jobs with parameters (smoke → regression)</td><td>Recommended</td></tr>
+<tr><td>Timestamper</td><td>Add timestamps to console output for debugging timing issues</td><td>Recommended</td></tr>
+<tr><td>Workspace Cleanup</td><td>Delete workspace after build to prevent disk full</td><td>Yes</td></tr>
+<tr><td>Docker</td><td>Run builds in Docker containers; Selenium Grid agents</td><td>Recommended</td></tr>
+<tr><td>NodeJS</td><td>If framework uses npm tools (Cucumber HTML reporter, etc.)</td><td>Optional</td></tr>
+<tr><td>Cucumber Reports</td><td>Publish Cucumber JSON results as HTML report</td><td>Yes (if using Cucumber)</td></tr>
+<tr><td>Slack Notification</td><td>Send build pass/fail alerts to Slack channel</td><td>Recommended</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Installing Plugins</h4>
+<p>Manage Jenkins → Plugins → Available → search plugin name → Install → restart Jenkins if prompted.</p>
+
+<h3>Post-Installation Configuration for Automation</h3>
+<h4>Configure Maven</h4>
+<p>Manage Jenkins → Global Tool Configuration → Maven → Add Maven → Name: <code>Maven-3.9</code> → Install automatically (or specify MAVEN_HOME path).</p>
+<h4>Configure JDK</h4>
+<p>Manage Jenkins → Global Tool Configuration → JDK → Add JDK → Name: <code>JDK-17</code> → <code>JAVA_HOME</code> path.</p>
+<h4>Configure Git</h4>
+<p>Usually auto-detected if Git is in system PATH. Verify: Manage Jenkins → Global Tool Configuration → Git.</p>
+<h4>Add Credentials</h4>
+<p>Manage Jenkins → Credentials → System → Global → Add Credentials:</p>
+<ul>
+<li>GitHub personal access token (for private automation repos)</li>
+<li>Test account username/password (for Selenium login tests)</li>
+<li>API keys (for REST Assured authenticated endpoints)</li>
+</ul>
+
+<h4>Sample Freestyle Job for Automation</h4>
+<ol>
+<li>New Item → Freestyle project → Name: <code>smoke-tests</code></li>
+<li>Source Code Management → Git → Repository URL → Credentials</li>
+<li>Build Triggers → Poll SCM or GitHub hook trigger</li>
+<li>Build → Invoke top-level Maven targets → <code>clean test -Psmoke -Dbrowser=chrome -Denv=qa</code></li>
+<li>Post-build → Publish Allure Report → Results path: <code>target/allure-results</code></li>
+<li>Save → Build Now → Verify blue build</li>
+</ol>
+
+<h3>Jenkins Security Basics</h3>
+<h4>User Management</h4>
+<p>Manage Jenkins → Users → Create User for each automation engineer. Do not share admin account.</p>
+<h4>Role-Based Access Control</h4>
+<p>Install "Role-based Authorization Strategy" plugin. Define roles:</p>
+<ul>
+<li><strong>Automation Engineer:</strong> Build, configure jobs, view reports—no admin access.</li>
+<li><strong>QA Lead:</strong> Build, configure, manage credentials for test accounts.</li>
+<li><strong>Admin:</strong> Full Jenkins administration, plugin management, agent configuration.</li>
+</ul>
+<h4>Security Best Practices</h4>
+<ul>
+<li>Enable "Matrix-based" or "Role-based" security—disable anonymous read/write.</li>
+<li>Use Credentials plugin—never hardcode passwords in Jenkinsfile.</li>
+<li>Keep Jenkins LTS updated; review security advisories.</li>
+<li>Restrict agent port 50000 to internal network only.</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>What are the prerequisites for installing Jenkins?</strong><br>Java 11 or 17 (required), Maven for running tests, Git for source checkout.</li>
+<li><strong>Where is the initial admin password on Windows?</strong><br><code>C:\Program Files\Jenkins\secrets\initialAdminPassword</code></li>
+<li><strong>Where is the initial admin password on Linux?</strong><br><code>/var/lib/jenkins/secrets/initialAdminPassword</code></li>
+<li><strong>How do you install Jenkins using Docker?</strong><br><code>docker run -d -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home jenkins/jenkins:lts</code></li>
+<li><strong>What is the purpose of port 50000?</strong><br>JNLP agent communication—build agents connect to master on this port.</li>
+<li><strong>What plugins are essential for automation testing?</strong><br>Git, Maven Integration, Pipeline, TestNG Results, Allure, HTML Publisher, Workspace Cleanup.</li>
+<li><strong>How do you configure Maven in Jenkins?</strong><br>Manage Jenkins → Global Tool Configuration → Maven → add/install Maven version.</li>
+<li><strong>How do you securely store test credentials in Jenkins?</strong><br>Credentials plugin → Add username/password or secret text → reference via credentialsId in pipeline.</li>
+<li><strong>What is the Jenkins setup wizard flow?</strong><br>Unlock → Install plugins → Create admin user → Configure URL → Dashboard.</li>
+<li><strong>Why use Docker for Jenkins practice?</strong><br>Isolated, reproducible, easy teardown/rebuild; persistent volume preserves config.</li>
+<li><strong>How do you create your first automation job?</strong><br>Freestyle or Pipeline job → Git repo → Maven build step <code>clean test</code> → Allure publisher.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p><strong>Scenario:</strong> Automation team setting up Jenkins for the first time on AWS.</p>
+<ul>
+<li><strong>Installation:</strong> Docker on EC2 t3.large; persistent EBS volume mapped to <code>jenkins_home</code>.</li>
+<li><strong>Wizard:</strong> Installed suggested plugins + Allure, Slack Notification, Role-based Auth.</li>
+<li><strong>Global tools:</strong> JDK-17 auto-install, Maven-3.9.6 auto-install.</li>
+<li><strong>Credentials:</strong> GitHub PAT, QA test account, Slack webhook token.</li>
+<li><strong>First pipeline:</strong> Jenkinsfile in automation repo—checkout → Maven smoke → Allure → Slack notify.</li>
+<li><strong>Security:</strong> Role-based access; 3 automation engineers (build role), 1 QA lead (admin), developers (read-only).</li>
+<li><strong>Timeline:</strong> Install to first green smoke build in 4 hours.</li>
+</ul>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Using Java 8—Jenkins LTS requires Java 11 minimum; test compilation may need Java 17.</li>
+<li>Skipping admin user creation—security vulnerability with open anonymous access.</li>
+<li>Not configuring persistent storage in Docker—lose all jobs on container removal.</li>
+<li>Installing plugins manually one-by-one instead of "suggested plugins" on first setup.</li>
+<li>Forgetting to open port 8080 (and 50000 for agents) in firewall/security group.</li>
+<li>Not configuring Maven/JDK in Global Tool Configuration—build fails with "mvn: command not found".</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Jenkins won't start on Windows:</strong> Check Java version; verify Jenkins service running in services.msc; review log at <code>C:\Program Files\Jenkins\jenkins.out.log</code>.</li>
+<li><strong>Cannot access localhost:8080:</strong> Check if port is in use; verify firewall allows inbound 8080.</li>
+<li><strong>Plugin installation fails:</strong> Check internet connectivity; configure proxy in Manage Jenkins → Plugins → Advanced.</li>
+<li><strong>Docker container exits immediately:</strong> Check Docker logs: <code>docker logs jenkins</code>; ensure volume permissions.</li>
+<li><strong>Maven build fails in Jenkins but works locally:</strong> Verify Maven/JDK configured in Global Tool Configuration; check PATH on agent.</li>
+<li><strong>Initial password file not found:</strong> Wait 1–2 minutes after install for Jenkins to generate it; check Docker exec path.</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>Prerequisites: Java 11/17, Maven, Git.</li>
+<li>Windows: .msi installer, service, password in Program Files/Jenkins/secrets.</li>
+<li>Linux: apt/yum install, systemctl start/enable, password in /var/lib/jenkins/secrets.</li>
+<li>Docker: <code>jenkins/jenkins:lts</code>, port 8080 + 50000, volume jenkins_home.</li>
+<li>Wizard: Unlock → Plugins → Admin user → URL → Ready.</li>
+<li>Must-have plugins: Git, Maven, Pipeline, TestNG, Allure, HTML Publisher, Workspace Cleanup.</li>
+<li>Configure: Global Tool Configuration (JDK, Maven), Credentials, Role-based security.</li>
+<li>First job: Git checkout → <code>mvn clean test</code> → Allure report publish.</li>
+</ul>
+</section>

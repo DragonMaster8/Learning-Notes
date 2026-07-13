@@ -1,0 +1,2048 @@
+<section id="section-8" class="section-card">
+<h2>Section 8: Java Access Modifiers</h2>
+
+<p>Access modifiers control the visibility of classes, fields, methods, and constructors. In test automation frameworks, choosing the right modifier is essential for encapsulation, maintainability, and clean API design.</p>
+
+<h3>Access Modifier Visibility Table</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Modifier</th><th>Same Class</th><th>Same Package</th><th>Subclass</th><th>Other Package</th></tr>
+</thead>
+<tbody>
+<tr><td><code>private</code></td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
+<tr><td><code>default</code> (package-private)</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td></tr>
+<tr><td><code>protected</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+<tr><td><code>public</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>private — Maximum Encapsulation</h3>
+<p>The most restrictive modifier. Accessible only within the declaring class. Use it to hide implementation details and protect internal state.</p>
+<pre><code>public class DriverFactory {
+    private WebDriver driver;
+
+    public WebDriver createDriver(String browser) {
+        driver = initializeDriver(browser);
+        return driver;
+    }
+
+    private WebDriver initializeDriver(String browser) {
+        switch (browser.toLowerCase()) {
+            case "chrome": return new ChromeDriver();
+            case "firefox": return new FirefoxDriver();
+            default: throw new IllegalArgumentException("Unsupported browser");
+        }
+    }
+
+    private void logDriverInfo() {
+        System.out.println("Driver initialized: " + driver.getClass().getSimpleName());
+    }
+}</code></pre>
+<div class="callout">
+<strong>Framework Usage:</strong> Keep <code>WebDriver</code> instances, locators, and internal helper methods <code>private</code>. Expose only public action methods that tests need.
+</div>
+
+<h3>default (Package-Private) — Package-Level Access</h3>
+<p>No keyword required. Accessible within the same package only. Useful for utilities shared among framework classes in one package.</p>
+<pre><code>// package com.automation.utils;
+
+class StringUtils {
+    static String trimAndLower(String input) {
+        return input == null ? "" : input.trim().toLowerCase();
+    }
+}
+
+class DateUtils {
+    static String getTimestamp() {
+        return StringUtils.trimAndLower(
+            java.time.LocalDateTime.now().toString()
+        );
+    }
+}</code></pre>
+<div class="callout">
+<strong>Framework Usage:</strong> Package-level utilities like internal formatters, log helpers, or shared validators that should not be exposed outside the framework package.
+</div>
+
+<h3>protected — Subclass Access</h3>
+<p>Accessible in the same class, same package, and by subclasses (even in different packages).</p>
+<pre><code>public abstract class BaseTest {
+    protected WebDriver driver;
+    protected Properties config;
+
+    protected void setUpDriver() {
+        driver = DriverManager.getDriver();
+        config = ConfigReader.loadProperties();
+    }
+
+    protected void tearDownDriver() {
+        if (driver != null) {
+            driver.quit();
+            DriverManager.removeDriver();
+        }
+    }
+
+    protected void takeScreenshotOnFailure(String testName) {
+        // shared screenshot logic for all child test classes
+    }
+}
+
+public class LoginTest extends BaseTest {
+    @Test
+    public void testValidLogin() {
+        setUpDriver();
+        // can access protected methods and fields from BaseTest
+        driver.get(config.getProperty("url"));
+        tearDownDriver();
+    }
+}</code></pre>
+<div class="callout">
+<strong>Framework Usage:</strong> Base test class setup/teardown methods, shared WebDriver references, and common assertion helpers accessible to all child test classes.
+</div>
+
+<h3>public — Universal Access</h3>
+<p>Accessible from anywhere. Use for the public API of your framework — what test classes and external consumers interact with.</p>
+<pre><code>public class LoginPage {
+    private WebDriver driver;
+    private By usernameField = By.id("username");
+    private By passwordField = By.id("password");
+    private By loginButton = By.id("login-btn");
+
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+    }
+
+    public LoginPage enterUsername(String username) {
+        driver.findElement(usernameField).sendKeys(username);
+        return this;
+    }
+
+    public LoginPage enterPassword(String password) {
+        driver.findElement(passwordField).sendKeys(password);
+        return this;
+    }
+
+    public HomePage clickLogin() {
+        driver.findElement(loginButton).click();
+        return new HomePage(driver);
+    }
+}</code></pre>
+<div class="callout">
+<strong>Framework Usage:</strong> Page Object action methods, test methods annotated with <code>@Test</code>, and public factory methods that external code must call.
+</div>
+
+<h3>Framework Design Pattern — Which Modifier Where</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Component</th><th>Recommended Modifier</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr><td>WebDriver field in Page Object</td><td><code>private</code></td><td>Hide driver reference; expose actions only</td></tr>
+<tr><td>Locator (By) fields</td><td><code>private</code></td><td>Encapsulate element location strategy</td></tr>
+<tr><td>Page action methods</td><td><code>public</code></td><td>Tests and other pages need to call them</td></tr>
+<tr><td>Internal wait/retry helpers</td><td><code>private</code></td><td>Implementation detail, not part of API</td></tr>
+<tr><td>BaseTest setup/teardown</td><td><code>protected</code></td><td>Child test classes inherit and use</td></tr>
+<tr><td>ConfigReader.loadProperties()</td><td><code>public static</code></td><td>Utility called from anywhere</td></tr>
+<tr><td>Package-level formatters</td><td><code>default</code></td><td>Shared within utils package only</td></tr>
+<tr><td>Logger instance in BasePage</td><td><code>protected</code></td><td>Available to all page subclasses</td></tr>
+<tr><td>Test class constructors</td><td><code>public</code></td><td>TestNG/JUnit needs to instantiate</td></tr>
+<tr><td>Constants class fields</td><td><code>public static final</code></td><td>Global constants accessible everywhere</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Common Mistakes</h3>
+<div class="callout">
+<strong>Mistake 1: Making Everything Public</strong>
+<p>Exposing all fields and methods breaks encapsulation. Tests become tightly coupled to implementation. If you change a locator strategy, every test that accessed the field directly breaks.</p>
+</div>
+<div class="callout">
+<strong>Mistake 2: Not Using Encapsulation</strong>
+<p>Public <code>WebDriver driver</code> fields in test classes allow any code to manipulate the driver directly. Use private fields with controlled access through Page Objects and DriverManager.</p>
+</div>
+<div class="callout">
+<strong>Mistake 3: Using Protected When Private Suffices</strong>
+<p>If a helper method is only used within one class, make it <code>private</code>, not <code>protected</code>. Wider access increases coupling surface.</p>
+</div>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What are the four access modifiers in Java?</h4>
+<p><strong>Answer:</strong> <code>private</code>, <code>default</code> (package-private), <code>protected</code>, and <code>public</code>. They control visibility from most restrictive to least restrictive. Only <code>public</code> and <code>protected</code> are explicit keywords; default requires no keyword.</p>
+<p><strong>Interviewer expects:</strong> Correct ordering by visibility scope and knowing default has no keyword.</p>
+
+<h4>Q2: Can a top-level class be private or protected?</h4>
+<p><strong>Answer:</strong> No. Top-level classes can only be <code>public</code> or package-private (default). Inner/nested classes can use all four modifiers. A private top-level class would be meaningless since nothing outside the file could reference it.</p>
+<p><strong>Interviewer expects:</strong> Understanding that modifier rules differ for top-level vs nested classes.</p>
+
+<h4>Q3: What is the difference between default and protected?</h4>
+<p><strong>Answer:</strong> Both allow access within the same package. However, <code>protected</code> also allows access from subclasses in different packages. Default does not grant cross-package subclass access. Protected is strictly broader than default.</p>
+<p><strong>Interviewer expects:</strong> The subclass-in-different-package distinction.</p>
+
+<h4>Q4: Why encapsulate WebDriver in a Page Object?</h4>
+<p><strong>Answer:</strong> Making the driver <code>private</code> prevents tests from calling <code>driver.findElement()</code> directly. All interactions go through well-named public methods, improving readability and maintainability. Locator changes happen in one place.</p>
+<p><strong>Interviewer expects:</strong> Connection between access modifiers and Page Object pattern.</p>
+
+<h4>Q5: Can you reduce the visibility of an overridden method?</h4>
+<p><strong>Answer:</strong> No. When overriding, you cannot make a method more restrictive. If the parent has <code>public void click()</code>, the child must also be public. You can widen access (protected → public) but never narrow it.</p>
+<p><strong>Interviewer expects:</strong> Knowledge of overriding visibility rules.</p>
+
+<h4>Q6: What access modifier is used for interface methods by default?</h4>
+<p><strong>Answer:</strong> Interface methods are implicitly <code>public abstract</code> (before Java 8). Default methods and static methods in interfaces are also implicitly public. Interface fields are implicitly <code>public static final</code>.</p>
+<p><strong>Interviewer expects:</strong> Awareness of implicit modifiers in interfaces.</p>
+
+<h4>Q7: How do access modifiers relate to the Single Responsibility Principle?</h4>
+<p><strong>Answer:</strong> Using <code>private</code> for internal logic keeps each class focused on its public API. External code only sees what it needs. This enforces boundaries between components and prevents classes from becoming god-objects with everything public.</p>
+<p><strong>Interviewer expects:</strong> Linking OOP design principles with practical modifier usage.</p>
+
+<h4>Q8: Can a constructor be private?</h4>
+<p><strong>Answer:</strong> Yes. Private constructors prevent external instantiation, used in Singleton pattern, utility classes (all static methods), and factory classes. Example: <code>private ConfigReader() {}</code> prevents creating instances of a utility class.</p>
+<p><strong>Interviewer expects:</strong> Singleton/utility class pattern as a real-world use case.</p>
+
+<h4>Q9: What happens if you try to access a private field from a subclass?</h4>
+<p><strong>Answer:</strong> Compilation error. Private members are not inherited in terms of access — the subclass cannot see or use them directly. The subclass can only use public/protected methods of the parent that internally use the private field.</p>
+<p><strong>Interviewer expects:</strong> Clear understanding that private ≠ inherited access.</p>
+
+<h4>Q10: In a Selenium framework, should test data fields be public?</h4>
+<p><strong>Answer:</strong> No. Test data should be loaded via private fields or methods and accessed through public getters or parameterized test methods. Public mutable test data fields invite accidental modification across test methods.</p>
+<p><strong>Interviewer expects:</strong> Practical framework design thinking, not just textbook definitions.</p>
+</section>
+
+<section id="section-9" class="section-card">
+<h2>Section 9: Static Keyword</h2>
+
+<p>The <code>static</code> keyword belongs to the class itself rather than any instance. In test automation, static members are widely used for utilities, constants, and thread-safe driver management — but misuse causes serious parallel execution problems.</p>
+
+<h3>Static Variables — Class-Level, Shared State</h3>
+<p>A static variable is created once when the class is loaded and shared by all instances. Only one copy exists in memory regardless of how many objects you create.</p>
+<pre><code>public class BrowserSession {
+    static WebDriver driver;  // ONE driver shared by ALL tests
+
+    public void launchBrowser() {
+        driver = new ChromeDriver();
+    }
+}</code></pre>
+<div class="callout">
+<strong>Why <code>static WebDriver driver</code> is Dangerous:</strong>
+<p>In parallel TestNG execution, multiple test threads share the same static driver. Test A navigates to URL X while Test B navigates to URL Y — both overwrite the same driver reference. Results: flaky tests, wrong assertions, browser crashes.</p>
+</div>
+
+<h4>ThreadLocal Alternative for Parallel Execution</h4>
+<pre><code>public class DriverManager {
+    private static ThreadLocal&lt;WebDriver&gt; driverThread = new ThreadLocal&lt;&gt;();
+
+    public static WebDriver getDriver() {
+        if (driverThread.get() == null) {
+            driverThread.set(new ChromeDriver());
+        }
+        return driverThread.get();
+    }
+
+    public static void removeDriver() {
+        driverThread.remove();
+    }
+}</code></pre>
+<p>Each thread gets its own WebDriver instance. No cross-test interference during parallel runs.</p>
+
+<h3>Static Methods — Called Without an Object</h3>
+<p>Static methods belong to the class. Invoke them as <code>ClassName.methodName()</code> without creating an instance.</p>
+<pre><code>public class ConfigReader {
+    private static Properties properties = new Properties();
+
+    public static String getProperty(String key) {
+        return properties.getProperty(key);
+    }
+
+    public static void loadConfig(String filePath) throws IOException {
+        properties.load(new FileInputStream(filePath));
+    }
+}
+
+// Usage — no object needed
+ConfigReader.loadConfig("config.properties");
+String url = ConfigReader.getProperty("url");</code></pre>
+
+<h4>Static Method Restrictions</h4>
+<ul>
+<li>Cannot access non-static (instance) members directly</li>
+<li>Cannot use <code>this</code> or <code>super</code> — there is no instance context</li>
+<li>Can only call other static methods or access static fields directly</li>
+</ul>
+<pre><code>public class Example {
+    int instanceVar = 10;
+    static int staticVar = 20;
+
+    static void staticMethod() {
+        // System.out.println(instanceVar);  // COMPILE ERROR
+        System.out.println(staticVar);       // OK
+        // this.instanceVar;                  // COMPILE ERROR
+    }
+
+    void instanceMethod() {
+        System.out.println(instanceVar);       // OK
+        System.out.println(staticVar);         // OK
+        staticMethod();                          // OK
+    }
+}</code></pre>
+
+<h3>Static Block — Executes Once at Class Load</h3>
+<p>Runs exactly once when the JVM loads the class, before any constructor or static method is called. Ideal for one-time initialization.</p>
+<pre><code>public class ConfigReader {
+    private static Properties properties;
+
+    static {
+        properties = new Properties();
+        try (FileInputStream fis = new FileInputStream("config.properties")) {
+            properties.load(fis);
+            System.out.println("Config loaded at class load time");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load config", e);
+        }
+    }
+
+    public static String getProperty(String key) {
+        return properties.getProperty(key);
+    }
+}</code></pre>
+
+<h3>Static Import</h3>
+<p>Imports static members so you can use them without the class prefix.</p>
+<pre><code>import static org.testng.Assert.*;
+import static org.openqa.selenium.By.*;
+
+public class LoginTest {
+    @Test
+    public void testLogin() {
+        driver.findElement(id("username")).sendKeys("admin");
+        assertTrue(driver.getTitle().contains("Dashboard"));
+        assertEquals(driver.getCurrentUrl(), "https://app.example.com/home");
+    }
+}</code></pre>
+
+<h3>Static in Framework Design</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Pattern</th><th>Example</th><th>Why Static</th></tr>
+</thead>
+<tbody>
+<tr><td>Utility classes</td><td><code>WaitUtils.untilVisible(element)</code></td><td>No state needed; pure functions</td></tr>
+<tr><td>Constants class</td><td><code>FrameworkConstants.DEFAULT_TIMEOUT</code></td><td>Shared immutable values</td></tr>
+<tr><td>DriverManager</td><td><code>ThreadLocal&lt;WebDriver&gt;</code></td><td>Centralized thread-safe access</td></tr>
+<tr><td>ConfigReader</td><td><code>getProperty("url")</code></td><td>Single config loaded once</td></tr>
+<tr><td>ReportManager</td><td><code>logStep("Clicked login")</code></td><td>Global reporting from any class</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>When to Use Static vs Non-Static — Decision Table</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Scenario</th><th>Use Static?</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr><td>Utility method with no state</td><td>Yes</td><td>No instance needed</td></tr>
+<tr><td>Page Object methods</td><td>No</td><td>Each page holds driver instance state</td></tr>
+<tr><td>Global constants</td><td>Yes</td><td>Same value everywhere</td></tr>
+<tr><td>WebDriver per test</td><td>No (use ThreadLocal static wrapper)</td><td>Each thread needs its own driver</td></tr>
+<tr><td>Test data reader</td><td>Yes</td><td>Stateless file parsing</td></tr>
+<tr><td>Element interaction on a page</td><td>No</td><td>Depends on page's driver and locators</td></tr>
+<tr><td>Factory method returning new objects</td><td>Yes</td><td>Creates instances but factory itself is stateless</td></tr>
+<tr><td>Counter tracking test runs</td><td>Yes (with synchronization)</td><td>Shared across all tests</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Static vs Instance — Memory and Lifecycle</h3>
+<div class="ascii-diagram">
+<pre>
+STATIC (Class-Level)                    INSTANCE (Object-Level)
++------------------+                    +------------------+
+|  Class: Browser  |                    |  Object: page1   |
+|  static driver   | &lt;-- ONE copy      |  driver (ref)    | &lt;-- per object
+|  static count=0  |                    |  locators        |
++------------------+                    +------------------+
+        |                               +------------------+
+        |                               |  Object: page2   |
+        |                               |  driver (ref)    |
+        |                               |  locators        |
+Loaded once at class load               +------------------+
+Lives until class unloaded              Created per new PageObject()
+Memory: Method Area / Metaspace          Memory: Heap
+</pre>
+</div>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What does the static keyword mean in Java?</h4>
+<p><strong>Answer:</strong> Static members belong to the class, not to any instance. They are loaded when the class is loaded and exist for the entire program lifecycle. Access via class name without creating an object.</p>
+<p><strong>Interviewer expects:</strong> Class-level vs instance-level distinction.</p>
+
+<h4>Q2: Can static methods be overridden?</h4>
+<p><strong>Answer:</strong> No. Static methods are hidden, not overridden. Method hiding occurs when a subclass defines a static method with the same signature — the method called depends on the reference type, not the object type. This is static binding (compile-time).</p>
+<p><strong>Interviewer expects:</strong> Method hiding vs overriding distinction.</p>
+
+<h4>Q3: Why is static WebDriver dangerous in parallel testing?</h4>
+<p><strong>Answer:</strong> A static driver is shared across all test threads. Parallel tests overwrite each other's browser state, causing race conditions, wrong page assertions, and intermittent failures. Use ThreadLocal to give each thread its own driver instance.</p>
+<p><strong>Interviewer expects:</strong> Practical parallel execution knowledge.</p>
+
+<h4>Q4: What is a static block and when does it execute?</h4>
+<p><strong>Answer:</strong> A static block runs once when the class is first loaded by the JVM, before any static method or constructor. Used for complex static initialization like loading config files or registering JDBC drivers.</p>
+<p><strong>Interviewer expects:</strong> One-time initialization use case.</p>
+
+<h4>Q5: Can a static method access instance variables?</h4>
+<p><strong>Answer:</strong> No. Static methods have no <code>this</code> reference and no instance context. They can only directly access static fields and call other static methods. To access instance data, you need an object reference passed as a parameter.</p>
+<p><strong>Interviewer expects:</strong> Clear compile-time restriction understanding.</p>
+
+<h4>Q6: What is static import?</h4>
+<p><strong>Answer:</strong> <code>import static ClassName.member;</code> allows using static members without the class prefix. Common in tests: <code>import static org.testng.Assert.*;</code> enables calling <code>assertEquals()</code> directly instead of <code>Assert.assertEquals()</code>.</p>
+<p><strong>Interviewer expects:</strong> Practical test code usage example.</p>
+
+<h4>Q7: Can you create objects of a class with a private constructor?</h4>
+<p><strong>Answer:</strong> Not from outside the class. Private constructor + static factory method or static getInstance() is the Singleton pattern. Utility classes use private constructors to prevent instantiation since all methods are static.</p>
+<p><strong>Interviewer expects:</strong> Singleton and utility class patterns.</p>
+
+<h4>Q8: Difference between static and final?</h4>
+<p><strong>Answer:</strong> Static means class-level (one copy). Final means value cannot change after assignment. <code>static final</code> combines both — a class-level constant. Static without final can be reassigned; final without static is an instance constant.</p>
+<p><strong>Interviewer expects:</strong> Independent concepts that combine for constants.</p>
+
+<h4>Q9: Are static methods thread-safe?</h4>
+<p><strong>Answer:</strong> Only if they don't modify shared static state. A static method that only uses local variables and parameters is thread-safe. If it reads/writes static fields without synchronization, race conditions occur in multi-threaded environments.</p>
+<p><strong>Interviewer expects:</strong> Thread safety depends on shared mutable state, not static alone.</p>
+
+<h4>Q10: What happens to static variables when the program ends?</h4>
+<p><strong>Answer:</strong> Static variables live in the Method Area (Metaspace) and persist for the JVM's lifetime. They are garbage collected only when the class loader that loaded the class is garbage collected, which typically happens at program shutdown.</p>
+<p><strong>Interviewer expects:</strong> Memory area awareness (Metaspace vs Heap).</p>
+
+<h4>Q11: Can a class be static?</h4>
+<p><strong>Answer:</strong> Top-level classes cannot be static. Only nested (inner) classes can be declared static — they become static nested classes, which don't require an outer class instance. Example: <code>Map.Entry</code> is a static nested class.</p>
+<p><strong>Interviewer expects:</strong> Nested class context, not top-level.</p>
+
+<h4>Q12: Why use ThreadLocal with static wrapper instead of instance WebDriver?</h4>
+<p><strong>Answer:</strong> ThreadLocal provides thread-confined storage accessible via static methods (no need to pass driver everywhere). Each thread gets its own driver via <code>get()</code>, <code>set()</code>, <code>remove()</code>. Combines centralized access with thread isolation.</p>
+<p><strong>Interviewer expects:</strong> DriverManager pattern as the gold standard for Selenium frameworks.</p>
+</section>
+
+<section id="section-10" class="section-card">
+<h2>Section 10: Interfaces &amp; Abstract Classes</h2>
+
+<p>Interfaces and abstract classes are the two primary mechanisms for achieving abstraction in Java. Test automation frameworks rely heavily on both — interfaces define contracts, abstract classes provide shared implementation.</p>
+
+<h3>Interface — Pure Contract</h3>
+<p>An interface defines a contract: what a class must do, without specifying how. Before Java 8, interfaces provided 100% abstraction (only abstract methods).</p>
+
+<h4>Basic Interface Syntax</h4>
+<pre><code>public interface Searchable {
+    void search(String query);
+    int getResultCount();
+}
+
+public class GoogleSearch implements Searchable {
+    @Override
+    public void search(String query) {
+        System.out.println("Searching Google for: " + query);
+    }
+
+    @Override
+    public int getResultCount() {
+        return 1000000;
+    }
+}</code></pre>
+
+<h4>Default Methods (Java 8+)</h4>
+<p>Add new behavior to interfaces without breaking existing implementations.</p>
+<pre><code>public interface Searchable {
+    void search(String query);
+
+    default void clearSearch() {
+        System.out.println("Clearing search field...");
+    }
+
+    default void logSearch(String query) {
+        System.out.println("[LOG] Search performed: " + query);
+        search(query);
+    }
+}</code></pre>
+
+<h4>Static Methods in Interface</h4>
+<pre><code>public interface WebDriver {
+    WebElement findElement(By by);
+
+    static WebDriver create(String browser) {
+        switch (browser) {
+            case "chrome": return new ChromeDriver();
+            case "firefox": return new FirefoxDriver();
+            default: throw new IllegalArgumentException("Unknown browser");
+        }
+    }
+}</code></pre>
+
+<h4>Functional Interface — Single Abstract Method</h4>
+<pre><code>@FunctionalInterface
+public interface ElementValidator {
+    boolean validate(WebElement element);
+}
+
+// Used with lambda
+ElementValidator isDisplayed = element -> element.isDisplayed();
+ElementValidator hasText = element -> !element.getText().isEmpty();</code></pre>
+
+<h4>Selenium Example: WebDriver Interface</h4>
+<pre><code>// Selenium's core design — interface with multiple implementations
+WebDriver driver1 = new ChromeDriver();    // implements WebDriver
+WebDriver driver2 = new FirefoxDriver();   // implements WebDriver
+WebDriver driver3 = new EdgeDriver();      // implements WebDriver
+
+// All share the same contract
+driver1.get("https://example.com");
+driver1.findElement(By.id("search")).sendKeys("test");</code></pre>
+
+<h4>Framework Interfaces</h4>
+<pre><code>public interface IPageActions {
+    void navigateTo();
+    void verifyPageLoaded();
+    String getPageTitle();
+}
+
+public interface IConfigurable {
+    void loadConfig(String path);
+    String getConfigValue(String key);
+}
+
+public class LoginPage extends BasePage implements IPageActions, IConfigurable {
+    @Override public void navigateTo() { driver.get(config.getProperty("loginUrl")); }
+    @Override public void verifyPageLoaded() { /* verify login form visible */ }
+    @Override public String getPageTitle() { return driver.getTitle(); }
+    @Override public void loadConfig(String path) { /* load config */ }
+    @Override public String getConfigValue(String key) { return config.getProperty(key); }
+}</code></pre>
+
+<h3>Abstract Class — Partial Abstraction</h3>
+<p>An abstract class can have both abstract methods (no body) and concrete methods (with implementation). Cannot be instantiated directly.</p>
+
+<pre><code>public abstract class BasePage {
+    protected WebDriver driver;
+    protected WebDriverWait wait;
+
+    public BasePage(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    public void waitForPageLoad() {
+        wait.until(d -> ((JavascriptExecutor) d)
+            .executeScript("return document.readyState").equals("complete"));
+    }
+
+    public abstract void verifyPageLoaded();
+
+    protected void clickElement(By locator) {
+        wait.until(ExpectedConditions.elementToBeClickable(locator)).click();
+    }
+}
+
+public class DashboardPage extends BasePage {
+    public DashboardPage(WebDriver driver) { super(driver); }
+
+    @Override
+    public void verifyPageLoaded() {
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("dashboard-header")));
+    }
+}</code></pre>
+
+<h4>Constructor in Abstract Class</h4>
+<p>Abstract classes can have constructors. Subclasses must call <code>super()</code> to initialize parent state. This is how BasePage sets up driver and wait for all page objects.</p>
+
+<h3>Interface vs Abstract Class — Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Interface</th><th>Abstract Class</th></tr>
+</thead>
+<tbody>
+<tr><td>Methods</td><td>Abstract, default, static (Java 8+)</td><td>Abstract + concrete methods</td></tr>
+<tr><td>Variables</td><td><code>public static final</code> only</td><td>Any type (instance, static, final)</td></tr>
+<tr><td>Constructor</td><td>Not allowed</td><td>Allowed (called by subclass via super())</td></tr>
+<tr><td>Inheritance</td><td>Multiple interfaces allowed</td><td>Single class inheritance only</td></tr>
+<tr><td>Access modifiers</td><td>Methods implicitly public</td><td>Any access modifier</td></tr>
+<tr><td>Instantiation</td><td>Cannot instantiate</td><td>Cannot instantiate</td></tr>
+<tr><td>State (fields)</td><td>Only constants</td><td>Can hold instance state</td></tr>
+<tr><td>When to use</td><td>Define a contract/capability</td><td>Share code + enforce structure</td></tr>
+<tr><td>Example</td><td><code>WebDriver</code>, <code>IPageActions</code></td><td><code>BasePage</code>, <code>BaseTest</code></td></tr>
+<tr><td>Java version</td><td>Enhanced in Java 8, 9, 17</td><td>Unchanged core concept</td></tr>
+<tr><td>Design pattern</td><td>Strategy, Observer</td><td>Template Method</td></tr>
+<tr><td>is-a vs can-do</td><td>"can-do" relationship</td><td>"is-a" relationship</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Java 8+ Changes to Interfaces</h3>
+<ul>
+<li><strong>Default methods:</strong> Provide implementation in interface; backward compatible</li>
+<li><strong>Static methods:</strong> Utility methods tied to the interface</li>
+<li><strong>Private methods (Java 9):</strong> Shared code within default methods</li>
+<li><strong>Sealed interfaces (Java 17):</strong> Restrict which classes can implement</li>
+</ul>
+
+<h3>Design Pattern: Strategy Using Interfaces</h3>
+<pre><code>public interface BrowserStrategy {
+    WebDriver createDriver();
+}
+
+public class ChromeStrategy implements BrowserStrategy {
+    public WebDriver createDriver() { return new ChromeDriver(); }
+}
+
+public class FirefoxStrategy implements BrowserStrategy {
+    public WebDriver createDriver() { return new FirefoxDriver(); }
+}
+
+public class DriverFactory {
+    public WebDriver getDriver(BrowserStrategy strategy) {
+        return strategy.createDriver();
+    }
+}
+
+// Usage — swap browser at runtime
+WebDriver driver = new DriverFactory().getDriver(new ChromeStrategy());</code></pre>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What is the difference between an interface and an abstract class?</h4>
+<p><strong>Answer:</strong> Interface defines a contract (what), abstract class provides partial implementation (what + some how). A class can implement multiple interfaces but extend only one abstract class. Abstract classes can have constructors and instance fields; interfaces cannot (except constants).</p>
+<p><strong>Interviewer expects:</strong> Multiple inheritance via interfaces as the key differentiator.</p>
+
+<h4>Q2: Can an interface have a constructor?</h4>
+<p><strong>Answer:</strong> No. Interfaces cannot have constructors because they cannot be instantiated and have no instance state to initialize. Abstract classes can have constructors because subclasses need to initialize inherited fields.</p>
+<p><strong>Interviewer expects:</strong> Brief, definitive answer.</p>
+
+<h4>Q3: What is a functional interface?</h4>
+<p><strong>Answer:</strong> An interface with exactly one abstract method (SAM). Annotated with <code>@FunctionalInterface</code>. Can be implemented via lambda expressions. Examples: Runnable, Callable, Comparator, Predicate.</p>
+<p><strong>Interviewer expects:</strong> SAM definition and lambda connection.</p>
+
+<h4>Q4: Why does Selenium use WebDriver as an interface?</h4>
+<p><strong>Answer:</strong> Interface allows polymorphism — write code against WebDriver, swap ChromeDriver/FirefoxDriver/EdgeDriver at runtime. New browser implementations can be added without changing test code. Follows Open/Closed Principle.</p>
+<p><strong>Interviewer expects:</strong> Polymorphism and framework extensibility reasoning.</p>
+
+<h4>Q5: What are default methods and why were they added?</h4>
+<p><strong>Answer:</strong> Default methods provide implementation in interfaces (Java 8). Added for backward compatibility — adding a new abstract method to an interface breaks all existing implementations. Default methods allow evolution without breaking code.</p>
+<p><strong>Interviewer expects:</strong> Backward compatibility as the primary motivation.</p>
+
+<h4>Q6: Can an abstract class implement an interface?</h4>
+<p><strong>Answer:</strong> Yes. An abstract class can implement an interface and optionally override its methods. It can leave some interface methods abstract, forcing concrete subclasses to implement them. Common pattern: abstract BasePage implements IPageActions.</p>
+<p><strong>Interviewer expects:</strong> Combined usage pattern awareness.</p>
+
+<h4>Q7: Can you instantiate an abstract class?</h4>
+<p><strong>Answer:</strong> No. Abstract classes cannot be instantiated directly. You must create a concrete subclass that implements all abstract methods, then instantiate the subclass. Attempting <code>new BasePage()</code> causes a compile error.</p>
+<p><strong>Interviewer expects:</strong> Subclass requirement for instantiation.</p>
+
+<h4>Q8: What is the diamond problem and how does Java handle it?</h4>
+<p><strong>Answer:</strong> Diamond problem occurs when a class inherits the same method from two interfaces. Java 8 resolves this by requiring the class to override the conflicting default method. If not overridden, compile error. Java avoids multiple class inheritance entirely.</p>
+<p><strong>Interviewer expects:</strong> Default method conflict resolution.</p>
+
+<h4>Q9: When would you choose abstract class over interface?</h4>
+<p><strong>Answer:</strong> When classes share significant common code and state (BasePage with driver, wait, common click/type methods). Use abstract class for Template Method pattern. Use interface when classes share a capability but not implementation (Searchable, Clickable).</p>
+<p><strong>Interviewer expects:</strong> "is-a" with shared code → abstract class; "can-do" → interface.</p>
+
+<h4>Q10: Can interface methods be private?</h4>
+<p><strong>Answer:</strong> Yes, since Java 9. Private methods in interfaces help share code between default methods without exposing it. They cannot be abstract — must have a body. Only called from within the interface itself.</p>
+<p><strong>Interviewer expects:</strong> Java 9+ feature awareness.</p>
+
+<h4>Q11: What happens if a class implements two interfaces with the same default method?</h4>
+<p><strong>Answer:</strong> The class must override the method to resolve ambiguity, optionally calling <code>InterfaceName.super.methodName()</code> to delegate to a specific interface's implementation. Without override, the compiler throws an error.</p>
+<p><strong>Interviewer expects:</strong> Explicit override with super syntax.</p>
+
+<h4>Q12: Explain Template Method pattern with abstract class.</h4>
+<p><strong>Answer:</strong> Abstract class defines the skeleton algorithm in a concrete method, calling abstract methods for steps that subclasses customize. Example: BaseTest defines test flow (setup → run → teardown) with abstract <code>runTest()</code> implemented by each test class.</p>
+<p><strong>Interviewer expects:</strong> BaseTest/BasePage as concrete framework examples.</p>
+</section>
+
+<section id="section-11" class="section-card">
+<h2>Section 11: Java 8+ Features</h2>
+
+<p>Java 8 introduced transformative features — lambdas, streams, functional interfaces, and Optional — that modernized test automation code. Selenium 4 and TestNG leverage these extensively.</p>
+
+<h3>Lambda Expressions</h3>
+<p>Lambda expressions provide a concise way to implement functional interfaces (single abstract method interfaces).</p>
+
+<h4>Syntax</h4>
+<pre><code>// Single expression (no braces needed)
+(params) -> expression
+
+// Multiple statements (braces required)
+(params) -> { statements; return value; }
+
+// Examples
+Runnable r = () -> System.out.println("Running test");
+Comparator&lt;String&gt; comp = (a, b) -> a.compareTo(b);
+Predicate&lt;String&gt; isEmpty = s -> s == null || s.isEmpty();</code></pre>
+
+<h4>Before vs After Lambda</h4>
+<pre><code>// BEFORE Java 8 — Anonymous inner class
+driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+List&lt;WebElement&gt; elements = driver.findElements(By.tagName("li"));
+Collections.sort(elements, new Comparator&lt;WebElement&gt;() {
+    @Override
+    public int compare(WebElement e1, WebElement e2) {
+        return e1.getText().compareTo(e2.getText());
+    }
+});
+
+// AFTER Java 8 — Lambda
+driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+List&lt;WebElement&gt; elements = driver.findElements(By.tagName("li"));
+elements.sort((e1, e2) -> e1.getText().compareTo(e2.getText()));</code></pre>
+
+<h4>Selenium Wait with Lambda</h4>
+<pre><code>WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+// Lambda as ExpectedCondition
+WebElement element = wait.until(
+    driver -> driver.findElement(By.id("submit-btn")).isDisplayed()
+        ? driver.findElement(By.id("submit-btn"))
+        : null
+);
+
+// FluentWait with lambda
+Wait&lt;WebDriver&gt; fluentWait = new FluentWait&lt;&gt;(driver)
+    .withTimeout(Duration.ofSeconds(30))
+    .pollingEvery(Duration.ofSeconds(2))
+    .ignoring(NoSuchElementException.class);
+
+WebElement result = fluentWait.until(d -> d.findElement(By.cssSelector(".result")));</code></pre>
+
+<h3>Functional Interfaces</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Interface</th><th>Method</th><th>Signature</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Predicate&lt;T&gt;</code></td><td><code>test(T t)</code></td><td>T → boolean</td><td><code>e -> e.isDisplayed()</code> — filter visible elements</td></tr>
+<tr><td><code>Function&lt;T,R&gt;</code></td><td><code>apply(T t)</code></td><td>T → R</td><td><code>e -> e.getText()</code> — extract text from elements</td></tr>
+<tr><td><code>Consumer&lt;T&gt;</code></td><td><code>accept(T t)</code></td><td>T → void</td><td><code>e -> e.click()</code> — click each element</td></tr>
+<tr><td><code>Supplier&lt;T&gt;</code></td><td><code>get()</code></td><td>() → T</td><td><code>() -> new ChromeDriver()</code> — lazy driver creation</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>// Predicate — filter visible menu items
+List&lt;WebElement&gt; visibleItems = driver.findElements(By.cssSelector(".menu-item"))
+    .stream()
+    .filter(e -> e.isDisplayed())
+    .collect(Collectors.toList());
+
+// Function — transform elements to text
+List&lt;String&gt; itemTexts = visibleItems.stream()
+    .map(WebElement::getText)
+    .collect(Collectors.toList());
+
+// Consumer — click all checkboxes
+driver.findElements(By.cssSelector("input[type=checkbox]"))
+    .forEach(checkbox -> checkbox.click());
+
+// Supplier — lazy WebDriver creation
+Supplier&lt;WebDriver&gt; driverSupplier = () -> new ChromeDriver();
+WebDriver driver = driverSupplier.get();</code></pre>
+
+<h3>Streams API</h3>
+
+<h4>Creating Streams</h4>
+<pre><code>List&lt;String&gt; browsers = Arrays.asList("chrome", "firefox", "edge");
+Stream&lt;String&gt; stream1 = browsers.stream();
+Stream&lt;String&gt; stream2 = Stream.of("chrome", "firefox", "edge");
+Stream&lt;String&gt; stream3 = Arrays.stream(new String[]{"chrome", "firefox"});</code></pre>
+
+<h4>Intermediate Operations (return Stream)</h4>
+<pre><code>.filter(predicate)   // keep matching elements
+.map(function)         // transform each element
+.sorted(comparator)    // sort elements
+.distinct()           // remove duplicates
+.limit(n)              // take first n elements
+.flatMap(function)     // flatten nested streams</code></pre>
+
+<h4>Terminal Operations (produce result)</h4>
+<pre><code>.collect(Collectors.toList())  // gather into collection
+.forEach(consumer)              // perform action on each
+.count()                        // count elements
+.findFirst()                    // get first Optional element
+.anyMatch(predicate)            // true if any match
+.allMatch(predicate)            // true if all match
+.reduce(identity, accumulator)  // combine into single value</code></pre>
+
+<h4>Complete Chaining Example</h4>
+<pre><code>List&lt;WebElement&gt; links = driver.findElements(By.tagName("a"));
+
+// Step 1: filter visible links containing "docs"
+// Step 2: extract href attribute
+// Step 3: collect to list
+List&lt;String&gt; docLinks = links.stream()
+    .filter(link -> link.isDisplayed())
+    .filter(link -> link.getText().contains("docs"))
+    .map(link -> link.getAttribute("href"))
+    .collect(Collectors.toList());
+
+// Output: ["https://example.com/docs/api", "https://example.com/docs/guide"]</code></pre>
+
+<h4>Selenium Stream Example — Filter and Extract</h4>
+<pre><code>List&lt;WebElement&gt; rows = driver.findElements(By.cssSelector("table tr"));
+
+List&lt;String&gt; activeUserEmails = rows.stream()
+    .skip(1)  // skip header row
+    .filter(row -> row.findElement(By.cssSelector(".status")).getText().equals("Active"))
+    .map(row -> row.findElement(By.cssSelector(".email")).getText())
+    .sorted()
+    .collect(Collectors.toList());
+
+System.out.println("Active users: " + activeUserEmails.size());
+activeUserEmails.forEach(email -> System.out.println("  - " + email));</code></pre>
+
+<h3>Optional — Avoiding NullPointerException</h3>
+<pre><code>// Creating Optional
+Optional&lt;String&gt; opt1 = Optional.of("value");          // non-null value
+Optional&lt;String&gt; opt2 = Optional.ofNullable(getText()); // may be null
+Optional&lt;String&gt; opt3 = Optional.empty();               // explicitly empty
+
+// Using Optional
+if (opt2.isPresent()) {
+    System.out.println(opt2.get());
+}
+
+opt2.ifPresent(text -> System.out.println("Found: " + text));
+
+String result = opt2.orElse("default value");
+String result2 = opt2.orElseGet(() -> fetchFromConfig());
+String result3 = opt2.orElseThrow(() -> new RuntimeException("Not found"));</code></pre>
+
+<h4>Selenium Optional Element Handling</h4>
+<pre><code>public Optional&lt;WebElement&gt; findElementSafely(By locator) {
+    try {
+        return Optional.of(driver.findElement(locator));
+    } catch (NoSuchElementException e) {
+        return Optional.empty();
+    }
+}
+
+// Usage
+findElementSafely(By.id("optional-banner"))
+    .ifPresent(banner -> banner.findElement(By.className("close")).click());
+
+String errorMsg = findElementSafely(By.cssSelector(".error-msg"))
+    .map(WebElement::getText)
+    .orElse("No error displayed");</code></pre>
+
+<h3>Method References</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Type</th><th>Syntax</th><th>Lambda Equivalent</th></tr>
+</thead>
+<tbody>
+<tr><td>Static</td><td><code>String::valueOf</code></td><td><code>x -> String.valueOf(x)</code></td></tr>
+<tr><td>Instance (specific object)</td><td><code>driver::getTitle</code></td><td><code>() -> driver.getTitle()</code></td></tr>
+<tr><td>Instance (arbitrary)</td><td><code>WebElement::getText</code></td><td><code>e -> e.getText()</code></td></tr>
+<tr><td>Constructor</td><td><code>ArrayList::new</code></td><td><code>() -> new ArrayList()</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code>// Static method reference
+List&lt;String&gt; numbers = Arrays.asList("1", "2", "3");
+List&lt;Integer&gt; ints = numbers.stream()
+    .map(Integer::parseInt)
+    .collect(Collectors.toList());
+
+// Instance method reference
+List&lt;String&gt; texts = elements.stream()
+    .map(WebElement::getText)
+    .collect(Collectors.toList());
+
+// Constructor reference
+Supplier&lt;ArrayList&lt;String&gt;&gt; listFactory = ArrayList::new;</code></pre>
+
+<h3>Java 10+ Features</h3>
+
+<h4>var Keyword (Java 10)</h4>
+<pre><code>var driver = new ChromeDriver();                    // WebDriver inferred
+var elements = driver.findElements(By.tagName("a"));  // List&lt;WebElement&gt; inferred
+var wait = new WebDriverWait(driver, Duration.ofSeconds(10));</code></pre>
+
+<h4>Text Blocks (Java 15)</h4>
+<pre><code>String json = """
+    {
+        "username": "admin",
+        "password": "secret",
+        "role": "administrator"
+    }
+    """;</code></pre>
+
+<h4>Records (Java 16)</h4>
+<pre><code>public record TestUser(String username, String password, String role) {}
+
+TestUser user = new TestUser("admin", "secret", "admin");
+System.out.println(user.username());  // auto-generated accessor</code></pre>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What is a lambda expression?</h4>
+<p><strong>Answer:</strong> A concise anonymous function that implements a functional interface's single abstract method. Syntax: <code>(parameters) -> expression</code>. Eliminates boilerplate anonymous inner classes. Used heavily in streams, comparators, and Selenium waits.</p>
+<p><strong>Interviewer expects:</strong> Connection to functional interfaces.</p>
+
+<h4>Q2: What is the difference between map() and flatMap()?</h4>
+<p><strong>Answer:</strong> map() transforms each element 1:1 (element → element). flatMap() transforms each element and flattens the result (element → stream → flattened). Use flatMap when the mapping function returns a stream or collection.</p>
+<p><strong>Interviewer expects:</strong> 1:1 vs 1:many transformation distinction.</p>
+
+<h4>Q3: What is Optional and why use it?</h4>
+<p><strong>Answer:</strong> Optional is a container that may or may not contain a value. It forces explicit null handling instead of returning null. Prevents NullPointerException. Use orElse/orElseGet for defaults, ifPresent for conditional actions.</p>
+<p><strong>Interviewer expects:</strong> Null safety as the primary motivation.</p>
+
+<h4>Q4: Difference between intermediate and terminal stream operations?</h4>
+<p><strong>Answer:</strong> Intermediate operations (filter, map, sorted) return a new stream and are lazy — not executed until a terminal operation is called. Terminal operations (collect, forEach, count) produce a result and trigger pipeline execution.</p>
+<p><strong>Interviewer expects:</strong> Lazy evaluation concept.</p>
+
+<h4>Q5: Can you reuse a Java stream?</h4>
+<p><strong>Answer:</strong> No. Once a terminal operation is called, the stream is consumed and cannot be reused. Attempting to call another terminal operation throws IllegalStateException. Create a new stream from the source collection if needed.</p>
+<p><strong>Interviewer expects:</strong> One-time consumption rule.</p>
+
+<h4>Q6: What is a method reference?</h4>
+<p><strong>Answer:</strong> Shorthand notation for lambda expressions that call an existing method. Four types: static (Class::method), instance of particular object (obj::method), instance of arbitrary object (Class::instanceMethod), constructor (Class::new).</p>
+<p><strong>Interviewer expects:</strong> All four types with examples.</p>
+
+<h4>Q7: What is the @FunctionalInterface annotation?</h4>
+<p><strong>Answer:</strong> Marks an interface as functional (one abstract method). Compiler validates the constraint. Not required but recommended — prevents accidentally adding a second abstract method. Examples: Runnable, Callable, Comparator, Predicate.</p>
+<p><strong>Interviewer expects:</strong> Compiler enforcement benefit.</p>
+
+<h4>Q8: How do lambdas improve Selenium wait conditions?</h4>
+<p><strong>Answer:</strong> ExpectedCondition is a functional interface. Lambdas replace verbose anonymous classes: <code>wait.until(d -> d.findElement(By.id("x")).isDisplayed())</code>. Cleaner, readable, and inline custom wait logic without separate classes.</p>
+<p><strong>Interviewer expects:</strong> Concrete Selenium code example.</p>
+
+<h4>Q9: What is the difference between orElse() and orElseGet()?</h4>
+<p><strong>Answer:</strong> orElse() always evaluates the default value argument, even if Optional has a value. orElseGet() takes a Supplier and only evaluates it when Optional is empty. Use orElseGet for expensive default computations.</p>
+<p><strong>Interviewer expects:</strong> Eager vs lazy default evaluation.</p>
+
+<h4>Q10: Explain parallel streams.</h4>
+<p><strong>Answer:</strong> Calling parallelStream() splits data across multiple threads using ForkJoinPool. Good for CPU-intensive operations on large datasets. Not recommended for I/O-bound Selenium operations. Can cause thread safety issues with shared state.</p>
+<p><strong>Interviewer expects:</strong> When NOT to use parallel streams in testing.</p>
+
+<h4>Q11: What is a record in Java?</h4>
+<p><strong>Answer:</strong> A compact class for immutable data carriers (Java 16). Auto-generates constructor, getters, equals(), hashCode(), toString(). Ideal for test data objects: <code>record User(String name, String email) {}</code>.</p>
+<p><strong>Interviewer expects:</strong> Test data POJO replacement use case.</p>
+
+<h4>Q12: What is the var keyword limitation?</h4>
+<p><strong>Answer:</strong> var enables local type inference — compiler deduces type from initializer. Cannot use for fields, method parameters, or return types. Variable must be initialized at declaration. Cannot be null without explicit type context.</p>
+<p><strong>Interviewer expects:</strong> Local variables only restriction.</p>
+
+<h4>Q13: How does Collectors.groupingBy work?</h4>
+<p><strong>Answer:</strong> Groups stream elements into a Map by a classifier function. Example: group test results by status — <code>.collect(Collectors.groupingBy(TestResult::getStatus))</code> produces Map&lt;String, List&lt;TestResult&gt;&gt;.</p>
+<p><strong>Interviewer expects:</strong> Practical aggregation example.</p>
+
+<h4>Q14: What is the difference between forEach and forEachOrdered?</h4>
+<p><strong>Answer:</strong> forEach may process elements in any order in parallel streams. forEachOrdered guarantees encounter order even in parallel streams. Use forEachOrdered when order matters; forEach for better parallel performance when order is irrelevant.</p>
+<p><strong>Interviewer expects:</strong> Parallel stream ordering awareness.</p>
+
+<h4>Q15: Can lambda expressions access local variables?</h4>
+<p><strong>Answer:</strong> Yes, but local variables must be effectively final (not reassigned after initialization). Lambdas capture the variable value, not the reference. This prevents concurrency issues and ensures consistent behavior.</p>
+<p><strong>Interviewer expects:</strong> Effectively final constraint.</p>
+</section>
+
+<section id="section-12" class="section-card">
+<h2>Section 12: File Handling</h2>
+
+<p>Test automation frameworks read configuration, test data, and reports from various file formats. Java provides multiple APIs for file I/O — from classic streams to modern NIO.</p>
+
+<h3>Reading Files</h3>
+
+<h4>FileReader + BufferedReader</h4>
+<pre><code>try (BufferedReader reader = new BufferedReader(new FileReader("testdata/users.txt"))) {
+    String line;
+    while ((line = reader.readLine()) != null) {
+        System.out.println(line);
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+}</code></pre>
+
+<h4>Files.readAllLines() — Java NIO</h4>
+<pre><code>import java.nio.file.*;
+
+List&lt;String&gt; lines = Files.readAllLines(Paths.get("testdata/users.txt"));
+lines.forEach(System.out::println);
+
+// Read as single string
+String content = Files.readString(Paths.get("testdata/config.json"));</code></pre>
+
+<h4>Scanner Class</h4>
+<pre><code>try (Scanner scanner = new Scanner(new File("testdata/users.csv"))) {
+    scanner.useDelimiter(",");
+    while (scanner.hasNext()) {
+        String username = scanner.next();
+        String password = scanner.next();
+        System.out.println(username + " : " + password);
+    }
+}</code></pre>
+
+<h3>Writing Files</h3>
+
+<h4>FileWriter + BufferedWriter</h4>
+<pre><code>try (BufferedWriter writer = new BufferedWriter(new FileWriter("reports/test-log.txt", true))) {
+    writer.write("Test: LoginTest - PASSED");
+    writer.newLine();
+    writer.write("Timestamp: " + LocalDateTime.now());
+} catch (IOException e) {
+    e.printStackTrace();
+}</code></pre>
+
+<h4>Files.write() — Java NIO</h4>
+<pre><code>List&lt;String&gt; results = Arrays.asList("LoginTest - PASS", "SearchTest - FAIL");
+Files.write(Paths.get("reports/results.txt"), results,
+    StandardOpenOption.CREATE, StandardOpenOption.APPEND);</code></pre>
+
+<h3>Properties Files</h3>
+<pre><code>Properties prop = new Properties();
+try (FileInputStream fis = new FileInputStream("config.properties")) {
+    prop.load(fis);
+}
+String browser = prop.getProperty("browser");
+String url = prop.getProperty("url");
+int timeout = Integer.parseInt(prop.getProperty("timeout", "10"));</code></pre>
+
+<h4>Complete ConfigReader Utility Class</h4>
+<pre><code>public class ConfigReader {
+    private static Properties properties;
+
+    static {
+        properties = new Properties();
+        try (InputStream input = ConfigReader.class.getClassLoader()
+                .getResourceAsStream("config.properties")) {
+            if (input == null) {
+                throw new RuntimeException("config.properties not found");
+            }
+            properties.load(input);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load config", e);
+        }
+    }
+
+    private ConfigReader() {}
+
+    public static String getProperty(String key) {
+        return properties.getProperty(key);
+    }
+
+    public static String getProperty(String key, String defaultValue) {
+        return properties.getProperty(key, defaultValue);
+    }
+
+    public static int getIntProperty(String key) {
+        return Integer.parseInt(properties.getProperty(key));
+    }
+}</code></pre>
+
+<h3>JSON Handling</h3>
+
+<h4>Jackson</h4>
+<pre><code>ObjectMapper mapper = new ObjectMapper();
+
+// Read JSON file to object
+TestUser user = mapper.readValue(new File("testdata/user.json"), TestUser.class);
+
+// Read JSON to List
+List&lt;TestUser&gt; users = mapper.readValue(new File("testdata/users.json"),
+    new TypeReference&lt;List&lt;TestUser&gt;&gt;() {});
+
+// Write object to JSON
+mapper.writeValue(new File("reports/result.json"), testResult);</code></pre>
+
+<h4>Gson</h4>
+<pre><code>Gson gson = new Gson();
+
+TestUser user = gson.fromJson(new FileReader("testdata/user.json"), TestUser.class);
+String jsonString = gson.toJson(user);</code></pre>
+
+<h4>Reading Test Data from JSON for DataProvider</h4>
+<pre><code>@DataProvider(name = "loginData")
+public Object[][] getLoginData() throws IOException {
+    ObjectMapper mapper = new ObjectMapper();
+    List&lt;Map&lt;String, String&gt;&gt; data = mapper.readValue(
+        new File("testdata/login-data.json"),
+        new TypeReference&lt;List&lt;Map&lt;String, String&gt;&gt;&gt;() {}
+    );
+    Object[][] result = new Object[data.size()][1];
+    for (int i = 0; i < data.size(); i++) {
+        result[i][0] = data.get(i);
+    }
+    return result;
+}</code></pre>
+
+<h3>Excel Handling — Apache POI</h3>
+<pre><code>public class ExcelReader {
+    public static Object[][] getSheetData(String filePath, String sheetName) {
+        Object[][] data = null;
+        try (FileInputStream fis = new FileInputStream(filePath);
+             XSSFWorkbook workbook = new XSSFWorkbook(fis)) {
+
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+            int rowCount = sheet.getLastRowNum();
+            int colCount = sheet.getRow(0).getLastCellNum();
+            data = new Object[rowCount][colCount];
+
+            for (int i = 1; i &lt;= rowCount; i++) {
+                XSSFRow row = sheet.getRow(i);
+                for (int j = 0; j &lt; colCount; j++) {
+                    XSSFCell cell = row.getCell(j);
+                    switch (cell.getCellType()) {
+                        case STRING:  data[i-1][j] = cell.getStringCellValue(); break;
+                        case NUMERIC: data[i-1][j] = (int) cell.getNumericCellValue(); break;
+                        case BOOLEAN: data[i-1][j] = cell.getBooleanCellValue(); break;
+                        default:      data[i-1][j] = "";
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read Excel: " + filePath, e);
+        }
+        return data;
+    }
+}</code></pre>
+
+<h3>CSV Handling — OpenCSV</h3>
+<pre><code>import com.opencsv.CSVReader;
+
+try (CSVReader reader = new CSVReader(new FileReader("testdata/users.csv"))) {
+    List&lt;String[]&gt; rows = reader.readAll();
+    for (String[] row : rows) {
+        System.out.println("User: " + row[0] + ", Role: " + row[1]);
+    }
+}</code></pre>
+
+<h3>Framework File Usage Table</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>File Type</th><th>Purpose</th><th>Library</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td>.properties</td><td>Environment config</td><td>java.util.Properties</td><td>browser=chrome, url=https://app.com</td></tr>
+<tr><td>.json</td><td>Structured test data</td><td>Jackson / Gson</td><td>login-data.json with user credentials</td></tr>
+<tr><td>.xlsx</td><td>Data-driven test data</td><td>Apache POI</td><td>TestData.xlsx for @DataProvider</td></tr>
+<tr><td>.csv</td><td>Simple tabular data</td><td>OpenCSV</td><td>users.csv for bulk test inputs</td></tr>
+<tr><td>.xml</td><td>TestNG suite config</td><td>Built-in TestNG</td><td>testng.xml parallel settings</td></tr>
+<tr><td>.txt / .log</td><td>Test execution logs</td><td>FileWriter / Log4j</td><td>execution-log.txt</td></tr>
+<tr><td>.html</td><td>Extent/Allure reports</td><td>ExtentReports</td><td>report.html after test run</td></tr>
+<tr><td>.yaml</td><td>CI/CD config</td><td>SnakeYAML</td><td>pipeline settings</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What is the difference between FileReader and Files.readAllLines()?</h4>
+<p><strong>Answer:</strong> FileReader is a character stream that reads byte-by-byte, typically wrapped in BufferedReader for efficiency. Files.readAllLines() is NIO that reads the entire file into a List&lt;String&gt; in one call. NIO is simpler for small files; streams better for large files read line-by-line.</p>
+<p><strong>Interviewer expects:</strong> Classic I/O vs NIO awareness.</p>
+
+<h4>Q2: Why use try-with-resources for file handling?</h4>
+<p><strong>Answer:</strong> try-with-resources automatically closes resources (FileReader, FileInputStream) even if an exception occurs. Implements AutoCloseable interface. Prevents resource leaks and eliminates manual finally blocks with close() calls.</p>
+<p><strong>Interviewer expects:</strong> AutoCloseable and resource leak prevention.</p>
+
+<h4>Q3: How do you read a properties file in a Selenium framework?</h4>
+<p><strong>Answer:</strong> Create Properties object, load via FileInputStream or ClassLoader.getResourceAsStream(), then access with getProperty(key). Wrap in a ConfigReader utility with static methods for centralized config access across the framework.</p>
+<p><strong>Interviewer expects:</strong> ConfigReader pattern with classpath loading.</p>
+
+<h4>Q4: Jackson vs Gson — which to use?</h4>
+<p><strong>Answer:</strong> Jackson is faster, supports streaming, annotations, and data binding with more features. Gson is simpler with fewer dependencies. Jackson is preferred in enterprise frameworks; Gson for lightweight projects. Both read/write JSON effectively.</p>
+<p><strong>Interviewer expects:</strong> Practical trade-off, not just feature list.</p>
+
+<h4>Q5: How do you read Excel data for TestNG DataProvider?</h4>
+<p><strong>Answer:</strong> Use Apache POI to open XSSFWorkbook, iterate rows/cells, build Object[][] array. Return from @DataProvider method. Skip header row (row 0), handle cell types (STRING, NUMERIC, BOOLEAN). Pass file path and sheet name as parameters.</p>
+<p><strong>Interviewer expects:</strong> Complete DataProvider integration flow.</p>
+
+<h4>Q6: What is the difference between relative and absolute file paths?</h4>
+<p><strong>Answer:</strong> Relative paths are from the current working directory (project root during test execution). Absolute paths include the full system path. Frameworks should use relative paths or classpath resources for portability across machines and CI environments.</p>
+<p><strong>Interviewer expects:</strong> CI/CD portability concern.</p>
+
+<h4>Q7: How do you write test results to a file after execution?</h4>
+<p><strong>Answer:</strong> Use ITestListener or TestNG Reporter to capture pass/fail status. Write to file using BufferedWriter or Files.write() with APPEND option. Include test name, status, timestamp, and failure message. Alternatively use ExtentReports or Allure for HTML reports.</p>
+<p><strong>Interviewer expects:</strong> Listener-based reporting approach.</p>
+
+<h4>Q8: What is FileInputStream vs FileReader?</h4>
+<p><strong>Answer:</strong> FileInputStream reads raw bytes — used for binary files (images, Excel, properties). FileReader reads characters — used for text files. For properties/JSON/CSV text files, FileReader or Files API is appropriate. For Excel (.xlsx), use FileInputStream with POI.</p>
+<p><strong>Interviewer expects:</strong> Byte vs character stream distinction.</p>
+
+<h4>Q9: How do you handle file not found in framework code?</h4>
+<p><strong>Answer:</strong> Catch FileNotFoundException or check Files.exists() before reading. Throw a meaningful RuntimeException with the file path in the message. Log the error. Fail fast during setup rather than mid-test with a confusing NullPointerException downstream.</p>
+<p><strong>Interviewer expects:</strong> Fail-fast with clear error messages.</p>
+
+<h4>Q10: Can Properties store non-String values?</h4>
+<p><strong>Answer:</strong> Properties extends Hashtable&lt;Object, Object&gt; but is designed for String keys and values. getProperty() returns String. Parse to int, boolean, etc. manually. For complex config, prefer JSON or YAML over flat properties files.</p>
+<p><strong>Interviewer expects:</strong> String-only limitation and when to use alternatives.</p>
+</section>
+
+<section id="section-13" class="section-card">
+<h2>Section 13: Multithreading</h2>
+
+<p>Parallel test execution is standard in modern automation. Understanding threads, synchronization, and ThreadLocal is critical for building stable Selenium frameworks.</p>
+
+<h3>Thread Basics</h3>
+
+<h4>Extending Thread Class</h4>
+<pre><code>public class TestRunner extends Thread {
+    private String testName;
+
+    public TestRunner(String testName) { this.testName = testName; }
+
+    @Override
+    public void run() {
+        System.out.println("Running: " + testName + " on " + Thread.currentThread().getName());
+    }
+}
+
+TestRunner t1 = new TestRunner("LoginTest");
+TestRunner t2 = new TestRunner("SearchTest");
+t1.start();  // starts new thread
+t2.start();</code></pre>
+
+<h4>Implementing Runnable Interface (Preferred)</h4>
+<pre><code>public class TestTask implements Runnable {
+    private String testName;
+    public TestTask(String testName) { this.testName = testName; }
+
+    @Override
+    public void run() {
+        WebDriver driver = DriverManager.getDriver();
+        System.out.println(testName + " using driver: " + driver);
+    }
+}
+
+Thread t1 = new Thread(new TestTask("LoginTest"));
+Thread t2 = new Thread(new TestTask("SearchTest"));
+t1.start();
+t2.start();</code></pre>
+
+<h3>Thread Lifecycle</h3>
+<div class="ascii-diagram">
+<pre>
+  NEW ──start()──> RUNNABLE ──scheduler──> RUNNING
+                      ^                       |
+                      |         sleep/wait    |
+                      |                       v
+                   RUNNABLE <──notify── BLOCKED/WAITING
+                                              |
+                                         run() completes
+                                              |
+                                              v
+                                         TERMINATED
+</pre>
+</div>
+
+<h4>Key Thread Methods</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Method</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>start()</code></td><td>Creates new thread and calls run()</td></tr>
+<tr><td><code>run()</code></td><td>Contains thread execution logic</td></tr>
+<tr><td><code>sleep(ms)</code></td><td>Pauses current thread temporarily</td></tr>
+<tr><td><code>join()</code></td><td>Waits for another thread to finish</td></tr>
+<tr><td><code>interrupt()</code></td><td>Signals thread to stop</td></tr>
+<tr><td><code>currentThread()</code></td><td>Returns reference to current thread</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Thread vs Runnable</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Extends Thread</th><th>Implements Runnable</th></tr>
+</thead>
+<tbody>
+<tr><td>Inheritance</td><td>Uses extends (single inheritance)</td><td>Uses implements (multiple allowed)</td></tr>
+<tr><td>Flexibility</td><td>Less flexible</td><td>More flexible — can extend another class</td></tr>
+<tr><td>Best practice</td><td>Not recommended</td><td>Preferred approach</td></tr>
+<tr><td>Sharing</td><td>Same object = same thread</td><td>Same Runnable can run on multiple threads</td></tr>
+<tr><td>ExecutorService</td><td>Cannot submit Thread to pool easily</td><td>Designed for thread pools</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Synchronization</h3>
+<p>When multiple threads access shared resources, race conditions occur. Synchronization ensures only one thread accesses critical code at a time.</p>
+
+<pre><code>public class TestCounter {
+    private static int passCount = 0;
+
+    public static synchronized void incrementPass() {
+        passCount++;
+    }
+
+    public static synchronized int getPassCount() {
+        return passCount;
+    }
+}
+
+// Synchronized block — finer-grained control
+public void updateReport(String result) {
+    synchronized (reportLock) {
+        reportData.add(result);
+    }
+}</code></pre>
+
+<div class="callout">
+<strong>Shared WebDriver Problem:</strong> A static WebDriver accessed by multiple threads without ThreadLocal causes tests to interfere with each other — one test quits the browser while another is still running.
+</div>
+
+<h3>ThreadLocal — Thread-Confined Storage</h3>
+<p>ThreadLocal provides each thread its own independent copy of a variable. The most important pattern for Selenium parallel execution.</p>
+
+<pre><code>public class DriverManager {
+    private static ThreadLocal&lt;WebDriver&gt; driverThread = new ThreadLocal&lt;&gt;();
+    private static ThreadLocal&lt;Properties&gt; configThread = new ThreadLocal&lt;&gt;();
+
+    public static WebDriver getDriver() {
+        return driverThread.get();
+    }
+
+    public static void setDriver(WebDriver driver) {
+        driverThread.set(driver);
+    }
+
+    public static void removeDriver() {
+        if (driverThread.get() != null) {
+            driverThread.get().quit();
+            driverThread.remove();
+        }
+    }
+
+    public static Properties getConfig() {
+        return configThread.get();
+    }
+
+    public static void setConfig(Properties config) {
+        configThread.set(config);
+    }
+}</code></pre>
+
+<h4>ThreadLocal Methods</h4>
+<ul>
+<li><code>set(value)</code> — stores value for current thread</li>
+<li><code>get()</code> — retrieves value for current thread</li>
+<li><code>remove()</code> — removes value (critical in thread pools to prevent memory leaks)</li>
+</ul>
+
+<h3>Parallel Execution in Frameworks</h3>
+<pre><code>// testng.xml
+&lt;suite name="Parallel Suite" parallel="methods" thread-count="3"&gt;
+    &lt;test name="Regression"&gt;
+        &lt;classes&gt;
+            &lt;class name="com.tests.LoginTest"/&gt;
+            &lt;class name="com.tests.SearchTest"/&gt;
+            &lt;class name="com.tests.CheckoutTest"/&gt;
+        &lt;/classes&gt;
+    &lt;/test&gt;
+&lt;/suite&gt;</code></pre>
+
+<pre><code>// BaseTest with ThreadLocal
+public class BaseTest {
+    @BeforeMethod
+    public void setUp() {
+        WebDriver driver = new ChromeDriver();
+        DriverManager.setDriver(driver);
+        driver.get(ConfigReader.getProperty("url"));
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        DriverManager.removeDriver();  // quit + remove from ThreadLocal
+    }
+}</code></pre>
+
+<h4>Thread-Safe Reporting</h4>
+<pre><code>public class ReportManager {
+    private static ThreadLocal&lt;ExtentTest&gt; testThread = new ThreadLocal&lt;&gt;();
+
+    public static ExtentTest getTest() { return testThread.get(); }
+    public static void setTest(ExtentTest test) { testThread.set(test); }
+
+    public static synchronized void flushReport() {
+        ExtentManager.getInstance().flush();
+    }
+}</code></pre>
+
+<h3>ExecutorService Basics</h3>
+<pre><code>ExecutorService executor = Executors.newFixedThreadPool(3);
+
+executor.submit(() -> { /* run LoginTest */ });
+executor.submit(() -> { /* run SearchTest */ });
+executor.submit(() -> { /* run CheckoutTest */ });
+
+executor.shutdown();
+executor.awaitTermination(30, TimeUnit.MINUTES);</code></pre>
+
+<h3>Interview Questions &amp; Answers</h3>
+
+<h4>Q1: What is the difference between Thread and Runnable?</h4>
+<p><strong>Answer:</strong> Thread is a class you extend; Runnable is an interface you implement. Runnable is preferred because Java supports single inheritance — implementing Runnable leaves extends available for another class. Runnable works naturally with ExecutorService thread pools.</p>
+<p><strong>Interviewer expects:</strong> Runnable preferred due to single inheritance.</p>
+
+<h4>Q2: What is ThreadLocal and why is it essential for Selenium?</h4>
+<p><strong>Answer:</strong> ThreadLocal gives each thread its own copy of a variable. In parallel testing, each test thread gets its own WebDriver via ThreadLocal, preventing cross-test interference. Without it, static WebDriver is shared and tests fail randomly.</p>
+<p><strong>Interviewer expects:</strong> DriverManager pattern as the canonical answer.</p>
+
+<h4>Q3: What is a race condition?</h4>
+<p><strong>Answer:</strong> A race condition occurs when multiple threads access shared mutable state concurrently and the outcome depends on timing. Example: two tests incrementing a shared counter simultaneously may lose an update. Fixed by synchronization or ThreadLocal.</p>
+<p><strong>Interviewer expects:</strong> Shared mutable state as the root cause.</p>
+
+<h4>Q4: Difference between start() and run()?</h4>
+<p><strong>Answer:</strong> start() creates a new thread and JVM calls run() on that new thread. Calling run() directly executes the method on the current thread — no new thread is created. start() enables parallelism; run() is just a regular method call.</p>
+<p><strong>Interviewer expects:</strong> Common mistake of calling run() instead of start().</p>
+
+<h4>Q5: Why must you call ThreadLocal.remove()?</h4>
+<p><strong>Answer:</strong> In thread pool environments (TestNG parallel, ExecutorService), threads are reused. Without remove(), the previous test's WebDriver persists in the thread, causing stale references and memory leaks. Always remove in @AfterMethod.</p>
+<p><strong>Interviewer expects:</strong> Thread pool reuse as the reason.</p>
+
+<h4>Q6: What is synchronization and when to use it?</h4>
+<p><strong>Answer:</strong> Synchronization ensures only one thread executes a critical section at a time. Use synchronized keyword on methods or blocks when multiple threads modify shared data (counters, report lists). ThreadLocal is preferred when each thread needs its own copy.</p>
+<p><strong>Interviewer expects:</strong> synchronized vs ThreadLocal decision.</p>
+
+<h4>Q7: What is deadlock?</h4>
+<p><strong>Answer:</strong> Deadlock occurs when two or more threads wait for each other to release locks, creating a circular dependency. Thread A holds Lock 1 and waits for Lock 2; Thread B holds Lock 2 and waits for Lock 1. Neither can proceed. Prevent by acquiring locks in consistent order.</p>
+<p><strong>Interviewer expects:</strong> Circular wait condition explanation.</p>
+
+<h4>Q8: How does TestNG parallel execution work?</h4>
+<p><strong>Answer:</strong> Configure parallel attribute in testng.xml: methods, tests, or classes. Set thread-count for max concurrent threads. Each thread needs its own WebDriver via ThreadLocal. TestNG creates threads and assigns test methods to them from a thread pool.</p>
+<p><strong>Interviewer expects:</strong> testng.xml configuration + ThreadLocal requirement.</p>
+
+<h4>Q9: What is ExecutorService?</h4>
+<p><strong>Answer:</strong> A higher-level thread management API from java.util.concurrent. Provides thread pools (newFixedThreadPool, newCachedThreadPool), task submission (submit, execute), and graceful shutdown. Preferred over manually creating Thread objects for managing multiple concurrent tasks.</p>
+<p><strong>Interviewer expects:</strong> Thread pool concept over raw Thread creation.</p>
+
+<h4>Q10: Is WebDriver thread-safe?</h4>
+<p><strong>Answer:</strong> No. WebDriver implementations are not thread-safe. A single WebDriver instance must not be shared across threads. Each thread must have its own WebDriver instance, typically managed via ThreadLocal in a DriverManager class.</p>
+<p><strong>Interviewer expects:</strong> Definitive "no" with ThreadLocal solution.</p>
+</section>
+
+<section id="section-14" class="section-card">
+<h2>Section 14: Java Interview Questions</h2>
+
+<p>Top 150 Java interview questions grouped by topic. Each includes a concise answer and what the interviewer is looking for.</p>
+
+<h3>OOP — 30 Questions</h3>
+
+<h4>Q1: What is a class and object in Java?</h4>
+<p><strong>Answer:</strong> A class is a blueprint/template defining fields and methods. An object is an instance of a class created at runtime using the new keyword. Example: LoginPage is a class; the actual page object you create in a test is an object.</p>
+<p><strong>Interviewer expects:</strong> Blueprint vs instance analogy.</p>
+
+<h4>Q2: What are the four pillars of OOP?</h4>
+<p><strong>Answer:</strong> Encapsulation (data hiding via access modifiers), Inheritance (acquiring parent class properties), Polymorphism (same method, different behavior), Abstraction (hiding complexity, showing essentials). All four are used in Selenium Page Object Model design.</p>
+<p><strong>Interviewer expects:</strong> All four named with brief definitions.</p>
+
+<h4>Q3: What is encapsulation?</h4>
+<p><strong>Answer:</strong> Bundling data and methods together while restricting direct access to fields using private modifiers and public getters/setters. In Page Objects, WebDriver and locators are private; action methods are public.</p>
+<p><strong>Interviewer expects:</strong> Data hiding with access modifiers example.</p>
+
+<h4>Q4: What is inheritance?</h4>
+<p><strong>Answer:</strong> A mechanism where a child class acquires fields and methods from a parent class using extends. LoginTest extends BaseTest inherits setup/teardown methods. Java supports single inheritance for classes, multiple for interfaces.</p>
+<p><strong>Interviewer expects:</strong> extends keyword and single inheritance rule.</p>
+
+<h4>Q5: What is polymorphism?</h4>
+<p><strong>Answer:</strong> Same method name, different behavior based on object type. Compile-time: method overloading. Runtime: method overriding. WebDriver driver = new ChromeDriver() — driver.get() calls ChromeDriver's implementation at runtime.</p>
+<p><strong>Interviewer expects:</strong> Compile-time vs runtime polymorphism distinction.</p>
+
+<h4>Q6: What is abstraction?</h4>
+<p><strong>Answer:</strong> Hiding implementation details and exposing only essential features. Achieved via abstract classes and interfaces. WebDriver interface abstracts browser operations — tests don't know if Chrome or Firefox is running.</p>
+<p><strong>Interviewer expects:</strong> Interface/abstract class as abstraction tools.</p>
+
+<h4>Q7: What is a constructor?</h4>
+<p><strong>Answer:</strong> A special method called when an object is created. Same name as class, no return type. Initializes object state. Page objects use constructors to receive WebDriver: public LoginPage(WebDriver driver) { this.driver = driver; }.</p>
+<p><strong>Interviewer expects:</strong> No return type, same name as class.</p>
+
+<h4>Q8: Constructor overloading vs method overloading?</h4>
+<p><strong>Answer:</strong> Constructor overloading: multiple constructors with different parameter lists in the same class. Method overloading: multiple methods with same name but different parameters. Both are compile-time polymorphism. Constructors cannot be overridden.</p>
+<p><strong>Interviewer expects:</strong> Constructors are not inherited or overridden.</p>
+
+<h4>Q9: What is method overloading?</h4>
+<p><strong>Answer:</strong> Same method name, different parameter list (type, number, or order) in the same class. Resolved at compile time. Example: findElement(By id) and findElement(String css) — different parameter types.</p>
+<p><strong>Interviewer expects:</strong> Parameter list must differ; return type alone is insufficient.</p>
+
+<h4>Q10: What is method overriding?</h4>
+<p><strong>Answer:</strong> Subclass provides specific implementation of a method already defined in parent class. Same signature, resolved at runtime. @Override annotation recommended. Cannot reduce visibility. BaseTest defines tearDown(); child can override with extra cleanup.</p>
+<p><strong>Interviewer expects:</strong> Runtime polymorphism, @Override, visibility rules.</p>
+
+<h4>Q11: Overloading vs overriding?</h4>
+<p><strong>Answer:</strong> Overloading: same class, different parameters, compile-time binding. Overriding: parent-child classes, same signature, runtime binding. Overloading is static polymorphism; overriding is dynamic polymorphism.</p>
+<p><strong>Interviewer expects:</strong> Side-by-side comparison with binding time.</p>
+
+<h4>Q12: Can you override static methods?</h4>
+<p><strong>Answer:</strong> No. Static methods belong to the class, not instances. Subclass can define a static method with same signature — this is method hiding, not overriding. Resolution happens at compile time based on reference type.</p>
+<p><strong>Interviewer expects:</strong> Method hiding, not overriding.</p>
+
+<h4>Q13: Can you override private methods?</h4>
+<p><strong>Answer:</strong> No. Private methods are not visible to subclasses. A subclass method with the same signature is a completely new method, not an override. Compiler treats them as unrelated methods.</p>
+<p><strong>Interviewer expects:</strong> Private methods are not part of inheritance hierarchy.</p>
+
+<h4>Q14: What is the diamond problem?</h4>
+<p><strong>Answer:</strong> Multiple inheritance causes ambiguity when two parent interfaces provide the same default method. Java avoids it by not allowing multiple class inheritance. For interfaces, the implementing class must override the conflicting method.</p>
+<p><strong>Interviewer expects:</strong> Java's interface-based solution to diamond problem.</p>
+
+<h4>Q15: What are interface default methods?</h4>
+<p><strong>Answer:</strong> Methods with implementation in interfaces, added in Java 8. Allow adding new methods to interfaces without breaking existing implementations. Use default keyword. Can be overridden by implementing classes.</p>
+<p><strong>Interviewer expects:</strong> Backward compatibility purpose.</p>
+
+<h4>Q16: What is the super keyword?</h4>
+<p><strong>Answer:</strong> Refers to the immediate parent class. super() calls parent constructor. super.methodName() calls parent method. Required when subclass constructor must initialize parent fields: public DashboardPage(WebDriver d) { super(d); }.</p>
+<p><strong>Interviewer expects:</strong> Constructor chaining with super().</p>
+
+<h4>Q17: What is the this keyword?</h4>
+<p><strong>Answer:</strong> Refers to the current object instance. Used to differentiate instance variables from parameters, call other constructors (this()), or pass current object. this.driver = driver assigns parameter to instance field.</p>
+<p><strong>Interviewer expects:</strong> Parameter vs field disambiguation.</p>
+
+<h4>Q18: What is composition vs inheritance?</h4>
+<p><strong>Answer:</strong> Inheritance (is-a): LoginPage is a BasePage. Composition (has-a): LoginPage has a WebDriver. Favor composition over inheritance when possible — less coupling. Page Object uses composition (has driver) more than deep inheritance chains.</p>
+<p><strong>Interviewer expects:</strong> "Favor composition over inheritance" principle.</p>
+
+<h4>Q19: What is an abstract class?</h4>
+<p><strong>Answer:</strong> A class that cannot be instantiated, may contain abstract and concrete methods. Subclasses must implement all abstract methods. Used for BasePage with shared wait/click methods and abstract verifyPageLoaded().</p>
+<p><strong>Interviewer expects:</strong> Partial implementation, force subclass contract.</p>
+
+<h4>Q20: What is an interface?</h4>
+<p><strong>Answer:</strong> A contract defining method signatures without implementation (pre-Java 8). A class implements an interface using implements keyword. Supports multiple interface implementation. WebDriver is the classic Selenium interface example.</p>
+<p><strong>Interviewer expects:</strong> Contract/capability definition.</p>
+
+<h4>Q21: Abstract class vs interface — when to use which?</h4>
+<p><strong>Answer:</strong> Abstract class: shared code + state (BasePage with driver field). Interface: define capability without shared implementation (Clickable, Searchable). Use abstract class for "is-a" with common code; interface for "can-do".</p>
+<p><strong>Interviewer expects:</strong> Practical decision criteria, not just definitions.</p>
+
+<h4>Q22: What is final keyword?</h4>
+<p><strong>Answer:</strong> final class — cannot be extended. final method — cannot be overridden. final variable — constant, assigned once. String class is final. Framework constants: public static final int DEFAULT_TIMEOUT = 10.</p>
+<p><strong>Interviewer expects:</strong> Three uses: class, method, variable.</p>
+
+<h4>Q23: Can a final method be overloaded?</h4>
+<p><strong>Answer:</strong> Yes. final prevents overriding in subclasses but does not prevent overloading within the same class. Overloading creates a new method with different parameters; overriding replaces parent implementation.</p>
+<p><strong>Interviewer expects:</strong> Overloading ≠ overriding clarification.</p>
+
+<h4>Q24: What is object cloning?</h4>
+<p><strong>Answer:</strong> Creating an exact copy of an object. Implement Cloneable interface and override clone() method. Shallow copy copies references; deep copy duplicates nested objects. Rarely used in test automation frameworks.</p>
+<p><strong>Interviewer expects:</strong> Shallow vs deep copy awareness.</p>
+
+<h4>Q25: What is the Object class?</h4>
+<p><strong>Answer:</strong> Root class of all Java classes. Every class implicitly extends Object. Provides equals(), hashCode(), toString(), getClass(), notify(), wait(). Override equals() and hashCode() together when comparing custom objects.</p>
+<p><strong>Interviewer expects:</strong> Universal parent class with key methods.</p>
+
+<h4>Q26: What is coupling and cohesion?</h4>
+<p><strong>Answer:</strong> Coupling: degree of dependency between classes — low coupling is better. Cohesion: how closely related a class's methods are — high cohesion is better. Page Objects with single page responsibility have high cohesion and low coupling to tests.</p>
+<p><strong>Interviewer expects:</strong> Low coupling, high cohesion as ideal.</p>
+
+<h4>Q27: What is static binding vs dynamic binding?</h4>
+<p><strong>Answer:</strong> Static (compile-time) binding: method resolution at compile time — overloading, static methods, final methods, private methods. Dynamic (runtime) binding: method resolution at runtime — overriding. JVM uses virtual method table for dynamic binding.</p>
+<p><strong>Interviewer expects:</strong> Which methods use which binding type.</p>
+
+<h4>Q28: What is an inner class?</h4>
+<p><strong>Answer:</strong> A class defined inside another class. Types: member inner class, static nested class, local inner class, anonymous inner class. Anonymous inner classes were common pre-Java 8 for event handlers; lambdas replaced most use cases.</p>
+<p><strong>Interviewer expects:</strong> Anonymous inner class → lambda evolution.</p>
+
+<h4>Q29: What is the instanceof operator?</h4>
+<p><strong>Answer:</strong> Checks if an object is an instance of a specific class or interface. Returns boolean. Used before casting: if (driver instanceof ChromeDriver) { /* Chrome-specific */ }. Prefer polymorphism over instanceof checks when possible.</p>
+<p><strong>Interviewer expects:</strong> Type checking before safe casting.</p>
+
+<h4>Q30: Explain IS-A vs HAS-A relationship.</h4>
+<p><strong>Answer:</strong> IS-A: inheritance — ChromeDriver IS-A WebDriver. HAS-A: composition — LoginPage HAS-A WebDriver. IS-A uses extends/implements; HAS-A uses instance variables. Test frameworks use both: pages HAS-A driver, test IS-A BaseTest.</p>
+<p><strong>Interviewer expects:</strong> Real examples from Selenium context.</p>
+
+<h3>Strings — 20 Questions</h3>
+
+<h4>Q31: Why is String immutable in Java?</h4>
+<p><strong>Answer:</strong> Strings are final with internal char array that cannot change after creation. Immutability enables String pool optimization, thread safety, and security (passwords, URLs). Any modification creates a new String object.</p>
+<p><strong>Interviewer expects:</strong> String pool and thread safety as reasons.</p>
+
+<h4>Q32: What is the String pool?</h4>
+<p><strong>Answer:</strong> A special memory area in the heap where String literals are stored. JVM reuses existing literals instead of creating duplicates. "hello" == "hello" is true (same pool reference). new String("hello") creates a separate heap object.</p>
+<p><strong>Interviewer expects:</strong> Literal vs new String() difference.</p>
+
+<h4>Q33: == vs equals() for Strings?</h4>
+<p><strong>Answer:</strong> == compares memory references (same object?). equals() compares actual character content. Always use equals() for String comparison. "hello" == new String("hello") is false; "hello".equals(new String("hello")) is true.</p>
+<p><strong>Interviewer expects:</strong> Always equals() for content comparison.</p>
+
+<h4>Q34: StringBuilder vs StringBuffer?</h4>
+<p><strong>Answer:</strong> Both are mutable string builders. StringBuilder is not synchronized — faster, use in single-threaded code. StringBuffer is synchronized — thread-safe, slower. For test report building in single thread, use StringBuilder.</p>
+<p><strong>Interviewer expects:</strong> Thread safety as the key difference.</p>
+
+<h4>Q35: String vs StringBuilder vs StringBuffer?</h4>
+<p><strong>Answer:</strong> String: immutable, concatenation creates new objects (slow in loops). StringBuilder: mutable, fast, not thread-safe. StringBuffer: mutable, thread-safe, slower. Rule: String for constants; StringBuilder for building strings in loops.</p>
+<p><strong>Interviewer expects:</strong> Performance in loop concatenation scenario.</p>
+
+<h4>Q36: What does intern() do?</h4>
+<p><strong>Answer:</strong> Returns a String from the pool. If the literal exists in the pool, returns that reference; otherwise adds it. new String("test").intern() == "test" becomes true. Rarely needed in application code; JVM handles literals automatically.</p>
+<p><strong>Interviewer expects:</strong> Pool reference retrieval purpose.</p>
+
+<h4>Q37: What is String.format()?</h4>
+<p><strong>Answer:</strong> Creates formatted strings using placeholders: String.format("Test %s - %s", name, status). Supports %s (string), %d (int), %f (float), %n (newline). Cleaner than concatenation for dynamic messages in test logs and reports.</p>
+<p><strong>Interviewer expects:</strong> Practical formatting use case.</p>
+
+<h4>Q38: How do you compare strings ignoring case?</h4>
+<p><strong>Answer:</strong> Use equalsIgnoreCase(): "ADMIN".equalsIgnoreCase("admin") returns true. Also regionMatches() for partial comparison. Never use toLowerCase() before equals() — locale issues can cause unexpected results (Turkish I problem).</p>
+<p><strong>Interviewer expects:</strong> equalsIgnoreCase(), not toLowerCase hack.</p>
+
+<h4>Q39: What is the difference between charAt() and substring()?</h4>
+<p><strong>Answer:</strong> charAt(index) returns a single char at the given index. substring(start, end) returns a new String from start (inclusive) to end (exclusive). Both throw StringIndexOutOfBoundsException for invalid indices.</p>
+<p><strong>Interviewer expects:</strong> Return type difference: char vs String.</p>
+
+<h4>Q40: How do you split a String in Java?</h4>
+<p><strong>Answer:</strong> String.split(regex) returns String array. "chrome,firefox,edge".split(",") → ["chrome", "firefox", "edge"]. split() uses regex, so special chars need escaping: split("\\."). For CSV parsing, consider OpenCSV library.</p>
+<p><strong>Interviewer expects:</strong> Regex-based splitting awareness.</p>
+
+<h4>Q41: What is a text block (Java 15)?</h4>
+<p><strong>Answer:</strong> Multi-line string literal using triple quotes: String json = """ { "key": "value" } """; Preserves formatting, eliminates escape characters and concatenation. Useful for embedding JSON/XML test payloads directly in code.</p>
+<p><strong>Interviewer expects:</strong> Multi-line string without escape sequences.</p>
+
+<h4>Q42: How do you check if a String is empty or blank?</h4>
+<p><strong>Answer:</strong> isEmpty() — true if length is 0. isBlank() (Java 11) — true if empty or only whitespace. "  ".isEmpty() is false; "  ".isBlank() is true. Use isBlank() for validating user input fields in tests.</p>
+<p><strong>Interviewer expects:</strong> isBlank() vs isEmpty() distinction.</p>
+
+<h4>Q43: What is StringJoiner?</h4>
+<p><strong>Answer:</strong> Java 8 utility for joining strings with delimiter, prefix, suffix. new StringJoiner(", ").add("a").add("b").toString() → "a, b". Also String.join(", ", list) as simpler alternative. Useful for building comma-separated test result summaries.</p>
+<p><strong>Interviewer expects:</strong> Alternative to manual concatenation with delimiters.</p>
+
+<h4>Q44: Can String be used in switch statements?</h4>
+<p><strong>Answer:</strong> Yes, since Java 7. switch(browser) { case "chrome": ... case "firefox": ... }. Compiler checks for null — NullPointerException if switch variable is null. Useful for browser selection in DriverFactory.</p>
+<p><strong>Interviewer expects:</strong> Browser switch example from frameworks.</p>
+
+<h4>Q45: What happens with String concatenation in a loop?</h4>
+<p><strong>Answer:</strong> Each += creates a new String object — O(n²) time and memory. With 1000 iterations, thousands of intermediate objects are created and garbage collected. Use StringBuilder inside the loop instead for O(n) performance.</p>
+<p><strong>Interviewer expects:</strong> Performance anti-pattern awareness.</p>
+
+<h4>Q46: What is the valueOf() method?</h4>
+<p><strong>Answer:</strong> Static method that converts primitives and objects to String. String.valueOf(42) → "42". Returns "null" string for null objects (doesn't throw NPE). Preferred over concatenation for converting numbers to strings in test assertions.</p>
+<p><strong>Interviewer expects:</strong> Null-safe conversion.</p>
+
+<h4>Q47: How do you reverse a String?</h4>
+<p><strong>Answer:</strong> StringBuilder has reverse(): new StringBuilder(str).reverse().toString(). Or convert to char array, swap characters in loop. String itself has no reverse method due to immutability.</p>
+<p><strong>Interviewer expects:</strong> StringBuilder.reverse() as the idiomatic approach.</p>
+
+<h4>Q48: What is the difference between trim() and strip()?</h4>
+<p><strong>Answer:</strong> trim() removes characters ≤ U+0020 (space). strip() (Java 11) removes all Unicode whitespace including tabs, non-breaking spaces. strip() is more comprehensive. Use strip() for modern Unicode-aware trimming of web element text.</p>
+<p><strong>Interviewer expects:</strong> Unicode whitespace handling difference.</p>
+
+<h4>Q49: How do you extract numbers from a String?</h4>
+<p><strong>Answer:</strong> Regex: str.replaceAll("[^0-9]", "") removes non-digits. Pattern/Matcher: Pattern.compile("\\d+").matcher(str).find(). Integer.parseInt() converts extracted digits. Useful for parsing price text from web elements: "$29.99" → 29.</p>
+<p><strong>Interviewer expects:</strong> Regex-based extraction approach.</p>
+
+<h4>Q50: What is the hashCode of a String?</h4>
+<p><strong>Answer:</strong> String overrides hashCode() based on character content. Same content produces same hash code. Two equal strings (by equals()) must have same hashCode. Important when using Strings as HashMap keys for test data lookup.</p>
+<p><strong>Interviewer expects:</strong> Content-based hashing, HashMap key usage.</p>
+
+<h3>Collections — 25 Questions</h3>
+
+<h4>Q51: List vs Set vs Map?</h4>
+<p><strong>Answer:</strong> List: ordered, allows duplicates (ArrayList). Set: no duplicates (HashSet). Map: key-value pairs, no duplicate keys (HashMap). Use List for test steps, Set for unique locators, Map for config key-value pairs.</p>
+<p><strong>Interviewer expects:</strong> Duplicates and ordering behavior for each.</p>
+
+<h4>Q52: ArrayList vs LinkedList?</h4>
+<p><strong>Answer:</strong> ArrayList: dynamic array, fast random access O(1), slow insert/delete in middle O(n). LinkedList: doubly linked list, slow access O(n), fast insert/delete O(1). Use ArrayList for most cases including storing WebElements.</p>
+<p><strong>Interviewer expects:</strong> ArrayList as default choice with performance reason.</p>
+
+<h4>Q53: How does HashMap work internally?</h4>
+<p><strong>Answer:</strong> Uses array of buckets with hash function to compute bucket index. Collisions handled by linked list (Java 7) or tree (Java 8+, when bucket > 8 entries). get/put average O(1). Key must implement hashCode() and equals() correctly.</p>
+<p><strong>Interviewer expects:</strong> Buckets, hashing, collision handling.</p>
+
+<h4>Q54: HashMap vs Hashtable?</h4>
+<p><strong>Answer:</strong> HashMap is not synchronized, allows one null key and null values, faster. Hashtable is synchronized (thread-safe), no null keys/values, legacy class. Use HashMap for single-threaded; ConcurrentHashMap for multi-threaded.</p>
+<p><strong>Interviewer expects:</strong> ConcurrentHashMap as modern alternative.</p>
+
+<h4>Q55: HashMap vs LinkedHashMap vs TreeMap?</h4>
+<p><strong>Answer:</strong> HashMap: no order guarantee. LinkedHashMap: insertion order (or access order). TreeMap: sorted by key (Red-Black tree). Use LinkedHashMap when iteration order matters; TreeMap for sorted test data.</p>
+<p><strong>Interviewer expects:</strong> Ordering behavior as the differentiator.</p>
+
+<h4>Q56: What is the default capacity of ArrayList?</h4>
+<p><strong>Answer:</strong> Default initial capacity is 10. When full, grows by 50% (new capacity = old + old/2). Internal array is copied to new larger array. Pre-size with new ArrayList<>(expectedSize) if you know the count to avoid resizing.</p>
+<p><strong>Interviewer expects:</strong> Growth strategy and pre-sizing tip.</p>
+
+<h4>Q57: What is ConcurrentHashMap?</h4>
+<p><strong>Answer:</strong> Thread-safe Map without locking the entire map. Uses segment/bucket-level locking (Java 7) or CAS operations (Java 8+). Better performance than Hashtable in concurrent scenarios. Use for shared test result maps in parallel execution.</p>
+<p><strong>Interviewer expects:</strong> Thread-safe alternative to HashMap.</p>
+
+<h4>Q58: What is fail-fast iterator?</h4>
+<p><strong>Answer:</strong> Iterator that throws ConcurrentModificationException if collection is modified during iteration (except via iterator's own remove()). ArrayList, HashMap use fail-fast iterators. Detects modification via modCount check.</p>
+<p><strong>Interviewer expects:</strong> ConcurrentModificationException scenario.</p>
+
+<h4>Q59: What is fail-safe iterator?</h4>
+<p><strong>Answer:</strong> Iterator that works on a clone/snapshot of the collection. Does not throw exception on concurrent modification. CopyOnWriteArrayList, ConcurrentHashMap iterators are fail-safe. Trade-off: may not reflect latest data.</p>
+<p><strong>Interviewer expects:</strong> Snapshot-based iteration concept.</p>
+
+<h4>Q60: ArrayList vs Array?</h4>
+<p><strong>Answer:</strong> Array: fixed size, primitive or object types, faster. ArrayList: dynamic size, objects only (autoboxing for primitives), rich API (add, remove, sort). Use ArrayList in frameworks for flexibility; arrays for performance-critical fixed-size data.</p>
+<p><strong>Interviewer expects:</strong> Dynamic vs fixed size as key difference.</p>
+
+<h4>Q61: How do you sort a List?</h4>
+<p><strong>Answer:</strong> Collections.sort(list) or list.sort(comparator). With lambdas: list.sort((a, b) -> a.compareTo(b)) or list.sort(Comparator.naturalOrder()). For custom objects, implement Comparable or pass Comparator. Stream: list.stream().sorted().collect(Collectors.toList()).</p>
+<p><strong>Interviewer expects:</strong> Comparable vs Comparator distinction.</p>
+
+<h4>Q62: Comparable vs Comparator?</h4>
+<p><strong>Answer:</strong> Comparable: natural ordering, implemented by the class itself (compareTo()). Comparator: external comparison logic (compare()). One class, one Comparable; multiple Comparators possible. Use Comparator for sorting WebElements by text length.</p>
+<p><strong>Interviewer expects:</strong> Internal vs external comparison logic.</p>
+
+<h4>Q63: What is Collections.unmodifiableList()?</h4>
+<p><strong>Answer:</strong> Returns a read-only view of a list. Any modification attempt throws UnsupportedOperationException. Does not prevent modification of the backing list. Since Java 9, use List.of() for truly immutable lists.</p>
+<p><strong>Interviewer expects:</strong> View vs truly immutable distinction.</p>
+
+<h4>Q64: What is HashSet internal working?</h4>
+<p><strong>Answer:</strong> HashSet internally uses HashMap. Elements stored as keys with a constant dummy value. Uniqueness enforced by hashCode() and equals(). add() returns false if element already exists. No ordering guarantee.</p>
+<p><strong>Interviewer expects:</strong> HashMap-backed implementation detail.</p>
+
+<h4>Q65: HashSet vs LinkedHashSet vs TreeSet?</h4>
+<p><strong>Answer:</strong> HashSet: no order, fastest. LinkedHashSet: insertion order, slight overhead. TreeSet: sorted order (Red-Black tree), O(log n) operations. Use HashSet for unique test IDs; TreeSet for sorted unique browser names.</p>
+<p><strong>Interviewer expects:</strong> Ordering and performance trade-offs.</p>
+
+<h4>Q66: What is the Iterator interface?</h4>
+<p><strong>Answer:</strong> Provides hasNext(), next(), remove() for traversing collections. Enhanced for loop uses Iterator internally. ListIterator adds previous(), set(), add() for bidirectional traversal. Never modify collection directly while iterating.</p>
+<p><strong>Interviewer expects:</strong> Safe removal via iterator.remove().</p>
+
+<h4>Q67: What is Queue in Java?</h4>
+<p><strong>Answer:</strong> FIFO data structure. LinkedList implements Queue. PriorityQueue for priority ordering. Methods: offer() (add), poll() (remove head), peek() (view head). Useful for managing ordered test execution queues.</p>
+<p><strong>Interviewer expects:</strong> FIFO principle and key methods.</p>
+
+<h4>Q68: What is PriorityQueue?</h4>
+<p><strong>Answer:</strong> Queue where elements are ordered by priority (natural ordering or Comparator). Head is the least element. Not thread-safe. Internally uses heap data structure. O(log n) for insert/remove. Use for prioritizing test retries.</p>
+<p><strong>Interviewer expects:</strong> Heap-based priority ordering.</p>
+
+<h4>Q69: What are Java 9 immutable collections?</h4>
+<p><strong>Answer:</strong> List.of(), Set.of(), Map.of() create immutable collections. Cannot add, remove, or modify. Null elements not allowed. Map.of() supports up to 10 key-value pairs; Map.ofEntries() for more. Preferred over Collections.unmodifiableList().</p>
+<p><strong>Interviewer expects:</strong> Factory methods and immutability guarantee.</p>
+
+<h4>Q70: How does HashMap handle null keys?</h4>
+<p><strong>Answer:</strong> HashMap allows one null key (stored at bucket 0) and multiple null values. Hashtable does not allow null keys or values. Null key's hashCode is 0. Important for default value patterns in config maps.</p>
+<p><strong>Interviewer expects:</strong> Single null key allowed at bucket 0.</p>
+
+<h4>Q71: What is the load factor in HashMap?</h4>
+<p><strong>Answer:</strong> Default load factor is 0.75 — when 75% of buckets are filled, HashMap resizes (doubles capacity) and rehashes all entries. Higher load factor = less memory but more collisions. Lower = more memory, fewer collisions.</p>
+<p><strong>Interviewer expects:</strong> Resize/rehash trigger mechanism.</p>
+
+<h4>Q72: What is CopyOnWriteArrayList?</h4>
+<p><strong>Answer:</strong> Thread-safe ArrayList where every write operation creates a new copy of the underlying array. Iterators never throw ConcurrentModificationException. Best for read-heavy, write-rare scenarios like listener lists in test reporting.</p>
+<p><strong>Interviewer expects:</strong> Read-heavy, write-rare use case.</p>
+
+<h4>Q73: How do you convert List to Array and vice versa?</h4>
+<p><strong>Answer:</strong> List to Array: list.toArray(new String[0]). Array to List: Arrays.asList(array) — fixed size, not resizable. For resizable: new ArrayList<>(Arrays.asList(array)). Stream: Arrays.stream(array).collect(Collectors.toList()).</p>
+<p><strong>Interviewer expects:</strong> Arrays.asList() fixed-size limitation.</p>
+
+<h4>Q74: What is Stream API's relationship with Collections?</h4>
+<p><strong>Answer:</strong> Streams process collection data functionally without modifying the source. collection.stream() creates a stream. Operations: filter, map, sorted (intermediate); collect, forEach, count (terminal). Streams are one-time use; collections are reusable.</p>
+<p><strong>Interviewer expects:</strong> Non-destructive functional processing.</p>
+
+<h4>Q75: What is the difference between Collection and Collections?</h4>
+<p><strong>Answer:</strong> Collection is the root interface for List, Set, Queue. Collections is a utility class with static methods: sort(), reverse(), shuffle(), synchronizedList(), unmodifiableList(). Collections adds functionality; Collection defines contract.</p>
+<p><strong>Interviewer expects:</strong> Interface vs utility class distinction.</p>
+
+<h3>Exception Handling — 15 Questions</h3>
+
+<h4>Q76: Checked vs unchecked exceptions?</h4>
+<p><strong>Answer:</strong> Checked: compile-time verification required (IOException, SQLException) — must handle or declare. Unchecked: runtime exceptions (NullPointerException, IllegalArgumentException) — no compile-time requirement. Selenium throws mostly unchecked exceptions.</p>
+<p><strong>Interviewer expects:</strong> Compile-time checking as the difference.</p>
+
+<h4>Q77: What is try-catch-finally?</h4>
+<p><strong>Answer:</strong> try: code that may throw exception. catch: handles specific exception types. finally: always executes (cleanup). In tests: try { run test } catch (AssertionError e) { screenshot } finally { driver.quit() }. finally runs even if return is in try/catch.</p>
+<p><strong>Interviewer expects:</strong> finally always executes (except System.exit).</p>
+
+<h4>Q78: What is try-with-resources?</h4>
+<p><strong>Answer:</strong> Auto-closes resources implementing AutoCloseable. try (FileReader fr = new FileReader("file.txt")) { ... } — no finally needed for close(). Java 9+ allows effectively final variables. Preferred over manual close() in finally blocks.</p>
+<p><strong>Interviewer expects:</strong> AutoCloseable and resource leak prevention.</p>
+
+<h4>Q79: Can you have multiple catch blocks?</h4>
+<p><strong>Answer:</strong> Yes. Multiple catch blocks handle different exception types. Catch more specific exceptions before general ones. Java 7+ multi-catch: catch (IOException | SQLException e). Only one catch block executes per exception.</p>
+<p><strong>Interviewer expects:</strong> Specific before general ordering rule.</p>
+
+<h4>Q80: What is exception propagation?</h4>
+<p><strong>Answer:</strong> When an exception is not caught, it propagates up the call stack to the caller. If no caller catches it, JVM terminates the thread. TestNG catches test exceptions and marks test as failed. Use throws keyword to declare propagated checked exceptions.</p>
+<p><strong>Interviewer expects:</strong> Call stack propagation concept.</p>
+
+<h4>Q81: What is a custom exception?</h4>
+<p><strong>Answer:</strong> User-defined exception extending Exception (checked) or RuntimeException (unchecked). Example: ElementNotFoundException extends RuntimeException. Use for domain-specific errors: FrameworkException, ConfigLoadException with meaningful messages.</p>
+<p><strong>Interviewer expects:</strong> When to create custom vs use standard exceptions.</p>
+
+<h4>Q82: finally vs finalize?</h4>
+<p><strong>Answer:</strong> finally: block associated with try-catch, always runs for cleanup, part of exception handling. finalize(): method called by garbage collector before object destruction — deprecated since Java 9, unreliable timing. Never use finalize(); use try-with-resources or Cleaner.</p>
+<p><strong>Interviewer expects:</strong> finalize is deprecated and unreliable.</p>
+
+<h4>Q83: What is the exception hierarchy?</h4>
+<p><strong>Answer:</strong> Throwable → Error (OutOfMemoryError — don't catch) and Exception → RuntimeException (unchecked: NPE, IllegalArgument) and checked exceptions (IOException). Catch specific types, not Throwable or Exception broadly.</p>
+<p><strong>Interviewer expects:</strong> Error vs Exception, don't catch Error.</p>
+
+<h4>Q84: What is throw vs throws?</h4>
+<p><strong>Answer:</strong> throw: explicitly throws an exception instance inside a method — throw new IllegalArgumentException("Invalid browser"). throws: declares exceptions a method may throw — void read() throws IOException. throw is the action; throws is the declaration.</p>
+<p><strong>Interviewer expects:</strong> Action vs declaration distinction.</p>
+
+<h4>Q85: How do you handle exceptions in Selenium?</h4>
+<p><strong>Answer:</strong> Catch specific exceptions: NoSuchElementException, TimeoutException, StaleElementReferenceException. Use WebDriverWait instead of catching. Retry on StaleElementReferenceException. Take screenshot in catch block. Log exception details for debugging.</p>
+<p><strong>Interviewer expects:</strong> Specific Selenium exception types.</p>
+
+<h4>Q86: What is suppressed exception?</h4>
+<p><strong>Answer:</strong> In try-with-resources, if both try block and close() throw exceptions, the try block exception is primary and close() exception is suppressed. Access via getSuppressed(). Ensures no exception information is lost during resource cleanup.</p>
+<p><strong>Interviewer expects:</strong> try-with-resources multi-exception handling.</p>
+
+<h4>Q87: What is StaleElementReferenceException?</h4>
+<p><strong>Answer:</strong> Occurs when a WebElement reference becomes invalid because the DOM was refreshed or the element was removed/re-added. Common after page navigation, AJAX updates, or form submission. Fix: re-find the element or use ExpectedConditions.</p>
+<p><strong>Interviewer expects:</strong> DOM refresh as root cause, re-find solution.</p>
+
+<h4>Q88: Can finally block override return value?</h4>
+<p><strong>Answer:</strong> Yes. If finally contains a return statement, it overrides the return value from try or catch. This is an anti-pattern — avoid returning from finally. Exception in finally can also mask the original exception from try block.</p>
+<p><strong>Interviewer expects:</strong> Anti-pattern awareness.</p>
+
+<h4>Q89: What is exception chaining?</h4>
+<p><strong>Answer:</strong> Wrapping one exception in another to preserve the original cause. throw new FrameworkException("Failed to load config", originalIOException). Access cause via getCause(). Maintains full stack trace for debugging in test frameworks.</p>
+<p><strong>Interviewer expects:</strong> Cause preservation for debugging.</p>
+
+<h4>Q90: What happens if main method throws exception?</h4>
+<p><strong>Answer:</strong> JVM catches uncaught exceptions from main, prints stack trace, and terminates the program. Non-zero exit code. In TestNG, the test runner catches test exceptions, reports them, and continues with remaining tests (depending on configuration).</p>
+<p><strong>Interviewer expects:</strong> JVM termination vs TestNG continuation.</p>
+
+<h3>Java 8 — 20 Questions</h3>
+
+<h4>Q91: What is a lambda expression?</h4>
+<p><strong>Answer:</strong> A concise anonymous function: (parameters) -> expression or { statements }. Implements a functional interface without a named class. Replaces verbose anonymous inner classes. Example: list.forEach(item -> System.out.println(item)).</p>
+<p><strong>Interviewer expects:</strong> Syntax and functional interface requirement.</p>
+
+<h4>Q92: What are the four core functional interfaces?</h4>
+<p><strong>Answer:</strong> Predicate&lt;T&gt; (test → boolean), Function&lt;T,R&gt; (apply → R), Consumer&lt;T&gt; (accept → void), Supplier&lt;T&gt; (get → T). All in java.util.function package. Used extensively with Streams API.</p>
+<p><strong>Interviewer expects:</strong> All four named with method signatures.</p>
+
+<h4>Q93: What is the Stream API?</h4>
+<p><strong>Answer:</strong> Java 8 API for processing collections in a functional, declarative style. Supports chaining intermediate operations (filter, map, sorted) with terminal operations (collect, forEach, count). Does not modify the source collection.</p>
+<p><strong>Interviewer expects:</strong> Intermediate vs terminal operation distinction.</p>
+
+<h4>Q94: Difference between intermediate and terminal stream operations?</h4>
+<p><strong>Answer:</strong> Intermediate operations (filter, map, distinct) return a Stream and are lazy — not executed until a terminal operation is called. Terminal operations (collect, forEach, count, findFirst) produce a result or side effect and close the stream.</p>
+<p><strong>Interviewer expects:</strong> Lazy evaluation concept.</p>
+
+<h4>Q95: What is Optional and why use it?</h4>
+<p><strong>Answer:</strong> A container that may or may not hold a value, avoiding null checks and NullPointerException. Methods: of(), ofNullable(), isPresent(), ifPresent(), orElse(), orElseGet(). Use when a method may legitimately return no value.</p>
+<p><strong>Interviewer expects:</strong> NPE prevention as primary motivation.</p>
+
+<h4>Q96: orElse() vs orElseGet()?</h4>
+<p><strong>Answer:</strong> orElse(defaultValue) always evaluates the default value argument, even if Optional has a value. orElseGet(Supplier) lazily evaluates the supplier only when Optional is empty. Prefer orElseGet for expensive default computations.</p>
+<p><strong>Interviewer expects:</strong> Lazy vs eager evaluation difference.</p>
+
+<h4>Q97: What is a method reference?</h4>
+<p><strong>Answer:</strong> Shorthand for lambda calling an existing method. Types: static (String::valueOf), instance (element::getText), constructor (ArrayList::new). More readable when lambda only delegates to one method.</p>
+<p><strong>Interviewer expects:</strong> Three types with examples.</p>
+
+<h4>Q98: What are default methods in interfaces?</h4>
+<p><strong>Answer:</strong> Methods with implementation in interfaces using default keyword, added in Java 8. Allow extending interfaces without breaking existing implementations. Can be overridden. Resolve diamond problem conflicts by explicit override in implementing class.</p>
+<p><strong>Interviewer expects:</strong> Backward compatibility purpose.</p>
+
+<h4>Q99: What is @FunctionalInterface?</h4>
+<p><strong>Answer:</strong> Annotation indicating an interface has exactly one abstract method (SAM). Compiler validates this constraint. Examples: Runnable, Comparator, Predicate. Lambda expressions can implement these interfaces.</p>
+<p><strong>Interviewer expects:</strong> Single abstract method rule.</p>
+
+<h4>Q100: map() vs flatMap() in Streams?</h4>
+<p><strong>Answer:</strong> map() transforms each element to one output element (1:1). flatMap() transforms each element to a stream and flattens all streams into one (1:many). Use flatMap when each element produces multiple results, like splitting lines into words.</p>
+<p><strong>Interviewer expects:</strong> Flattening nested structures use case.</p>
+
+<h4>Q101: Can you reuse a Java stream?</h4>
+<p><strong>Answer:</strong> No. Once a terminal operation is executed, the stream is consumed and cannot be reused. Attempting to reuse throws IllegalStateException. Create a new stream from the source collection if you need to process again.</p>
+<p><strong>Interviewer expects:</strong> One-time use limitation.</p>
+
+<h4>Q102: What are parallel streams?</h4>
+<p><strong>Answer:</strong> Streams that process elements concurrently using ForkJoinPool.commonPool(). Created via parallelStream() or stream().parallel(). Good for CPU-intensive operations on large datasets. Not recommended for I/O-bound Selenium operations.</p>
+<p><strong>Interviewer expects:</strong> When parallel helps vs hurts.</p>
+
+<h4>Q103: What is Collectors.groupingBy?</h4>
+<p><strong>Answer:</strong> Terminal operation that groups stream elements by a classifier function into a Map&lt;K, List&lt;T&gt;&gt;. Example: group test results by status — results.stream().collect(Collectors.groupingBy(TestResult::getStatus)). Useful for test report aggregation.</p>
+<p><strong>Interviewer expects:</strong> Practical grouping example.</p>
+
+<h4>Q104: What is a record in Java?</h4>
+<p><strong>Answer:</strong> Compact class for immutable data carriers (Java 16+). Auto-generates constructor, getters, equals(), hashCode(), toString(). Syntax: record TestData(String username, String password) {}. Ideal for test data POJOs and JSON mapping.</p>
+<p><strong>Interviewer expects:</strong> Immutability and boilerplate reduction.</p>
+
+<h4>Q105: What is the var keyword?</h4>
+<p><strong>Answer:</strong> Local variable type inference (Java 10+). Compiler infers type from initializer: var list = new ArrayList&lt;String&gt;(). Cannot use for fields, parameters, or without initializer. Improves readability for complex generic types.</p>
+<p><strong>Interviewer expects:</strong> Local-only scope limitation.</p>
+
+<h4>Q106: What are text blocks (Java 15)?</h4>
+<p><strong>Answer:</strong> Multi-line string literals using triple quotes: """ line1 line2 """. Preserves formatting, no escape sequences needed for newlines. Useful for SQL queries, JSON payloads, and expected response bodies in API tests.</p>
+<p><strong>Interviewer expects:</strong> Multi-line string use case.</p>
+
+<h4>Q107: How do lambdas improve Selenium wait conditions?</h4>
+<p><strong>Answer:</strong> ExpectedConditions and WebDriverWait accept lambdas: wait.until(driver -> driver.findElement(By.id("btn")).isDisplayed()). Cleaner than anonymous ExpectedCondition classes. Custom wait logic becomes one-liner fluent expressions.</p>
+<p><strong>Interviewer expects:</strong> Concrete Selenium lambda example.</p>
+
+<h4>Q108: forEach vs forEachOrdered in streams?</h4>
+<p><strong>Answer:</strong> forEach() may process elements in any order (especially in parallel streams). forEachOrdered() guarantees encounter order is preserved. Use forEachOrdered when order matters, like logging test steps sequentially.</p>
+<p><strong>Interviewer expects:</strong> Order preservation in parallel context.</p>
+
+<h4>Q109: Can lambda expressions access local variables?</h4>
+<p><strong>Answer:</strong> Yes, but local variables must be effectively final (not reassigned after initialization). Lambdas capture variables by value, not reference. Instance and static variables can be accessed and modified freely.</p>
+<p><strong>Interviewer expects:</strong> Effectively final requirement.</p>
+
+<h4>Q110: What is the difference between Stream.of() and Arrays.stream()?</h4>
+<p><strong>Answer:</strong> Stream.of(elements) creates a stream from individual elements or an array (varargs). Arrays.stream(array) specifically works with arrays and supports range operations (skip, limit on indices). Both produce sequential streams.</p>
+<p><strong>Interviewer expects:</strong> Varargs vs array-specific stream creation.</p>
+
+<h3>Multithreading — 15 Questions</h3>
+
+<h4>Q111: What is the difference between Thread and Runnable?</h4>
+<p><strong>Answer:</strong> Thread is a class; extending it limits inheritance (Java single inheritance). Runnable is a functional interface with run() method — preferred approach. Implement Runnable and pass to Thread: new Thread(() -> runTests()).start(). Separates task from thread execution.</p>
+<p><strong>Interviewer expects:</strong> Runnable preferred for flexibility.</p>
+
+<h4>Q112: What is ThreadLocal and why is it essential for Selenium?</h4>
+<p><strong>Answer:</strong> ThreadLocal provides thread-confined variable storage. Each thread gets its own copy of the variable. Essential for parallel TestNG execution: ThreadLocal&lt;WebDriver&gt; gives each test thread its own browser instance, preventing cross-test interference.</p>
+<p><strong>Interviewer expects:</strong> Parallel WebDriver isolation solution.</p>
+
+<h4>Q113: What is a race condition?</h4>
+<p><strong>Answer:</strong> Occurs when multiple threads access shared mutable data concurrently and the outcome depends on timing. Example: two parallel tests sharing a static WebDriver variable — both may navigate to different URLs simultaneously, causing unpredictable failures.</p>
+<p><strong>Interviewer expects:</strong> Shared mutable state as root cause.</p>
+
+<h4>Q114: Difference between start() and run()?</h4>
+<p><strong>Answer:</strong> start() creates a new thread and calls run() asynchronously in that thread. Calling run() directly executes the method in the current thread — no new thread is created. Always use start() for concurrent execution.</p>
+<p><strong>Interviewer expects:</strong> run() does not create a new thread.</p>
+
+<h4>Q115: Why must you call ThreadLocal.remove()?</h4>
+<p><strong>Answer:</strong> ThreadLocal values persist for the thread's lifetime. In thread pools (TestNG parallel, ExecutorService), threads are reused. Without remove(), old WebDriver references leak into new test executions, causing stale driver bugs and memory leaks.</p>
+<p><strong>Interviewer expects:</strong> Thread pool reuse and memory leak prevention.</p>
+
+<h4>Q116: What is synchronization and when to use it?</h4>
+<p><strong>Answer:</strong> synchronized keyword ensures only one thread executes a method/block at a time on the same object monitor. Prevents race conditions on shared resources. Use for shared counters, report writers, or file append operations in parallel test suites.</p>
+<p><strong>Interviewer expects:</strong> Mutual exclusion concept with use case.</p>
+
+<h4>Q117: What is deadlock?</h4>
+<p><strong>Answer:</strong> Two or more threads permanently blocked, each waiting for a lock held by the other. Classic scenario: Thread A holds Lock1, wants Lock2; Thread B holds Lock2, wants Lock1. Prevention: acquire locks in consistent order, use timeout locks.</p>
+<p><strong>Interviewer expects:</strong> Circular wait condition awareness.</p>
+
+<h4>Q118: How does TestNG parallel execution work?</h4>
+<p><strong>Answer:</strong> Configure parallel="methods|tests|classes" and thread-count in testng.xml. TestNG creates a thread pool and assigns tests to threads. Each thread needs its own WebDriver via ThreadLocal. Use @BeforeMethod/@AfterMethod for per-test setup/teardown.</p>
+<p><strong>Interviewer expects:</strong> testng.xml parallel attributes and ThreadLocal pairing.</p>
+
+<h4>Q119: What is ExecutorService?</h4>
+<p><strong>Answer:</strong> Higher-level API for managing thread pools. Executors.newFixedThreadPool(n) creates n reusable threads. submit(Runnable) queues tasks. shutdown() stops accepting new tasks. More efficient than creating new Thread objects for each task.</p>
+<p><strong>Interviewer expects:</strong> Thread pool vs raw Thread advantage.</p>
+
+<h4>Q120: Is WebDriver thread-safe?</h4>
+<p><strong>Answer:</strong> No. WebDriver implementations are not thread-safe. Multiple threads calling methods on the same WebDriver instance cause unpredictable behavior. Each thread must have its own WebDriver instance, typically managed via ThreadLocal in DriverManager.</p>
+<p><strong>Interviewer expects:</strong> One driver per thread rule.</p>
+
+<h4>Q121: What are the thread states in Java?</h4>
+<p><strong>Answer:</strong> NEW (created), RUNNABLE (ready/running), BLOCKED (waiting for monitor lock), WAITING (wait/join with no timeout), TIMED_WAITING (sleep/join with timeout), TERMINATED (completed). Monitor via Thread.getState().</p>
+<p><strong>Interviewer expects:</strong> At least NEW, RUNNABLE, TERMINATED states.</p>
+
+<h4>Q122: What is volatile keyword?</h4>
+<p><strong>Answer:</strong> Ensures visibility of variable changes across threads. Without volatile, threads may cache variable values locally. Does not provide atomicity for compound operations (i++). Use for simple flags like boolean stopRequested in test runner shutdown.</p>
+<p><strong>Interviewer expects:</strong> Visibility vs atomicity distinction.</p>
+
+<h4>Q123: synchronized method vs synchronized block?</h4>
+<p><strong>Answer:</strong> synchronized method locks on the object instance (or class for static methods). synchronized block locks on a specific object: synchronized(lockObject) { ... }. Blocks offer finer-grained locking — lock only the critical section, not the entire method.</p>
+<p><strong>Interviewer expects:</strong> Finer-grained control with blocks.</p>
+
+<h4>Q124: What is thread-safe reporting in parallel tests?</h4>
+<p><strong>Answer:</strong> Shared report objects (ExtentReports, log files) must handle concurrent writes. Use synchronized blocks, thread-safe collections, or per-thread report instances merged at the end. ExtentReports is thread-safe by design; custom loggers may need synchronization.</p>
+<p><strong>Interviewer expects:</strong> Shared resource protection in parallel context.</p>
+
+<h4>Q125: What is the difference between wait() and sleep()?</h4>
+<p><strong>Answer:</strong> wait() releases the object lock and waits until notify()/notifyAll() or timeout — must be called inside synchronized block. sleep() pauses current thread for specified milliseconds without releasing any lock. Selenium Thread.sleep() is different from Object.wait().</p>
+<p><strong>Interviewer expects:</strong> Lock release behavior difference.</p>
+
+<h3>Coding Questions — 25 Questions</h3>
+
+<h4>Q126: Reverse a string without using reverse API.</h4>
+<p><strong>Answer:</strong> Convert to char array and swap from both ends: for (int i = 0, j = s.length()-1; i &lt; j; i++, j--) { swap chars[i] and chars[j] }. Or use StringBuilder loop appending chars from end to start. Time O(n), space O(n).</p>
+<p><strong>Interviewer expects:</strong> Two-pointer swap or StringBuilder approach.</p>
+
+<h4>Q127: Find duplicate elements in an array.</h4>
+<p><strong>Answer:</strong> Use HashSet: iterate array, if set.add(element) returns false, element is duplicate. Alternative: sort array and check adjacent elements. HashSet approach is O(n) time, O(n) space. Sorting is O(n log n) but O(1) extra space.</p>
+<p><strong>Interviewer expects:</strong> HashSet add() return value trick.</p>
+
+<h4>Q128: Check if a string is a palindrome.</h4>
+<p><strong>Answer:</strong> Two-pointer approach: compare chars at start and end, move inward. Ignore case and non-alphanumeric if required. Loop while left &lt; right. Return false on mismatch, true when pointers meet. Time O(n), space O(1).</p>
+<p><strong>Interviewer expects:</strong> Two-pointer O(1) space solution.</p>
+
+<h4>Q129: Find the second largest element in an array.</h4>
+<p><strong>Answer:</strong> Track largest and secondLargest while iterating. Update both when finding a new largest. Handle edge cases: array with fewer than 2 elements, all same elements. Single pass O(n) time, O(1) space.</p>
+<p><strong>Interviewer expects:</strong> Single-pass with two variables.</p>
+
+<h4>Q130: Sort an array without using sort API.</h4>
+<p><strong>Answer:</strong> Bubble sort: compare adjacent elements, swap if out of order, repeat n-1 passes. O(n²) but easy to implement. Better: implement quicksort or mergesort for O(n log n). For interviews, bubble sort is acceptable if you explain trade-offs.</p>
+<p><strong>Interviewer expects:</strong> Any correct sorting algorithm with complexity stated.</p>
+
+<h4>Q131: Count occurrences of each character in a string.</h4>
+<p><strong>Answer:</strong> Use HashMap&lt;Character, Integer&gt;: iterate chars, map.merge(c, 1, Integer::sum) or get-or-default increment. Java 8: string.chars().mapToObj(c -> (char)c).collect(Collectors.groupingBy(c -> c, Collectors.counting())).</p>
+<p><strong>Interviewer expects:</strong> HashMap or Stream groupingBy approach.</p>
+
+<h4>Q132: Find missing number in array of 1 to n.</h4>
+<p><strong>Answer:</strong> Expected sum = n*(n+1)/2. Actual sum = sum of array elements. Missing = expected - actual. Alternative: XOR all numbers 1 to n with all array elements — result is the missing number. Both O(n) time, O(1) space.</p>
+<p><strong>Interviewer expects:</strong> Sum formula or XOR trick.</p>
+
+<h4>Q133: Remove duplicates from an ArrayList.</h4>
+<p><strong>Answer:</strong> Convert to LinkedHashSet (preserves order): new ArrayList&lt;&gt;(new LinkedHashSet&lt;&gt;(list)). Or use Stream: list.stream().distinct().collect(Collectors.toList()). LinkedHashSet approach is O(n) with order preserved.</p>
+<p><strong>Interviewer expects:</strong> Order-preserving deduplication.</p>
+
+<h4>Q134: Swap two numbers without a temp variable.</h4>
+<p><strong>Answer:</strong> a = a + b; b = a - b; a = a - b (arithmetic). Or a = a ^ b; b = a ^ b; a = a ^ b (XOR). Note: arithmetic method risks overflow for large numbers. XOR works for integers without overflow risk.</p>
+<p><strong>Interviewer expects:</strong> XOR or arithmetic approach.</p>
+
+<h4>Q135: Print Fibonacci series up to n terms.</h4>
+<p><strong>Answer:</strong> Initialize a=0, b=1. Loop n times: print a, then c=a+b, a=b, b=c. Or recursive: fib(n) = fib(n-1) + fib(n-2) with base cases fib(0)=0, fib(1)=1. Iterative is O(n); recursive without memoization is O(2^n).</p>
+<p><strong>Interviewer expects:</strong> Iterative preferred for efficiency.</p>
+
+<h4>Q136: Check if two strings are anagrams.</h4>
+<p><strong>Answer:</strong> Sort both strings and compare: Arrays.sort(chars1); Arrays.sort(chars2); return Arrays.equals(chars1, chars2). Or count char frequencies in HashMap for both strings and compare maps. Sort approach is O(n log n); HashMap is O(n).</p>
+<p><strong>Interviewer expects:</strong> Sort or frequency count approach.</p>
+
+<h4>Q137: Find the frequency of elements using HashMap.</h4>
+<p><strong>Answer:</strong> Iterate collection, for each element: map.put(element, map.getOrDefault(element, 0) + 1). Java 8: collection.stream().collect(Collectors.groupingBy(e -> e, Collectors.counting())). Useful for counting pass/fail test results.</p>
+<p><strong>Interviewer expects:</strong> getOrDefault or groupingBy pattern.</p>
+
+<h4>Q138: Reverse words in a sentence.</h4>
+<p><strong>Answer:</strong> Split by space: String[] words = sentence.split(" "). Reverse array using two pointers or Collections.reverse(Arrays.asList(words)). Join back: String.join(" ", words). Handle multiple spaces if interviewer specifies.</p>
+<p><strong>Interviewer expects:</strong> Split-reverse-join approach.</p>
+
+<h4>Q139: Find common elements in two arrays.</h4>
+<p><strong>Answer:</strong> Add all elements of first array to HashSet. Iterate second array, if set.contains(element), add to result and remove from set (avoid duplicates). Time O(n+m), space O(n). Stream: Arrays.stream(a1).filter(Arrays.asList(a2)::contains).</p>
+<p><strong>Interviewer expects:</strong> HashSet intersection approach.</p>
+
+<h4>Q140: Print a number pyramid pattern.</h4>
+<p><strong>Answer:</strong> Nested loops: outer loop for rows (1 to n), inner loop for spaces (n-i times), inner loop for numbers (1 to i). Example row 3: "  1 2 3". System.out.println() after each row. Demonstrates nested loop control.</p>
+<p><strong>Interviewer expects:</strong> Correct nested loop logic.</p>
+
+<h4>Q141: Implement FizzBuzz.</h4>
+<p><strong>Answer:</strong> Loop 1 to n: if i%15==0 print "FizzBuzz", else if i%3==0 print "Fizz", else if i%5==0 print "Buzz", else print i. Tests modulo operator understanding and conditional logic ordering (check 15 before 3 and 5).</p>
+<p><strong>Interviewer expects:</strong> Correct divisibility check order.</p>
+
+<h4>Q142: Find the largest and smallest in an array.</h4>
+<p><strong>Answer:</strong> Initialize largest=arr[0], smallest=arr[0]. Single pass: if arr[i] &gt; largest, largest=arr[i]; if arr[i] &lt; smallest, smallest=arr[i]. O(n) time, O(1) space. Do not sort the array — sorting is O(n log n) and unnecessary.</p>
+<p><strong>Interviewer expects:</strong> Single-pass O(n) solution.</p>
+
+<h4>Q143: Merge two sorted arrays.</h4>
+<p><strong>Answer:</strong> Two-pointer approach: compare elements at index i (array1) and j (array2), add smaller to result, advance that pointer. When one exhausted, add remaining from other. O(n+m) time. Same logic as merge step in merge sort.</p>
+<p><strong>Interviewer expects:</strong> Two-pointer merge technique.</p>
+
+<h4>Q144: Count vowels in a string.</h4>
+<p><strong>Answer:</strong> Iterate chars, check if char is in "aeiouAEIOU" using indexOf or Set.of('a','e','i','o','u'). Increment counter. Stream: (int) str.chars().filter(c -> "aeiou".indexOf(c) &gt;= 0).count(). Case-insensitive handling required.</p>
+<p><strong>Interviewer expects:</strong> Simple iteration with vowel check.</p>
+
+<h4>Q145: Check if a number is prime.</h4>
+<p><strong>Answer:</strong> If n &lt;= 1, not prime. Loop i from 2 to sqrt(n): if n % i == 0, not prime. Return true if no divisor found. Optimization: check 2 separately, then only odd numbers. O(sqrt(n)) time complexity.</p>
+<p><strong>Interviewer expects:</strong> Loop to sqrt(n) optimization.</p>
+
+<h4>Q146: Rotate an array by k positions.</h4>
+<p><strong>Answer:</strong> k = k % n (handle k &gt; n). Reverse entire array, reverse first k elements, reverse remaining n-k elements. Three reversals achieve rotation in O(n) time, O(1) space. Alternative: create new array with shifted indices.</p>
+<p><strong>Interviewer expects:</strong> Reverse algorithm or modulo indexing.</p>
+
+<h4>Q147: Find intersection of two HashMaps.</h4>
+<p><strong>Answer:</strong> Iterate smaller map's entrySet. For each key, if larger map.containsKey(key), add to result map with min value of both. Or use retainAll on key sets: map1.keySet().retainAll(map2.keySet()). Useful for finding common config properties.</p>
+<p><strong>Interviewer expects:</strong> Key set retainAll or entry iteration.</p>
+
+<h4>Q148: Stream: filter list of WebElements by visible text.</h4>
+<p><strong>Answer:</strong> List&lt;WebElement&gt; filtered = elements.stream().filter(e -> e.isDisplayed()).filter(e -> e.getText().contains("Submit")).collect(Collectors.toList()). Combines filter for visibility and text matching. Handle StaleElementReferenceException with try-catch in filter.</p>
+<p><strong>Interviewer expects:</strong> Chained filter with collect terminal operation.</p>
+
+<h4>Q149: Stream: group test results by status.</h4>
+<p><strong>Answer:</strong> Map&lt;String, List&lt;TestResult&gt;&gt; grouped = results.stream().collect(Collectors.groupingBy(TestResult::getStatus)). Produces {"PASS": [...], "FAIL": [...], "SKIP": [...]}. Add counting: Collectors.groupingBy(TestResult::getStatus, Collectors.counting()) for summary counts.</p>
+<p><strong>Interviewer expects:</strong> groupingBy with method reference.</p>
+
+<h4>Q150: Implement a simple Singleton with double-checked locking.</h4>
+<p><strong>Answer:</strong> private static volatile Singleton instance; private constructor. getInstance(): if (instance == null) { synchronized(Singleton.class) { if (instance == null) instance = new Singleton(); } } return instance. volatile prevents partial construction visibility. Used for ConfigReader in frameworks.</p>
+<p><strong>Interviewer expects:</strong> volatile + double-checked locking pattern.</p>
+
+</section>

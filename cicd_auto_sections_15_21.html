@@ -1,0 +1,2230 @@
+<section id="section-15" class="section-card">
+<h2>Section 15: Reporting in Jenkins</h2>
+
+<p>As an automation engineer, your tests are only as valuable as the reports stakeholders can read. Jenkins reporting turns raw test execution into actionable dashboards, trend graphs, and shareable artifacts that QA leads, developers, and managers rely on daily.</p>
+
+<h3>TestNG Default Reports</h3>
+
+<p>When you run TestNG via Maven Surefire, reports are auto-generated without any Jenkins plugin configuration.</p>
+
+<h4>test-output/ Folder</h4>
+<p>After every TestNG run, Maven creates <code>target/surefire-reports/</code> (JUnit XML) and TestNG creates <code>test-output/</code> with HTML files. Key files:</p>
+<ul>
+<li><strong>index.html</strong> — main dashboard with suite summary</li>
+<li><strong>emailable-report.html</strong> — lightweight summary designed for email sharing</li>
+<li><strong>testng-results.xml</strong> — machine-readable results for Jenkins plugins</li>
+<li><strong>testng-failed.xml</strong> — failed test methods for re-run</li>
+</ul>
+
+<div class="callout">
+<strong>Automation Engineer Tip:</strong> Always configure Surefire to output JUnit XML format. Jenkins natively understands JUnit XML via the JUnit plugin — this is your baseline reporting layer even before Allure or Extent.
+</div>
+
+<h4>emailable-report.html</h4>
+<p>TestNG generates this automatically. Share it via Jenkins Email Extension Plugin using <code>attachmentsPattern: 'test-output/emailable-report.html'</code>. It contains pass/fail counts, duration, and grouped results — perfect for quick stakeholder updates.</p>
+
+<h4>Jenkins TestNG Results Plugin</h4>
+<p>Install <strong>TestNG Results Plugin</strong> from Manage Jenkins → Plugins. Configure as a post-build action:</p>
+<ol>
+<li>Go to job configuration → Post-build Actions</li>
+<li>Add <strong>Publish TestNG Results</strong></li>
+<li>Set report path: <code>test-output/testng-results.xml</code> or <code>**/testng-results.xml</code></li>
+</ol>
+
+<p>Benefits for automation engineers:</p>
+<ul>
+<li>Trend graphs showing pass/fail history over builds</li>
+<li>Test result diff between builds (new failures, fixed tests)</li>
+<li>Drill-down into failed test methods with stack traces</li>
+<li>Build stability metrics for flaky test identification</li>
+</ul>
+
+<pre><code class="language-groovy">// Declarative Pipeline — TestNG Results
+post {
+    always {
+        step([$class: 'Publisher',
+              reportFilenamePattern: '**/testng-results.xml'])
+        // Or using junit step (also works with TestNG XML)
+        junit '**/testng-results.xml'
+    }
+}</code></pre>
+
+<h3>Allure Reports</h3>
+
+<p>Allure is the industry standard for rich, interactive test reports. It captures steps, screenshots, logs, and severity — ideal for UI automation frameworks.</p>
+
+<h4>Dependencies</h4>
+<pre><code class="language-xml">&lt;!-- pom.xml --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+    &lt;artifactId&gt;allure-testng&lt;/artifactId&gt;
+    &lt;version&gt;2.27.0&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;!-- For Cucumber BDD --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.qameta.allure&lt;/groupId&gt;
+    &lt;artifactId&gt;allure-cucumber7-jvm&lt;/artifactId&gt;
+    &lt;version&gt;2.27.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+
+<h4>Allure Annotations for Automation</h4>
+<pre><code class="language-java">@Epic("Checkout Module")
+@Feature("Payment Processing")
+public class PaymentTests {
+
+    @Test
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Verify credit card payment completes successfully")
+    public void testCreditCardPayment() {
+        loginPage.open();
+        checkoutPage.selectCreditCard();
+        // steps auto-captured via @Step methods
+    }
+
+    @Step("Enter card number: {cardNumber}")
+    public void enterCardNumber(String cardNumber) {
+        paymentPage.enterCard(cardNumber);
+    }
+}</code></pre>
+
+<h4>Jenkins Allure Plugin Setup</h4>
+<ol>
+<li>Install <strong>Allure Jenkins Plugin</strong></li>
+<li>Manage Jenkins → Global Tool Configuration → Allure Commandline → Add installation (e.g., Allure 2.27.0)</li>
+<li>In pipeline, publish results after test stage</li>
+</ol>
+
+<pre><code class="language-groovy">stage('Reports') {
+    steps {
+        allure includeProperties: false,
+              jdk: '',
+              results: [[path: 'target/allure-results']]
+    }
+}</code></pre>
+
+<h4>Allure Dashboard Features</h4>
+<ul>
+<li><strong>Timeline</strong> — visualize test execution order and parallel runs</li>
+<li><strong>Graphs</strong> — status, severity, duration trends</li>
+<li><strong>Categories</strong> — group failures by Product Defects vs Test Defects</li>
+<li><strong>Retries</strong> — track flaky tests with retry history</li>
+<li><strong>Attachments</strong> — screenshots, HTTP logs, page source on failure</li>
+</ul>
+
+<h3>Extent Reports</h3>
+
+<p>Extent Reports provides beautiful HTML dashboards with charts. Popular in Selenium + TestNG frameworks where you want a standalone HTML file without Jenkins plugin dependency.</p>
+
+<h4>ExtentSparkReporter Setup</h4>
+<pre><code class="language-java">// ExtentManager.java
+public class ExtentManager {
+    private static ExtentReports extent;
+
+    public static ExtentReports getInstance() {
+        if (extent == null) {
+            ExtentSparkReporter spark = new ExtentSparkReporter("reports/ExtentReport.html");
+            spark.config().setDocumentTitle("Automation Report");
+            spark.config().setReportName("Regression Test Results");
+            spark.config().setTheme(Theme.DARK);
+            extent = new ExtentReports();
+            extent.attachReporter(spark);
+            extent.setSystemInfo("Environment", System.getProperty("env", "QA"));
+            extent.setSystemInfo("Browser", System.getProperty("browser", "chrome"));
+        }
+        return extent;
+    }
+}</code></pre>
+
+<h4>TestNG Listener Integration</h4>
+<pre><code class="language-java">public class ExtentTestNGListener implements ITestListener {
+    @Override
+    public void onTestStart(ITestResult result) {
+        ExtentTest test = ExtentManager.getInstance()
+            .createTest(result.getMethod().getMethodName());
+        ExtentTestManager.setTest(test);
+    }
+
+    @Override
+    public void onTestFailure(ITestResult result) {
+        ExtentTestManager.getTest().fail(result.getThrowable());
+        // Attach screenshot on failure
+        String screenshot = captureScreenshot(result.getName());
+        ExtentTestManager.getTest().addScreenCaptureFromPath(screenshot);
+    }
+
+    @Override
+    public void onFinish(ITestContext context) {
+        ExtentManager.getInstance().flush();
+    }
+}</code></pre>
+
+<p>Register in <code>testng.xml</code>: <code>&lt;listener class-name="com.qa.listeners.ExtentTestNGListener"/&gt;</code></p>
+
+<h4>Jenkins HTML Publisher Plugin</h4>
+<pre><code class="language-groovy">publishHTML([
+    allowMissing: false,
+    alwaysLinkToLastBuild: true,
+    keepAll: true,
+    reportDir: 'reports',
+    reportFiles: 'ExtentReport.html',
+    reportName: 'Extent Report',
+    reportTitles: 'Automation Test Report'
+])</code></pre>
+
+<div class="callout">
+<strong>Security Note:</strong> HTML Publisher serves reports on Jenkins. Ensure reports do not contain credentials, API keys, or PII captured in screenshots. Sanitize before publishing.
+</div>
+
+<h3>Cucumber Reports</h3>
+
+<p>For BDD frameworks, Cucumber generates JSON reports that Jenkins renders into feature/scenario breakdowns.</p>
+
+<h4>Generate Cucumber JSON</h4>
+<pre><code class="language-java">// @CucumberOptions in runner class
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = "com.qa.steps",
+    plugin = {
+        "pretty",
+        "html:target/cucumber-reports/cucumber.html",
+        "json:target/cucumber-reports/cucumber.json"
+    }
+)</code></pre>
+
+<h4>Jenkins Cucumber Reports Plugin</h4>
+<ol>
+<li>Install <strong>Cucumber reports</strong> plugin</li>
+<li>Post-build action → Publish cucumber test results</li>
+<li>JSON path: <code>target/cucumber-reports/*.json</code></li>
+</ol>
+
+<p>Dashboard shows:</p>
+<ul>
+<li>Feature and scenario pass rate</li>
+<li>Step-level failure breakdown with stack traces</li>
+<li>Duration per scenario for performance analysis</li>
+<li>Trend over builds for BDD coverage tracking</li>
+</ul>
+
+<pre><code class="language-groovy">// Pipeline
+cucumber buildStatus: 'UNSTABLE',
+         fileIncludePattern: '**/cucumber.json',
+         jsonReportDirectory: 'target/cucumber-reports',
+         sortingMethod: 'ALPHABETICAL'</code></pre>
+
+<h3>Report Comparison Table</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Criteria</th><th>TestNG Default</th><th>Allure</th><th>Extent</th><th>Cucumber</th></tr>
+</thead>
+<tbody>
+<tr><td>Setup Complexity</td><td>None (auto-generated)</td><td>Medium (deps + annotations)</td><td>Medium (listener setup)</td><td>Low (JSON plugin config)</td></tr>
+<tr><td>Visual Quality</td><td>Basic HTML tables</td><td>Excellent (interactive UI)</td><td>Very Good (charts, dark theme)</td><td>Good (feature hierarchy)</td></tr>
+<tr><td>Step-Level Detail</td><td>Method level only</td><td>@Step annotations, attachments</td><td>Log steps manually</td><td>Given/When/Then steps</td></tr>
+<tr><td>Jenkins Integration</td><td>TestNG/JUnit plugin</td><td>Allure plugin (trend graphs)</td><td>HTML Publisher plugin</td><td>Cucumber Reports plugin</td></tr>
+<tr><td>Screenshot Support</td><td>Manual HTML embed</td><td>Native attachments</td><td>Built-in screenshot API</td><td>Via hooks + Allure/Extent</td></tr>
+<tr><td>Best For</td><td>Quick baseline reporting</td><td>Enterprise UI automation</td><td>Standalone HTML sharing</td><td>BDD / Cucumber projects</td></tr>
+<tr><td>Historical Trends</td><td>Via Jenkins plugin</td><td>Allure Jenkins trends</td><td>Limited (HTML per build)</td><td>Cucumber plugin trends</td></tr>
+<tr><td>Framework Support</td><td>TestNG, JUnit</td><td>TestNG, JUnit, Cucumber, REST Assured</td><td>TestNG, JUnit</td><td>Cucumber only</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Report Archiving Strategy</h3>
+
+<p>Automation engineers must define retention policies so Jenkins disk does not fill up while keeping enough history for trend analysis.</p>
+
+<h4>Keep Last N Builds</h4>
+<pre><code class="language-groovy">// Jenkinsfile — discard old builds
+options {
+    buildDiscarder(logRotator(
+        numToKeepStr: '30',           // keep last 30 builds
+        artifactNumToKeepStr: '10'    // keep artifacts for last 10
+    ))
+}</code></pre>
+
+<h4>Archive Artifacts</h4>
+<pre><code class="language-groovy">post {
+    always {
+        archiveArtifacts artifacts: '''
+            target/allure-results/**,
+            reports/ExtentReport.html,
+            test-output/emailable-report.html,
+            screenshots/**,
+            logs/**
+        ''', allowEmptyArchive: true, fingerprint: true
+
+        junit '**/surefire-reports/*.xml'
+    }
+}</code></pre>
+
+<h4>Recommended Strategy for Automation Projects</h4>
+<ul>
+<li><strong>Allure raw results</strong> — archived per build; Allure plugin generates report on-the-fly</li>
+<li><strong>Extent HTML</strong> — archive + HTML Publisher for inline viewing</li>
+<li><strong>Screenshots/logs</strong> — archive on failure only to save disk</li>
+<li><strong>External storage</strong> — push reports to S3/Azure Blob for long-term retention beyond Jenkins</li>
+</ul>
+
+<div class="callout">
+<strong>Production Pattern:</strong> Use Allure for Jenkins dashboard trends + archive screenshots/logs as artifacts. Send emailable-report.html or Allure summary link via email on failure. This gives managers visibility without bloating Jenkins storage.
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Q: What is the difference between TestNG's emailable-report.html and Allure report?</strong><br>
+A: emailable-report is a static HTML summary auto-generated by TestNG with basic pass/fail tables. Allure is a rich interactive report with steps, attachments, severity, trends, and categories — requires framework integration and the Allure Jenkins plugin.</li>
+<li><strong>Q: How do you publish Allure reports in a Jenkins pipeline?</strong><br>
+A: Install Allure Commandline in Global Tool Configuration, add allure-testng dependency, generate results in target/allure-results during tests, then use the <code>allure</code> pipeline step with the results path.</li>
+<li><strong>Q: What file format does Jenkins JUnit plugin consume?</strong><br>
+A: JUnit XML format. TestNG's testng-results.xml and Surefire's TEST-*.xml both work with the <code>junit</code> pipeline step.</li>
+<li><strong>Q: How do you attach screenshots to Extent Reports on test failure?</strong><br>
+A: Implement an ITestListener, capture screenshot in onTestFailure(), and call <code>test.addScreenCaptureFromPath(path)</code> before flushing the report.</li>
+<li><strong>Q: What is the purpose of the Cucumber JSON report?</strong><br>
+A: It is a machine-readable report consumed by the Jenkins Cucumber Reports plugin to render feature/scenario dashboards with step-level failure details and trend graphs.</li>
+<li><strong>Q: How do you prevent Jenkins disk from filling up with reports?</strong><br>
+A: Configure buildDiscarder to keep last N builds, limit artifact retention, archive screenshots only on failure, and optionally offload long-term storage to S3 or similar.</li>
+<li><strong>Q: Can you use multiple reporting tools in the same project?</strong><br>
+A: Yes. Common pattern: Allure for detailed Jenkins dashboard + Extent for standalone HTML + JUnit XML for Jenkins test result trends. They serve different audiences.</li>
+<li><strong>Q: What Allure annotations do automation engineers use most?</strong><br>
+A: @Epic, @Feature (organization), @Severity (priority), @Description (test purpose), @Step (granular step logging in page objects).</li>
+<li><strong>Q: Why is publishHTML allowMissing set to false?</strong><br>
+A: To fail the build if the report was not generated — this catches reporting pipeline breaks instead of silently showing empty report links.</li>
+<li><strong>Q: How do you share test reports with non-Jenkins stakeholders?</strong><br>
+A: Email emailable-report.html as attachment, share archived Extent HTML via shared drive, or send Allure report zip exported from Jenkins build artifacts.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>In a Selenium + TestNG + Maven e-commerce automation project with 800+ tests:</p>
+<ul>
+<li><strong>Allure</strong> integrated with @Step in page objects; Jenkins Allure plugin shows trend graphs — team spotted 12 flaky tests over 2 weeks</li>
+<li><strong>JUnit XML</strong> via Surefire for Jenkins build health badge</li>
+<li><strong>Extent Report</strong> published via HTML Publisher for QA lead quick review</li>
+<li><strong>Archiving:</strong> last 20 builds kept, screenshots archived only on failure</li>
+<li><strong>Email:</strong> on failure, emailable-report.html + top 5 failure names sent to dev channel</li>
+</ul>
+<p>Result: Mean time to identify regression dropped from 4 hours to 30 minutes because reports were centralized in Jenkins with historical comparison.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Not adding Allure listener or aspectjweaver agent — Allure results folder stays empty</li>
+<li>Wrong report path in Jenkins plugin config (e.g., test-output vs target/surefire-reports)</li>
+<li>Setting allowMissing: true on publishHTML — missing reports go unnoticed</li>
+<li>Committing reports to Git instead of generating them in CI</li>
+<li>Capturing screenshots on every step — bloated reports and slow execution</li>
+<li>Not configuring buildDiscarder — Jenkins master disk fills within weeks</li>
+<li>Using absolute paths in report config instead of workspace-relative paths</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Empty Allure report:</strong> Verify target/allure-results contains JSON files; check aspectjweaver in Surefire argLine</li>
+<li><strong>HTML Publisher shows 404:</strong> Confirm reportDir path relative to workspace; check reportFiles matches exact filename</li>
+<li><strong>TestNG plugin shows zero tests:</strong> Validate testng-results.xml exists and is not empty; check glob pattern</li>
+<li><strong>Cucumber report missing scenarios:</strong> Ensure JSON plugin is in @CucumberOptions and runner executed (not skipped)</li>
+<li><strong>Reports show stale data:</strong> Add clean step before test run; disable report caching</li>
+<li><strong>Trend graphs flat:</strong> Need minimum 2+ builds with published results; verify plugin records history</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>TestNG auto-generates test-output/ — emailable-report.html for email, testng-results.xml for Jenkins</li>
+<li>Allure = richest reports; needs allure-testng + Allure Commandline + Jenkins Allure plugin</li>
+<li>Extent = standalone HTML via ExtentSparkReporter + TestNG Listener + HTML Publisher</li>
+<li>Cucumber JSON → Cucumber Reports plugin for BDD dashboards</li>
+<li>Always publish JUnit/TestNG XML via <code>junit</code> step for build trends</li>
+<li>Archive with buildDiscarder; keep artifacts for last N builds only</li>
+<li>Production combo: Allure dashboard + email on failure + screenshot archive</li>
+</ul>
+</section>
+
+<section id="section-16" class="section-card">
+<h2>Section 16: Email Notifications</h2>
+
+<p>Email notifications bridge the gap between Jenkins build results and team awareness. For automation engineers, timely alerts mean failed regression suites get triaged before the next deployment window closes.</p>
+
+<h3>Why Email Notifications Matter</h3>
+<ul>
+<li><strong>Immediate feedback</strong> — team knows within minutes if nightly regression failed</li>
+<li><strong>Stakeholder visibility</strong> — managers receive pass/fail summary without logging into Jenkins</li>
+<li><strong>Audit trail</strong> — email history documents build health over releases</li>
+<li><strong>Actionable context</strong> — attach reports, include failure details and build links</li>
+<li><strong>Escalation path</strong> — different recipients for success vs failure vs unstable builds</li>
+</ul>
+
+<h3>Jenkins Email Extension Plugin (Email-ext)</h3>
+
+<p>The default Jenkins email notification is basic. <strong>Email Extension Plugin (email-ext)</strong> provides HTML templates, triggers, attachments, and recipient token expansion — essential for automation pipelines.</p>
+
+<h4>Installation and SMTP Configuration</h4>
+<ol>
+<li>Manage Jenkins → Plugins → Install <strong>Email Extension Plugin</strong></li>
+<li>Manage Jenkins → Configure System → Extended E-mail Notification</li>
+<li>Configure SMTP server settings (see examples below)</li>
+<li>Send test email to verify configuration</li>
+</ol>
+
+<h4>SMTP Settings Overview</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Setting</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>SMTP Server</td><td>Mail relay hostname</td></tr>
+<tr><td>SMTP Port</td><td>465 (SSL), 587 (TLS), or 25 (unencrypted)</td></tr>
+<tr><td>Credentials</td><td>Username/password or app-specific password</td></tr>
+<tr><td>SSL/TLS</td><td>Enable based on provider requirements</td></tr>
+<tr><td>Default Recipients</td><td>Fallback team distribution list</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Gmail SMTP Example</h4>
+<pre><code class="language-bash"># Jenkins Configure System → Extended E-mail Notification
+SMTP Server:    smtp.gmail.com
+SMTP Port:      465
+SSL:            Enabled
+Username:       automation-bot@company.com
+Password:       xxxx-xxxx-xxxx-xxxx  (Google App Password)
+Default Suffix: @company.com</code></pre>
+
+<div class="callout">
+<strong>Important:</strong> Gmail requires App Passwords when 2FA is enabled. Regular account passwords will fail authentication. For production, use a dedicated service account or corporate SMTP relay — not personal Gmail.
+</div>
+
+<h4>Office 365 SMTP Example</h4>
+<pre><code class="language-bash">SMTP Server:    smtp.office365.com
+SMTP Port:      587
+TLS:            STARTTLS Enabled
+Username:       jenkins-notify@company.com
+Password:       &lt;service account password&gt;
+Authentication: Required</code></pre>
+
+<h3>Email Triggers by Build Result</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Trigger</th><th>Recipients</th><th>Content</th></tr>
+</thead>
+<tbody>
+<tr><td>Build Success</td><td>QA team, scrum channel</td><td>Summary: pass count, duration, report link</td></tr>
+<tr><td>Build Failure</td><td>Team lead + developers + QA</td><td>Failure stage, console excerpt, report attachment</td></tr>
+<tr><td>Test Failure (Unstable)</td><td>QA team</td><td>Failed test names, screenshot links, Allure URL</td></tr>
+<tr><td>First Failure After Success</td><td>On-call engineer</td><td>Regression alert — previously green build now red</td></tr>
+<tr><td>Fixed After Failure</td><td>Team lead</td><td>Confirmation that regression is resolved</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Pipeline Email Configuration</h3>
+
+<pre><code class="language-groovy">pipeline {
+    agent any
+
+    stages {
+        stage('Test') {
+            steps {
+                bat 'mvn clean test'
+            }
+        }
+    }
+
+    post {
+        success {
+            emailext (
+                subject: "BUILD SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """&lt;h2&gt;Build Passed&lt;/h2&gt;
+                        &lt;p&gt;&lt;strong&gt;Job:&lt;/strong&gt; ${env.JOB_NAME}&lt;/p&gt;
+                        &lt;p&gt;&lt;strong&gt;Build:&lt;/strong&gt; #${env.BUILD_NUMBER}&lt;/p&gt;
+                        &lt;p&gt;&lt;strong&gt;Duration:&lt;/strong&gt; ${currentBuild.durationString}&lt;/p&gt;
+                        &lt;p&gt;&lt;strong&gt;Branch:&lt;/strong&gt; ${env.BRANCH_NAME ?: 'N/A'}&lt;/p&gt;
+                        &lt;p&gt;&lt;a href='${env.BUILD_URL}'&gt;View Build&lt;/a&gt;&lt;/p&gt;
+                        &lt;p&gt;&lt;a href='${env.BUILD_URL}allure'&gt;Allure Report&lt;/a&gt;&lt;/p&gt;""",
+                to: 'qa-team@company.com',
+                mimeType: 'text/html',
+                attachmentsPattern: 'reports/*.html'
+            )
+        }
+        failure {
+            emailext (
+                subject: "BUILD FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """&lt;h2 style='color:red'&gt;Build Failed&lt;/h2&gt;
+                        &lt;p&gt;&lt;strong&gt;Job:&lt;/strong&gt; ${env.JOB_NAME}&lt;/p&gt;
+                        &lt;p&gt;&lt;strong&gt;Build:&lt;/strong&gt; #${env.BUILD_NUMBER}&lt;/p&gt;
+                        &lt;p&gt;&lt;strong&gt;Duration:&lt;/strong&gt; ${currentBuild.durationString}&lt;/p&gt;
+                        &lt;p&gt;&lt;a href='${env.BUILD_URL}console'&gt;Console Output&lt;/a&gt;&lt;/p&gt;
+                        &lt;p&gt;Please investigate immediately.&lt;/p&gt;""",
+                to: 'qa-team@company.com, lead@company.com, dev-team@company.com',
+                mimeType: 'text/html',
+                attachmentsPattern: 'test-output/emailable-report.html, screenshots/**'
+            )
+        }
+        unstable {
+            emailext (
+                subject: "TESTS FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """&lt;h2 style='color:orange'&gt;Build Unstable — Test Failures&lt;/h2&gt;
+                        &lt;p&gt;Some tests failed. Review the report.&lt;/p&gt;
+                        &lt;p&gt;&lt;a href='${env.BUILD_URL}testReport'&gt;Test Report&lt;/a&gt;&lt;/p&gt;""",
+                to: 'qa-team@company.com',
+                mimeType: 'text/html'
+            )
+        }
+        always {
+            // Optional: cleanup notification temp files
+        }
+    }
+}</code></pre>
+
+<h4>Advanced: Groovy Email Templates</h4>
+<p>Store reusable HTML templates in Jenkins → Extended Email → Default Content → Editable Email Templates. Reference with <code>${SCRIPT, template="my-template"}</code> for consistent branding across all automation jobs.</p>
+
+<h3>Slack Notifications as Alternative</h3>
+
+<p>Email is formal; Slack is faster for dev teams. Many automation projects use both — Slack for immediate alerts, email for management summaries.</p>
+
+<h4>Slack Plugin Configuration</h4>
+<ol>
+<li>Install <strong>Slack Notification Plugin</strong></li>
+<li>Manage Jenkins → Configure System → Slack → Workspace + Credential (Bot Token)</li>
+<li>Create Jenkins credential with Slack Bot OAuth token</li>
+<li>Test connection to verify channel access</li>
+</ol>
+
+<pre><code class="language-groovy">post {
+    success {
+        slackSend(
+            channel: '#qa-automation',
+            color: 'good',
+            message: "✅ Build PASSED: ${env.JOB_NAME} #${env.BUILD_NUMBER} (${currentBuild.durationString})\n&lt;${env.BUILD_URL}|View Build&gt;"
+        )
+    }
+    failure {
+        slackSend(
+            channel: '#qa-alerts',
+            color: 'danger',
+            message: "❌ Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n&lt;${env.BUILD_URL}console|Console Log&gt;"
+        )
+    }
+}
+
+// Simple one-liner
+slackSend channel: '#qa-alerts', message: "Build ${currentBuild.result}: ${env.JOB_NAME} #${env.BUILD_NUMBER}"</code></pre>
+
+<h3>Microsoft Teams Webhook Notifications</h3>
+
+<p>Teams uses Incoming Webhooks — no dedicated Jenkins plugin required. Use <code>httpRequest</code> or <code>office365ConnectorWebhooks</code> step.</p>
+
+<pre><code class="language-groovy">// Using Office 365 Connector plugin
+office365ConnectorWebhooks([
+    webhooks: [[
+        name: 'QA Team Webhook',
+        url: 'https://outlook.office.com/webhook/xxxx',
+        notifyBackToUser: false,
+        notifySuccess: true,
+        notifyFailure: true
+    ]]
+])
+
+// Or raw HTTP POST with JSON card
+post {
+    failure {
+        script {
+            def payload = """
+            {
+                "@type": "MessageCard",
+                "summary": "Build Failed",
+                "themeColor": "FF0000",
+                "title": "Jenkins Build Failed",
+                "sections": [{
+                    "facts": [
+                        {"name": "Job", "value": "${env.JOB_NAME}"},
+                        {"name": "Build", "value": "#${env.BUILD_NUMBER}"}
+                    ]
+                }],
+                "potentialAction": [{
+                    "@type": "OpenUri",
+                    "name": "View Build",
+                    "targets": [{"os": "default", "uri": "${env.BUILD_URL}"}]
+                }]
+            }"""
+            httpRequest url: 'https://outlook.office.com/webhook/xxxx',
+                          httpMode: 'POST',
+                          contentType: 'APPLICATION_JSON',
+                          requestBody: payload
+        }
+    }
+}</code></pre>
+
+<h3>Notification Strategy for Automation Engineers</h3>
+
+<div class="callout">
+<strong>Best Practice:</strong> Route notifications by severity. Smoke test failure → Slack #qa-alerts immediately. Nightly regression failure → email QA lead + Slack. Success → Slack summary only (avoid email noise). Production deployment gate failure → email + Teams + PagerDuty.
+</div>
+
+<ul>
+<li><strong>Do not email on every success</strong> — causes alert fatigue; use Slack or weekly digest</li>
+<li><strong>Always include BUILD_URL</strong> — one-click access to console and reports</li>
+<li><strong>Attach reports on failure only</strong> — keeps email size manageable</li>
+<li><strong>Use parameterized recipient lists</strong> — different emails per environment (QA vs prod)</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Q: What is the difference between default Jenkins email and Email Extension Plugin?</strong><br>
+A: Default email sends plain text on fixed triggers with limited customization. Email-ext supports HTML bodies, attachments, per-trigger templates, recipient tokens, and pipeline emailext step with rich content.</li>
+<li><strong>Q: How do you attach test reports to Jenkins notification emails?</strong><br>
+A: Use attachmentsPattern in emailext step, e.g., <code>attachmentsPattern: 'reports/*.html, test-output/emailable-report.html'</code>. Files must exist in workspace at post-build time.</li>
+<li><strong>Q: What SMTP settings are required for Gmail in Jenkins?</strong><br>
+A: smtp.gmail.com, port 465, SSL enabled, valid username, and Google App Password (not regular password if 2FA is on).</li>
+<li><strong>Q: When would you use Slack instead of email?</strong><br>
+A: For real-time team alerts where immediate visibility matters — failed smoke tests, broken CI pipeline. Slack reduces response time; email suits formal stakeholder reporting.</li>
+<li><strong>Q: How do you send different emails for success vs failure in a pipeline?</strong><br>
+A: Use post { success { emailext(...) } failure { emailext(...) } unstable { emailext(...) } } blocks with different subjects, recipients, and bodies.</li>
+<li><strong>Q: What is an unstable build in Jenkins and how do you notify for it?</strong><br>
+A: Unstable means build completed but tests failed (or quality gate degraded). Use the unstable post condition with emailext to alert QA with test report links.</li>
+<li><strong>Q: How do you configure Teams notifications without a dedicated plugin?</strong><br>
+A: Create an Incoming Webhook in Teams channel, then POST a MessageCard JSON payload via httpRequest step or use Office 365 Connector plugin.</li>
+<li><strong>Q: How do you prevent notification spam from frequent builds?</strong><br>
+A: Email only on failure/unstable, use Slack for success summaries, configure fix-failure-only triggers, and set quiet period on jobs triggered by every commit.</li>
+<li><strong>Q: What environment variables are commonly used in email body templates?</strong><br>
+A: JOB_NAME, BUILD_NUMBER, BUILD_URL, BUILD_URL/console, BRANCH_NAME, currentBuild.durationString, currentBuild.result.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>A fintech QA team running 15 Jenkins jobs (smoke, regression, API, performance):</p>
+<ul>
+<li><strong>Smoke (every commit):</strong> Slack #ci-alerts on failure only — zero email</li>
+<li><strong>Nightly regression:</strong> Email to qa-lead@ + dev-leads@ with emailable-report.html attachment on failure; Slack summary on success</li>
+<li><strong>Pre-release full suite:</strong> Email + Teams webhook to release managers with Allure link</li>
+<li><strong>SMTP:</strong> Corporate Office 365 relay — no Gmail dependency</li>
+</ul>
+<p>Outcome: Developer response time to smoke failures dropped to under 15 minutes. Email volume reduced 70% by eliminating success emails on frequent jobs.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Using personal Gmail without App Password — authentication silently fails</li>
+<li>Hardcoding recipient emails in Jenkinsfile instead of job parameters or credentials</li>
+<li>Sending email on every successful build — team ignores all notifications</li>
+<li>Missing mimeType: 'text/html' — HTML renders as raw tags in inbox</li>
+<li>attachmentsPattern path wrong — emails send without expected reports</li>
+<li>Not testing SMTP after Jenkins upgrade — mail relay breaks unnoticed</li>
+<li>Including sensitive data (passwords, tokens) in email body or attachments</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Emails not sending:</strong> Check Manage Jenkins → System Log; enable email-ext debug logging</li>
+<li><strong>Authentication failed:</strong> Verify credentials, App Password, and TLS/SSL port match provider docs</li>
+<li><strong>Empty attachments:</strong> Confirm files exist before post block runs; check glob pattern case sensitivity</li>
+<li><strong>Slack not posting:</strong> Verify bot token scope (chat:write), bot invited to channel</li>
+<li><strong>Teams webhook 400:</strong> Validate JSON payload schema for MessageCard format</li>
+<li><strong>Emails in spam:</strong> Configure SPF/DKIM on corporate domain; use internal SMTP relay</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>Email-ext plugin → HTML emails, attachments, pipeline emailext step</li>
+<li>Gmail: smtp.gmail.com:465 SSL + App Password</li>
+<li>Office 365: smtp.office365.com:587 STARTTLS</li>
+<li>post { success/failure/unstable } for conditional notifications</li>
+<li>Slack: slackSend with channel, color, message + BUILD_URL link</li>
+<li>Teams: Incoming Webhook + JSON MessageCard</li>
+<li>Failure → email + Slack; success → Slack only to avoid noise</li>
+</ul>
+</section>
+
+<section id="section-17" class="section-card">
+<h2>Section 17: Jenkins Parameters</h2>
+
+<p>Parameters transform a static Jenkins job into a flexible automation launcher. Instead of editing code or creating duplicate jobs for every browser, environment, or test suite, automation engineers expose runtime choices that anyone on the team can use.</p>
+
+<h3>Why Parameterize Pipelines?</h3>
+<ul>
+<li><strong>Flexible execution</strong> — run smoke on QA, full regression on staging from same job</li>
+<li><strong>Reusable pipeline</strong> — one Jenkinsfile serves dev, QA, and release teams</li>
+<li><strong>No code changes</strong> — switch browser, tags, or thread count without committing</li>
+<li><strong>Self-service for QA</strong> — manual "Build with Parameters" replaces asking automation engineers</li>
+<li><strong>Environment safety</strong> — explicit ENV parameter prevents accidental prod runs</li>
+</ul>
+
+<h3>Parameter Types</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Type</th><th>Groovy Syntax</th><th>Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td>Choice</td><td>choice(name: 'X', choices: ['a','b'])</td><td>Dropdown — browser, environment, suite</td></tr>
+<tr><td>String</td><td>string(name: 'X', defaultValue: 'val')</td><td>Free text — tags, URL, thread count</td></tr>
+<tr><td>Boolean</td><td>booleanParam(name: 'X', defaultValue: true)</td><td>Toggle — headless mode, debug flag</td></tr>
+<tr><td>Password</td><td>password(name: 'X', defaultValue: '')</td><td>Masked input — API keys (use credentials instead when possible)</td></tr>
+<tr><td>File</td><td>file(name: 'X')</td><td>Upload — test data file, config override</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Common Automation Parameters</h3>
+
+<pre><code class="language-groovy">pipeline {
+    agent any
+
+    parameters {
+        choice(
+            name: 'BROWSER',
+            choices: ['chrome', 'firefox', 'edge'],
+            description: 'Browser for UI tests'
+        )
+        choice(
+            name: 'ENV',
+            choices: ['qa', 'staging', 'prod'],
+            description: 'Target environment'
+        )
+        choice(
+            name: 'SUITE',
+            choices: ['smoke', 'regression', 'sanity', 'full'],
+            description: 'Test suite to execute'
+        )
+        string(
+            name: 'TAGS',
+            defaultValue: '@smoke',
+            description: 'Cucumber tags filter'
+        )
+        booleanParam(
+            name: 'HEADLESS',
+            defaultValue: true,
+            description: 'Run browser in headless mode'
+        )
+        string(
+            name: 'THREADS',
+            defaultValue: '3',
+            description: 'Parallel thread count'
+        )
+        string(
+            name: 'BASE_URL',
+            defaultValue: 'https://qa.app.com',
+            description: 'Application base URL override'
+        )
+    }
+
+    stages {
+        stage('Validate Parameters') {
+            steps {
+                script {
+                    if (params.ENV == 'prod' &amp;&amp; params.SUITE == 'full') {
+                        input message: 'Confirm PROD full regression?', ok: 'Proceed'
+                    }
+                }
+            }
+        }
+    }
+}</code></pre>
+
+<h3>Using Parameters in Pipeline Stages</h3>
+
+<pre><code class="language-groovy">stages {
+    stage('Test') {
+        steps {
+            bat """
+                mvn clean test ^
+                  -Dbrowser=${params.BROWSER} ^
+                  -Denv=${params.ENV} ^
+                  -Dsurefire.suiteXmlFiles=${params.SUITE}.xml ^
+                  -Dthread.count=${params.THREADS} ^
+                  -Dheadless=${params.HEADLESS} ^
+                  -Dbase.url=${params.BASE_URL}
+            """
+        }
+    }
+    stage('Cucumber Tests') {
+        when {
+            expression { params.TAGS?.trim() }
+        }
+        steps {
+            bat "mvn test -Dcucumber.filter.tags=\"${params.TAGS}\""
+        }
+    }
+}</code></pre>
+
+<div class="callout">
+<strong>Access Syntax:</strong> In declarative pipeline steps use <code>${params.PARAM_NAME}</code>. In scripted pipeline or script blocks, <code>params.BROWSER</code> also works. Environment variables from parameters require explicit mapping (see below).
+</div>
+
+<h3>Environment Variables</h3>
+
+<h4>Built-in Jenkins Environment Variables</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Variable</th><th>Description</th><th>Automation Use</th></tr>
+</thead>
+<tbody>
+<tr><td>BUILD_NUMBER</td><td>Current build ID</td><td>Report naming, screenshot folders</td></tr>
+<tr><td>JOB_NAME</td><td>Job name</td><td>Email subjects, Allure environment info</td></tr>
+<tr><td>BUILD_URL</td><td>Build page URL</td><td>Notification links</td></tr>
+<tr><td>WORKSPACE</td><td>Job workspace path</td><td>File paths, report directories</td></tr>
+<tr><td>NODE_NAME</td><td>Agent running the build</td><td>Debug agent-specific failures</td></tr>
+<tr><td>BRANCH_NAME</td><td>SCM branch (Multibranch)</td><td>Conditional test execution</td></tr>
+<tr><td>GIT_COMMIT</td><td>Current commit SHA</td><td>Traceability in reports</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Custom Environment Block</h4>
+<pre><code class="language-groovy">environment {
+    REPORT_DIR = 'target/reports'
+    ALLURE_RESULTS = 'target/allure-results'
+    // Map parameter to env var for shell steps
+    TEST_ENV = "${params.ENV}"
+    BUILD_TAG = "${env.JOB_NAME}-${env.BUILD_NUMBER}"
+}
+
+stages {
+    stage('Test') {
+        steps {
+            echo "Running on environment: ${env.TEST_ENV}"
+            echo "Reports at: ${env.WORKSPACE}/${env.REPORT_DIR}"
+            bat "mvn test -Denv=${env.TEST_ENV}"
+        }
+    }
+}</code></pre>
+
+<h3>Passing Parameters Between Stages</h3>
+
+<h4>Method 1: Environment Block (Preferred)</h4>
+<p>Define values once in <code>environment {}</code> — available to all stages automatically.</p>
+
+<h4>Method 2: Script Variables</h4>
+<pre><code class="language-groovy">stage('Setup') {
+    steps {
+        script {
+            env.DYNAMIC_SUITE = params.SUITE == 'full' ? 'regression.xml' : "${params.SUITE}.xml"
+        }
+    }
+}
+stage('Test') {
+    steps {
+        bat "mvn test -Dsurefire.suiteXmlFiles=${env.DYNAMIC_SUITE}"
+    }
+}</code></pre>
+
+<h4>Method 3: Stash/Unstash (Cross-Agent Data)</h4>
+<pre><code class="language-groovy">stage('Build on Agent A') {
+    steps {
+        stash name: 'test-config', includes: 'config/${params.ENV}.properties'
+    }
+}
+stage('Test on Agent B') {
+    agent { label 'selenium-grid' }
+    steps {
+        unstash 'test-config'
+        bat 'mvn test -Dconfig.file=config/${params.ENV}.properties'
+    }
+}</code></pre>
+
+<h3>Active Choices Plugin — Dynamic Parameters</h3>
+
+<p>The <strong>Active Choices Plugin</strong> renders parameter values dynamically based on other selections — powerful for automation engineers managing complex test matrices.</p>
+
+<pre><code class="language-groovy">// Freestyle or Pipeline with Active Choices
+// When ENV = 'qa'     → SUITE choices: smoke, sanity, regression
+// When ENV = 'staging' → SUITE choices: smoke, full
+// When ENV = 'prod'    → SUITE choices: smoke only
+
+// Groovy script for Active Choices Reactive Parameter:
+if (ENV.equals('prod')) {
+    return ['smoke']
+} else if (ENV.equals('staging')) {
+    return ['smoke', 'full']
+} else {
+    return ['smoke', 'sanity', 'regression', 'full']
+}</code></pre>
+
+<p>Use cases: load browser list from config file, populate test suite names from repo directory listing, filter tags based on environment.</p>
+
+<h3>Parameter Best Practices for Automation</h3>
+<ul>
+<li>Provide sensible <code>defaultValue</code> — job should work with zero input on first run</li>
+<li>Add <code>description</code> to every parameter — self-documenting for QA self-service</li>
+<li>Validate dangerous combos (prod + full regression) with <code>input</code> step</li>
+<li>Never store secrets in string parameters — use Jenkins Credentials binding</li>
+<li>Log parameter values at build start for debugging: <code>echo "Params: ${params}"</code></li>
+<li>Keep parameter count manageable — more than 8 parameters suggests job should be split</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Q: Why parameterize Jenkins pipelines instead of creating separate jobs?</strong><br>
+A: One pipeline reduces maintenance — same Jenkinsfile, same plugins, same reporting. Parameters let teams run different configs without duplicating jobs or changing code.</li>
+<li><strong>Q: What is the difference between params.X and env.X?</strong><br>
+A: params.X are user-supplied build parameters. env.X are environment variables (built-in or custom). Parameters must be explicitly mapped to env vars if needed in shell export context.</li>
+<li><strong>Q: How do you run a parameterized pipeline manually?</strong><br>
+A: Click "Build with Parameters" on the job page. Jenkins renders the parameter form defined in the parameters block.</li>
+<li><strong>Q: Can you add new parameters to an existing pipeline without losing history?</strong><br>
+A: Yes. Add parameters block to Jenkinsfile. First run after change may require "Build with Parameters" to initialize defaults. Existing build history is preserved.</li>
+<li><strong>Q: How do you pass Cucumber tags as a parameter?</strong><br>
+A: Define string parameter TAGS with default '@smoke', pass to Maven: <code>-Dcucumber.filter.tags="${params.TAGS}"</code>.</li>
+<li><strong>Q: What is Active Choices Plugin used for?</strong><br>
+A: Dynamic parameter values that change based on other parameter selections — e.g., suite list changes when environment changes.</li>
+<li><strong>Q: How do you share data between pipeline stages on different agents?</strong><br>
+A: Use stash/unstash for files, or store values in env variables (master only), or use external storage (S3, database).</li>
+<li><strong>Q: How do you prevent accidental production test execution?</strong><br>
+A: Restrict prod in choice parameter, add input confirmation step when ENV=prod, use Jenkins RBAC to limit who can select prod.</li>
+<li><strong>Q: What happens if you reference params before parameters block is defined?</strong><br>
+A: On first job run, parameters may be null until "Build with Parameters" initializes them. Use defaultValue in parameter definition to avoid null issues.</li>
+<li><strong>Q: How do booleanParam values appear in Maven command line?</strong><br>
+A: As string 'true' or 'false' — pass directly: <code>-Dheadless=${params.HEADLESS}</code>. Java/TestNG reads as boolean system property.</li>
+<li><strong>Q: Can file parameters be used in pipeline?</strong><br>
+A: Yes. Uploaded file lands in workspace. Reference path in test framework config. Useful for ad-hoc test data uploads by QA.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>A SaaS company unified 6 separate Jenkins jobs (chrome-smoke, firefox-smoke, qa-regression, staging-regression, etc.) into one parameterized pipeline:</p>
+<ul>
+<li>Parameters: BROWSER, ENV, SUITE, HEADLESS, TAGS, THREADS</li>
+<li>QA team uses "Build with Parameters" daily — no Jenkinsfile edits needed</li>
+<li>Active Choices limits prod to smoke-only suite</li>
+<li>Nightly cron trigger uses default parameters; manual runs override as needed</li>
+</ul>
+<p>Result: 6 jobs → 1 job. Jenkinsfile maintenance reduced 80%. New QA hires onboarded to CI in one training session.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Forgetting defaultValue — first build fails with null parameter</li>
+<li>Using params in triggers or options block where not yet available</li>
+<li>Passing prod URL without confirmation gate — data corruption risk</li>
+<li>Hardcoding suite XML name mismatch (smoke vs smoke.xml)</li>
+<li>Not escaping special characters in string params for shell commands</li>
+<li>Storing passwords in string/password params instead of Credentials</li>
+<li>Too many parameters — confuses users; split into separate jobs</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Parameter not appearing:</strong> Pipeline must run once after adding parameters block to register them</li>
+<li><strong>params.X is null:</strong> Check defaultValue; ensure "Build with Parameters" was used</li>
+<li><strong>Maven not receiving property:</strong> Verify -D flag spelling matches @Parameters or system property name in framework</li>
+<li><strong>Stash/unstash fails:</strong> Stash size limit default 5MB — increase or archive selectively</li>
+<li><strong>Wrong suite runs:</strong> Add echo step logging all params at pipeline start for audit</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>parameters {} block: choice, string, booleanParam, password, file</li>
+<li>Access via ${params.NAME} in steps</li>
+<li>Built-in env: BUILD_NUMBER, JOB_NAME, BUILD_URL, WORKSPACE, NODE_NAME</li>
+<li>Custom env: environment { VAR = 'value' } or map from params</li>
+<li>Cross-stage data: environment block, script env.VAR, stash/unstash</li>
+<li>Active Choices: dynamic dropdowns based on other selections</li>
+<li>Always set defaultValue and description on every parameter</li>
+</ul>
+</section>
+
+<section id="section-18" class="section-card">
+<h2>Section 18: Real-Time Pipeline Design</h2>
+
+<p>This section ties together everything an automation engineer needs: checkout, build, parallel browser tests, reporting, notifications, and deployment gates — in one production-grade Jenkinsfile you can adapt to real projects.</p>
+
+<h3>End-to-End Pipeline Architecture</h3>
+
+<div class="ascii-diagram">
+<pre>
+GitHub Push → Webhook → Jenkins → Checkout → Build → Unit Tests
+    → Smoke Tests (parallel: Chrome + Firefox) → API Tests
+    → Regression → Reports → Email → Slack → Deploy
+
+┌──────────┐    ┌─────────┐    ┌─────────┐    ┌──────────┐
+│  GitHub  │───▶│ Webhook │───▶│ Jenkins │───▶│ Checkout │
+│   Push   │    │ Trigger │    │  Master │    │   SCM    │
+└──────────┘    └─────────┘    └─────────┘    └────┬─────┘
+                                                    │
+    ┌───────────────────────────────────────────────┘
+    ▼
+┌────────┐   ┌────────────┐   ┌─────────────────────────────┐
+│ Build  │──▶│ Unit Tests │──▶│ Smoke Tests                 │
+│  mvn   │   │   JUnit    │   │  ┌─────────┐  ┌──────────┐  │
+│compile │   │            │   │  │ Chrome  │  │ Firefox  │  │
+└────────┘   └────────────┘   │  └─────────┘  └──────────┘  │
+                               └──────────────┬──────────────┘
+                                              ▼
+                               ┌──────────────┐   ┌────────────┐
+                               │  API Tests   │──▶│ Regression │
+                               └──────────────┘   └─────┬──────┘
+                                                        ▼
+                               ┌─────────────────────────────────────┐
+                               │ Reports → Email → Slack → Deploy    │
+                               │ Allure  │ emailext │ slackSend│ QA  │
+                               └─────────────────────────────────────┘
+</pre>
+</div>
+
+<h3>Complete Production-Grade Jenkinsfile</h3>
+
+<pre><code class="language-groovy">pipeline {
+    agent any
+
+    tools {
+        maven 'Maven-3.9'
+        jdk 'JDK-17'
+    }
+
+    parameters {
+        choice(name: 'ENV', choices: ['qa', 'staging'], description: 'Target environment')
+        choice(name: 'SUITE', choices: ['smoke', 'regression', 'full'], description: 'Test suite')
+        choice(name: 'BROWSER', choices: ['chrome', 'firefox'], description: 'Primary browser')
+        booleanParam(name: 'HEADLESS', defaultValue: true, description: 'Headless mode')
+        string(name: 'TAGS', defaultValue: '@smoke', description: 'Cucumber tags (optional)')
+    }
+
+    environment {
+        REPORT_DIR = 'target/reports'
+        ALLURE_RESULTS = 'target/allure-results'
+        TEST_ENV = "${params.ENV}"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '30', artifactNumToKeepStr: '10'))
+        timeout(time: 120, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    triggers {
+        // Nightly regression at ~2 AM
+        cron('H 2 * * *')
+        // Poll SCM fallback (prefer webhook)
+        // pollSCM('H/15 * * * *')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    echo "Building ${env.JOB_NAME} #${env.BUILD_NUMBER} on ${env.NODE_NAME}"
+                    echo "Parameters: ENV=${params.ENV}, SUITE=${params.SUITE}, BROWSER=${params.BROWSER}"
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat 'mvn clean compile -DskipTests'
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                bat 'mvn test -Dsurefire.suiteXmlFiles=unit-tests.xml'
+            }
+            post {
+                always {
+                    junit '**/surefire-reports/TEST-*.xml'
+                }
+            }
+        }
+
+        stage('Smoke Tests') {
+            when {
+                expression { params.SUITE != 'regression' }
+            }
+            steps {
+                bat """
+                    mvn test ^
+                      -Dsurefire.suiteXmlFiles=smoke.xml ^
+                      -Dbrowser=${params.BROWSER} ^
+                      -Dheadless=${params.HEADLESS} ^
+                      -Denv=${params.ENV}
+                """
+            }
+        }
+
+        stage('Parallel Browser Tests') {
+            when {
+                expression { params.SUITE == 'full' }
+            }
+            parallel {
+                stage('Chrome Regression') {
+                    steps {
+                        bat 'mvn test -Dbrowser=chrome -Dheadless=true -Dsurefire.suiteXmlFiles=regression.xml -Denv=${params.ENV}'
+                    }
+                }
+                stage('Firefox Regression') {
+                    steps {
+                        bat 'mvn test -Dbrowser=firefox -Dheadless=true -Dsurefire.suiteXmlFiles=regression.xml -Denv=${params.ENV}'
+                    }
+                }
+            }
+        }
+
+        stage('Regression') {
+            when {
+                expression { params.SUITE == 'regression' }
+            }
+            steps {
+                bat """
+                    mvn test ^
+                      -Dsurefire.suiteXmlFiles=regression.xml ^
+                      -Dbrowser=${params.BROWSER} ^
+                      -Dheadless=${params.HEADLESS} ^
+                      -Denv=${params.ENV}
+                """
+            }
+        }
+
+        stage('API Tests') {
+            when {
+                expression { params.SUITE == 'full' || params.SUITE == 'regression' }
+            }
+            steps {
+                bat "mvn test -Dsurefire.suiteXmlFiles=api.xml -Denv=${params.ENV}"
+            }
+        }
+
+        stage('Cucumber BDD') {
+            when {
+                expression { params.TAGS?.trim() &amp;&amp; params.SUITE != 'smoke' }
+            }
+            steps {
+                bat "mvn test -Dcucumber.filter.tags=\"${params.TAGS}\" -Denv=${params.ENV}"
+            }
+        }
+
+        stage('Reports') {
+            steps {
+                allure includeProperties: false,
+                      jdk: '',
+                      results: [[path: "${ALLURE_RESULTS}"]]
+                publishHTML([
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: "${REPORT_DIR}",
+                    reportFiles: 'ExtentReport.html',
+                    reportName: 'Test Report'
+                ])
+            }
+        }
+
+        stage('Deploy to QA') {
+            when {
+                allOf {
+                    branch 'main'
+                    expression { params.ENV == 'qa' }
+                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+                }
+            }
+            steps {
+                input message: 'Deploy to QA environment?', ok: 'Deploy'
+                bat 'mvn deploy -DskipTests -Denv=qa'
+                echo "Deployed build ${env.BUILD_NUMBER} to QA"
+            }
+        }
+    }
+
+    post {
+        always {
+            junit '**/surefire-reports/*.xml'
+            archiveArtifacts artifacts: 'screenshots/**, logs/**', allowEmptyArchive: true
+            cleanWs(cleanWhenNotBuilt: false, deleteDirs: true, disableDeferredWipeout: true)
+        }
+        success {
+            emailext(
+                subject: "PASSED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """&lt;h2&gt;Build Passed&lt;/h2&gt;
+                         &lt;p&gt;Env: ${params.ENV} | Suite: ${params.SUITE}&lt;/p&gt;
+                         &lt;p&gt;&lt;a href='${env.BUILD_URL}allure'&gt;Allure Report&lt;/a&gt;&lt;/p&gt;""",
+                to: 'team@company.com',
+                mimeType: 'text/html'
+            )
+        }
+        failure {
+            emailext(
+                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """&lt;h2&gt;Build Failed&lt;/h2&gt;
+                         &lt;p&gt;&lt;a href='${env.BUILD_URL}console'&gt;Console Log&lt;/a&gt;&lt;/p&gt;""",
+                to: 'team@company.com',
+                mimeType: 'text/html',
+                attachmentsPattern: 'test-output/emailable-report.html'
+            )
+            slackSend channel: '#qa-alerts', color: 'danger',
+                      message: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+        }
+        unstable {
+            slackSend channel: '#qa-alerts', color: 'warning',
+                      message: "Tests Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER} — &lt;${env.BUILD_URL}testReport|Report&gt;"
+        }
+    }
+}</code></pre>
+
+<h3>Webhook Configuration — GitHub to Jenkins</h3>
+
+<ol>
+<li><strong>GitHub repo</strong> → Settings → Webhooks → Add webhook</li>
+<li><strong>Payload URL:</strong> <code>https://jenkins.company.com/github-webhook/</code></li>
+<li><strong>Content type:</strong> application/json</li>
+<li><strong>Events:</strong> Push events, Pull request events (optional)</li>
+<li><strong>Jenkins job:</strong> Enable "GitHub hook trigger for GITScm polling" under Build Triggers</li>
+</ol>
+
+<div class="callout">
+<strong>Multibranch Pipeline:</strong> For modern setups, use Multibranch Pipeline with Branch Source plugin. Jenkins auto-discovers branches, creates jobs per branch, and triggers on push via webhook — no manual job creation per branch.
+</div>
+
+<h3>Cron Triggers for Nightly Regression</h3>
+
+<pre><code class="language-groovy">triggers {
+    cron('H 2 * * *')    // ~2 AM nightly full regression
+    cron('H 8-18/4 * * 1-5')  // Every 4 hours weekdays — smoke
+}
+
+// Parameterized cron (requires Parameterized Scheduler plugin)
+// triggers { parameterizedCron('0 2 * * * % SUITE=full; ENV=staging') }</code></pre>
+
+<p>The <code>H</code> (hash) distributes load — Jenkins spreads builds across the hour instead of all firing at exactly 2:00 AM.</p>
+
+<h3>Multi-Environment Pipeline Design</h3>
+
+<pre><code class="language-groovy">// Pattern: separate deploy/test stages per environment
+stages {
+    stage('Test QA') {
+        steps {
+            bat 'mvn test -Denv=qa -Dsurefire.suiteXmlFiles=smoke.xml'
+        }
+    }
+    stage('Promote to Staging') {
+        when { branch 'main' }
+        steps {
+            input message: 'Run staging tests?', ok: 'Proceed'
+            bat 'mvn test -Denv=staging -Dsurefire.suiteXmlFiles=regression.xml'
+        }
+    }
+    stage('Production Smoke') {
+        when {
+            allOf { branch 'main'; expression { params.ENV == 'prod' } }
+        }
+        steps {
+            input message: 'Confirm PROD smoke test', ok: 'Run'
+            bat 'mvn test -Denv=prod -Dsurefire.suiteXmlFiles=smoke.xml'
+        }
+    }
+}</code></pre>
+
+<h3>Pipeline Shared Libraries</h3>
+
+<p>Extract reusable Groovy functions so 20 automation projects share the same reporting, notification, and test execution logic.</p>
+
+<pre><code class="language-groovy">// vars/runAutomation.groovy (Shared Library)
+def call(Map config) {
+    bat """
+        mvn clean test ^
+          -Dbrowser=${config.browser} ^
+          -Denv=${config.env} ^
+          -Dsurefire.suiteXmlFiles=${config.suite}.xml ^
+          -Dheadless=${config.headless ?: true}
+    """
+}
+
+// Jenkinsfile in project repo
+@Library('qa-shared-lib') _
+pipeline {
+    stages {
+        stage('Test') {
+            steps {
+                runAutomation(browser: params.BROWSER, env: params.ENV,
+                              suite: params.SUITE, headless: params.HEADLESS)
+            }
+        }
+    }
+}</code></pre>
+
+<p>Shared library structure:</p>
+<pre><code class="language-bash">qa-shared-lib/
+├── vars/
+│   ├── runAutomation.groovy
+│   ├── publishReports.groovy
+│   └── sendNotifications.groovy
+└── src/
+    └── org/qa/PipelineUtils.groovy</code></pre>
+
+<h3>Pipeline Design Principles for Automation Engineers</h3>
+<ul>
+<li><strong>Fail fast</strong> — smoke before regression; compile before tests</li>
+<li><strong>Parallelize wisely</strong> — browser parallel for full suite; avoid overloading agents</li>
+<li><strong>Conditional stages</strong> — use <code>when {}</code> to skip irrelevant stages per parameter</li>
+<li><strong>Always publish results</strong> — post { always { junit ... } } even on failure</li>
+<li><strong>Clean workspace</strong> — prevent stale artifacts causing false passes</li>
+<li><strong>Timeout everything</strong> — hung Selenium tests should not block agents for hours</li>
+<li><strong>Human gates for prod</strong> — input step before production deploy or test</li>
+</ul>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Q: Describe a production-grade CI pipeline for Selenium automation.</strong><br>
+A: Webhook-triggered checkout → compile → unit tests → smoke → parallel browser regression → API tests → Allure/Extent reports → JUnit publish → email/Slack on failure → optional deploy with input gate.</li>
+<li><strong>Q: How do you run Chrome and Firefox tests in parallel in Jenkins?</strong><br>
+A: Use parallel {} block with separate stages, each running mvn test with -Dbrowser=chrome or firefox. Ensure sufficient agent executors.</li>
+<li><strong>Q: What is the purpose of the when block in declarative pipeline?</strong><br>
+A: Conditionally execute stages based on branch, parameters, build result, or custom expression — e.g., skip smoke when SUITE=regression.</li>
+<li><strong>Q: How do you configure GitHub webhook to trigger Jenkins?</strong><br>
+A: Add webhook URL https://jenkins/github-webhook/ in GitHub repo settings. Enable "GitHub hook trigger" in Jenkins job Build Triggers.</li>
+<li><strong>Q: What does cron('H 2 * * *') mean?</strong><br>
+A: Run approximately at 2 AM daily. H hash spreads load across the hour to prevent all jobs firing simultaneously.</li>
+<li><strong>Q: What are Jenkins shared libraries and why use them?</strong><br>
+A: Reusable Groovy code (vars/ and src/) shared across pipelines — DRY principle for reporting, notifications, and test execution steps.</li>
+<li><strong>Q: How do you prevent concurrent builds from conflicting?</strong><br>
+A: options { disableConcurrentBuilds() } or throttle concurrent builds per agent label.</li>
+<li><strong>Q: What goes in post { always {} } vs post { failure {} }?</strong><br>
+A: always runs regardless of result — JUnit publish, artifact archive, workspace cleanup. failure runs only on failure — alert emails, Slack.</li>
+<li><strong>Q: How do you add a manual approval before deployment?</strong><br>
+A: Use input step: input message: 'Deploy?', ok: 'Proceed' — pipeline pauses until authorized user approves.</li>
+<li><strong>Q: Why use buildDiscarder in options?</strong><br>
+A: Automatically delete old builds and artifacts to prevent Jenkins disk exhaustion while keeping recent history for trends.</li>
+<li><strong>Q: How do you handle different test suites from one pipeline?</strong><br>
+A: Parameterize SUITE choice and use when {} blocks or dynamic surefire.suiteXmlFiles=${params.SUITE}.xml.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>Enterprise ERP automation — 1200 Selenium tests, 200 API tests, 4 environments:</p>
+<ul>
+<li><strong>Trigger:</strong> GitHub webhook on push to feature branches; cron nightly full regression on main</li>
+<li><strong>Pipeline:</strong> 55-line Jenkinsfile with shared library for runTests() and publishReports()</li>
+<li><strong>Parallel:</strong> Chrome + Firefox + Edge on staging nightly (3 agents)</li>
+<li><strong>Reports:</strong> Allure dashboard + JUnit trends; Slack #erp-qa on failure</li>
+<li><strong>Gate:</strong> Smoke must pass before merge (GitHub branch protection + Jenkins status check)</li>
+</ul>
+<p>Release cycle improved: regression feedback within 45 minutes of code merge vs 24 hours with manual test runs.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>No timeout — hung browser tests block agent indefinitely</li>
+<li>Running full regression on every commit — slow feedback loop</li>
+<li>Missing post { always { junit } } — no test results recorded on failure</li>
+<li>Parallel stages without enough executors — parallel runs sequentially anyway</li>
+<li>Webhook + pollSCM both enabled — duplicate builds</li>
+<li>Hardcoded environment URLs instead of parameterized ENV</li>
+<li>Skipping cleanWs — stale screenshots/reports cause confusion</li>
+<li>Deploy stage without input gate on production</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Webhook not triggering:</strong> Check GitHub webhook delivery log; verify Jenkins URL reachable; confirm hook trigger enabled on job</li>
+<li><strong>Parallel stage one fails:</strong> Other parallel branches continue; overall stage fails — check Blue Ocean for branch-specific logs</li>
+<li><strong>Cron not firing:</strong> Verify cron syntax; check Jenkins master timezone; ensure job not disabled</li>
+<li><strong>Shared library not found:</strong> Configure library in Manage Jenkins → System → Global Pipeline Libraries</li>
+<li><strong>Input step hangs pipeline:</strong> Set timeout on input or configure approval timeout in Jenkins settings</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>Flow: Push → Webhook → Checkout → Build → Test (smoke → parallel → API) → Reports → Notify → Deploy</li>
+<li>parameters + when {} + parallel {} = flexible production pipeline</li>
+<li>triggers { cron('H 2 * * *') } for nightly regression</li>
+<li>post { always/failure/success/unstable } for reports and notifications</li>
+<li>Shared libraries: reusable Groovy in vars/ for DRY pipelines</li>
+<li>GitHub webhook URL: /github-webhook/ + enable hook trigger on job</li>
+<li>buildDiscarder + timeout + disableConcurrentBuilds in options {}</li>
+</ul>
+</section>
+
+<section id="section-19" class="section-card">
+<h2>Section 19: Jenkins Troubleshooting</h2>
+
+<p>Every automation engineer spends significant time debugging Jenkins failures. This section covers the top 10 issues with structured Problem → Root Cause → Investigation → Resolution → Prevention format — the same framework you should use in interviews and on real projects.</p>
+
+<h3>How to Debug Any Jenkins Failure</h3>
+<ol>
+<li><strong>Read console output</strong> — scroll to first red ERROR line, not the last</li>
+<li><strong>Identify the failing stage</strong> — Blue Ocean or Stage View pinpoints stage</li>
+<li><strong>Reproduce locally</strong> — run the same Maven command from console output on your machine</li>
+<li><strong>Check recent changes</strong> — code, pom.xml, Jenkinsfile, plugin updates</li>
+<li><strong>Check agent environment</strong> — Java version, browser, disk space on agent node</li>
+</ol>
+
+<h3>Issue 1: Build Failed — Compilation Error</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Problem</strong></td><td>Build fails at compile stage with Java syntax or dependency errors</td></tr>
+<tr><td><strong>Root Cause</strong></td><td>Missing dependencies, wrong Java version, code syntax error, incompatible library upgrade</td></tr>
+<tr><td><strong>Investigation</strong></td><td>Read console output for [ERROR] lines; verify pom.xml dependencies; check Java version with <code>java -version</code> on agent; compare with local</td></tr>
+<tr><td><strong>Resolution</strong></td><td>Fix code/syntax; add missing dependency to pom.xml; configure correct JDK in Jenkins tools {} block; align Java version across team</td></tr>
+<tr><td><strong>Prevention</strong></td><td>Pin JDK in Jenkinsfile tools {}; run compile in CI on every PR; use Maven enforcer plugin for Java version</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Issue 2: Maven Build Failed</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Problem</strong></td><td>Maven lifecycle fails — dependency download, plugin execution, or test phase errors</td></tr>
+<tr><td><strong>Root Cause</strong></td><td>Dependency download failed, plugin version conflict, network/proxy issue, corrupt local .m2 cache</td></tr>
+<tr><td><strong>Investigation</strong></td><td>Run <code>mvn dependency:tree</code>; check ~/.m2/repository for corrupt jars; verify proxy settings in settings.xml; test <code>mvn clean install</code> on agent manually</td></tr>
+<tr><td><strong>Resolution</strong></td><td>Delete corrupt artifact from .m2 and rebuild; fix plugin version conflict; configure Jenkins Maven settings.xml with proxy/credentials; use internal Nexus/Artifactory mirror</td></tr>
+<tr><td><strong>Prevention</strong></td><td>Commit dependency versions explicitly; use corporate artifact repository; cache .m2 on agents with periodic cleanup</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code class="language-bash"># Investigation commands
+mvn dependency:tree -Dverbose
+mvn clean install -X          # debug output
+ls ~/.m2/repository/com/yourgroup/yourartifact/</code></pre>
+
+<h3>Issue 3: Git Checkout Failed</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Problem</strong></td><td>Pipeline fails at checkout stage — cannot clone or fetch repository</td></tr>
+<tr><td><strong>Root Cause</strong></td><td>Credential expired/revoked, branch not found, repo URL changed, SSH key invalid, insufficient permissions</td></tr>
+<tr><td><strong>Investigation</strong></td><td>Verify credentials in Jenkins Credentials store; check branch name spelling; test <code>git clone &lt;url&gt;</code> manually on agent; review GitHub/GitLab token expiry</td></tr>
+<tr><td><strong>Resolution</strong></td><td>Regenerate and update credentials; fix branch name in Jenkinsfile; update repo URL; re-add SSH deploy key to repository</td></tr>
+<tr><td><strong>Prevention</strong></td><td>Use service account tokens with rotation calendar; use SSH keys with no passphrase for CI; monitor credential expiry alerts</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Issue 4: Workspace Issues</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Problem</strong></td><td>Build fails with disk space, file lock, or stale workspace errors</td></tr>
+<tr><td><strong>Root Cause</strong></td><td>Disk full on agent, locked files from previous build, stale workspace with corrupted state</td></tr>
+<tr><td><strong>Investigation</strong></td><td>Check disk space: <code>df -h</code> (Linux) or Properties (Windows); look for "No space left on device"; check if previous build was killed mid-run</td></tr>
+<tr><td><strong>Resolution</strong></td><td>Wipe workspace: job page → Workspace → Wipe Out; add cleanWs step in pipeline; free disk space; delete old build artifacts</td></tr>
+<tr><td><strong>Prevention</strong></td><td>buildDiscarder for old builds; cleanWs in post { always {} }; monitor agent disk with alerts; archive artifacts externally</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Issue 5: Tests Pass Locally but Fail in Jenkins</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Problem</strong></td><td>Automation suite green on developer machine but red in Jenkins — most common automation engineer complaint</td></tr>
+<tr><td><strong>Root Cause</strong></td><td>Headless mode missing, different browser/driver version, timing/flaky tests, different environment config, screen resolution, missing display</td></tr>
+<tr><td><strong>Investigation</strong></td><td>Compare Java, browser, driver versions; check -Dheadless flag; review implicit/explicit waits; verify ENV-specific config; run Jenkins console command locally</td></tr>
+<tr><td><strong>Resolution</strong></td><td>Add -Dheadless=true; pin browser/driver versions in Jenkins agent; increase wait timeouts; use Docker for consistent environment; externalize config per ENV</td></tr>
+<tr><td><strong>Prevention</strong></td><td>Run tests in Docker locally and in CI; pin tool versions in Jenkinsfile; implement retry for known flaky tests; use explicit waits over Thread.sleep</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Golden Rule:</strong> Copy the exact Maven command from Jenkins console output and run it locally. If it passes locally but fails in Jenkins, the difference is environment — not test logic.
+</div>
+
+<h3>Issue 6: Permission Denied</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Problem</strong></td><td>Access denied errors — cannot write files, execute scripts, or access Jenkins features</td></tr>
+<tr><td><strong>Root Cause</strong></td><td>Jenkins user lacks OS file permissions, job not authorized for user, script security sandbox blocking Groovy</td></tr>
+<tr><td><strong>Investigation</strong></td><td>Check file ownership on agent; verify Jenkins user role (Job Configure, Build); review In-process Script Approval for pending signatures</td></tr>
+<tr><td><strong>Resolution</strong></td><td>chmod/chown workspace directories; grant Jenkins role permissions; approve script in Manage Jenkins → In-process Script Approval</td></tr>
+<tr><td><strong>Prevention</strong></td><td>Run agents as dedicated jenkins user with consistent permissions; use least-privilege RBAC; avoid non-whitelisted Groovy methods</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Issue 7: Port Already in Use</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Problem</strong></td><td>Jenkins fails to start or Selenium/Appium server cannot bind to port</td></tr>
+<tr><td><strong>Root Cause</strong></td><td>Another Jenkins instance, zombie process, or conflicting service using port 8080/4444</td></tr>
+<tr><td><strong>Investigation</strong></td><td>Linux: <code>netstat -tlnp | grep 8080</code> or <code>ss -tlnp | grep 8080</code>; Windows: <code>netstat -ano | findstr 8080</code></td></tr>
+<tr><td><strong>Resolution</strong></td><td>Kill conflicting process; change Jenkins HTTP port in /etc/default/jenkins or jenkins.xml; use different Selenium Grid port</td></tr>
+<tr><td><strong>Prevention</strong></td><td>Document port assignments; use Docker with explicit port mapping; systemd service management for Jenkins</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Issue 8: Agent Offline</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Problem</strong></td><td>Jenkins agent shows offline — builds queue indefinitely waiting for executor</td></tr>
+<tr><td><strong>Root Cause</strong></td><td>Network connectivity lost, agent Java not installed, SSH key expired, agent process crashed, firewall blocking JNLP port</td></tr>
+<tr><td><strong>Investigation</strong></td><td>Check agent log on agent machine; verify ping/SSH from master; check Manage Jenkins → Nodes → agent status and log; verify Java on agent</td></tr>
+<tr><td><strong>Resolution</strong></td><td>Restart agent service; re-launch JNLP agent; regenerate SSH keys; open firewall ports; reinstall agent if corrupted</td></tr>
+<tr><td><strong>Prevention</strong></td><td>Monitor agent health with alerts; use permanent agent service (systemd/Windows Service); auto-reconnect JNLP agents</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Issue 9: Plugin Failure</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Problem</strong></td><td>Jenkins UI errors, missing pipeline steps, or startup failure after plugin update</td></tr>
+<tr><td><strong>Root Cause</strong></td><td>Incompatible plugin version, missing dependency plugin, corrupt plugin install, Jenkins core/plugin version mismatch</td></tr>
+<tr><td><strong>Investigation</strong></td><td>Check Manage Jenkins → System Log; review plugin compatibility matrix; identify recently updated plugins; check /var/log/jenkins/jenkins.log</td></tr>
+<tr><td><strong>Resolution</strong></td><td>Rollback plugin to previous version; install missing dependency; remove corrupt plugin from $JENKINS_HOME/plugins and restart; upgrade Jenkins core if required</td></tr>
+<tr><td><strong>Prevention</strong></td><td>Test plugin updates on staging Jenkins first; use plugin BOM for known-good combinations; backup $JENKINS_HOME before updates</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Issue 10: Out of Memory (OOM)</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Problem</strong></td><td>Jenkins master/agent crashes with java.lang.OutOfMemoryError; builds killed mid-execution</td></tr>
+<tr><td><strong>Root Cause</strong></td><td>Large test suite memory footprint, too many parallel builds, memory leak in plugin, default JVM heap too small</td></tr>
+<tr><td><strong>Investigation</strong></td><td>Check JVM heap in Jenkins log; monitor memory during build; count concurrent builds; review Maven fork settings in Surefire</td></tr>
+<tr><td><strong>Resolution</strong></td><td>Increase heap: <code>JAVA_OPTS="-Xmx2g -Xms512m"</code> in jenkins.xml or systemd; limit concurrent builds; set Surefire forkCount appropriately; restart Jenkins periodically</td></tr>
+<tr><td><strong>Prevention</strong></td><td>Right-size agent machines; disableConcurrentBuilds on heavy jobs; use dedicated agents for large suites; monitor heap usage trends</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code class="language-bash"># Jenkins JVM heap (Linux systemd)
+# /etc/default/jenkins or override.conf
+JAVA_ARGS="-Xmx2g -Xms512m -XX:+UseG1GC"
+
+# Maven Surefire memory per fork
+# pom.xml
+&lt;forkCount&gt;2&lt;/forkCount&gt;
+&lt;argLine&gt;-Xmx1024m&lt;/argLine&gt;</code></pre>
+
+<h3>Jenkins Log Files — Locations and Usage</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Log</th><th>Location</th><th>When to Use</th></tr>
+</thead>
+<tbody>
+<tr><td>Build Console Output</td><td>Job → Build → Console Output</td><td>First stop for any failure — full command output</td></tr>
+<tr><td>Jenkins System Log</td><td>Manage Jenkins → System Log</td><td>Plugin errors, startup issues, webhook failures</td></tr>
+<tr><td>jenkins.log</td><td>/var/log/jenkins/jenkins.log (Linux)</td><td>Master-level errors, OOM, plugin crashes</td></tr>
+<tr><td>Agent Log</td><td>Manage Nodes → Agent → Log</td><td>Agent connection, JNLP, SSH issues</td></tr>
+<tr><td>Build Record</td><td>$JENKINS_HOME/jobs/&lt;job&gt;/builds/&lt;N&gt;/log</td><td>Historical build log on disk</td></tr>
+<tr><td>GC Log</td><td>Configured via -Xlog:gc*</td><td>Memory leak investigation</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Console Output is King:</strong> 90% of automation failures are diagnosed from the build console. Search for [ERROR], Exception, FAILED, and the first stack trace — not the summary at the bottom.
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Q: Tests pass locally but fail in Jenkins — how do you troubleshoot?</strong><br>
+A: Copy exact Jenkins Maven command to local terminal. Compare Java/browser/driver versions. Check headless flag, environment config, and wait strategies. Run in Docker matching CI environment.</li>
+<li><strong>Q: How do you fix "No space left on device" in Jenkins?</strong><br>
+A: Wipe workspace, configure buildDiscarder, delete old artifacts, archive to external storage, and monitor agent disk capacity.</li>
+<li><strong>Q: Jenkins agent is offline — what steps do you take?</strong><br>
+A: Check agent log, verify network connectivity from master, confirm Java installed on agent, restart agent service, regenerate SSH/JNLP credentials if expired.</li>
+<li><strong>Q: How do you investigate Maven dependency download failures?</strong><br>
+A: Run mvn dependency:tree, check .m2/repository for corrupt jars, verify proxy/settings.xml, test connectivity to Maven Central or internal Nexus.</li>
+<li><strong>Q: What causes Jenkins OutOfMemoryError and how do you fix it?</strong><br>
+A: Default JVM heap too small for workload. Increase JAVA_OPTS -Xmx, limit parallel builds, tune Surefire forkCount, and investigate memory leaks via GC logs.</li>
+<li><strong>Q: Git checkout fails with authentication error — what do you check?</strong><br>
+A: Jenkins Credentials for expired token/password, SSH key validity, repo URL correctness, and service account permissions on the repository.</li>
+<li><strong>Q: Where do you look first when a Jenkins build fails?</strong><br>
+A: Build console output — find the first ERROR or exception in the failing stage. Then identify if it's compile, test, or infrastructure issue.</li>
+<li><strong>Q: How do you handle plugin incompatibility after Jenkins upgrade?</strong><br>
+A: Check plugin compatibility matrix, rollback problematic plugins, update dependent plugins together, test on staging Jenkins before production upgrade.</li>
+<li><strong>Q: How do you prevent workspace-related failures?</strong><br>
+A: Add cleanWs in post { always {} }, configure buildDiscarder, use disableConcurrentBuilds for jobs that lock resources.</li>
+<li><strong>Q: What is In-process Script Approval in Jenkins?</strong><br>
+A: Security sandbox that blocks unapproved Groovy methods in pipelines. Admin must approve scripts at Manage Jenkins → In-process Script Approval when pipelines use restricted APIs.</li>
+<li><strong>Q: How do you debug flaky tests that fail intermittently in CI?</strong><br>
+A: Review Jenkins test trend for pattern, increase explicit waits, run failed tests in isolation with retry, check parallel execution race conditions, capture screenshots/logs on failure.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>Nightly regression (900 tests) suddenly failed 100% in Jenkins but passed locally:</p>
+<ul>
+<li><strong>Investigation:</strong> Console showed ChromeDriver version 120 but Chrome browser updated to 122 on agent overnight (auto-update enabled)</li>
+<li><strong>Resolution:</strong> Pinned Chrome version via Docker agent; matched ChromeDriver in pom.xml using WebDriverManager</li>
+<li><strong>Prevention:</strong> Switched to Docker-based pipeline agents with pinned browser versions; disabled auto-update on test agents</li>
+</ul>
+<p>Resolution time: 2 hours. Without structured troubleshooting (compare versions first), team estimated it would have taken 2 days.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Only reading the last lines of console output — root cause is usually earlier</li>
+<li>Not reproducing with exact Jenkins command locally</li>
+<li>Deleting .m2 entirely instead of targeted corrupt artifact removal</li>
+<li>Updating all Jenkins plugins at once without staging test</li>
+<li>Ignoring agent disk space until builds fail catastrophically</li>
+<li>Increasing JVM heap without investigating memory leak root cause</li>
+<li>Fixing symptoms (retry) without addressing flaky test root cause</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li>Keep a team runbook linking common errors to fixes — saves hours per incident</li>
+<li>Use Blue Ocean timeline view to pinpoint failing parallel branch instantly</li>
+<li>Add <code>bat 'set'</code> or <code>sh 'env | sort'</code> diagnostic stage to dump environment when debugging</li>
+<li>Enable Maven -X debug temporarily — disable after fixing to reduce log noise</li>
+<li>Compare last successful build console with failed build — diff reveals what changed</li>
+<li>For agent issues, SSH to agent and run build commands manually as jenkins user</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>Debug order: Console output → failing stage → reproduce locally → check environment diff</li>
+<li>Compilation: JDK version + pom.xml dependencies</li>
+<li>Maven: dependency:tree, .m2 cache, proxy/Nexus</li>
+<li>Git: credentials expiry, branch name, repo URL</li>
+<li>Local pass / CI fail: headless, browser version, waits, ENV config</li>
+<li>Agent offline: network, Java, SSH/JNLP key, restart agent</li>
+<li>OOM: JAVA_OPTS -Xmx2g, limit concurrent builds, Surefire forkCount</li>
+<li>Logs: Console Output (first), System Log (plugins), jenkins.log (master)</li>
+</ul>
+</section>
+
+<section id="section-20" class="section-card">
+<h2>Section 20: Docker for Automation Engineers</h2>
+
+<p>Docker eliminates "works on my machine" by packaging your automation framework, browsers, and dependencies into portable containers. Every automation engineer should know enough Docker to run tests consistently in CI and locally.</p>
+
+<h3>What is Docker?</h3>
+<p>Docker is a containerization platform that packages applications with all dependencies into isolated, portable units called containers. Unlike VMs, containers share the host OS kernel — lightweight, fast to start, and identical everywhere.</p>
+
+<h3>Why Automation Engineers Use Docker</h3>
+<ul>
+<li><strong>Consistent test environment</strong> — same Java, Maven, browser versions on every machine and CI agent</li>
+<li><strong>Selenium Grid in containers</strong> — spin up hub + Chrome + Firefox nodes with one command</li>
+<li><strong>Jenkins in container</strong> — portable CI server for team onboarding</li>
+<li><strong>Framework execution in container</strong> — run mvn test inside containerized environment</li>
+<li><strong>No "works on my machine"</strong> — if it passes in Docker, it passes everywhere</li>
+<li><strong>Parallel isolated runs</strong> — each container is a clean slate with no state leakage</li>
+</ul>
+
+<h3>Docker Core Concepts</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Concept</th><th>Description</th><th>Automation Analogy</th></tr>
+</thead>
+<tbody>
+<tr><td>Image</td><td>Read-only template with OS, Java, Maven, browsers</td><td>Like a Java class — blueprint</td></tr>
+<tr><td>Container</td><td>Running instance of an image</td><td>Like a Java object — live execution</td></tr>
+<tr><td>Dockerfile</td><td>Text file with build instructions</td><td>Like pom.xml — defines how to build</td></tr>
+<tr><td>docker-compose</td><td>Multi-container orchestration YAML</td><td>Like testng.xml — orchestrates multiple services</td></tr>
+<tr><td>Volume</td><td>Persistent storage mounted into container</td><td>Store test reports outside container</td></tr>
+<tr><td>Registry</td><td>Image storage (Docker Hub, ECR)</td><td>Like Maven Central for images</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Essential Docker Commands for QA</h3>
+
+<pre><code class="language-bash"># Run a container
+docker run maven:3.9-eclipse-temurin-17 mvn --version
+docker run -d --name my-grid selenium/standalone-chrome   # detached mode
+
+# List running containers
+docker ps
+docker ps -a    # include stopped
+
+# Manage containers
+docker stop my-grid
+docker start my-grid
+docker restart my-grid
+docker rm my-grid           # remove stopped container
+docker rm -f my-grid        # force remove running
+
+# View logs
+docker logs my-grid
+docker logs -f my-grid      # follow live logs
+
+# Access container shell
+docker exec -it my-grid bash
+docker exec -it my-grid sh  # Alpine-based images
+
+# Images
+docker images
+docker pull selenium/standalone-chrome:4.15.0
+docker rmi image-name       # remove image
+docker build -t my-automation:latest .   # build from Dockerfile
+
+# Docker Compose
+docker-compose up -d        # start all services in background
+docker-compose down         # stop and remove containers
+docker-compose logs -f hub  # follow hub logs
+docker-compose ps           # service status</code></pre>
+
+<h3>Dockerfile for Automation Framework</h3>
+
+<pre><code class="language-dockerfile"># Dockerfile — Selenium + Maven automation framework
+FROM maven:3.9-eclipse-temurin-17
+
+LABEL maintainer="qa-team@company.com"
+LABEL description="Automation test runner"
+
+WORKDIR /app
+
+# Cache dependencies layer (rebuilds only when pom.xml changes)
+COPY pom.xml .
+RUN mvn dependency:resolve -B
+
+# Copy framework source
+COPY src ./src
+COPY testng.xml .
+COPY config ./config
+
+# Create report directories
+RUN mkdir -p reports screenshots target/allure-results
+
+# Default: run smoke suite headless
+CMD ["mvn", "clean", "test", \
+     "-Dsurefire.suiteXmlFiles=smoke.xml", \
+     "-Dheadless=true"]
+
+# Build: docker build -t automation-framework:latest .
+# Run:   docker run --rm -v $(pwd)/reports:/app/reports automation-framework:latest
+# Override suite:
+#        docker run --rm automation-framework:latest \
+#          mvn test -Dsurefire.suiteXmlFiles=regression.xml</code></pre>
+
+<h4>Build and Run Workflow</h4>
+<pre><code class="language-bash"># Build image
+docker build -t automation-framework:latest .
+
+# Run with report volume mount (reports persist on host)
+docker run --rm \
+  -v "${PWD}/reports:/app/reports" \
+  -v "${PWD}/screenshots:/app/screenshots" \
+  -e ENV=qa \
+  automation-framework:latest
+
+# Run specific suite overriding CMD
+docker run --rm automation-framework:latest \
+  mvn test -Dsurefire.suiteXmlFiles=regression.xml -Dbrowser=firefox</code></pre>
+
+<h3>Docker Compose for Selenium Grid</h3>
+
+<pre><code class="language-yaml"># docker-compose.yml — Selenium Grid 4
+services:
+  hub:
+    image: selenium/hub:4.15.0
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"
+      - "4442:4442"
+      - "4443:4443"
+    environment:
+      - SE_SESSION_REQUEST_TIMEOUT=300
+      - SE_NODE_SESSION_TIMEOUT=300
+
+  chrome:
+    image: selenium/node-chrome:4.15.0
+    depends_on:
+      - hub
+    environment:
+      - SE_EVENT_BUS_HOST=hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=2
+    shm_size: '2gb'    # prevent Chrome crash in container
+    scale: 2           # docker-compose up --scale chrome=2
+
+  firefox:
+    image: selenium/node-firefox:4.15.0
+    depends_on:
+      - hub
+    environment:
+      - SE_EVENT_BUS_HOST=hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    shm_size: '2gb'
+
+# Start: docker-compose up -d
+# Grid UI: http://localhost:4444
+# Test config: webdriver.remote.url=http://localhost:4444</code></pre>
+
+<div class="callout">
+<strong>shm_size: '2gb':</strong> Chrome crashes in Docker without adequate shared memory. Always set shm_size to at least 2gb for Selenium Chrome nodes — this is the #1 Docker + Selenium gotcha for automation engineers.
+</div>
+
+<h3>Jenkins + Docker Integration</h3>
+
+<p>Run each build inside a fresh Docker container — clean environment every time, no stale browser sessions or leftover files.</p>
+
+<h4>Docker Agent in Pipeline</h4>
+<pre><code class="language-groovy">pipeline {
+    agent {
+        docker {
+            image 'maven:3.9-eclipse-temurin-17'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+    stages {
+        stage('Test') {
+            steps {
+                sh 'mvn clean test -Dsurefire.suiteXmlFiles=smoke.xml -Dheadless=true'
+            }
+        }
+    }
+}</code></pre>
+
+<h4>Docker Agent with Selenium Sidecar</h4>
+<pre><code class="language-groovy">pipeline {
+    agent none
+    stages {
+        stage('Grid Tests') {
+            agent {
+                docker {
+                    image 'maven:3.9-eclipse-temurin-17'
+                    args '--network=host'
+                }
+            }
+            steps {
+                sh '''
+                    docker-compose -f docker-compose.grid.yml up -d
+                    sleep 10
+                    mvn test -Dgrid.url=http://localhost:4444 -Dsurefire.suiteXmlFiles=regression.xml
+                '''
+            }
+            post {
+                always {
+                    sh 'docker-compose -f docker-compose.grid.yml down'
+                }
+            }
+        }
+    }
+}</code></pre>
+
+<h4>Custom Automation Image in Jenkins</h4>
+<pre><code class="language-groovy">agent {
+    docker {
+        image 'company/automation-framework:2.1.0'
+        registryUrl 'https://registry.company.com'
+        registryCredentialsId 'docker-registry-credentials'
+        reuseNode true
+    }
+}</code></pre>
+
+<h3>Docker Best Practices for Automation</h3>
+<ul>
+<li><strong>Layer caching</strong> — COPY pom.xml + dependency:resolve before COPY source — faster rebuilds</li>
+<li><strong>Volume mounts for reports</strong> — persist reports/screenshots outside container</li>
+<li><strong>Pin image versions</strong> — selenium/standalone-chrome:4.15.0 not :latest</li>
+<li><strong>.dockerignore</strong> — exclude target/, .git/, reports/ from build context</li>
+<li><strong>Multi-stage builds</strong> — separate build and test stages for smaller images</li>
+<li><strong>Non-root user</strong> — run tests as non-root for security in CI</li>
+</ul>
+
+<pre><code class="language-bash"># .dockerignore
+target/
+.git/
+reports/
+screenshots/
+*.iml
+.idea/</code></pre>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Q: What is the difference between a Docker image and container?</strong><br>
+A: Image is a read-only template (blueprint). Container is a running instance of that image. You build an image once, run many containers from it.</li>
+<li><strong>Q: Why do automation engineers use Docker?</strong><br>
+A: Consistent test environments across local, CI, and staging. Eliminates version mismatches for Java, browsers, and drivers. Enables Selenium Grid and clean CI agents per build.</li>
+<li><strong>Q: How do you run Selenium Grid with Docker?</strong><br>
+A: docker-compose with selenium/hub and selenium/node-chrome/node-firefox services. Connect tests via webdriver.remote.url=http://localhost:4444.</li>
+<li><strong>Q: What is shm_size and why is it needed for Chrome in Docker?</strong><br>
+A: Shared memory allocation. Chrome requires significant shared memory; default 64MB causes crashes. Set shm_size: '2gb' in docker-compose for Chrome nodes.</li>
+<li><strong>Q: How do you persist test reports from a Docker container?</strong><br>
+A: Volume mount: docker run -v $(pwd)/reports:/app/reports. Reports written inside container appear on host filesystem.</li>
+<li><strong>Q: How do you use Docker as a Jenkins pipeline agent?</strong><br>
+A: agent { docker { image 'maven:3.9-eclipse-temurin-17' } } — Jenkins starts container, runs steps inside, destroys after build.</li>
+<li><strong>Q: What is the purpose of COPY pom.xml before COPY src in Dockerfile?</strong><br>
+A: Docker layer caching. Dependencies resolve in a separate layer that only rebuilds when pom.xml changes — much faster subsequent builds.</li>
+<li><strong>Q: docker run vs docker-compose up — when to use each?</strong><br>
+A: docker run for single containers (one-off test runs). docker-compose for multi-container setups (Selenium Grid hub + nodes).</li>
+<li><strong>Q: How do you debug a failing test inside a Docker container?</strong><br>
+A: docker exec -it container-name bash to get shell access; docker logs container-name for output; run with interactive mode and override CMD.</li>
+<li><strong>Q: What is docker-compose scale used for in Selenium Grid?</strong><br>
+A: Run multiple browser node instances: docker-compose up --scale chrome=3 — scales parallel browser capacity for faster test execution.</li>
+<li><strong>Q: Why pin Docker image versions instead of using :latest?</strong><br>
+A: :latest changes unpredictably — browser version drift causes test failures. Pinning ensures reproducible builds across time and environments.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>Mobile banking automation team migrated from bare-metal Jenkins agents to Docker:</p>
+<ul>
+<li><strong>Before:</strong> Chrome auto-updated on agents overnight, breaking 30% of tests weekly</li>
+<li><strong>After:</strong> Custom Dockerfile with pinned Chrome 120 + ChromeDriver 120 + Maven 3.9 + JDK 17</li>
+<li><strong>Grid:</strong> docker-compose with 2 Chrome + 1 Firefox node; Jenkins pipeline agent uses docker {} block</li>
+<li><strong>Reports:</strong> Volume mount persists Allure results to host; Jenkins archives as artifacts</li>
+</ul>
+<p>Result: Environment-related failures dropped from ~30% to zero. New team member onboarding: docker-compose up + mvn test — running in 10 minutes.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Using :latest tag — unpredictable browser version changes break tests</li>
+<li>Forgetting shm_size for Chrome — random browser crashes in container</li>
+<li>Not mounting volumes — reports lost when container stops</li>
+<li>COPY . . before dependency resolve — slow rebuilds, no layer caching</li>
+<li>Running as root in container — security risk in shared CI infrastructure</li>
+<li>Not adding .dockerignore — large build context slows docker build</li>
+<li>Exposing Grid port 4444 publicly without authentication — security vulnerability</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Chrome crash in container:</strong> Add shm_size: '2gb'; increase container memory limit</li>
+<li><strong>Cannot connect to Grid:</strong> Verify hub is running (docker ps); check network mode; use service name not localhost in compose network</li>
+<li><strong>Permission denied on volume mount:</strong> Match container user UID with host directory ownership</li>
+<li><strong>Image build slow:</strong> Optimize layer order; use .dockerignore; leverage build cache</li>
+<li><strong>docker: not found in Jenkins:</strong> Install Docker on agent; add jenkins user to docker group; mount docker.sock</li>
+<li><strong>Tests pass in container locally but fail in Jenkins:</strong> Check Jenkins docker agent args and network configuration</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>Image = template; Container = running instance; Dockerfile = build instructions</li>
+<li>Key commands: run, ps, logs, exec -it, build -t, compose up -d</li>
+<li>Dockerfile: FROM maven → COPY pom.xml → dependency:resolve → COPY src → CMD mvn test</li>
+<li>Selenium Grid: docker-compose hub + chrome + firefox; shm_size 2gb for Chrome</li>
+<li>Jenkins: agent { docker { image '...' } } for clean per-build environment</li>
+<li>Volume mount (-v) to persist reports outside container</li>
+<li>Pin image versions; never use :latest in CI</li>
+</ul>
+</section>
+
+<section id="section-21" class="section-card">
+<h2>Section 21: Kubernetes Overview for Automation Engineers</h2>
+
+<p>You do not need to be a Kubernetes administrator — but as an SDET, you should understand K8s architecture because the applications you test, the grids you use, and the CI pipelines you maintain increasingly run on Kubernetes.</p>
+
+<h3>What is Kubernetes?</h3>
+<p>Kubernetes (K8s) is an open-source container orchestration platform that automates deployment, scaling, and management of containerized applications. It manages hundreds of containers across clusters of machines — handling failures, scaling, networking, and rollouts automatically.</p>
+
+<h3>Why SDETs Should Know Kubernetes</h3>
+<ul>
+<li><strong>Application under test runs on K8s</strong> — understand deployment failures to triage environment vs product bugs</li>
+<li><strong>Selenium Grid on K8s</strong> — scale browser nodes dynamically based on test queue depth</li>
+<li><strong>Jenkins on K8s</strong> — dynamic build agents as pods; each build gets clean environment</li>
+<li><strong>Deployment failures are QA responsibility</strong> — "tests fail after deploy" often means pod crash, not test bug</li>
+<li><strong>Test environment management</strong> — spin up isolated QA namespaces per feature branch</li>
+<li><strong>Interview expectation</strong> — K8s basics increasingly asked for senior automation roles</li>
+</ul>
+
+<h3>Key Kubernetes Concepts — QA Perspective</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Concept</th><th>Simple Explanation</th><th>QA Relevance</th></tr>
+</thead>
+<tbody>
+<tr><td>Pod</td><td>Smallest deployable unit; runs one or more containers</td><td>Like one test runner instance — check if it's running before blaming tests</td></tr>
+<tr><td>Deployment</td><td>Manages pod replicas; handles rolling updates</td><td>Like scaling Selenium Grid nodes — 3 Chrome pods for parallel runs</td></tr>
+<tr><td>Service</td><td>Stable network endpoint for pods; load balancing</td><td>Access application URL consistently even when pods restart</td></tr>
+<tr><td>Namespace</td><td>Virtual cluster for isolation</td><td>Separate qa, staging, prod environments in one cluster</td></tr>
+<tr><td>ConfigMap</td><td>Stores non-sensitive configuration</td><td>Test environment configs — base URLs, feature flags</td></tr>
+<tr><td>Secret</td><td>Stores sensitive data (encrypted at rest)</td><td>API keys, DB passwords for test data setup</td></tr>
+<tr><td>Ingress</td><td>External HTTP/HTTPS access to services</td><td>Route qa.app.com to QA namespace service</td></tr>
+<tr><td>Node</td><td>Physical or virtual machine in cluster</td><td>Where pods actually run — node failure kills pods on it</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="ascii-diagram">
+<pre>
+Kubernetes Cluster (QA View)
+┌─────────────────────────────────────────────────────────┐
+│  Namespace: qa                                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │ Pod: app-1   │  │ Pod: app-2   │  │ Pod: app-3   │  │
+│  │ (app under   │  │ (replica)    │  │ (replica)    │  │
+│  │  test)       │  │              │  │              │  │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
+│         └─────────────────┼─────────────────┘          │
+│                           │                             │
+│                    ┌──────▼──────┐                      │
+│                    │  Service    │ ← qa-app-service     │
+│                    │  (ClusterIP)│   stable endpoint    │
+│                    └──────┬──────┘                      │
+│                           │                             │
+│  ┌──────────────┐  ┌──────▼──────┐  ┌──────────────┐  │
+│  │ Pod: chrome  │  │ Pod: hub    │  │ Pod: firefox │  │
+│  │ (Grid node)  │  │ (Grid hub)  │  │ (Grid node)  │  │
+│  └──────────────┘  └─────────────┘  └──────────────┘  │
+│         Selenium Grid Deployment (scales with KEDA)    │
+└─────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<h3>Essential kubectl Commands for QA</h3>
+
+<pre><code class="language-bash"># Check application status
+kubectl get pods                          # all pods in default namespace
+kubectl get pods -n qa                    # pods in qa namespace
+kubectl get pods -n qa -w                 # watch live status changes
+
+# View application logs (critical for triaging test failures)
+kubectl logs pod-name -n qa
+kubectl logs pod-name -n qa --tail=100    # last 100 lines
+kubectl logs pod-name -n qa -f              # follow live logs
+kubectl logs deployment/app-name -n qa      # logs from deployment
+
+# Detailed pod information (events, restarts, errors)
+kubectl describe pod pod-name -n qa
+# Look for: Events section, Restart Count, State: Waiting/CrashLoopBackOff
+
+# Access running pod (debug inside container)
+kubectl exec -it pod-name -n qa -- bash
+kubectl exec -it pod-name -n qa -- curl localhost:8080/health
+
+# Find service endpoints (application URLs)
+kubectl get services -n qa
+kubectl get ingress -n qa
+
+# Check deployments and rollout status
+kubectl get deployments -n qa
+kubectl rollout status deployment/app-name -n qa
+
+# Scale Selenium Grid nodes
+kubectl scale deployment/chrome-node --replicas=5 -n qa
+
+# Port forward for local access to cluster service
+kubectl port-forward svc/qa-app-service 8080:80 -n qa
+# Access app at http://localhost:8080
+
+# ConfigMaps and Secrets (test environment config)
+kubectl get configmaps -n qa
+kubectl describe configmap app-config -n qa
+kubectl get secrets -n qa</code></pre>
+
+<h3>QA Troubleshooting with kubectl</h3>
+
+<p>When tests fail after a deployment, check infrastructure before re-running tests:</p>
+
+<pre><code class="language-bash"># Step 1: Are pods running?
+kubectl get pods -n qa
+# STATUS should be Running, RESTARTS should be 0 (or low)
+
+# Step 2: Any CrashLoopBackOff or Error?
+kubectl describe pod failing-pod -n qa
+# Check Events: "Back-off restarting failed container"
+
+# Step 3: What do application logs say?
+kubectl logs failing-pod -n qa --previous   # logs from crashed container
+
+# Step 4: Can service be reached?
+kubectl get svc -n qa
+kubectl exec -it any-running-pod -n qa -- curl http://qa-app-service/health
+
+# Step 5: Did config change?
+kubectl describe configmap app-config -n qa</code></pre>
+
+<div class="callout">
+<strong>QA Triage Rule:</strong> If kubectl get pods shows CrashLoopBackOff or Error status, the test failure is an environment issue — not a product bug. Escalate to DevOps with pod describe output attached.
+</div>
+
+<h3>Selenium Grid on Kubernetes</h3>
+
+<p>Running Selenium Grid on K8s enables dynamic scaling — spin up browser nodes when tests queue, scale down when idle.</p>
+
+<ul>
+<li><strong>KEDA (Kubernetes Event-Driven Autoscaling)</strong> — scales Grid nodes based on session queue length</li>
+<li><strong>Moon ( Aerokube )</strong> — commercial Selenium Grid operator for K8s with built-in VNC, video recording</li>
+<li><strong>Selenoid</strong> — lightweight Grid alternative with K8s deployment options</li>
+<li><strong>Selenium Grid 4 Helm Chart</strong> — official chart for hub + node deployment on K8s</li>
+</ul>
+
+<pre><code class="language-yaml"># Simplified Selenium Grid Deployment on K8s
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chrome-node
+  namespace: qa
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: chrome-node
+  template:
+    metadata:
+      labels:
+        app: chrome-node
+    spec:
+      containers:
+      - name: chrome
+        image: selenium/node-chrome:4.15.0
+        env:
+        - name: SE_EVENT_BUS_HOST
+          value: selenium-hub
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "1"</code></pre>
+
+<h3>Jenkins on Kubernetes</h3>
+
+<p>The <strong>Kubernetes Plugin for Jenkins</strong> creates dynamic build agents as pods — each pipeline run gets a fresh pod with specified container image, destroyed after completion.</p>
+
+<pre><code class="language-groovy">// Jenkinsfile with Kubernetes dynamic agent
+pipeline {
+    agent {
+        kubernetes {
+            yaml '''
+                apiVersion: v1
+                kind: Pod
+                spec:
+                  containers:
+                  - name: maven
+                    image: maven:3.9-eclipse-temurin-17
+                    command: ["sleep"]
+                    args: ["99999"]
+                    resources:
+                      limits:
+                        memory: "2Gi"
+                        cpu: "1"
+            '''
+        }
+    }
+    stages {
+        stage('Test') {
+            steps {
+                container('maven') {
+                    sh 'mvn clean test -Dsurefire.suiteXmlFiles=smoke.xml'
+                }
+            }
+        }
+    }
+}</code></pre>
+
+<p>Benefits for automation engineers:</p>
+<ul>
+<li>Each build gets isolated pod — no stale browser sessions or leftover files</li>
+<li>Scale agents automatically — 10 parallel builds = 10 pods</li>
+<li>Define exact container image per pipeline — Maven, Python, Node as needed</li>
+<li>Resource limits prevent one heavy test suite from starving others</li>
+</ul>
+
+<h3>K8s Knowledge Level for Automation Engineers</h3>
+
+<div class="callout">
+<strong>Target Skill Level:</strong> Not deep ops — but understand architecture, read pod status, pull logs, exec into containers, and know when a test failure is infrastructure vs application. Senior SDETs should be able to deploy a test Grid on Minikube locally.
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Skill</th><th>Junior SDET</th><th>Senior SDET</th><th>Not Required</th></tr>
+</thead>
+<tbody>
+<tr><td>kubectl get pods/logs</td><td>Required</td><td>Required</td><td>—</td></tr>
+<tr><td>Read pod describe output</td><td>Required</td><td>Required</td><td>—</td></tr>
+<tr><td>Port-forward for local testing</td><td>Nice to have</td><td>Required</td><td>—</td></tr>
+<tr><td>Deploy Grid on Minikube</td><td>Nice to have</td><td>Required</td><td>—</td></tr>
+<tr><td>Write K8s YAML manifests</td><td>Not required</td><td>Basic</td><td>Advanced operators</td></tr>
+<tr><td>Cluster administration</td><td>Not required</td><td>Not required</td><td>DevOps team</td></tr>
+<tr><td>Helm chart customization</td><td>Not required</td><td>Basic</td><td>Chart development</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Questions</h3>
+<ol>
+<li><strong>Q: What is Kubernetes and why should automation engineers know it?</strong><br>
+A: Container orchestration platform managing deployment, scaling, and networking of containers. SDETs need it because apps under test, Selenium Grid, and Jenkins agents increasingly run on K8s — understanding pod status and logs helps triage test failures.</li>
+<li><strong>Q: What is a Pod in Kubernetes?</strong><br>
+A: Smallest deployable unit — one or more containers sharing network and storage. For QA: if pod is CrashLoopBackOff, tests will fail regardless of test code quality.</li>
+<li><strong>Q: How do you check if the application is running before running tests?</strong><br>
+A: kubectl get pods -n qa (STATUS=Running), kubectl logs pod-name, curl health endpoint via port-forward or service URL.</li>
+<li><strong>Q: What kubectl command shows why a pod is failing?</strong><br>
+A: kubectl describe pod pod-name — Events section shows OOMKilled, ImagePullBackOff, CrashLoopBackOff with reasons.</li>
+<li><strong>Q: How does Selenium Grid scale on Kubernetes?</strong><br>
+A: Grid nodes run as Deployment replicas. KEDA autoscales based on session queue. Scale manually with kubectl scale deployment --replicas=N.</li>
+<li><strong>Q: How does Jenkins use Kubernetes for dynamic agents?</strong><br>
+A: Kubernetes plugin creates a pod per build with specified container image. Pod destroyed after build — clean environment every time.</li>
+<li><strong>Q: What is a Namespace and how is it used in testing?</strong><br>
+A: Virtual cluster providing isolation. QA namespace separate from staging/prod — safe to run destructive tests without affecting other environments.</li>
+<li><strong>Q: What is the difference between ConfigMap and Secret?</strong><br>
+A: ConfigMap stores non-sensitive config (URLs, feature flags). Secret stores sensitive data (passwords, API keys) base64-encoded. Both inject env vars into pods.</li>
+<li><strong>Q: Tests fail after deployment — how do you determine if it's K8s or application issue?</strong><br>
+A: kubectl get pods (check STATUS), kubectl logs (app errors), kubectl describe pod (Events). If pods healthy and logs clean, it's likely a test or app logic issue.</li>
+<li><strong>Q: What K8s knowledge level is expected from automation engineers?</strong><br>
+A: Basic: kubectl get/describe/logs/exec, understand pod/deployment/service/namespace concepts. Not expected: cluster admin, writing operators, network policy configuration.</li>
+</ol>
+
+<h3>Real Project Example</h3>
+<p>E-commerce platform — application and test infrastructure both on AWS EKS:</p>
+<ul>
+<li><strong>App under test:</strong> 3 replicas in staging namespace; tests hit service URL not pod IP</li>
+<li><strong>Selenium Grid:</strong> KEDA-scaled Chrome nodes — 0 nodes idle, 5 nodes during nightly regression</li>
+<li><strong>Jenkins:</strong> Dynamic agents on K8s — each build gets maven:3.9 pod, destroyed after 30 min</li>
+<li><strong>QA triage:</strong> When regression failed after deploy, SDET ran kubectl get pods, found ImagePullBackOff — new Docker image tag typo in deployment YAML, not a test issue</li>
+<li><strong>Per-branch testing:</strong> Feature branches get dedicated namespace with ConfigMap pointing to branch-specific service URL</li>
+</ul>
+<p>SDET kubectl skills saved 4 hours of unnecessary test re-runs and false bug reports per release cycle.</p>
+
+<h3>Common Mistakes</h3>
+<ul>
+<li>Running tests against pod IP instead of Service URL — pod restarts change IP</li>
+<li>Ignoring CrashLoopBackOff and re-running tests hoping they pass</li>
+<li>Not specifying namespace (-n qa) — checking wrong environment's pods</li>
+<li>Assuming test failure is always application bug — missing K8s infrastructure check</li>
+<li>Not checking application logs before escalating test failures to developers</li>
+<li>Over-provisioning Grid nodes without KEDA — paying for idle browser pods 24/7</li>
+</ul>
+
+<h3>Troubleshooting Tips</h3>
+<ul>
+<li><strong>Pod CrashLoopBackOff:</strong> kubectl logs pod --previous for crash reason; check describe Events</li>
+<li><strong>ImagePullBackOff:</strong> Wrong image tag or missing registry credentials — check deployment YAML</li>
+<li><strong>OOMKilled:</strong> Pod exceeded memory limit — increase resources.limits.memory in deployment</li>
+<li><strong>Tests timeout connecting to app:</strong> Verify service exists (kubectl get svc); check Ingress rules</li>
+<li><strong>Grid sessions queue indefinitely:</strong> kubectl get pods for grid nodes; scale up if pending</li>
+<li><strong>Local access to cluster app:</strong> kubectl port-forward svc/app-service 8080:80 -n qa</li>
+</ul>
+
+<h3>Quick Revision Notes</h3>
+<ul>
+<li>K8s = container orchestration; SDETs need basics not admin skills</li>
+<li>Pod = smallest unit; Deployment = manages replicas; Service = stable endpoint</li>
+<li>Namespace = environment isolation (qa, staging, prod)</li>
+<li>ConfigMap = config; Secret = sensitive data</li>
+<li>Key commands: get pods, logs, describe pod, exec -it, get svc, port-forward</li>
+<li>CrashLoopBackOff/ImagePullBackOff = environment issue, not test bug</li>
+<li>Selenium Grid on K8s: KEDA autoscaling, Moon/Selenoid alternatives</li>
+<li>Jenkins on K8s: dynamic agent pods via Kubernetes plugin — clean per-build environment</li>
+</ul>
+</section>

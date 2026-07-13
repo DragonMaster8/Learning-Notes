@@ -1,0 +1,1722 @@
+<section id="section-6" class="section-card">
+<h2>Section 6: Collections Framework — Most Asked in Interviews</h2>
+
+<p>The Java Collections Framework is the backbone of test data management, API response parsing, and element handling in automation frameworks. Interviewers love this topic because it reveals whether you understand <em>why</em> you pick a collection — not just syntax.</p>
+
+<h3>Collections Hierarchy</h3>
+
+<div class="ascii-diagram"><pre>
+                    Iterable
+                       |
+                  Collection ──────────────────────────────┐
+                       |                                  |
+        ┌──────────────┼──────────────┐                   |
+        |              |              |                   |
+      List            Set           Queue                 |
+        |              |              |                   |
+   ArrayList         HashSet      PriorityQueue            |
+   LinkedList     LinkedHashSet   ArrayDeque               |
+                   TreeSet         LinkedList               |
+                                                            |
+                    Map (separate hierarchy — NOT a Collection)
+                       |
+        ┌──────────────┼──────────────┬──────────────┐
+        |              |              |              |
+     HashMap      LinkedHashMap    TreeMap      ConcurrentHashMap
+     Hashtable
+</pre></div>
+
+<h3>Why Collections in Automation?</h3>
+
+<div class="callout">
+<ul>
+<li><strong>Dynamic test data</strong> — CSV rows, Excel sheets, JSON arrays loaded into <code>List</code> or <code>Map</code></li>
+<li><strong>Config storage</strong> — <code>Map&lt;String, String&gt;</code> for properties, environment variables, API headers</li>
+<li><strong>Element lists</strong> — <code>List&lt;WebElement&gt;</code> from <code>findElements()</code> for table rows, menu items, product cards</li>
+<li><strong>API response parsing</strong> — REST Assured returns JSON arrays; you iterate, filter, and assert on collections</li>
+</ul>
+</div>
+
+<!-- ===================== LIST ===================== -->
+
+<h3>List Interface</h3>
+<p>Ordered, allows duplicates, index-based access. The two workhorses in automation are <code>ArrayList</code> and <code>LinkedList</code>.</p>
+
+<h4>ArrayList</h4>
+
+<p><strong>Internal structure:</strong> Backed by a dynamic array. Default initial capacity is <strong>10</strong>. When full, it grows by approximately <strong>50%</strong> (creates a new array and copies elements).</p>
+
+<p><strong>Automation usage:</strong></p>
+<ul>
+<li>Store <code>WebElement</code> lists from <code>findElements()</code></li>
+<li>Hold test data rows (usernames, product IDs)</li>
+<li>Collect assertion failure messages for soft asserts</li>
+</ul>
+
+<pre><code>// Store all product cards on a page
+List&lt;WebElement&gt; elements = driver.findElements(By.cssSelector(".product-card"));
+
+// Iterate and click each "Add to Cart" button
+for (WebElement card : elements) {
+    card.findElement(By.cssSelector(".add-btn")).click();
+}
+
+// Test data list
+List&lt;String&gt; usernames = Arrays.asList("admin", "user1", "guest");
+</code></pre>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Operation</th><th>Time Complexity</th><th>Automation Example</th></tr>
+</thead>
+<tbody>
+<tr><td>get(index)</td><td>O(1)</td><td>Access 3rd row in a table element list</td></tr>
+<tr><td>add(element)</td><td>O(1) amortized</td><td>Append failed test names during suite run</td></tr>
+<tr><td>remove(index)</td><td>O(n)</td><td>Remove processed item from queue list</td></tr>
+<tr><td>contains(element)</td><td>O(n)</td><td>Check if error message already logged</td></tr>
+<tr><td>size()</td><td>O(1)</td><td>Assert number of visible products</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>LinkedList</h4>
+
+<p><strong>Internal structure:</strong> Doubly linked list — each node holds data + references to previous and next nodes.</p>
+
+<p><strong>When to use in automation:</strong> Rarely. Only when you need frequent insertions/deletions in the middle of a list (e.g., a custom retry queue). For 99% of framework code, prefer <code>ArrayList</code>.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Operation</th><th>Time Complexity</th></tr>
+</thead>
+<tbody>
+<tr><td>get(index)</td><td>O(n)</td></tr>
+<tr><td>add (at end)</td><td>O(1)</td></tr>
+<tr><td>add (at index)</td><td>O(n)</td></tr>
+<tr><td>remove</td><td>O(1) if you have the node reference</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>ArrayList vs LinkedList — Comparison</h4>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>ArrayList</th><th>LinkedList</th></tr>
+</thead>
+<tbody>
+<tr><td>Internal structure</td><td>Dynamic array</td><td>Doubly linked list</td></tr>
+<tr><td>Random access (get by index)</td><td>Fast — O(1)</td><td>Slow — O(n)</td></tr>
+<tr><td>Insert at end</td><td>O(1) amortized</td><td>O(1)</td></tr>
+<tr><td>Insert/remove in middle</td><td>O(n) — shift elements</td><td>O(1) with node reference</td></tr>
+<tr><td>Memory overhead</td><td>Low</td><td>Higher (node pointers)</td></tr>
+<tr><td>Cache-friendly</td><td>Yes (contiguous memory)</td><td>No</td></tr>
+<tr><td>Implements Deque?</td><td>No</td><td>Yes</td></tr>
+<tr><td>Best for automation</td><td>✅ Element lists, test data</td><td>❌ Rarely needed</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===================== SET ===================== -->
+
+<h3>Set Interface</h3>
+<p>Unordered (mostly), no duplicates. Perfect for deduplication in test data pipelines.</p>
+
+<h4>HashSet</h4>
+
+<p><strong>Internal structure:</strong> Backed by a <code>HashMap</code>. Uses hashing — <code>hashCode()</code> determines bucket, <code>equals()</code> resolves collisions.</p>
+
+<p><strong>Automation usage:</strong></p>
+<ul>
+<li>Remove duplicate test data entries before data-driven tests</li>
+<li>Collect unique URLs during crawl/link-check tests</li>
+<li>Track unique error messages across a test suite</li>
+</ul>
+
+<pre><code>List&lt;String&gt; linkTexts = Arrays.asList("/home", "/about", "/home", "/contact", "/about");
+
+// Remove duplicates — order NOT guaranteed
+Set&lt;String&gt; uniqueLinks = new HashSet&lt;&gt;(linkTexts);
+System.out.println(uniqueLinks);
+// Output: [/about, /home, /contact]  (order may vary)
+</code></pre>
+
+<h4>LinkedHashSet</h4>
+<p>Maintains <strong>insertion order</strong>. Use when you need uniqueness AND predictable iteration order — e.g., unique navigation links in the order they appear on the page.</p>
+
+<h4>TreeSet</h4>
+<p>Sorted order (natural ordering or custom <code>Comparator</code>). Implements <code>NavigableSet</code>. Use for sorted test data validation — e.g., verify dropdown options are alphabetically sorted.</p>
+
+<pre><code>Set&lt;String&gt; sortedOptions = new TreeSet&lt;&gt;(dropdownTexts);
+// Automatically sorted: [Apple, Banana, Cherry, Mango]
+</code></pre>
+
+<h4>HashSet vs LinkedHashSet vs TreeSet</h4>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>HashSet</th><th>LinkedHashSet</th><th>TreeSet</th></tr>
+</thead>
+<tbody>
+<tr><td>Order</td><td>No guaranteed order</td><td>Insertion order</td><td>Sorted (natural/Comparator)</td></tr>
+<tr><td>Null allowed</td><td>One null</td><td>One null</td><td>No null (NullPointerException)</td></tr>
+<tr><td>Performance</td><td>O(1) add/remove/contains</td><td>O(1) add/remove/contains</td><td>O(log n) — Red-Black tree</td></tr>
+<tr><td>Internal</td><td>HashMap</td><td>LinkedHashMap</td><td>NavigableMap (TreeMap)</td></tr>
+<tr><td>Automation use</td><td>Deduplicate test data</td><td>Unique + ordered links</td><td>Sorted dropdown validation</td></tr>
+<tr><td>Implements</td><td>Set</td><td>Set</td><td>NavigableSet</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===================== MAP ===================== -->
+
+<h3>Map Interface</h3>
+<p>Key-value pairs. The most-used collection in automation frameworks for configuration, headers, and test data maps.</p>
+
+<h4>HashMap</h4>
+
+<p><strong>Internal structure:</strong> Hash table with buckets. Hash function maps key → bucket index. Collision handling: linked list in bucket; at 8+ entries in a bucket (Java 8+), converts to Red-Black tree for O(log n) lookup.</p>
+
+<p><strong>Automation usage:</strong></p>
+<ul>
+<li>Config properties: <code>Map&lt;String, String&gt; config</code></li>
+<li>Test data key-value: username → password maps</li>
+<li>API request headers and query parameters</li>
+<li>Environment-specific URLs</li>
+</ul>
+
+<pre><code>Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();
+headers.put("Content-Type", "application/json");
+headers.put("Authorization", "Bearer " + token);
+headers.put("Accept", "application/json");
+
+// Test data map
+Map&lt;String, String&gt; credentials = new HashMap&lt;&gt;();
+credentials.put("admin", "admin123");
+credentials.put("user", "user456");
+
+// Null key allowed — only ONE null key
+Map&lt;String, String&gt; map = new HashMap&lt;&gt;();
+map.put(null, "default-value");  // Valid
+</code></pre>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Operation</th><th>Time Complexity</th></tr>
+</thead>
+<tbody>
+<tr><td>get(key)</td><td>O(1) average</td></tr>
+<tr><td>put(key, value)</td><td>O(1) average</td></tr>
+<tr><td>containsKey(key)</td><td>O(1) average</td></tr>
+<tr><td>remove(key)</td><td>O(1) average</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>LinkedHashMap</h4>
+<p>Insertion-ordered map. Ideal for reading config files where order matters — e.g., test execution sequence defined in properties file.</p>
+
+<h4>TreeMap</h4>
+<p>Sorted by keys. Use when you need environment configs sorted alphabetically or priority-ordered test suites.</p>
+
+<h4>Hashtable</h4>
+<p>Legacy, synchronized, <strong>no null keys or values</strong>. Avoid in new code — use <code>ConcurrentHashMap</code> for thread safety instead.</p>
+
+<h4>ConcurrentHashMap</h4>
+<p>Thread-safe, modern alternative. Used in parallel test frameworks where multiple threads read/write shared config or report data simultaneously.</p>
+
+<pre><code>// Thread-safe config cache for parallel TestNG execution
+ConcurrentHashMap&lt;String, String&gt; envConfig = new ConcurrentHashMap&lt;&gt;();
+envConfig.put("baseUrl", "https://staging.example.com");
+</code></pre>
+
+<h4>HashMap vs Hashtable vs ConcurrentHashMap</h4>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>HashMap</th><th>Hashtable</th><th>ConcurrentHashMap</th></tr>
+</thead>
+<tbody>
+<tr><td>Thread-safe</td><td>No</td><td>Yes (synchronized)</td><td>Yes (lock striping)</td></tr>
+<tr><td>Null key</td><td>One null allowed</td><td>Not allowed</td><td>Not allowed</td></tr>
+<tr><td>Null value</td><td>Allowed</td><td>Not allowed</td><td>Not allowed</td></tr>
+<tr><td>Performance</td><td>Fast (single-thread)</td><td>Slow (full lock)</td><td>Fast (partial locking)</td></tr>
+<tr><td>Iterator</td><td>Fail-fast</td><td>Fail-fast</td><td>Weakly consistent</td></tr>
+<tr><td>Introduced</td><td>Java 1.2</td><td>Java 1.0 (legacy)</td><td>Java 1.5</td></tr>
+<tr><td>Automation use</td><td>Single-thread config/data</td><td>❌ Avoid</td><td>✅ Parallel framework config</td></tr>
+<tr><td>Recommendation</td><td>Default choice</td><td>Never use</td><td>Parallel execution</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===================== QUEUE ===================== -->
+
+<h3>Queue &amp; Deque</h3>
+
+<h4>PriorityQueue</h4>
+<p>Elements ordered by natural ordering or <code>Comparator</code>. Use for test priority scheduling — critical tests dequeued first.</p>
+
+<pre><code>PriorityQueue&lt;String&gt; testQueue = new PriorityQueue&lt;&gt;();
+testQueue.add("LOW: testFooterLinks");
+testQueue.add("CRITICAL: testLogin");
+testQueue.add("HIGH: testCheckout");
+// Polls in natural order: CRITICAL first (if using custom comparator)
+</code></pre>
+
+<h4>Deque / ArrayDeque</h4>
+<p>Double-ended queue. Supports stack (<code>push/pop</code>) and queue (<code>offer/poll</code>) operations. Faster than <code>Stack</code> class (which is legacy).</p>
+
+<pre><code>Deque&lt;String&gt; browserStack = new ArrayDeque&lt;&gt;();
+browserStack.push("chrome");
+browserStack.push("firefox");
+String last = browserStack.pop();  // "firefox"
+</code></pre>
+
+<!-- ===================== ITERATORS ===================== -->
+
+<h3>Iterators &amp; Traversal</h3>
+
+<h4>Iterator</h4>
+<pre><code>Iterator&lt;WebElement&gt; it = elements.iterator();
+while (it.hasNext()) {
+    WebElement el = it.next();
+    if (el.getText().isEmpty()) {
+        it.remove();  // Safe removal during iteration
+    }
+}
+</code></pre>
+
+<h4>ListIterator</h4>
+<p>Bidirectional — can traverse forward and backward. Only works on <code>List</code> implementations.</p>
+
+<h4>Enhanced for-each Loop</h4>
+<pre><code>for (WebElement el : elements) {
+    System.out.println(el.getText());
+}
+</code></pre>
+
+<h4>Java 8 forEach with Lambda</h4>
+<pre><code>elements.forEach(el -&gt; el.click());
+
+// With method reference
+elements.forEach(System.out::println);
+</code></pre>
+
+<div class="callout">
+<strong>⚠️ ConcurrentModificationException</strong>
+<p>The #1 collections bug in automation code: modifying a collection (add/remove) while iterating with for-each or Iterator (without using <code>Iterator.remove()</code>). Common when dynamically removing elements from a <code>findElements()</code> list during iteration.</p>
+<pre><code>// ❌ WRONG — throws ConcurrentModificationException
+for (WebElement el : elements) {
+    if (el.getText().equals("")) {
+        elements.remove(el);
+    }
+}
+
+// ✅ CORRECT — use Iterator.remove() or collect to-remove items first
+List&lt;WebElement&gt; toRemove = new ArrayList&lt;&gt;();
+for (WebElement el : elements) {
+    if (el.getText().equals("")) toRemove.add(el);
+}
+elements.removeAll(toRemove);
+</code></pre>
+</div>
+
+<!-- ===================== CODING QUESTIONS ===================== -->
+
+<h3>Coding Questions — Complete Solutions</h3>
+
+<h4>Q1: Remove Duplicates from ArrayList Using Set</h4>
+
+<p><strong>Problem:</strong> Given a list of test URLs with duplicates, return a list with unique entries preserving insertion order.</p>
+<p><strong>Approach:</strong> Pass the ArrayList to a <code>LinkedHashSet</code> constructor (removes dupes, keeps order), then create a new ArrayList from the set.</p>
+
+<pre><code>import java.util.*;
+
+public class RemoveDuplicates {
+    public static void main(String[] args) {
+        List&lt;String&gt; urls = new ArrayList&lt;&gt;(Arrays.asList(
+            "/login", "/dashboard", "/login", "/settings", "/dashboard"
+        ));
+
+        // LinkedHashSet preserves insertion order
+        Set&lt;String&gt; uniqueSet = new LinkedHashSet&lt;&gt;(urls);
+        List&lt;String&gt; uniqueList = new ArrayList&lt;&gt;(uniqueSet);
+
+        System.out.println("Original: " + urls);
+        System.out.println("Unique:   " + uniqueList);
+    }
+}
+</code></pre>
+
+<p><strong>Output:</strong></p>
+<pre><code>Original: [/login, /dashboard, /login, /settings, /dashboard]
+Unique:   [/login, /dashboard, /settings]
+</code></pre>
+<p><strong>Complexity:</strong> Time O(n), Space O(n)</p>
+
+<h4>Q2: Find Duplicate Elements</h4>
+
+<p><strong>Problem:</strong> Find all duplicate test case IDs in a list.</p>
+<p><strong>Approach:</strong> <code>HashSet.add()</code> returns <code>false</code> when the element already exists — that's a duplicate.</p>
+
+<pre><code>import java.util.*;
+
+public class FindDuplicates {
+    public static void main(String[] args) {
+        List&lt;String&gt; testIds = Arrays.asList("TC001", "TC002", "TC001", "TC003", "TC002", "TC004");
+
+        Set&lt;String&gt; seen = new HashSet&lt;&gt;();
+        Set&lt;String&gt; duplicates = new HashSet&lt;&gt;();
+
+        for (String id : testIds) {
+            if (!seen.add(id)) {  // add returns false = duplicate
+                duplicates.add(id);
+            }
+        }
+
+        System.out.println("Duplicate test IDs: " + duplicates);
+    }
+}
+</code></pre>
+
+<p><strong>Output:</strong></p>
+<pre><code>Duplicate test IDs: [TC001, TC002]
+</code></pre>
+<p><strong>Complexity:</strong> Time O(n), Space O(n)</p>
+
+<h4>Q3: Character Frequency Using HashMap</h4>
+
+<p><strong>Problem:</strong> Count frequency of each character in a test string (e.g., validate password complexity rules).</p>
+<p><strong>Approach:</strong> Iterate characters, use <code>HashMap&lt;Character, Integer&gt;</code>, increment count with <code>getOrDefault</code>.</p>
+
+<pre><code>import java.util.*;
+
+public class CharFrequency {
+    public static void main(String[] args) {
+        String password = "Test@123Test";
+
+        Map&lt;Character, Integer&gt; freqMap = new HashMap&lt;&gt;();
+        for (char c : password.toCharArray()) {
+            freqMap.put(c, freqMap.getOrDefault(c, 0) + 1);
+        }
+
+        freqMap.forEach((ch, count) -&gt;
+            System.out.println("'" + ch + "' → " + count)
+        );
+    }
+}
+</code></pre>
+
+<p><strong>Output:</strong></p>
+<pre><code>'T' → 2
+'e' → 2
+'s' → 1
+'t' → 2
+'@' → 1
+'1' → 1
+'2' → 1
+'3' → 1
+</code></pre>
+<p><strong>Complexity:</strong> Time O(n), Space O(k) where k = unique characters</p>
+
+<h4>Q4: Sort List of Employees (Comparable vs Comparator)</h4>
+
+<p><strong>Problem:</strong> Sort automation team members by salary, then by name.</p>
+
+<pre><code>import java.util.*;
+
+class Employee implements Comparable&lt;Employee&gt; {
+    String name;
+    int salary;
+
+    Employee(String name, int salary) {
+        this.name = name;
+        this.salary = salary;
+    }
+
+    // Natural ordering: by salary ascending
+    @Override
+    public int compareTo(Employee other) {
+        return Integer.compare(this.salary, other.salary);
+    }
+
+    @Override
+    public String toString() {
+        return name + " ($" + salary + ")";
+    }
+}
+
+public class SortEmployees {
+    public static void main(String[] args) {
+        List&lt;Employee&gt; team = new ArrayList&lt;&gt;(Arrays.asList(
+            new Employee("Alice", 90000),
+            new Employee("Bob", 75000),
+            new Employee("Charlie", 90000)
+        ));
+
+        // Approach 1: Comparable (natural order — by salary)
+        Collections.sort(team);
+        System.out.println("By salary (Comparable): " + team);
+
+        // Approach 2: Comparator (custom — by name)
+        team.sort(Comparator.comparing(e -&gt; e.name));
+        System.out.println("By name (Comparator):   " + team);
+
+        // Approach 3: Comparator chaining — salary desc, then name asc
+        team.sort(Comparator.comparingInt((Employee e) -&gt; e.salary).reversed()
+                          .thenComparing(e -&gt; e.name));
+        System.out.println("Salary desc, name asc:  " + team);
+    }
+}
+</code></pre>
+
+<p><strong>Output:</strong></p>
+<pre><code>By salary (Comparable): [Bob ($75000), Alice ($90000), Charlie ($90000)]
+By name (Comparator):   [Alice ($90000), Bob ($75000), Charlie ($90000)]
+Salary desc, name asc:  [Alice ($90000), Charlie ($90000), Bob ($75000)]
+</code></pre>
+<p><strong>Complexity:</strong> Time O(n log n), Space O(1)</p>
+
+<h4>Q5: Sort HashMap by Value</h4>
+
+<p><strong>Problem:</strong> Sort test failure counts by frequency (value) descending.</p>
+<p><strong>Approach:</strong> Stream API on <code>entrySet()</code>, sort by value, collect to LinkedHashMap.</p>
+
+<pre><code>import java.util.*;
+import java.util.stream.*;
+
+public class SortMapByValue {
+    public static void main(String[] args) {
+        Map&lt;String, Integer&gt; failures = new HashMap&lt;&gt;();
+        failures.put("testLogin", 15);
+        failures.put("testCheckout", 8);
+        failures.put("testSearch", 22);
+        failures.put("testProfile", 3);
+
+        Map&lt;String, Integer&gt; sorted = failures.entrySet().stream()
+            .sorted(Map.Entry.&lt;String, Integer&gt;comparingByValue().reversed())
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (a, b) -&gt; a,
+                LinkedHashMap::new
+            ));
+
+        sorted.forEach((test, count) -&gt;
+            System.out.println(test + " → " + count + " failures")
+        );
+    }
+}
+</code></pre>
+
+<p><strong>Output:</strong></p>
+<pre><code>testSearch → 22 failures
+testLogin → 15 failures
+testCheckout → 8 failures
+testProfile → 3 failures
+</code></pre>
+<p><strong>Complexity:</strong> Time O(n log n), Space O(n)</p>
+
+<h4>Q6: Count Word Frequency in Paragraph</h4>
+
+<p><strong>Problem:</strong> Count word frequency in an error log paragraph to find most common errors.</p>
+
+<pre><code>import java.util.*;
+
+public class WordFrequency {
+    public static void main(String[] args) {
+        String log = "timeout timeout element not found stale element timeout connection refused";
+
+        Map&lt;String, Integer&gt; wordCount = new HashMap&lt;&gt;();
+        for (String word : log.split("\\s+")) {
+            word = word.toLowerCase();
+            wordCount.put(word, wordCount.getOrDefault(word, 0) + 1);
+        }
+
+        // Find most frequent word
+        String maxWord = Collections.max(wordCount.entrySet(),
+            Map.Entry.comparingByValue()).getKey();
+
+        System.out.println("Word frequencies: " + wordCount);
+        System.out.println("Most frequent:    " + maxWord);
+    }
+}
+</code></pre>
+
+<p><strong>Output:</strong></p>
+<pre><code>Word frequencies: {timeout=3, element=2, not=1, found=1, stale=1, connection=1, refused=1}
+Most frequent:    timeout
+</code></pre>
+<p><strong>Complexity:</strong> Time O(n), Space O(k) where k = unique words</p>
+
+<!-- ===================== INTERVIEW Q&A ===================== -->
+
+<h3>Interview Q&amp;A — Section 6 (15+ Questions)</h3>
+
+<h4>Q: What is the difference between Collection and Collections?</h4>
+<p><strong>A:</strong> <code>Collection</code> is the root interface of the framework hierarchy. <code>Collections</code> is a utility class with static methods like <code>sort()</code>, <code>reverse()</code>, <code>synchronizedList()</code>. In automation, you use <code>Collections.sort()</code> to sort test data lists.</p>
+
+<h4>Q: Why is ArrayList preferred over Vector?</h4>
+<p><strong>A:</strong> <code>Vector</code> is synchronized (thread-safe but slow). <code>ArrayList</code> is faster for single-threaded test execution. For parallel tests, use thread-safe alternatives like <code>CopyOnWriteArrayList</code>, not Vector.</p>
+
+<h4>Q: Can we store null in ArrayList?</h4>
+<p><strong>A:</strong> Yes. <code>ArrayList</code> allows multiple nulls. Useful when parsing optional fields from test data where some columns may be empty.</p>
+
+<h4>Q: How does HashSet maintain uniqueness?</h4>
+<p><strong>A:</strong> It uses <code>hashCode()</code> to find the bucket and <code>equals()</code> to compare within the bucket. If <code>equals()</code> returns true, the element is not added. Override both in custom test data objects.</p>
+
+<h4>Q: What happens if two keys in HashMap have the same hashCode?</h4>
+<p><strong>A:</strong> Collision occurs. Java stores them in a linked list within the same bucket. If the bucket exceeds 8 entries (Java 8+), it converts to a Red-Black tree for O(log n) performance.</p>
+
+<h4>Q: Why doesn't HashMap implement Collection interface?</h4>
+<p><strong>A:</strong> Map stores key-value pairs, not individual elements. It has its own hierarchy with <code>Map.Entry</code> for iterating entries.</p>
+
+<h4>Q: When would you use LinkedHashMap over HashMap in a framework?</h4>
+<p><strong>A:</strong> When config property order matters — e.g., test execution order defined in a properties file, or maintaining insertion order of API request parameters for debugging.</p>
+
+<h4>Q: Is HashMap thread-safe?</h4>
+<p><strong>A:</strong> No. In parallel TestNG/Cucumber execution, use <code>ConcurrentHashMap</code> for shared config or report data.</p>
+
+<h4>Q: What is fail-fast vs fail-safe iterator?</h4>
+<p><strong>A:</strong> Fail-fast (ArrayList, HashMap) throws <code>ConcurrentModificationException</code> on structural modification during iteration. Fail-safe (ConcurrentHashMap) works on a clone — no exception but may not reflect latest changes.</p>
+
+<h4>Q: How do you convert ArrayList to Array and vice versa?</h4>
+<p><strong>A:</strong> <code>list.toArray(new String[0])</code> and <code>new ArrayList&lt;&gt;(Arrays.asList(array))</code> or <code>Arrays.asList()</code> (fixed-size).</p>
+
+<h4>Q: What is the initial capacity of ArrayList and why does it matter?</h4>
+<p><strong>A:</strong> Default is 10. If you know you'll store 500 test data rows, set initial capacity to avoid repeated resizing: <code>new ArrayList&lt;&gt;(500)</code>.</p>
+
+<h4>Q: Comparable vs Comparator — when to use which?</h4>
+<p><strong>A:</strong> <code>Comparable</code> = natural ordering defined inside the class (one sort logic). <code>Comparator</code> = external, multiple sort strategies without modifying the class. In frameworks, use Comparator for flexible test data sorting.</p>
+
+<h4>Q: How do you iterate a HashMap?</h4>
+<p><strong>A:</strong> Four ways: (1) <code>entrySet()</code> — best, (2) <code>keySet()</code> then get value, (3) <code>values()</code>, (4) Java 8 <code>forEach</code>. Prefer <code>entrySet()</code> for config iteration.</p>
+
+<h4>Q: What is ConcurrentModificationException and how to avoid it?</h4>
+<p><strong>A:</strong> Thrown when a collection is structurally modified during iteration (except via <code>Iterator.remove()</code>). In automation, common when filtering WebElements during for-each. Fix: use Iterator, stream filter, or removeAll with a separate list.</p>
+
+<h4>Q: Can TreeMap have null keys?</h4>
+<p><strong>A:</strong> No. <code>TreeMap</code> uses comparison — null key causes <code>NullPointerException</code>. Use <code>HashMap</code> if null keys are needed.</p>
+
+<h4>Q: How would you find the intersection of two lists of test data?</h4>
+<p><strong>A:</strong> <code>list1.retainAll(list2)</code> modifies list1 to keep only common elements. Or use streams: <code>list1.stream().filter(list2::contains).collect(Collectors.toList())</code>.</p>
+
+<h4>Q: What collection would you use to store WebElements and why?</h4>
+<p><strong>A:</strong> <code>ArrayList&lt;WebElement&gt;</code> — because <code>findElements()</code> returns a list, you need index access for specific rows, and you iterate sequentially. No need for Set (duplicates aren't an issue) or Map (no key-value relationship).</p>
+
+</section>
+
+<section id="section-7" class="section-card">
+<h2>Section 7: Exception Handling</h2>
+
+<p>Exception handling separates fragile test scripts from production-grade automation frameworks. Every Selenium and REST Assured exception you handle gracefully is a test suite that runs reliably in CI/CD.</p>
+
+<h3>Exception Hierarchy</h3>
+
+<div class="ascii-diagram"><pre>
+                        Throwable
+                       /         \
+                  Exception       Error
+                  /    |    \         \
+         IOException  |  RuntimeException  OutOfMemoryError
+         SQLException |       |            StackOverflowError
+         ClassNotFound|       |
+                      |   ┌───┴────────────────┐
+                      |   |                    |
+                      | NoSuchElement    NullPointerException
+                      | TimeoutException IllegalArgumentException
+                      | StaleElementRef  IndexOutOfBoundsException
+                      | ElementClickInt. ArrayIndexOutOfBounds
+                      | WebDriverException NumberFormatException
+                      |
+              (Checked Exceptions)
+         Must handle or declare (throws)
+</pre></div>
+
+<h3>Checked vs Unchecked Exceptions</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Checked</th><th>Unchecked (Runtime)</th></tr>
+</thead>
+<tbody>
+<tr><td>Parent class</td><td>Exception (not RuntimeException)</td><td>RuntimeException</td></tr>
+<tr><td>Compile-time check</td><td>Yes — must handle or declare</td><td>No — optional handling</td></tr>
+<tr><td>Examples</td><td>IOException, SQLException</td><td>NoSuchElementException, NPE</td></tr>
+<tr><td>When thrown</td><td>Recoverable external failures</td><td>Programming errors, framework failures</td></tr>
+<tr><td>Automation context</td><td>Reading config files, DB connections</td><td>Element not found, stale element</td></tr>
+<tr><td>Must declare in signature?</td><td>Yes (or try-catch)</td><td>No</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Exception Handling Keywords</h3>
+
+<h4>try-catch</h4>
+<pre><code>try {
+    WebElement loginBtn = driver.findElement(By.id("login"));
+    loginBtn.click();
+} catch (NoSuchElementException e) {
+    logger.error("Login button not found: " + e.getMessage());
+    takeScreenshot("login_failure");
+    throw e;  // re-throw to fail the test
+}
+</code></pre>
+
+<p><strong>Multiple catch blocks — order matters:</strong> Most specific first, most general last.</p>
+<pre><code>try {
+    driver.findElement(By.id("submit")).click();
+} catch (StaleElementReferenceException e) {
+    // handle stale
+} catch (NoSuchElementException e) {
+    // handle not found
+} catch (WebDriverException e) {
+    // handle any other WebDriver issue
+}
+</code></pre>
+
+<h4>finally</h4>
+<p>Always executes — even if exception occurs or return statement is hit. Used for resource cleanup.</p>
+<pre><code>WebDriver driver = null;
+try {
+    driver = new ChromeDriver();
+    // test logic
+} catch (Exception e) {
+    logger.error("Test failed", e);
+} finally {
+    if (driver != null) {
+        driver.quit();  // ALWAYS close browser
+    }
+}
+</code></pre>
+
+<h4>throw</h4>
+<p>Explicitly throw an exception from your code.</p>
+<pre><code>public void login(String user, String pass) {
+    if (user == null || user.isEmpty()) {
+        throw new TestDataException("Username cannot be empty");
+    }
+    // proceed with login
+}
+</code></pre>
+
+<h4>throws</h4>
+<p>Declares that a method may throw checked exceptions — caller must handle.</p>
+<pre><code>public Map&lt;String, String&gt; loadConfig(String path) throws IOException {
+    Properties prop = new Properties();
+    prop.load(new FileInputStream(path));
+    // convert to Map and return
+}
+</code></pre>
+
+<h4>try-with-resources (Java 7+)</h4>
+<p>Auto-closes resources implementing <code>AutoCloseable</code>. No finally needed.</p>
+<pre><code>// Auto-close file stream
+try (FileInputStream fis = new FileInputStream("config.properties")) {
+    Properties prop = new Properties();
+    prop.load(fis);
+}
+
+// Auto-close WebDriver (if WebDriver implements AutoCloseable — it does in Selenium 4+)
+try (WebDriver driver = new ChromeDriver()) {
+    driver.get("https://example.com");
+    // test logic — driver.quit() called automatically
+}
+</code></pre>
+
+<h3>Custom Exceptions for Frameworks</h3>
+
+<p>Custom exceptions make framework errors self-documenting and catchable at the right level.</p>
+
+<pre><code>// Base framework exception
+public class FrameworkException extends RuntimeException {
+    public FrameworkException(String message) {
+        super(message);
+    }
+    public FrameworkException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+// Specific exceptions
+public class PageNotFoundException extends FrameworkException {
+    public PageNotFoundException(String pageName) {
+        super("Page not loaded: " + pageName);
+    }
+}
+
+public class ConfigException extends FrameworkException {
+    public ConfigException(String key) {
+        super("Config key not found: " + key);
+    }
+}
+
+public class TestDataException extends FrameworkException {
+    public TestDataException(String message) {
+        super("Test data error: " + message);
+    }
+}
+</code></pre>
+
+<div class="callout">
+<strong>When to create custom exceptions in automation:</strong>
+<ul>
+<li>Config file missing a required key → <code>ConfigException</code></li>
+<li>Page object <code>isLoaded()</code> returns false → <code>PageNotFoundException</code></li>
+<li>Data provider returns empty/invalid data → <code>TestDataException</code></li>
+<li>Wrapping Selenium exceptions with business context → <code>FrameworkException</code></li>
+</ul>
+</div>
+
+<h3>Selenium Exceptions — Deep Dive</h3>
+
+<h4>NoSuchElementException</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>What</td><td>Element not found in DOM</td></tr>
+<tr><td>When</td><td>Locator is wrong, element not yet loaded, element removed</td></tr>
+<tr><td>Code causing it</td><td><code>driver.findElement(By.id("nonexistent"))</code></td></tr>
+<tr><td>Fix</td><td>Add explicit wait, verify locator in DevTools, check iframe context</td></tr>
+<tr><td>Prevention</td><td>Use Page Objects with waits built in; never raw findElement in tests</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>TimeoutException</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>What</td><td>Explicit wait condition not met within timeout</td></tr>
+<tr><td>When</td><td>Element takes too long to appear/clickable</td></tr>
+<tr><td>Code causing it</td><td><code>wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("slow-load")))</code></td></tr>
+<tr><td>Fix</td><td>Increase timeout for slow pages, verify element exists, check for loading spinners</td></tr>
+<tr><td>Prevention</td><td>Configure reasonable default timeouts in framework config</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>StaleElementReferenceException</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>What</td><td>Element reference is no longer attached to DOM</td></tr>
+<tr><td>When</td><td>Page refresh, AJAX update, navigation after finding element</td></tr>
+<tr><td>Code causing it</td><td>Find element → page refreshes → click same reference</td></tr>
+<tr><td>Fix</td><td>Re-find element before interaction (retry pattern)</td></tr>
+<tr><td>Prevention</td><td>Wrap actions in retry utility; use fresh findElement for each action</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>// Re-find pattern to handle stale elements
+public void safeClick(By locator) {
+    for (int i = 0; i &lt; 3; i++) {
+        try {
+            driver.findElement(locator).click();
+            return;
+        } catch (StaleElementReferenceException e) {
+            // retry — re-find on next iteration
+        }
+    }
+    throw new FrameworkException("Failed to click after 3 retries: " + locator);
+}
+</code></pre>
+
+<h4>ElementClickInterceptedException</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>What</td><td>Another element is overlaying the target</td></tr>
+<tr><td>When</td><td>Cookie banner, modal popup, sticky header covers button</td></tr>
+<tr><td>Code causing it</td><td><code>driver.findElement(By.id("submit")).click()</code> with overlay present</td></tr>
+<tr><td>Fix</td><td>Wait for overlay to disappear, scroll into view, JavaScript click</td></tr>
+<tr><td>Prevention</td><td>BasePage dismisses popups in <code>navigateTo()</code> before any action</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>// JavaScript click fallback
+JavascriptExecutor js = (JavascriptExecutor) driver;
+js.executeScript("arguments[0].click();", element);
+</code></pre>
+
+<h4>ElementNotInteractableException</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>What</td><td>Element exists but cannot be interacted with</td></tr>
+<tr><td>When</td><td>Hidden (display:none), disabled, zero size, off-screen</td></tr>
+<tr><td>Fix</td><td>Scroll into view, wait for enabled state, use JS for hidden inputs</td></tr>
+<tr><td>Prevention</td><td>Wait for <code>elementToBeClickable</code> not just <code>presenceOfElementLocated</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>WebDriverException</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>What</td><td>Generic WebDriver failure</td></tr>
+<tr><td>When</td><td>Browser crash, driver-browser version mismatch, network issue</td></tr>
+<tr><td>Fix</td><td>Use Selenium Manager (auto driver management), restart browser</td></tr>
+<tr><td>Prevention</td><td>Let Selenium 4+ manage drivers; don't hardcode driver paths</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>NoSuchWindowException</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>What</td><td>Target window/tab no longer exists</td></tr>
+<tr><td>When</td><td>Window closed programmatically or by application</td></tr>
+<tr><td>Fix</td><td>Validate window handles before switch: <code>driver.getWindowHandles()</code></td></tr>
+<tr><td>Prevention</td><td>Store original window handle in <code>@BeforeMethod</code>, validate before switch</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>NoSuchFrameException</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>What</td><td>Frame/iframe not found</td></tr>
+<tr><td>When</td><td>Wrong frame name/index, frame not yet loaded</td></tr>
+<tr><td>Fix</td><td>Wait for frame, verify with DevTools, use <code>driver.switchTo().parentFrame()</code> to reset</td></tr>
+<tr><td>Prevention</td><td>Always switch back to default content after frame operations</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>InvalidSelectorException</h4>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td>What</td><td>Malformed XPath or CSS selector</td></tr>
+<tr><td>When</td><td>Syntax error in locator string</td></tr>
+<tr><td>Code causing it</td><td><code>By.xpath("//div[@id='test'")</code> — missing closing bracket</td></tr>
+<tr><td>Fix</td><td>Validate selector in browser DevTools console first</td></tr>
+<tr><td>Prevention</td><td>Store locators as constants; code review locator syntax</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>REST Assured Exceptions</h3>
+
+<h4>JsonPathException</h4>
+<p><strong>What:</strong> Invalid JSON path expression or path doesn't exist in response.</p>
+<pre><code>// ❌ Path doesn't exist
+String name = response.jsonPath().getString("data.user.name");
+// Fix: validate response structure first
+assertEquals(response.getStatusCode(), 200);
+String name = response.jsonPath().getString("data.user.name");
+</code></pre>
+
+<h4>AssertionError</h4>
+<p><strong>What:</strong> REST Assured assertion failed (status code, body, header mismatch).</p>
+<pre><code>response.then()
+    .statusCode(200)
+    .body("data.id", equalTo(123));  // AssertionError if id != 123
+</code></pre>
+
+<h3>Exception Handling Best Practices for Frameworks</h3>
+
+<div class="callout">
+<ol>
+<li><strong>Catch specific, not generic</strong> — catch <code>NoSuchElementException</code>, not <code>Exception</code></li>
+<li><strong>Always log before re-throwing</strong> — include context (page name, locator, test name)</li>
+<li><strong>Take screenshot on failure</strong> — in catch block or TestNG listener</li>
+<li><strong>Use custom exceptions</strong> — wrap Selenium exceptions with business meaning</li>
+<li><strong>Never swallow exceptions</strong> — empty catch blocks hide failures</li>
+<li><strong>Clean up in finally or @AfterMethod</strong> — quit driver, close connections</li>
+<li><strong>try-with-resources</strong> — for file streams, readers, WebDriver (Selenium 4+)</li>
+<li><strong>Retry for transient failures</strong> — stale element, intermittent timeout</li>
+<li><strong>Fail fast for config errors</strong> — throw <code>ConfigException</code> at startup, not mid-test</li>
+<li><strong>Use TestNG listeners</strong> — centralized exception handling, reporting, screenshots</li>
+</ol>
+</div>
+
+<h3>Interview Q&amp;A — Section 7 (15+ Questions)</h3>
+
+<h4>Q: What is the difference between throw and throws?</h4>
+<p><strong>A:</strong> <code>throw</code> explicitly creates and throws an exception instance inside a method. <code>throws</code> declares in the method signature that checked exceptions may propagate to the caller.</p>
+
+<h4>Q: Can we have try without catch?</h4>
+<p><strong>A:</strong> Yes — try with finally only, or try-with-resources (Java 7+). Both are valid.</p>
+
+<h4>Q: Does finally always execute?</h4>
+<p><strong>A:</strong> Almost always. Exceptions: <code>System.exit()</code>, JVM crash, infinite loop in try, daemon thread killed.</p>
+
+<h4>Q: What happens if catch and finally both throw exceptions?</h4>
+<p><strong>A:</strong> The exception from <code>finally</code> suppresses the one from <code>catch</code>. The catch exception is added as suppressed (Java 7+).</p>
+
+<h4>Q: Why are Selenium exceptions unchecked?</h4>
+<p><strong>A:</strong> They extend <code>RuntimeException</code>. Selenium doesn't force you to handle them at compile time — you handle them at the framework design level with waits and retry utilities.</p>
+
+<h4>Q: How do you handle StaleElementReferenceException in a framework?</h4>
+<p><strong>A:</strong> Implement a retry wrapper in BasePage that re-finds the element and retries the action up to N times before failing.</p>
+
+<h4>Q: What is exception chaining?</h4>
+<p><strong>A:</strong> Wrapping one exception inside another: <code>throw new FrameworkException("Login failed", originalException)</code>. Preserves the root cause stack trace.</p>
+
+<h4>Q: Can we catch Error?</h4>
+<p><strong>A:</strong> Technically yes, but you shouldn't. Errors (<code>OutOfMemoryError</code>, <code>StackOverflowError</code>) indicate serious JVM problems that tests cannot recover from.</p>
+
+<h4>Q: What is multi-catch (Java 7+)?</h4>
+<p><strong>A:</strong> <code>catch (NoSuchElementException | TimeoutException e)</code> — single catch block for multiple exception types.</p>
+
+<h4>Q: How do you handle exceptions in TestNG?</h4>
+<p><strong>A:</strong> (1) try-catch in test/page methods, (2) <code>@Test(expectedExceptions=...)</code> for negative tests, (3) <code>ITestListener.onTestFailure()</code> for screenshots/reports, (4) <code>@Test(retryAnalyzer=...)</code> for flaky test retry.</p>
+
+<h4>Q: What is the difference between Error and Exception?</h4>
+<p><strong>A:</strong> <code>Error</code> = serious JVM problems (not recoverable). <code>Exception</code> = conditions apps can handle (file not found, element not found).</p>
+
+<h4>Q: When would you use checked exceptions in automation?</h4>
+<p><strong>A:</strong> Reading config files (<code>IOException</code>), database connections (<code>SQLException</code>), parsing XML test data. Wrap in custom <code>ConfigException</code> or <code>TestDataException</code> for cleaner framework API.</p>
+
+<h4>Q: How do you log exceptions properly?</h4>
+<p><strong>A:</strong> <code>logger.error("Failed to click login button on page: {}", pageName, exception)</code> — include context message AND pass the exception object for full stack trace.</p>
+
+<h4>Q: What is try-with-resources?</h4>
+<p><strong>A:</strong> Java 7 feature that auto-closes <code>AutoCloseable</code> resources. Compiler generates finally block with <code>close()</code>. Use for file readers, DB connections, WebDriver.</p>
+
+<h4>Q: How do you design exception handling in a Page Object Model?</h4>
+<p><strong>A:</strong> BasePage provides safe action methods (safeClick, safeSendKeys) with built-in waits and retry. Page-specific methods throw custom exceptions (<code>PageNotFoundException</code>). Tests never catch Selenium exceptions directly.</p>
+
+<h4>Q: Can finally block change the return value?</h4>
+<p><strong>A:</strong> Yes — if finally has a return statement, it overrides try/catch return value. Avoid return in finally — it's a bad practice.</p>
+
+</section>
+
+<section id="section-8" class="section-card">
+<h2>Section 8: Access Modifiers</h2>
+
+<p>Access modifiers control visibility of classes, methods, and variables. In automation frameworks, choosing the right modifier is a design decision that affects maintainability, encapsulation, and extensibility of Page Objects, utilities, and base classes.</p>
+
+<h3>Access Modifier Table</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Modifier</th><th>Same Class</th><th>Same Package</th><th>Subclass</th><th>Other Package</th></tr>
+</thead>
+<tbody>
+<tr><td><code>private</code></td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td><td>❌ No</td></tr>
+<tr><td><code>default</code> (no modifier)</td><td>✅ Yes</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td></tr>
+<tr><td><code>protected</code></td><td>✅ Yes</td><td>✅ Yes</td><td>✅ Yes</td><td>❌ No</td></tr>
+<tr><td><code>public</code></td><td>✅ Yes</td><td>✅ Yes</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Framework Usage for Each Modifier</h3>
+
+<h4>private</h4>
+<p>Internal implementation details — hidden from outside the class.</p>
+<ul>
+<li><code>WebDriver driver</code> instance in Page Object</li>
+<li>Internal helper methods (e.g., <code>private void waitForAjax()</code>)</li>
+<li>Locator fields: <code>private By loginBtn = By.id("login");</code></li>
+<li>Screenshot capture logic inside a page class</li>
+</ul>
+<pre><code>public class LoginPage {
+    private WebDriver driver;                    // internal state
+    private By usernameField = By.id("user");    // locators hidden
+    private By passwordField = By.id("pass");
+
+    private void enterCredentials(String u, String p) {  // internal helper
+        driver.findElement(usernameField).sendKeys(u);
+        driver.findElement(passwordField).sendKeys(p);
+    }
+
+    public void login(String u, String p) {      // public API
+        enterCredentials(u, p);
+        driver.findElement(By.id("submit")).click();
+    }
+}
+</code></pre>
+
+<h4>default (package-private)</h4>
+<p>Visible within the same package only. Used for package-level utilities and internal test helpers.</p>
+<pre><code>// In package com.framework.pages — visible to all pages, not to tests
+class PageHelper {
+    void dismissCookieBanner(WebDriver driver) { /* ... */ }
+}
+</code></pre>
+
+<h4>protected</h4>
+<p>Accessible to subclasses — the backbone of BasePage/BaseTest inheritance.</p>
+<pre><code>public abstract class BasePage {
+    protected WebDriver driver;
+    protected WebDriverWait wait;
+
+    protected BasePage(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    protected void click(By locator) { /* shared click logic */ }
+    protected String getText(By locator) { /* shared get text */ }
+
+    protected abstract boolean isLoaded();  // force child implementation
+}
+
+public class LoginPage extends BasePage {
+    public LoginPage(WebDriver driver) { super(driver); }
+
+    @Override
+    protected boolean isLoaded() {
+        return driver.findElement(By.id("login-form")).isDisplayed();
+    }
+}
+</code></pre>
+
+<h4>public</h4>
+<p>Accessible everywhere — the framework's API surface.</p>
+<ul>
+<li>Page action methods: <code>public void login(String user, String pass)</code></li>
+<li>Test methods: <code>@Test public void testLogin()</code></li>
+<li>Utility methods: <code>public static String getProperty(String key)</code></li>
+<li>Constants: <code>public static final String BASE_URL</code></li>
+</ul>
+
+<h3>Design Decision Table</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>What</th><th>Modifier</th><th>Why</th></tr>
+</thead>
+<tbody>
+<tr><td>WebDriver in DriverManager</td><td>private + public getter</td><td>Encapsulate driver lifecycle; controlled access</td></tr>
+<tr><td>Locators in Page Objects</td><td>private</td><td>Hide implementation; change locator without breaking tests</td></tr>
+<tr><td>Locators in extended pages</td><td>protected</td><td>Allow subclass pages to reuse/override locators</td></tr>
+<tr><td>Action methods in Pages</td><td>public</td><td>Tests call these — they're the page API</td></tr>
+<tr><td>BaseTest setup/teardown</td><td>protected</td><td>Child test classes inherit but external code doesn't access</td></tr>
+<tr><td>Utility methods</td><td>public static</td><td>Called from anywhere without instantiation</td></tr>
+<tr><td>Constants</td><td>public static final</td><td>Global access, immutable</td></tr>
+<tr><td>Internal wait helpers</td><td>private</td><td>Implementation detail of the page class</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Common Mistakes</h3>
+
+<div class="callout">
+<ul>
+<li><strong>Making everything public</strong> — breaks encapsulation; locators and helpers should be private/protected</li>
+<li><strong>Using default accidentally</strong> — forgetting a modifier makes it package-private; test classes in a different package can't access it</li>
+<li><strong>private test methods</strong> — TestNG needs public test methods (or at least non-private)</li>
+<li><strong>protected locators when private suffices</strong> — only use protected if subclasses genuinely need them</li>
+<li><strong>public WebDriver field</strong> — always private with a getter, or pass via constructor</li>
+</ul>
+</div>
+
+<h3>Interview Q&amp;A — Section 8 (10+ Questions)</h3>
+
+<h4>Q: What is the most restrictive access modifier?</h4>
+<p><strong>A:</strong> <code>private</code> — accessible only within the same class.</p>
+
+<h4>Q: Can a top-level class be private?</h4>
+<p><strong>A:</strong> No. Top-level classes can only be <code>public</code> or package-private (default). <code>private</code> applies to inner/nested classes.</p>
+
+<h4>Q: Why are locators private in Page Objects?</h4>
+<p><strong>A:</strong> Encapsulation — if a locator changes, you update one private field. Tests use public action methods and never reference locators directly.</p>
+
+<h4>Q: protected vs default — what's the difference?</h4>
+<p><strong>A:</strong> Both are accessible in the same package. <code>protected</code> additionally allows access from subclasses in <strong>other packages</strong>. Critical for BasePage in <code>com.framework.base</code> extended by pages in <code>com.framework.pages</code>.</p>
+
+<h4>Q: Can constructors be private?</h4>
+<p><strong>A:</strong> Yes — used in Singleton pattern (e.g., <code>DriverManager</code>) and utility classes to prevent instantiation.</p>
+
+<h4>Q: What access modifier for TestNG @Test methods?</h4>
+<p><strong>A:</strong> <code>public</code> (convention) or package-private. TestNG can invoke non-private methods. Never private.</p>
+
+<h4>Q: How do access modifiers relate to encapsulation?</h4>
+<p><strong>A:</strong> Encapsulation = hide internal state, expose public API. Access modifiers enforce it: private fields, public getters/setters, protected for inheritance hierarchy.</p>
+
+<h4>Q: Can an interface method be protected?</h4>
+<p><strong>A:</strong> Pre-Java 9: all interface methods are implicitly public. Java 9+ allows private methods in interfaces.</p>
+
+<h4>Q: Why use protected for BaseTest @BeforeMethod?</h4>
+<p><strong>A:</strong> So child test classes in the same or different package can override setup/teardown while keeping it hidden from unrelated classes.</p>
+
+<h4>Q: What happens if DriverManager.driver is public?</h4>
+<p><strong>A:</strong> Any class can directly modify the driver reference — breaks encapsulation, causes thread-safety issues in parallel execution, makes debugging harder.</p>
+
+<h4>Q: Can we reduce visibility when overriding a method?</h4>
+<p><strong>A:</strong> No. Overridden method cannot have a more restrictive modifier. If parent method is <code>protected</code>, override must be <code>protected</code> or <code>public</code>.</p>
+
+</section>
+
+<section id="section-9" class="section-card">
+<h2>Section 9: Static Keyword</h2>
+
+<p>The <code>static</code> keyword belongs to the class, not to any instance. In automation frameworks, static is used for constants, utility methods, and config loading — but misused static WebDriver is the #1 cause of parallel execution failures.</p>
+
+<h3>Static Variable</h3>
+
+<p>Shared across <strong>ALL instances</strong> of the class — one copy in memory, class-level scope.</p>
+
+<pre><code>public class FrameworkConfig {
+    public static final String BASE_URL = "https://staging.example.com";
+    public static final int DEFAULT_TIMEOUT = 10;
+    public static final String BROWSER = "chrome";
+
+    // Counter shared across all test instances
+    public static int testsExecuted = 0;
+}
+</code></pre>
+
+<div class="callout">
+<strong>⚠️ DANGER: Static WebDriver</strong>
+<pre><code>public class DriverFactory {
+    public static WebDriver driver;  // ❌ NEVER DO THIS
+}
+</code></pre>
+<p>In parallel TestNG execution, ALL threads share the same static driver. Thread 1 opens Chrome, Thread 2 overwrites it with Firefox, Thread 1's test fails with wrong browser or stale session.</p>
+</div>
+
+<div class="ascii-diagram"><pre>
+  PARALLEL EXECUTION WITH static WebDriver (BROKEN):
+
+  Thread-1 (Test A)          Thread-2 (Test B)
+       |                          |
+       v                          v
+  driver = Chrome            driver = Firefox  ← overwrites!
+       |                          |
+  driver.get("/login")       driver.get("/cart")
+       |                          |
+  ❌ FAILS — driver now       ✅ Works on Firefox
+     points to Firefox        but broke Test A
+
+  SHARED static driver ──→ ONE WebDriver for ALL threads
+</pre></div>
+
+<p><strong>Solution:</strong> Use <code>ThreadLocal&lt;WebDriver&gt;</code> (covered in Section 14) — each thread gets its own driver instance.</p>
+
+<h3>Static Method</h3>
+
+<p>Called without creating an object. Cannot access instance variables or use <code>this</code>/<code>super</code>.</p>
+
+<pre><code>public class ConfigReader {
+    private static Properties prop = new Properties();
+
+    public static String getProperty(String key) {
+        return prop.getProperty(key);
+        // Cannot access instance fields here
+    }
+
+    public static WebDriver createDriver(String browser) {
+        switch (browser.toLowerCase()) {
+            case "chrome":  return new ChromeDriver();
+            case "firefox": return new FirefoxDriver();
+            default:        throw new IllegalArgumentException("Unknown browser: " + browser);
+        }
+    }
+}
+
+// Usage — no object needed
+String url = ConfigReader.getProperty("base.url");
+WebDriver driver = ConfigReader.createDriver("chrome");
+</code></pre>
+
+<p><strong>Automation usage:</strong></p>
+<ul>
+<li>Utility methods: <code>ExcelUtils.readSheet()</code>, <code>RandomDataGenerator.generateEmail()</code></li>
+<li>Factory methods: <code>DriverFactory.createDriver()</code></li>
+<li>Config readers: <code>ConfigReader.getProperty()</code></li>
+</ul>
+
+<h3>Static Block</h3>
+
+<p>Executes <strong>once</strong> when the class is first loaded by JVM — before any static method or object creation.</p>
+
+<pre><code>public class ConfigReader {
+    private static Properties prop;
+
+    static {
+        prop = new Properties();
+        try (FileInputStream fis = new FileInputStream("src/test/resources/config.properties")) {
+            prop.load(fis);
+            System.out.println("Config loaded successfully");
+        } catch (IOException e) {
+            throw new ConfigException("Failed to load config.properties", e);
+        }
+    }
+
+    public static String getProperty(String key) {
+        return prop.getProperty(key);
+    }
+}
+</code></pre>
+
+<p><strong>Automation usage:</strong> Load config once at class load time — avoids re-reading the file for every test method.</p>
+
+<h3>Static Import</h3>
+
+<pre><code>import static org.testng.Assert.*;
+import static org.openqa.selenium.By.*;
+
+// Now use directly without class prefix
+assertEquals(actual, expected);
+assertTrue(condition);
+driver.findElement(id("login"));
+driver.findElement(xpath("//button[@type='submit']"));
+</code></pre>
+
+<h3>Static in Framework Design</h3>
+
+<h4>Constants Class</h4>
+<pre><code>public final class Constants {
+    private Constants() {}  // prevent instantiation
+
+    public static final String BASE_URL = "https://example.com";
+    public static final int TIMEOUT = 10;
+    public static final String SCREENSHOT_DIR = "screenshots/";
+}
+</code></pre>
+
+<h4>Utility Class</h4>
+<pre><code>public final class StringUtils {
+    private StringUtils() {}  // no constructor — all static
+
+    public static String generateRandomEmail() {
+        return "test" + System.currentTimeMillis() + "@mail.com";
+    }
+
+    public static boolean isEmpty(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+}
+</code></pre>
+
+<h4>Singleton Pattern</h4>
+<pre><code>public class ReportManager {
+    private static ReportManager instance;
+
+    private ReportManager() {}  // private constructor
+
+    public static ReportManager getInstance() {
+        if (instance == null) {
+            instance = new ReportManager();
+        }
+        return instance;
+    }
+}
+</code></pre>
+
+<h3>Static vs Instance — Decision Table</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Static</th><th>Instance (Non-static)</th></tr>
+</thead>
+<tbody>
+<tr><td>Belongs to</td><td>Class</td><td>Object (instance)</td></tr>
+<tr><td>Memory</td><td>One copy</td><td>One copy per object</td></tr>
+<tr><td>Access</td><td>ClassName.method()</td><td>object.method()</td></tr>
+<tr><td>Can access instance vars?</td><td>No</td><td>Yes</td></tr>
+<tr><td>Can use this/super?</td><td>No</td><td>Yes</td></tr>
+<tr><td>Override?</td><td>No (hidden, not overridden)</td><td>Yes (polymorphism)</td></tr>
+<tr><td>Framework use</td><td>Utils, constants, config</td><td>Page Objects, test classes</td></tr>
+<tr><td>Thread safety</td><td>Shared state — dangerous</td><td>Each instance isolated</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Interview Q&amp;A — Section 9 (12+ Questions)</h3>
+
+<h4>Q: Can we override static methods?</h4>
+<p><strong>A:</strong> No — static methods are hidden, not overridden. Method resolution is compile-time (based on reference type), not runtime polymorphism.</p>
+
+<h4>Q: Why is static WebDriver bad for parallel execution?</h4>
+<p><strong>A:</strong> Static = one shared instance across all threads. Parallel tests overwrite each other's driver, causing random failures. Use ThreadLocal instead.</p>
+
+<h4>Q: Can a class be static?</h4>
+<p><strong>A:</strong> Top-level classes cannot be static. Only nested classes can be declared static — they don't need an outer class instance.</p>
+
+<h4>Q: When does static block execute?</h4>
+<p><strong>A:</strong> Once, when the class is first loaded by ClassLoader — before main(), before any static method call, before first object creation.</p>
+
+<h4>Q: Can static methods be synchronized?</h4>
+<p><strong>A:</strong> Yes — locks on the Class object. Used in Singleton double-checked locking. Rare in automation.</p>
+
+<h4>Q: What is static variable default value?</h4>
+<p><strong>A:</strong> Default initialized by JVM: 0 for numbers, false for boolean, null for objects. Instance variables get defaults too, but static has one shared copy.</p>
+
+<h4>Q: Why do utility classes have private constructors?</h4>
+<p><strong>A:</strong> To prevent instantiation — all methods are static, so creating an object is meaningless. Example: <code>private ConfigReader() {}</code>.</p>
+
+<h4>Q: Can we access static variable through object reference?</h4>
+<p><strong>A:</strong> Yes syntactically (<code>obj.staticVar</code>) but it's bad practice. Always use <code>ClassName.staticVar</code> — clearer intent.</p>
+
+<h4>Q: Difference between static import and normal import?</h4>
+<p><strong>A:</strong> Normal import brings class name into scope. Static import brings static members — use <code>assertEquals()</code> instead of <code>Assert.assertEquals()</code>.</p>
+
+<h4>Q: Can main method access non-static variables?</h4>
+<p><strong>A:</strong> No directly — main is static, non-static variables belong to objects. Must create an object first: <code>new MyClass().instanceMethod()</code>.</p>
+
+<h4>Q: How is static used in TestNG assertions?</h4>
+<p><strong>A:</strong> All Assert methods are static: <code>Assert.assertEquals(actual, expected)</code>. With static import: <code>assertEquals(actual, expected)</code>.</p>
+
+<h4>Q: Static variable vs instance variable — memory?</h4>
+<p><strong>A:</strong> Static: one copy in method area (metaspace). Instance: one copy per object on the heap. Static survives until class is unloaded.</p>
+
+<h4>Q: Can abstract class have static methods?</h4>
+<p><strong>A:</strong> Yes — static methods in abstract classes are common for factory methods: <code>public static LoginPage create(WebDriver driver)</code>.</p>
+
+</section>
+
+<section id="section-10" class="section-card">
+<h2>Section 10: Interface vs Abstract Class</h2>
+
+<p>Interfaces and abstract classes are the foundation of framework architecture — BasePage, WebDriver, listener contracts, and report interfaces all rely on choosing the right abstraction.</p>
+
+<h3>Interface</h3>
+
+<p>A <strong>100% contract</strong> (pre-Java 8). Defines <em>what</em> a class must do, not <em>how</em>. A class can implement multiple interfaces.</p>
+
+<pre><code>public interface IPageActions {
+    void navigateTo();
+    boolean isLoaded();
+    String getPageTitle();
+}
+
+public interface IValidatable {
+    void validateRequiredFields();
+    List&lt;String&gt; getValidationErrors();
+}
+
+// Multiple interfaces
+public class LoginPage implements IPageActions, IValidatable {
+    @Override
+    public void navigateTo() { /* ... */ }
+
+    @Override
+    public boolean isLoaded() { /* ... */ }
+
+    @Override
+    public String getPageTitle() { return driver.getTitle(); }
+
+    @Override
+    public void validateRequiredFields() { /* ... */ }
+
+    @Override
+    public List&lt;String&gt; getValidationErrors() { /* ... */ }
+}
+</code></pre>
+
+<h4>Default Methods (Java 8+)</h4>
+<p>Add behavior to interfaces without breaking existing implementations.</p>
+<pre><code>public interface IPageActions {
+    void navigateTo();
+    boolean isLoaded();
+
+    // Default method — optional override
+    default void waitForPageLoad() {
+        new WebDriverWait(driver, Duration.ofSeconds(10))
+            .until(d -&gt; ((JavascriptExecutor) d)
+                .executeScript("return document.readyState").equals("complete"));
+    }
+}
+</code></pre>
+
+<h4>Static Methods in Interface</h4>
+<pre><code>public interface BrowserUtils {
+    static boolean isBrowserOpen(WebDriver driver) {
+        try {
+            driver.getTitle();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}
+
+// Call without implementation
+boolean open = BrowserUtils.isBrowserOpen(driver);
+</code></pre>
+
+<h4>Functional Interface</h4>
+<pre><code>@FunctionalInterface
+public interface ElementAction {
+    void perform(WebElement element);
+    // Exactly ONE abstract method — enables lambdas
+}
+
+// Usage with lambda
+ElementAction click = el -&gt; el.click();
+ElementAction getText = el -&gt; System.out.println(el.getText());
+
+elements.forEach(el -&gt; click.perform(el));
+</code></pre>
+
+<h4>Selenium Example: WebDriver Interface</h4>
+<pre><code>WebDriver driver = new ChromeDriver();    // Interface reference
+driver = new FirefoxDriver();           // Different implementation
+driver = new EdgeDriver();              // Same interface, different browser
+
+// WebDriver is an interface — ChromeDriver, FirefoxDriver implement it
+// SearchContext, TakesScreenshot, JavascriptExecutor are sub-interfaces
+</code></pre>
+
+<h4>Framework Examples</h4>
+<ul>
+<li><code>IPageActions</code> — contract for all page objects</li>
+<li><code>IConfigurable</code> — contract for config-driven components</li>
+<li><code>IReportable</code> — contract for test reporting listeners</li>
+</ul>
+
+<h3>Abstract Class</h3>
+
+<p>Partial implementation — mix of concrete methods (shared code) and abstract methods (force subclass implementation). Can have constructors, instance variables, any access modifier.</p>
+
+<pre><code>public abstract class BasePage {
+    protected WebDriver driver;
+    protected WebDriverWait wait;
+
+    // Constructor — YES, abstract classes CAN have constructors
+    protected BasePage(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    // Concrete method — shared by ALL pages
+    public void click(By locator) {
+        wait.until(ExpectedConditions.elementToBeClickable(locator)).click();
+    }
+
+    protected void sendKeys(By locator, String text) {
+        wait.until(ExpectedConditions.visibilityOfElementLocated(locator)).sendKeys(text);
+    }
+
+    protected String getText(By locator) {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(locator)).getText();
+    }
+
+    // Abstract method — force each page to implement
+    public abstract boolean isLoaded();
+    public abstract String getPageUrl();
+}
+</code></pre>
+
+<h3>Comparison Table</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Feature</th><th>Interface</th><th>Abstract Class</th></tr>
+</thead>
+<tbody>
+<tr><td>Methods</td><td>Abstract + default + static</td><td>Abstract + concrete</td></tr>
+<tr><td>Variables</td><td>public static final only</td><td>Any type (instance, static)</td></tr>
+<tr><td>Constructor</td><td>No</td><td>Yes</td></tr>
+<tr><td>Multiple inheritance</td><td>Yes (implements multiple)</td><td>No (extends one only)</td></tr>
+<tr><td>Access modifiers</td><td>Public (Java 9+ allows private)</td><td>Any (private, protected, public)</td></tr>
+<tr><td>Instance variables</td><td>Not allowed (only constants)</td><td>Allowed (driver, wait, etc.)</td></tr>
+<tr><td>When to use</td><td>Contract across unrelated classes</td><td>Base class with shared code + forced overrides</td></tr>
+<tr><td>Keyword</td><td><code>implements</code></td><td><code>extends</code></td></tr>
+<tr><td>Real framework example</td><td>IPageActions, WebDriver</td><td>BasePage, BaseTest</td></tr>
+<tr><td>Can have main method?</td><td>Yes (static method)</td><td>Yes (static or instance)</td></tr>
+<tr><td>Polymorphism</td><td>Yes — interface reference</td><td>Yes — abstract class reference</td></tr>
+<tr><td>Design role</td><td>CAN-DO relationship (capability)</td><td>IS-A relationship (inheritance)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Real Framework Decisions</h3>
+
+<div class="callout">
+<ul>
+<li><strong>BasePage → ABSTRACT CLASS</strong> — has shared code (click, sendKeys, wait) + forces <code>isLoaded()</code> implementation</li>
+<li><strong>IPageActions → INTERFACE</strong> — pure contract, no shared state, multiple unrelated classes can implement</li>
+<li><strong>WebDriver → INTERFACE</strong> — Selenium's core design; ChromeDriver, FirefoxDriver, RemoteWebDriver all implement it</li>
+<li><strong>BaseTest → ABSTRACT CLASS</strong> — shared @BeforeMethod/@AfterMethod + abstract test configuration</li>
+<li><strong>ITestListener → INTERFACE</strong> — TestNG listener contract</li>
+</ul>
+</div>
+
+<h3>Design Pattern: Interface + Abstract Class Combination</h3>
+
+<p>The most powerful framework pattern — interface defines the contract, abstract class provides shared implementation, concrete class completes it.</p>
+
+<pre><code>// 1. Interface — the contract
+public interface IPageActions {
+    void navigateTo();
+    boolean isLoaded();
+    void validatePage();
+}
+
+// 2. Abstract class — shared implementation
+public abstract class BasePage implements IPageActions {
+    protected WebDriver driver;
+    protected WebDriverWait wait;
+
+    protected BasePage(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    protected void click(By locator) {
+        wait.until(ExpectedConditions.elementToBeClickable(locator)).click();
+    }
+
+    protected void type(By locator, String text) {
+        WebElement el = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+        el.clear();
+        el.sendKeys(text);
+    }
+
+    // Default implementation — can be overridden
+    @Override
+    public void validatePage() {
+        if (!isLoaded()) {
+            throw new PageNotFoundException(this.getClass().getSimpleName());
+        }
+    }
+
+    // Force subclass to implement
+    @Override
+    public abstract boolean isLoaded();
+}
+
+// 3. Concrete class — page-specific
+public class LoginPage extends BasePage {
+    private By usernameField = By.id("username");
+    private By passwordField = By.id("password");
+    private By loginButton   = By.id("login-btn");
+
+    public LoginPage(WebDriver driver) {
+        super(driver);
+    }
+
+    @Override
+    public void navigateTo() {
+        driver.get(ConfigReader.getProperty("base.url") + "/login");
+        validatePage();
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return driver.findElement(loginButton).isDisplayed();
+    }
+
+    public void login(String username, String password) {
+        type(usernameField, username);
+        type(passwordField, password);
+        click(loginButton);
+    }
+}
+</code></pre>
+
+<h3>When to Choose Which?</h3>
+
+<div class="ascii-diagram"><pre>
+  Decision Flow:
+
+  Need shared state (driver, wait)?
+       |
+      YES ──→ ABSTRACT CLASS (BasePage)
+       |
+      NO
+       |
+  Need shared method implementations?
+       |
+      YES ──→ ABSTRACT CLASS or Interface with default methods
+       |
+      NO
+       |
+  Need multiple inheritance?
+       |
+      YES ──→ INTERFACE (implements A, B, C)
+       |
+      NO
+       |
+  Define a contract/capability?
+       |
+      YES ──→ INTERFACE (IPageActions)
+       |
+      NO
+       |
+  IS-A relationship with shared code?
+       |
+      YES ──→ ABSTRACT CLASS (BaseTest extends...)
+</pre></div>
+
+<h3>Interview Q&amp;A — Section 10 (12+ Questions)</h3>
+
+<h4>Q: Can an interface extend another interface?</h4>
+<p><strong>A:</strong> Yes — interface inheritance is supported. <code>interface IAdvancedActions extends IPageActions, IValidatable</code>.</p>
+
+<h4>Q: Can an abstract class implement an interface?</h4>
+<p><strong>A:</strong> Yes — and it can leave interface methods abstract. <code>abstract class BasePage implements IPageActions</code> — provides some implementations, leaves rest abstract.</p>
+
+<h4>Q: Can we create an object of an abstract class?</h4>
+<p><strong>A:</strong> No — must subclass and implement all abstract methods. <code>BasePage page = new BasePage(driver)</code> is a compile error.</p>
+
+<h4>Q: Can an interface have a constructor?</h4>
+<p><strong>A:</strong> No — interfaces cannot have constructors. Only abstract and concrete classes can.</p>
+
+<h4>Q: Why is WebDriver an interface and not an abstract class?</h4>
+<p><strong>A:</strong> Selenium supports many browsers (Chrome, Firefox, Edge, Safari, Remote). Interface allows each browser driver to implement independently without sharing a common base class hierarchy. Also, WebDriver extends multiple interfaces: SearchContext, TakesScreenshot.</p>
+
+<h4>Q: What is a marker interface?</h4>
+<p><strong>A:</strong> Empty interface with no methods — marks a capability. <code>Serializable</code>, <code>Cloneable</code>. In automation, you might create <code>IScreenshotable</code> as a marker for pages that support screenshot capture.</p>
+
+<h4>Q: Can an abstract class be final?</h4>
+<p><strong>A:</strong> No — <code>abstract</code> and <code>final</code> are contradictory. Abstract means "must be extended"; final means "cannot be extended."</p>
+
+<h4>Q: Interface vs abstract class — Java 8 changes?</h4>
+<p><strong>A:</strong> Java 8 added default and static methods to interfaces, blurring the line. But interfaces still can't have instance variables or constructors. Use abstract class when you need state (driver, wait).</p>
+
+<h4>Q: How does BasePage benefit from being abstract?</h4>
+<p><strong>A:</strong> (1) Provides shared methods (click, type, wait) — DRY principle. (2) Forces each page to implement <code>isLoaded()</code> — compile-time enforcement. (3) Cannot be instantiated directly — must create specific pages.</p>
+
+<h4>Q: Can a concrete class extend an abstract class without implementing all abstract methods?</h4>
+<p><strong>A:</strong> Only if the concrete class is also declared abstract. Otherwise, compile error — must implement all abstract methods.</p>
+
+<h4>Q: What is the diamond problem and how does Java handle it?</h4>
+<p><strong>A:</strong> Multiple inheritance causes ambiguity if two interfaces have same default method. Java resolves by requiring explicit override: <code>@Override public void method() { InterfaceA.super.method(); }</code>.</p>
+
+<h4>Q: Why implement IPageActions interface if BasePage already has the methods?</h4>
+<p><strong>A:</strong> Interface enables polymorphism — you can pass any IPageActions to a method without knowing the concrete page class. Enables generic page validation: <code>void verifyPage(IPageActions page) { assertTrue(page.isLoaded()); }</code>.</p>
+
+<h4>Q: Functional interface — why important in automation?</h4>
+<p><strong>A:</strong> Enables lambda expressions for cleaner code: <code>elements.forEach(el -&gt; el.click())</code>, custom wait conditions: <code>wait.until(driver -&gt; driver.findElement(By.id("x")).isDisplayed())</code>, and callback patterns in retry utilities.</p>
+
+</section>

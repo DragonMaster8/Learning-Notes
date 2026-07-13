@@ -43,7 +43,13 @@
 <div class="dashboard">
   <header class="dashboard-header">
     <div class="brand"><em>Learning</em> Notes</div>
-    <p class="tagline">Your personal knowledge base — performance testing, automation, and beyond.</p>
+    <p class="tagline">Complete Interview Preparation for 4+ Year Experienced QA Automation Engineers</p>
+    <div class="dash-stats-bar">
+      <div class="dash-stat"><span class="dash-stat-num">13</span><span class="dash-stat-label">Handbooks</span></div>
+      <div class="dash-stat"><span class="dash-stat-num">279</span><span class="dash-stat-label">Sections</span></div>
+      <div class="dash-stat"><span class="dash-stat-num">3,430+</span><span class="dash-stat-label">Interview Q&amp;A</span></div>
+      <div class="dash-stat"><span class="dash-stat-num">~68 hrs</span><span class="dash-stat-label">Total Read Time</span></div>
+    </div>
     <div class="dashboard-nav">
       <input type="text" class="dashboard-search" placeholder="Search topics... (Ctrl+K)" aria-label="Search topics">
       <div class="dash-user-bar"><span class="user-avatar"></span><span class="user-greeting"></span></div>
@@ -51,84 +57,209 @@
     </div>
   </header>
 
+  <!-- ===== PRIORITY LEGEND ===== -->
+  <div class="priority-legend">
+    <span class="legend-item"><span class="priority-dot priority-must-master"></span> Must Master</span>
+    <span class="legend-item"><span class="priority-dot priority-essential"></span> Essential</span>
+    <span class="legend-item"><span class="priority-dot priority-important"></span> Important</span>
+    <span class="legend-item"><span class="priority-dot priority-reference"></span> Reference</span>
+  </div>
+
   <div class="topics-grid" id="topics-grid">
 
-    <!-- ========== TOPIC CARD: JMeter ========== -->
-    <a href="JMeter_Notes_Website.html" class="topic-card">
+    <!-- ========== TOPIC CARD: Java for Automation ========== -->
+    <a href="java_automation_notes.html" class="topic-card priority-border-must-master">
       <span class="topic-card-arrow">&rarr;</span>
-      <div class="topic-card-icon">&#9889;</div>
-      <h3>JMeter Performance Testing</h3>
-      <p>Complete guide covering installation, recording, thread groups, listeners, assertions, controllers, timers, correlation, BeanShell scripting, distributed testing, and interview prep.</p>
+      <div class="topic-card-priority"><span class="priority-badge priority-must-master">Must Master</span></div>
+      <div class="topic-card-icon">&#9749;</div>
+      <h3>Java for Automation Engineers</h3>
+      <p>Java OOP, Collections, Strings, Java 8, Design Patterns, ThreadLocal, POM, framework-specific Java, 200+ interview questions, 50 company-wise SDET coding rounds.</p>
       <div class="topic-card-meta">
-        <span class="topic-tag">16 Sections</span>
-        <span class="topic-tag">250+ Revision Items</span>
-        <span class="topic-tag">4+ Yrs Experience</span>
-      </div>
-    </a>
-
-    <!-- ========== TOPIC CARD: Git & GitHub ========== -->
-    <a href="git_github.html" class="topic-card">
-      <span class="topic-card-arrow">&rarr;</span>
-      <div class="topic-card-icon">&#128268;</div>
-      <h3>Git &amp; GitHub for QA Engineers</h3>
-      <p>Complete guide covering version control fundamentals, branching strategies, merge vs rebase, Git hooks for shift-left testing, git bisect for debugging, cherry-pick, LFS, CI/CD integration, and interview preparation.</p>
-      <div class="topic-card-meta">
-        <span class="topic-tag">16 Sections</span>
-        <span class="topic-tag">200+ Revision Items</span>
-        <span class="topic-tag">50+ Interview Q&amp;A</span>
-      </div>
-    </a>
-
-    <!-- ========== TOPIC CARD: UNIX/Linux ========== -->
-    <a href="unix_linux.html" class="topic-card">
-      <span class="topic-card-arrow">&rarr;</span>
-      <div class="topic-card-icon">&#128427;</div>
-      <h3>UNIX/Linux for QA Engineers</h3>
-      <p>Complete handbook covering file system, permissions, process management, text processing, shell scripting, log analysis, curl API testing, CI/CD integration, and 50+ production scenarios.</p>
-      <div class="topic-card-meta">
-        <span class="topic-tag">20 Modules</span>
-        <span class="topic-tag">300+ Commands</span>
+        <span class="topic-tag">25 Sections</span>
         <span class="topic-tag">200+ Interview Q&amp;A</span>
+        <span class="topic-tag">50 Coding Problems</span>
       </div>
+      <div class="topic-card-read-time">&#9201; 7h 11m read</div>
+    </a>
+
+    <!-- ========== TOPIC CARD: Java & Selenium ========== -->
+    <a href="java_selenium_notes.html" class="topic-card priority-border-must-master">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-must-master">Must Master</span></div>
+      <div class="topic-card-icon">&#127760;</div>
+      <h3>Java &amp; Selenium Handbook</h3>
+      <p>Java fundamentals, OOP, Collections, Selenium WebDriver, Locators, Waits, POM, Page Factory, Hybrid Framework, TestNG, Cucumber, Maven, Jenkins, Grid, 450+ interview questions.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">42 Sections</span>
+        <span class="topic-tag">450+ Interview Q&amp;A</span>
+        <span class="topic-tag">6 Real Scenarios</span>
+      </div>
+      <div class="topic-card-read-time">&#9201; 10h 21m read</div>
+    </a>
+
+    <!-- ========== TOPIC CARD: TestNG & Cucumber ========== -->
+    <a href="testng_cucumber_notes.html" class="topic-card priority-border-must-master">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-must-master">Must Master</span></div>
+      <div class="topic-card-icon">&#129514;</div>
+      <h3>TestNG &amp; Cucumber BDD</h3>
+      <p>TestNG annotations, parallel execution, listeners, retry, Cucumber BDD, Gherkin, step definitions, framework architecture, API testing, Jenkins CI/CD, 350+ interview questions.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">35 Sections</span>
+        <span class="topic-tag">350+ Interview Q&amp;A</span>
+        <span class="topic-tag">5 Real Scenarios</span>
+      </div>
+      <div class="topic-card-read-time">&#9201; 9h 24m read</div>
     </a>
 
     <!-- ========== TOPIC CARD: API Testing & Automation ========== -->
-    <a href="api_testing_notes.html" class="topic-card">
+    <a href="api_testing_notes.html" class="topic-card priority-border-essential">
       <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-essential">Essential</span></div>
       <div class="topic-card-icon">&#128640;</div>
       <h3>API Testing &amp; Automation</h3>
-      <p>Complete study material &mdash; REST Assured, Postman (mock servers, e-commerce flow), SOAP, SoapUI (Groovy, Axis2), GraphQL, OAuth&nbsp;2.0, Newman, Jenkins CI/CD, Jira API, and 250+ interview questions.</p>
+      <p>REST Assured, Postman (mock servers, e-commerce flow), SOAP, SoapUI (Groovy, Axis2), GraphQL, OAuth&nbsp;2.0, Newman, Jenkins CI/CD, Jira API, and 250+ interview questions.</p>
       <div class="topic-card-meta">
         <span class="topic-tag">14 Modules</span>
         <span class="topic-tag">3500+ Topics</span>
         <span class="topic-tag">250+ Interview Q&amp;A</span>
       </div>
+      <div class="topic-card-read-time">&#9201; 4h 10m read</div>
     </a>
 
     <!-- ========== TOPIC CARD: SQL & Database ========== -->
-    <a href="sql_database_notes.html" class="topic-card">
+    <a href="sql_database_notes.html" class="topic-card priority-border-essential">
       <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-essential">Essential</span></div>
       <div class="topic-card-icon">&#128451;</div>
       <h3>SQL &amp; Database Handbook</h3>
-      <p>Complete SQL &amp; Database handbook &mdash; fundamentals, JOINs, window functions, database testing, ETL, API+DB validation, stored procedures, NoSQL, 200+ interview questions, cheat sheet, and career roadmap.</p>
+      <p>SQL fundamentals, JOINs, window functions, database testing, ETL, API+DB validation, stored procedures, NoSQL, 200+ interview questions, cheat sheet, and career roadmap.</p>
       <div class="topic-card-meta">
         <span class="topic-tag">20 Sections</span>
         <span class="topic-tag">200+ Interview Q&amp;A</span>
         <span class="topic-tag">100+ SQL Examples</span>
       </div>
+      <div class="topic-card-read-time">&#9201; 5h 44m read</div>
+    </a>
+
+    <!-- ========== TOPIC CARD: Testing, Agile & Jira ========== -->
+    <a href="testing_agile_jira_notes.html" class="topic-card priority-border-essential">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-essential">Essential</span></div>
+      <div class="topic-card-icon">&#128203;</div>
+      <h3>Software Testing, Agile &amp; Jira</h3>
+      <p>Testing fundamentals, 16 testing types, Agile/Scrum, Jira mastery, test design techniques, defect management, real project scenarios, 300+ interview questions, and career roadmap.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">19 Sections</span>
+        <span class="topic-tag">300+ Interview Q&amp;A</span>
+        <span class="topic-tag">5 Real Scenarios</span>
+      </div>
+      <div class="topic-card-read-time">&#9201; 9h 22m read</div>
+    </a>
+
+    <!-- ========== TOPIC CARD: CI/CD for Automation ========== -->
+    <a href="cicd_automation_notes.html" class="topic-card priority-border-essential">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-essential">Essential</span></div>
+      <div class="topic-card-icon">&#9881;</div>
+      <h3>CI/CD &amp; Jenkins for Automation</h3>
+      <p>Jenkins pipelines, TestNG/Cucumber/Selenium/Playwright integration, Maven, Git, Docker, Kubernetes, Azure DevOps, GitHub Actions, 300+ interview questions, troubleshooting &amp; scenarios.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">31 Sections</span>
+        <span class="topic-tag">300+ Interview Q&amp;A</span>
+        <span class="topic-tag">8 Real Scenarios</span>
+      </div>
+      <div class="topic-card-read-time">&#9201; ~6h read</div>
+    </a>
+
+    <!-- ========== TOPIC CARD: CI/CD & Jenkins (Previous) ========== -->
+    <a href="cicd_jenkins_notes.html" class="topic-card priority-border-reference">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-reference">Reference</span></div>
+      <div class="topic-card-icon">&#9881;</div>
+      <h3>CI/CD &amp; Jenkins (General)</h3>
+      <p>DevOps fundamentals, Jenkins pipelines, Maven, TestNG integration, Docker, Kubernetes, real project implementation, troubleshooting, 350+ interview questions, and SDET roadmap.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">22 Sections</span>
+        <span class="topic-tag">350+ Interview Q&amp;A</span>
+        <span class="topic-tag">8 Real Scenarios</span>
+      </div>
+      <div class="topic-card-read-time">&#9201; 6h 25m read</div>
+    </a>
+
+    <!-- ========== TOPIC CARD: Git & GitHub ========== -->
+    <a href="git_github.html" class="topic-card priority-border-important">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-important">Important</span></div>
+      <div class="topic-card-icon">&#128268;</div>
+      <h3>Git &amp; GitHub for QA Engineers</h3>
+      <p>Version control fundamentals, branching strategies, merge vs rebase, Git hooks for shift-left testing, git bisect for debugging, cherry-pick, LFS, CI/CD integration, and interview preparation.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">16 Sections</span>
+        <span class="topic-tag">200+ Revision Items</span>
+        <span class="topic-tag">50+ Interview Q&amp;A</span>
+      </div>
+      <div class="topic-card-read-time">&#9201; 1h 25m read</div>
+    </a>
+
+    <!-- ========== TOPIC CARD: UNIX/Linux ========== -->
+    <a href="unix_linux.html" class="topic-card priority-border-important">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-important">Important</span></div>
+      <div class="topic-card-icon">&#128427;</div>
+      <h3>UNIX/Linux for QA Engineers</h3>
+      <p>File system, permissions, process management, text processing, shell scripting, log analysis, curl API testing, CI/CD integration, and 50+ production scenarios.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">20 Modules</span>
+        <span class="topic-tag">300+ Commands</span>
+        <span class="topic-tag">200+ Interview Q&amp;A</span>
+      </div>
+      <div class="topic-card-read-time">&#9201; 2h 0m read</div>
+    </a>
+
+    <!-- ========== TOPIC CARD: JMeter ========== -->
+    <a href="JMeter_Notes_Website.html" class="topic-card priority-border-important">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-important">Important</span></div>
+      <div class="topic-card-icon">&#9889;</div>
+      <h3>JMeter Performance Testing</h3>
+      <p>Installation, recording, thread groups, listeners, assertions, controllers, timers, correlation, BeanShell scripting, distributed testing, and interview prep.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">16 Sections</span>
+        <span class="topic-tag">250+ Revision Items</span>
+        <span class="topic-tag">4+ Yrs Experience</span>
+      </div>
+      <div class="topic-card-read-time">&#9201; 1h 49m read</div>
     </a>
 
     <!-- ========== TOPIC CARD: Notes by Dipali ========== -->
-    <a href="dipali_notes.html" class="topic-card">
+    <a href="dipali_notes.html" class="topic-card priority-border-reference">
       <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-reference">Reference</span></div>
       <div class="topic-card-icon">&#128218;</div>
       <h3>Notes by Dipali</h3>
-      <p>Complete QA automation knowledge repository — manual testing, Selenium WebDriver, Java for SDET, API testing, SQL, Git, UAT, and 600+ interview questions with answers.</p>
+      <p>QA automation knowledge repository — manual testing, Selenium WebDriver, Java for SDET, API testing, SQL, Git, UAT, and 600+ interview questions with answers.</p>
       <div class="topic-card-meta">
         <span class="topic-tag">12 Modules</span>
         <span class="topic-tag">1500+ Topics</span>
         <span class="topic-tag">600+ Interview Q&amp;A</span>
       </div>
+      <div class="topic-card-read-time">&#9201; 2h 33m read</div>
+    </a>
+
+    <!-- ========== TOPIC CARD: Add-On Topics ========== -->
+    <a href="addon_topics_notes.html" class="topic-card priority-border-reference">
+      <span class="topic-card-arrow">&rarr;</span>
+      <div class="topic-card-priority"><span class="priority-badge priority-reference">Add-On / Reference</span></div>
+      <div class="topic-card-icon">&#128300;</div>
+      <h3>Add-On Topics</h3>
+      <p>Playwright Automation, REST Assured Deep Dive, Microservices Testing, DSA for SDET, Appium &amp; Mobile Testing, Security Testing, Cloud Testing for QA Engineers.</p>
+      <div class="topic-card-meta">
+        <span class="topic-tag">7 Sections</span>
+        <span class="topic-tag">130+ Interview Q&amp;A</span>
+        <span class="topic-tag">Optional</span>
+      </div>
+      <div class="topic-card-read-time">&#9201; ~3h 30m read</div>
     </a>
 
     <!--

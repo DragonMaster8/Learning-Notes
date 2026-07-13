@@ -1,0 +1,3489 @@
+<section id="section-17" class="section-card">
+<h2>Section 17: Design Patterns for Automation</h2>
+
+<p>Design patterns are reusable solutions to common software design problems. In test automation frameworks, they solve recurring challenges: managing WebDriver instances, creating browser objects, building test configurations, switching wait strategies, and reacting to test events. Mastering these five patterns is essential for framework design interviews and real-world Selenium/TestNG projects.</p>
+
+<!-- ===================== SINGLETON PATTERN ===================== -->
+<h3>Singleton Pattern</h3>
+
+<h4>What</h4>
+<p>The Singleton pattern ensures a class has <strong>only ONE instance</strong> throughout the application lifecycle and provides a global access point to that instance. The constructor is private; creation happens via a static <code>getInstance()</code> method.</p>
+
+<h4>Why in Automation</h4>
+<ul>
+<li><strong>ConfigReader</strong> — Read <code>config.properties</code> once at startup; every test class accesses the same configuration without re-parsing the file.</li>
+<li><strong>ExtentReports</strong> — One report instance accumulates all test results into a single HTML report.</li>
+<li><strong>DriverManager</strong> — Centralized driver lifecycle (often combined with ThreadLocal for parallel runs).</li>
+</ul>
+
+<div class="callout">
+<strong>Framework Usage:</strong> Place Singleton classes in <code>src/main/java/config/</code> or <code>driver/</code>. Initialize in <code>@BeforeSuite</code> and access anywhere via <code>ConfigReader.getInstance()</code>.
+</div>
+
+<h4>Implementation Variants</h4>
+<ul>
+<li><strong>Eager Singleton</strong> — Instance created at class load time.</li>
+<li><strong>Lazy Singleton</strong> — Instance created on first <code>getInstance()</code> call.</li>
+<li><strong>Thread-Safe Singleton</strong> — <code>synchronized getInstance()</code>, double-checked locking, or Bill Pugh (static inner holder class).</li>
+</ul>
+
+<h4>Complete Code: Singleton ConfigReader</h4>
+<pre><code>package config;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+
+public class ConfigReader {
+
+    private static ConfigReader instance;
+    private Properties properties;
+
+    // Private constructor — prevents external instantiation
+    private ConfigReader() {
+        properties = new Properties();
+        try {
+            FileInputStream fis = new FileInputStream("src/test/resources/config.properties");
+            properties.load(fis);
+            fis.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load config.properties", e);
+        }
+    }
+
+    // Thread-safe lazy initialization (synchronized)
+    public static synchronized ConfigReader getInstance() {
+        if (instance == null) {
+            instance = new ConfigReader();
+        }
+        return instance;
+    }
+
+    public String getProperty(String key) {
+        return properties.getProperty(key);
+    }
+
+    public String getBrowser() {
+        return properties.getProperty("browser", "chrome");
+    }
+
+    public String getBaseUrl() {
+        return properties.getProperty("baseUrl", "https://example.com");
+    }
+
+    public int getTimeout() {
+        return Integer.parseInt(properties.getProperty("timeout", "10"));
+    }
+}
+
+// Usage in BaseTest:
+// ConfigReader config = ConfigReader.getInstance();
+// driver.get(config.getBaseUrl());</code></pre>
+
+<h4>Complete Code: Bill Pugh Singleton — ExtentReportManager</h4>
+<pre><code>package reports;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+
+public class ExtentReportManager {
+
+    // Private constructor
+    private ExtentReportManager() {}
+
+    // Bill Pugh: inner static class holds the singleton instance
+    private static class ReportHolder {
+        private static final ExtentReportManager INSTANCE = new ExtentReportManager();
+        private static final ExtentReports EXTENT = createReport();
+    }
+
+    private static ExtentReports createReport() {
+        ExtentSparkReporter spark = new ExtentSparkReporter("reports/AutomationReport.html");
+        spark.config().setReportName("Automation Test Report");
+        spark.config().setDocumentTitle("Test Results");
+        ExtentReports extent = new ExtentReports();
+        extent.attachReporter(spark);
+        extent.setSystemInfo("Project", "E-Commerce Automation");
+        extent.setSystemInfo("Environment", System.getProperty("env", "QA"));
+        return extent;
+    }
+
+    public static ExtentReportManager getInstance() {
+        return ReportHolder.INSTANCE;
+    }
+
+    public ExtentReports getReport() {
+        return ReportHolder.EXTENT;
+    }
+}
+
+// Usage in TestListener:
+// ExtentReports extent = ExtentReportManager.getInstance().getReport();
+// ExtentTest test = extent.createTest(result.getMethod().getMethodName());</code></pre>
+
+<h4>Pros/Cons in Automation Context</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Pros</th><th>Cons</th></tr></thead>
+<tbody>
+<tr><td>Single config read — fast, consistent</td><td>Hard to unit test (global state)</td></tr>
+<tr><td>One report instance — unified output</td><td>Violates Single Responsibility if overused</td></tr>
+<tr><td>Memory efficient — no duplicate objects</td><td>Thread safety requires careful design</td></tr>
+<tr><td>Easy global access from any class</td><td>Hidden dependencies — hard to mock in isolation</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===================== FACTORY PATTERN ===================== -->
+<h3>Factory Pattern</h3>
+
+<h4>What</h4>
+<p>The Factory pattern creates objects without exposing the instantiation logic to the client. The client requests an object by type/name; the factory decides which concrete class to instantiate.</p>
+
+<h4>Why in Automation</h4>
+<ul>
+<li><strong>DriverFactory</strong> — Create <code>ChromeDriver</code>, <code>FirefoxDriver</code>, or <code>EdgeDriver</code> based on a config parameter or TestNG parameter.</li>
+<li><strong>PageFactory</strong> — Dynamically create page object instances bound to the current WebDriver.</li>
+<li><strong>BrowserType enum</strong> — Type-safe browser selection: <code>BrowserType.CHROME</code> → <code>ChromeDriver</code>.</li>
+</ul>
+
+<h4>Complete Code: BrowserFactory with Switch/Enum</h4>
+<pre><code>package driver;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
+import io.github.bonigarcia.wdm.WebDriverManager;
+
+public enum BrowserType {
+    CHROME, FIREFOX, EDGE, HEADLESS_CHROME
+}
+
+public class BrowserFactory {
+
+    public static WebDriver createDriver(BrowserType browser) {
+        WebDriver driver;
+        switch (browser) {
+            case CHROME:
+                WebDriverManager.chromedriver().setup();
+                driver = new ChromeDriver();
+                break;
+            case FIREFOX:
+                WebDriverManager.firefoxdriver().setup();
+                driver = new FirefoxDriver();
+                break;
+            case EDGE:
+                WebDriverManager.edgedriver().setup();
+                driver = new EdgeDriver();
+                break;
+            case HEADLESS_CHROME:
+                WebDriverManager.chromedriver().setup();
+                ChromeOptions options = new ChromeOptions();
+                options.addArguments("--headless", "--disable-gpu", "--window-size=1920,1080");
+                driver = new ChromeDriver(options);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported browser: " + browser);
+        }
+        driver.manage().window().maximize();
+        driver.manage().timeouts().implicitlyWait(java.time.Duration.ofSeconds(10));
+        return driver;
+    }
+
+    // Factory method reading from config
+    public static WebDriver createDriverFromConfig() {
+        String browserName = config.ConfigReader.getInstance().getBrowser().toUpperCase();
+        BrowserType type = BrowserType.valueOf(browserName);
+        return createDriver(type);
+    }
+}
+
+// Usage in BaseTest @BeforeMethod:
+// WebDriver driver = BrowserFactory.createDriver(BrowserType.CHROME);</code></pre>
+
+<h4>Complete Code: Page Object Factory</h4>
+<pre><code>package pages;
+
+import org.openqa.selenium.WebDriver;
+import java.lang.reflect.Constructor;
+
+public class PageFactory {
+
+    @SuppressWarnings("unchecked")
+    public static &lt;T extends BasePage&gt; T createPage(WebDriver driver, Class&lt;T&gt; pageClass) {
+        try {
+            Constructor&lt;T&gt; constructor = pageClass.getConstructor(WebDriver.class);
+            return constructor.newInstance(driver);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create page: " + pageClass.getSimpleName(), e);
+        }
+    }
+}
+
+// Usage in tests:
+// LoginPage loginPage = PageFactory.createPage(driver, LoginPage.class);
+// HomePage homePage = PageFactory.createPage(driver, HomePage.class);
+
+// Dynamic page creation from TestNG parameter:
+// @Parameters({"pageClass"})
+// public void testPage(String pageClassName) {
+//     Class&lt;?&gt; clazz = Class.forName("pages." + pageClassName);
+//     BasePage page = PageFactory.createPage(driver, (Class) clazz);
+// }</code></pre>
+
+<h4>Pros/Cons</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Pros</th><th>Cons</th></tr></thead>
+<tbody>
+<tr><td>Centralized object creation — change browser in one place</td><td>Factory class grows with each new browser type</td></tr>
+<tr><td>Tests don't depend on concrete driver classes</td><td>Switch statements violate Open/Closed Principle</td></tr>
+<tr><td>Easy cross-browser testing via config/parameter</td><td>Reflection-based page factory adds complexity</td></tr>
+<tr><td>Enum provides compile-time safety</td><td>Debugging factory failures can be harder</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===================== BUILDER PATTERN ===================== -->
+<h3>Builder Pattern</h3>
+
+<h4>What</h4>
+<p>The Builder pattern constructs complex objects step by step. Instead of a constructor with 10 parameters, you chain setter-like methods and call <code>build()</code> at the end.</p>
+
+<h4>Why in Automation</h4>
+<ul>
+<li><strong>REST Assured</strong> — <code>RequestSpecBuilder().setBaseUri().addHeader().addQueryParam().build()</code> creates a <code>RequestSpecification</code>.</li>
+<li><strong>TestConfig</strong> — Build test configuration with browser, URL, timeout, headless mode, parallel threads.</li>
+<li><strong>APIRequest</strong> — Construct API test requests with method, headers, body, and auth token.</li>
+</ul>
+
+<h4>Complete Code: TestConfig Builder</h4>
+<pre><code>package config;
+
+public class TestConfig {
+    private final String browser;
+    private final String baseUrl;
+    private final int timeout;
+    private final boolean headless;
+    private final int parallelThreads;
+
+    private TestConfig(Builder builder) {
+        this.browser = builder.browser;
+        this.baseUrl = builder.baseUrl;
+        this.timeout = builder.timeout;
+        this.headless = builder.headless;
+        this.parallelThreads = builder.parallelThreads;
+    }
+
+    public String getBrowser() { return browser; }
+    public String getBaseUrl() { return baseUrl; }
+    public int getTimeout() { return timeout; }
+    public boolean isHeadless() { return headless; }
+    public int getParallelThreads() { return parallelThreads; }
+
+    public static class Builder {
+        private String browser = "chrome";
+        private String baseUrl = "https://example.com";
+        private int timeout = 10;
+        private boolean headless = false;
+        private int parallelThreads = 1;
+
+        public Builder browser(String browser) {
+            this.browser = browser;
+            return this;
+        }
+
+        public Builder baseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+            return this;
+        }
+
+        public Builder timeout(int timeout) {
+            this.timeout = timeout;
+            return this;
+        }
+
+        public Builder headless(boolean headless) {
+            this.headless = headless;
+            return this;
+        }
+
+        public Builder parallelThreads(int threads) {
+            this.parallelThreads = threads;
+            return this;
+        }
+
+        public TestConfig build() {
+            return new TestConfig(this);
+        }
+    }
+}
+
+// Usage:
+// TestConfig config = new TestConfig.Builder()
+//     .browser("chrome")
+//     .baseUrl("https://staging.example.com")
+//     .timeout(15)
+//     .headless(true)
+//     .parallelThreads(4)
+//     .build();</code></pre>
+
+<h4>Complete Code: APIRequest Builder</h4>
+<pre><code>package api;
+
+import io.restassured.specification.RequestSpecification;
+import io.restassured.builder.RequestSpecBuilder;
+import java.util.HashMap;
+import java.util.Map;
+
+public class APIRequest {
+    private final String method;
+    private final String endpoint;
+    private final Map&lt;String, String&gt; headers;
+    private final Map&lt;String, String&gt; queryParams;
+    private final String body;
+    private final String baseUri;
+
+    private APIRequest(Builder builder) {
+        this.method = builder.method;
+        this.endpoint = builder.endpoint;
+        this.headers = builder.headers;
+        this.queryParams = builder.queryParams;
+        this.body = builder.body;
+        this.baseUri = builder.baseUri;
+    }
+
+    public RequestSpecification toRequestSpec() {
+        RequestSpecBuilder specBuilder = new RequestSpecBuilder()
+            .setBaseUri(baseUri)
+            .setContentType("application/json");
+        headers.forEach(specBuilder::addHeader);
+        queryParams.forEach(specBuilder::addQueryParam);
+        return specBuilder.build();
+    }
+
+    public String getMethod() { return method; }
+    public String getEndpoint() { return endpoint; }
+    public String getBody() { return body; }
+
+    public static class Builder {
+        private String method = "GET";
+        private String endpoint = "/";
+        private Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();
+        private Map&lt;String, String&gt; queryParams = new HashMap&lt;&gt;();
+        private String body = "";
+        private String baseUri = "https://api.example.com";
+
+        public Builder method(String method) { this.method = method; return this; }
+        public Builder endpoint(String endpoint) { this.endpoint = endpoint; return this; }
+        public Builder header(String key, String value) { this.headers.put(key, value); return this; }
+        public Builder queryParam(String key, String value) { this.queryParams.put(key, value); return this; }
+        public Builder body(String body) { this.body = body; return this; }
+        public Builder baseUri(String baseUri) { this.baseUri = baseUri; return this; }
+
+        public APIRequest build() { return new APIRequest(this); }
+    }
+}
+
+// Usage in API test:
+// APIRequest request = new APIRequest.Builder()
+//     .method("POST")
+//     .endpoint("/users")
+//     .header("Authorization", "Bearer " + token)
+//     .body("{\"name\":\"testUser\"}")
+//     .build();
+// given(request.toRequestSpec()).body(request.getBody()).when()
+//     .post(request.getEndpoint()).then().statusCode(201);</code></pre>
+
+<h4>Pros/Cons</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Pros</th><th>Cons</th></tr></thead>
+<tbody>
+<tr><td>Readable, fluent configuration — self-documenting tests</td><td>More boilerplate code than a simple constructor</td></tr>
+<tr><td>Immutable config objects — thread-safe by default</td><td>Must create Builder inner class for each config type</td></tr>
+<tr><td>Optional parameters handled elegantly</td><td>Overkill for simple 2-3 field objects</td></tr>
+<tr><td>Same pattern as REST Assured — familiar to API testers</td><td>Validation logic must be added manually in build()</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===================== STRATEGY PATTERN ===================== -->
+<h3>Strategy Pattern</h3>
+
+<h4>What</h4>
+<p>The Strategy pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable. The client chooses the strategy at runtime without changing client code.</p>
+
+<h4>Why in Automation</h4>
+<ul>
+<li><strong>Wait Strategies</strong> — Switch between ExplicitWait, FluentWait, and ImplicitWait based on element behavior.</li>
+<li><strong>Locator Strategies</strong> — Swap between ID, CSS, XPath strategies for element finding.</li>
+<li><strong>Reporting Strategies</strong> — Switch between ExtentReports and Allure without changing test code.</li>
+</ul>
+
+<h4>Complete Code: WaitStrategy</h4>
+<pre><code>package utils;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.FluentWait;
+import java.time.Duration;
+
+// Strategy interface
+public interface WaitStrategy {
+    WebElement waitForElement(WebDriver driver, By locator);
+}
+
+// Concrete strategy: Explicit Wait
+public class ExplicitWaitStrategy implements WaitStrategy {
+    private final int timeoutSeconds;
+
+    public ExplicitWaitStrategy(int timeoutSeconds) {
+        this.timeoutSeconds = timeoutSeconds;
+    }
+
+    @Override
+    public WebElement waitForElement(WebDriver driver, By locator) {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
+        return wait.until(d -&gt; d.findElement(locator).isDisplayed()
+            ? d.findElement(locator) : null);
+    }
+}
+
+// Concrete strategy: Fluent Wait
+public class FluentWaitStrategy implements WaitStrategy {
+    private final int timeoutSeconds;
+    private final int pollingMillis;
+
+    public FluentWaitStrategy(int timeoutSeconds, int pollingMillis) {
+        this.timeoutSeconds = timeoutSeconds;
+        this.pollingMillis = pollingMillis;
+    }
+
+    @Override
+    public WebElement waitForElement(WebDriver driver, By locator) {
+        FluentWait&lt;WebDriver&gt; wait = new FluentWait&lt;&gt;(driver)
+            .withTimeout(Duration.ofSeconds(timeoutSeconds))
+            .pollingEvery(Duration.ofMillis(pollingMillis))
+            .ignoring(org.openqa.selenium.NoSuchElementException.class);
+        return wait.until(d -&gt; d.findElement(locator));
+    }
+}
+
+// Context class — uses strategy
+public class WaitContext {
+    private WaitStrategy strategy;
+
+    public WaitContext(WaitStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public void setStrategy(WaitStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public WebElement findElement(WebDriver driver, By locator) {
+        return strategy.waitForElement(driver, locator);
+    }
+}
+
+// Usage in page object:
+// WaitContext waitCtx = new WaitContext(new ExplicitWaitStrategy(10));
+// WebElement btn = waitCtx.findElement(driver, By.id("submit"));
+// // Switch strategy for slow-loading AJAX element:
+// waitCtx.setStrategy(new FluentWaitStrategy(30, 500));
+// WebElement ajaxResult = waitCtx.findElement(driver, By.id("ajax-data"));</code></pre>
+
+<h4>Complete Code: ReportStrategy</h4>
+<pre><code>package reports;
+
+import org.testng.ITestResult;
+
+public interface ReportStrategy {
+    void logPass(String testName, String message);
+    void logFail(String testName, String message, ITestResult result);
+    void flush();
+}
+
+public class ExtentReportStrategy implements ReportStrategy {
+    private com.aventstack.extentreports.ExtentReports extent;
+    private com.aventstack.extentreports.ExtentTest currentTest;
+
+    public ExtentReportStrategy(com.aventstack.extentreports.ExtentReports extent) {
+        this.extent = extent;
+    }
+
+    public void startTest(String testName) {
+        currentTest = extent.createTest(testName);
+    }
+
+    @Override
+    public void logPass(String testName, String message) {
+        currentTest.pass(message);
+    }
+
+    @Override
+    public void logFail(String testName, String message, ITestResult result) {
+        currentTest.fail(message);
+        currentTest.addScreenCaptureFromPath(captureScreenshot(result));
+    }
+
+    @Override
+    public void flush() {
+        extent.flush();
+    }
+
+    private String captureScreenshot(ITestResult result) {
+        return "screenshots/" + result.getName() + ".png";
+    }
+}
+
+public class AllureReportStrategy implements ReportStrategy {
+    @Override
+    public void logPass(String testName, String message) {
+        io.qameta.allure.Allure.step(message, () -&gt; {});
+    }
+
+    @Override
+    public void logFail(String testName, String message, ITestResult result) {
+        io.qameta.allure.Allure.step("FAILED: " + message);
+    }
+
+    @Override
+    public void flush() {
+        // Allure auto-generates report from results directory
+    }
+}
+
+// Usage in TestListener — switch via config:
+// ReportStrategy reporter = config.getProperty("report.type").equals("allure")
+//     ? new AllureReportStrategy()
+//     : new ExtentReportStrategy(extent);
+// reporter.logPass("LoginTest", "User logged in successfully");</code></pre>
+
+<h4>Pros/Cons</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Pros</th><th>Cons</th></tr></thead>
+<tbody>
+<tr><td>Swap wait/report algorithms at runtime via config</td><td>More classes and interfaces to maintain</td></tr>
+<tr><td>Open/Closed Principle — add new strategy without modifying existing code</td><td>Over-engineering if you only ever use one strategy</td></tr>
+<tr><td>Each strategy is independently testable</td><td>Client must know which strategy to select</td></tr>
+<tr><td>Clean separation — page objects don't know wait implementation</td><td>Strategy selection logic adds a layer of indirection</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===================== OBSERVER PATTERN ===================== -->
+<h3>Observer Pattern</h3>
+
+<h4>What</h4>
+<p>The Observer pattern defines a one-to-many dependency: when one object (subject) changes state, all dependent objects (observers) are notified and updated automatically.</p>
+
+<h4>Why in Automation</h4>
+<p><strong>TestNG Listeners ARE the Observer pattern.</strong> The TestNG framework (subject) fires test events; your listener classes (observers) react to those events — logging results, taking screenshots, updating reports, sending Slack notifications.</p>
+
+<h4>How ITestListener Works as Observer</h4>
+<pre><code>package listeners;
+
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+import org.testng.ITestContext;
+import reports.ExtentReportManager;
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+
+// Observer: reacts to test lifecycle events from TestNG (Subject)
+public class TestListener implements ITestListener {
+
+    private ExtentReports extent = ExtentReportManager.getInstance().getReport();
+    private ThreadLocal&lt;ExtentTest&gt; extentTest = new ThreadLocal&lt;&gt;();
+
+    // Observer method: notified when test STARTS
+    @Override
+    public void onTestStart(ITestResult result) {
+        ExtentTest test = extent.createTest(result.getMethod().getMethodName());
+        extentTest.set(test);
+        System.out.println("TEST STARTED: " + result.getName());
+    }
+
+    // Observer method: notified when test PASSES
+    @Override
+    public void onTestSuccess(ITestResult result) {
+        extentTest.get().pass("Test passed: " + result.getName());
+        System.out.println("TEST PASSED: " + result.getName());
+    }
+
+    // Observer method: notified when test FAILS
+    @Override
+    public void onTestFailure(ITestResult result) {
+        extentTest.get().fail("Test failed: " + result.getThrowable());
+        captureScreenshot(result);
+        System.out.println("TEST FAILED: " + result.getName());
+    }
+
+    // Observer method: notified when test is SKIPPED
+    @Override
+    public void onTestSkipped(ITestResult result) {
+        extentTest.get().skip("Test skipped: " + result.getName());
+    }
+
+    // Observer method: notified when entire SUITE finishes
+    @Override
+    public void onFinish(ITestContext context) {
+        extent.flush();
+        System.out.println("SUITE FINISHED — Report generated");
+    }
+
+    private void captureScreenshot(ITestResult result) {
+        // Screenshot logic on failure
+        extentTest.get().addScreenCaptureFromPath("screenshots/" + result.getName() + ".png");
+    }
+}
+
+// Register in testng.xml:
+// &lt;listeners&gt;
+//     &lt;listener class-name="listeners.TestListener"/&gt;
+// &lt;/listeners&gt;</code></pre>
+
+<div class="callout">
+<strong>Key Insight:</strong> You can register multiple listeners (observers) — one for reporting, one for screenshots, one for Slack alerts — and TestNG notifies ALL of them on every event. This is classic Observer pattern.
+</div>
+
+<!-- ===================== PATTERN COMPARISON TABLE ===================== -->
+<h3>Pattern Comparison Table</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Pattern</th><th>When to Use</th><th>Framework Layer</th><th>Complexity</th></tr>
+</thead>
+<tbody>
+<tr><td>Singleton</td><td>One shared resource (config, report, logger)</td><td>Config / Reports / Driver</td><td>Low</td></tr>
+<tr><td>Factory</td><td>Object creation varies by type (browser, page)</td><td>Driver / Pages</td><td>Low–Medium</td></tr>
+<tr><td>Builder</td><td>Complex object with many optional params</td><td>Config / API Requests</td><td>Medium</td></tr>
+<tr><td>Strategy</td><td>Multiple interchangeable algorithms</td><td>Utils / Reports / Waits</td><td>Medium</td></tr>
+<tr><td>Observer</td><td>React to events without modifying source</td><td>Listeners / Reporting</td><td>Low</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ===================== INTERVIEW Q&A ===================== -->
+<h3>Interview Q&amp;A — Design Patterns for Automation</h3>
+
+<h4>Q1: Which design pattern is used in TestNG listeners?</h4>
+<p><strong>A:</strong> Observer pattern. TestNG is the subject that fires events (<code>onTestStart</code>, <code>onTestFailure</code>); listener classes are observers that react to those events.</p>
+
+<h4>Q2: Why use Singleton for ConfigReader instead of static variables?</h4>
+<p><strong>A:</strong> Singleton provides lazy initialization, thread safety, and encapsulation. Static variables are initialized at class load and harder to reset between test suites.</p>
+
+<h4>Q3: Singleton vs Factory — when to use which?</h4>
+<p><strong>A:</strong> Singleton when you need exactly ONE instance (config, report). Factory when you need to CREATE different types of objects (browsers, page objects).</p>
+
+<h4>Q4: Is PageFactory (Selenium) the same as Factory pattern?</h4>
+<p><strong>A:</strong> Selenium's PageFactory is a hybrid — it uses Factory to initialize page elements via reflection and proxy, but the core Factory pattern creates entire page object instances.</p>
+
+<h4>Q5: How does REST Assured use Builder pattern?</h4>
+<p><strong>A:</strong> <code>RequestSpecBuilder</code> and <code>ResponseSpecBuilder</code> let you chain <code>setBaseUri()</code>, <code>addHeader()</code>, <code>addQueryParam()</code> and call <code>build()</code> to create immutable specification objects.</p>
+
+<h4>Q6: Can you combine Singleton with ThreadLocal?</h4>
+<p><strong>A:</strong> Yes. Singleton DriverManager holds a ThreadLocal&lt;WebDriver&gt; — one manager instance, but each thread gets its own driver. Common in parallel TestNG execution.</p>
+
+<h4>Q7: What is double-checked locking in Singleton?</h4>
+<p><strong>A:</strong> Check if instance is null twice — once without synchronization (fast path), once inside synchronized block — to avoid creating multiple instances in multi-threaded environments while minimizing lock overhead.</p>
+
+<h4>Q8: Strategy vs Factory — what's the difference?</h4>
+<p><strong>A:</strong> Factory creates objects; Strategy defines interchangeable behavior/algorithms. Factory answers "which object?"; Strategy answers "which algorithm?"</p>
+
+<h4>Q9: How would you add a new browser to BrowserFactory?</h4>
+<p><strong>A:</strong> Add enum value to BrowserType, add case in switch statement, configure WebDriverManager for that browser. Tests remain unchanged — they call <code>createDriverFromConfig()</code>.</p>
+
+<h4>Q10: What are disadvantages of Singleton in test automation?</h4>
+<p><strong>A:</strong> Global state makes unit testing difficult, hidden dependencies between classes, and state can leak between test suites if not properly reset in @AfterSuite.</p>
+
+<h4>Q11: How does Builder pattern improve test readability?</h4>
+<p><strong>A:</strong> Instead of <code>new TestConfig("chrome", "url", 10, true, 4)</code>, you write fluent chains: <code>new TestConfig.Builder().browser("chrome").headless(true).build()</code> — self-documenting and order-independent.</p>
+
+<h4>Q12: Give a real example of Observer in your framework.</h4>
+<p><strong>A:</strong> TestListener implements ITestListener. On test failure, it captures screenshot, logs to ExtentReport, and sends Slack notification — all triggered automatically by TestNG without modifying test classes.</p>
+
+<h4>Q13: Is Enum Singleton better than synchronized getInstance()?</h4>
+<p><strong>A:</strong> Joshua Bloch recommends enum singleton — inherently serializable, reflection-proof, and thread-safe without any synchronization code. Best for simple singletons like ConfigReader.</p>
+
+<h4>Q14: How do design patterns make a framework scalable?</h4>
+<p><strong>A:</strong> Factory adds new browsers/pages without changing tests. Strategy swaps wait/report implementations via config. Builder handles growing config complexity. Observer adds new listeners without modifying TestNG or test classes.</p>
+
+</section>
+
+<section id="section-18" class="section-card">
+<h2>Section 18: Page Object Model — Framework Design</h2>
+
+<h3>What is POM?</h3>
+<p>The Page Object Model (POM) is a design pattern that separates page UI elements and actions from test logic. Each web page (or component) gets its own class containing locators (private) and action methods (public). Tests interact with pages through these methods — never directly with locators.</p>
+
+<h3>Why POM? — The #1 Framework Design Question</h3>
+
+<h4>Without POM — Maintenance Nightmare</h4>
+<pre><code>// BAD: Locators and actions mixed directly in test class
+@Test
+public void testLogin() {
+    driver.findElement(By.id("username")).sendKeys("admin");
+    driver.findElement(By.id("password")).sendKeys("pass123");
+    driver.findElement(By.xpath("//button[@type='submit']")).click();
+    Assert.assertTrue(driver.findElement(By.cssSelector(".welcome-msg"))
+        .getText().contains("Welcome"));
+    // If login button ID changes → update EVERY test file that logs in!
+}</code></pre>
+
+<h4>With POM — Change Once, All Tests Work</h4>
+<pre><code>// GOOD: Test uses page object methods — no locators in test
+@Test
+public void testLogin() {
+    LoginPage loginPage = new LoginPage(driver);
+    HomePage homePage = loginPage.login("admin", "pass123");
+    Assert.assertTrue(homePage.getWelcomeText().contains("Welcome"));
+    // If login button ID changes → update ONLY LoginPage.java
+}</code></pre>
+
+<h3>POM Architecture</h3>
+<div class="ascii-diagram">
+<pre>
+┌─────────────────────────────────────────────────────────────┐
+│                      TEST LAYER                              │
+│  LoginTest.java    SearchTest.java    CheckoutTest.java     │
+│       │                  │                   │               │
+│       ▼                  ▼                   ▼               │
+├─────────────────────────────────────────────────────────────┤
+│                    PAGE OBJECT LAYER                         │
+│  LoginPage.java    SearchPage.java    CheckoutPage.java     │
+│       │ extends          │ extends          │ extends       │
+│       ▼                  ▼                   ▼               │
+│              BasePage.java (common actions)                  │
+├─────────────────────────────────────────────────────────────┤
+│                    UTILITY LAYER                             │
+│  WaitUtils.java    ElementUtils.java    ConfigReader.java   │
+├─────────────────────────────────────────────────────────────┤
+│                    DRIVER LAYER                              │
+│  DriverFactory.java    ThreadLocal&lt;WebDriver&gt;               │
+├─────────────────────────────────────────────────────────────┤
+│                    LISTENER LAYER                            │
+│  TestListener.java (screenshots, reports, logging)         │
+└─────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<h3>POM Rules</h3>
+<ol>
+<li><strong>One class per page/component</strong> — LoginPage, HomePage, SearchPage each get their own class.</li>
+<li><strong>Locators: private</strong> — Never expose By locators outside the page class.</li>
+<li><strong>Actions: public methods</strong> — <code>enterUsername()</code>, <code>clickLogin()</code> encapsulate interactions.</li>
+<li><strong>Return type: next page object</strong> — <code>clickLogin()</code> returns <code>HomePage</code> for method chaining.</li>
+<li><strong>NO assertions in page objects</strong> — Assertions belong in test classes only.</li>
+<li><strong>NO test data in page objects</strong> — Pass data as method parameters from tests.</li>
+</ol>
+
+<h3>Complete Framework Architecture</h3>
+<div class="ascii-diagram">
+<pre>
+src/main/java/
+├── base/
+│   └── BasePage.java
+├── pages/
+│   ├── LoginPage.java
+│   ├── HomePage.java
+│   ├── SearchPage.java
+│   └── ProductPage.java
+├── config/
+│   └── ConfigReader.java
+├── driver/
+│   └── DriverFactory.java
+└── utils/
+    ├── WaitUtils.java
+    └── ElementUtils.java
+
+src/test/java/
+├── base/
+│   └── BaseTest.java
+├── tests/
+│   ├── LoginTest.java
+│   └── SearchTest.java
+└── listeners/
+    └── TestListener.java
+</pre>
+</div>
+
+<h3>Complete Code: BasePage.java</h3>
+<pre><code>package base;
+
+import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.interactions.Actions;
+import java.time.Duration;
+
+public class BasePage {
+    protected WebDriver driver;
+    protected WebDriverWait wait;
+    protected Actions actions;
+
+    public BasePage(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        this.actions = new Actions(driver);
+    }
+
+    protected void click(By locator) {
+        waitForElement(locator);
+        driver.findElement(locator).click();
+    }
+
+    protected void type(By locator, String text) {
+        waitForElement(locator);
+        WebElement element = driver.findElement(locator);
+        element.clear();
+        element.sendKeys(text);
+    }
+
+    protected String getText(By locator) {
+        waitForElement(locator);
+        return driver.findElement(locator).getText();
+    }
+
+    protected WebElement waitForElement(By locator) {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+    }
+
+    protected WebElement waitForClickable(By locator) {
+        return wait.until(ExpectedConditions.elementToBeClickable(locator));
+    }
+
+    protected void scrollTo(By locator) {
+        WebElement element = driver.findElement(locator);
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].scrollIntoView(true);", element);
+    }
+
+    protected boolean isDisplayed(By locator) {
+        try {
+            return driver.findElement(locator).isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
+    protected void selectDropdownByText(By locator, String text) {
+        WebElement dropdown = waitForElement(locator);
+        org.openqa.selenium.support.ui.Select select =
+            new org.openqa.selenium.support.ui.Select(dropdown);
+        select.selectByVisibleText(text);
+    }
+
+    protected String getPageTitle() {
+        return driver.getTitle();
+    }
+
+    protected String getCurrentUrl() {
+        return driver.getCurrentUrl();
+    }
+}</code></pre>
+
+<h3>Complete Code: LoginPage.java</h3>
+<pre><code>package pages;
+
+import base.BasePage;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+
+public class LoginPage extends BasePage {
+
+    // Private locators — never exposed outside this class
+    private By usernameField = By.id("username");
+    private By passwordField = By.id("password");
+    private By loginButton   = By.xpath("//button[@type='submit']");
+    private By errorMessage  = By.cssSelector(".error-msg");
+
+    public LoginPage(WebDriver driver) {
+        super(driver);
+    }
+
+    public LoginPage enterUsername(String username) {
+        type(usernameField, username);
+        return this;
+    }
+
+    public LoginPage enterPassword(String password) {
+        type(passwordField, password);
+        return this;
+    }
+
+    public HomePage clickLogin() {
+        click(loginButton);
+        return new HomePage(driver);
+    }
+
+    // Combined action — most common usage
+    public HomePage login(String username, String password) {
+        enterUsername(username);
+        enterPassword(password);
+        return clickLogin();
+    }
+
+    public String getErrorMessage() {
+        return getText(errorMessage);
+    }
+
+    public boolean isLoginPageDisplayed() {
+        return isDisplayed(usernameField) &amp;&amp; isDisplayed(loginButton);
+    }
+}</code></pre>
+
+<h3>Complete Code: HomePage.java</h3>
+<pre><code>package pages;
+
+import base.BasePage;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+
+public class HomePage extends BasePage {
+
+    private By welcomeMessage  = By.cssSelector(".welcome-msg");
+    private By searchLink      = By.linkText("Search");
+    private By logoutButton    = By.id("logout");
+    private By userProfileIcon = By.cssSelector(".user-profile");
+
+    public HomePage(WebDriver driver) {
+        super(driver);
+    }
+
+    public boolean isHomePageDisplayed() {
+        return isDisplayed(welcomeMessage);
+    }
+
+    public String getWelcomeText() {
+        return getText(welcomeMessage);
+    }
+
+    public SearchPage navigateToSearch() {
+        click(searchLink);
+        return new SearchPage(driver);
+    }
+
+    public LoginPage logout() {
+        click(logoutButton);
+        return new LoginPage(driver);
+    }
+
+    public String getUserProfileName() {
+        return getText(userProfileIcon);
+    }
+}</code></pre>
+
+<h3>Complete Code: BaseTest.java</h3>
+<pre><code>package base;
+
+import config.ConfigReader;
+import driver.BrowserFactory;
+import driver.DriverManager;
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.*;
+import org.testng.ITestResult;
+import reports.ExtentReportManager;
+import com.aventstack.extentreports.ExtentReports;
+
+public class BaseTest {
+
+    protected WebDriver driver;
+    protected ConfigReader config;
+
+    @BeforeSuite
+    public void initReports() {
+        ExtentReports extent = ExtentReportManager.getInstance().getReport();
+        System.out.println("Reports initialized");
+    }
+
+    @BeforeMethod
+    public void setUp() {
+        config = ConfigReader.getInstance();
+        driver = BrowserFactory.createDriverFromConfig();
+        DriverManager.setDriver(driver);
+        driver.get(config.getBaseUrl());
+    }
+
+    @AfterMethod
+    public void tearDown(ITestResult result) {
+        if (result.getStatus() == ITestResult.FAILURE) {
+            captureScreenshot(result.getName());
+        }
+        DriverManager.quitDriver();
+    }
+
+    private void captureScreenshot(String testName) {
+        try {
+            org.openqa.selenium.TakesScreenshot ts =
+                (org.openqa.selenium.TakesScreenshot) driver;
+            java.io.File src = ts.getScreenshotAs(
+                org.openqa.selenium.OutputType.FILE);
+            java.nio.file.Files.copy(src.toPath(),
+                new java.io.File("screenshots/" + testName + ".png").toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            System.out.println("Screenshot failed: " + e.getMessage());
+        }
+    }
+}</code></pre>
+
+<h3>Complete Code: LoginTest.java</h3>
+<pre><code>package tests;
+
+import base.BaseTest;
+import pages.HomePage;
+import pages.LoginPage;
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+public class LoginTest extends BaseTest {
+
+    @DataProvider(name = "loginData")
+    public Object[][] getLoginData() {
+        return new Object[][] {
+            {"admin",    "admin123",  true,  "Welcome, Admin"},
+            {"user1",    "user123",   true,  "Welcome, User1"},
+            {"invalid",  "wrong",     false, null},
+            {"",         "pass",      false, null}
+        };
+    }
+
+    @Test(dataProvider = "loginData")
+    public void testLogin(String username, String password,
+                          boolean shouldPass, String expectedWelcome) {
+        LoginPage loginPage = new LoginPage(driver);
+        Assert.assertTrue(loginPage.isLoginPageDisplayed(),
+            "Login page should be displayed");
+
+        if (shouldPass) {
+            HomePage homePage = loginPage.login(username, password);
+            Assert.assertTrue(homePage.isHomePageDisplayed());
+            Assert.assertTrue(homePage.getWelcomeText().contains(expectedWelcome));
+        } else {
+            loginPage.enterUsername(username).enterPassword(password);
+            loginPage.clickLogin();
+            Assert.assertFalse(new HomePage(driver).isHomePageDisplayed());
+        }
+    }
+
+    @Test
+    public void testLoginWithMethodChaining() {
+        HomePage homePage = new LoginPage(driver)
+            .enterUsername("admin")
+            .enterPassword("admin123")
+            .clickLogin();
+        Assert.assertEquals(homePage.getWelcomeText(), "Welcome, Admin");
+    }
+}</code></pre>
+
+<h3>Page Factory</h3>
+
+<h4>@FindBy Annotation</h4>
+<pre><code>import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
+
+public class LoginPagePF extends BasePage {
+
+    @FindBy(id = "username")
+    private WebElement usernameField;
+
+    @FindBy(id = "password")
+    private WebElement passwordField;
+
+    @FindBy(xpath = "//button[@type='submit']")
+    private WebElement loginButton;
+
+    @FindBy(css = ".error-msg")
+    private WebElement errorMessage;
+
+    public LoginPagePF(WebDriver driver) {
+        super(driver);
+        PageFactory.initElements(driver, this); // Initializes all @FindBy elements
+    }
+
+    public void enterUsername(String username) {
+        usernameField.clear();
+        usernameField.sendKeys(username);
+    }
+
+    public void clickLogin() {
+        loginButton.click();
+    }
+}</code></pre>
+
+<h4>@CacheLookup — Cache Static Elements Only</h4>
+<pre><code>@FindBy(id = "header-logo")
+@CacheLookup  // Element found once, cached for subsequent calls
+private WebElement headerLogo;
+
+@FindBy(id = "dynamic-cart-count")
+// NO @CacheLookup — cart count changes dynamically
+private WebElement cartCount;</code></pre>
+
+<h4>@FindBys (AND) vs @FindAll (OR)</h4>
+<pre><code>// @FindBys: ALL locators must match (AND logic)
+@FindBys({
+    @FindBy(className = "nav-item"),
+    @FindBy(linkText = "Products")
+})
+private WebElement productsNavLink;
+
+// @FindAll: ANY locator matches (OR logic)
+@FindAll({
+    @FindBy(id = "submit-btn"),
+    @FindBy(xpath = "//button[text()='Submit']"),
+    @FindBy(css = "input[type='submit']")
+})
+private WebElement submitButton;</code></pre>
+
+<h4>PageFactory Limitations</h4>
+<ul>
+<li><strong>StaleElementReferenceException</strong> — Using @CacheLookup on dynamic elements (AJAX-loaded content) returns stale references after DOM refresh.</li>
+<li><strong>No dynamic locator support</strong> — Cannot parameterize locators: <code>@FindBy(id = dynamicId)</code> does not work with runtime values.</li>
+<li><strong>Hidden initialization</strong> — Elements initialized via proxy; debugging is harder than explicit <code>driver.findElement(By)</code>.</li>
+<li><strong>Tied to WebElement</strong> — Cannot easily return By locators for custom wait strategies.</li>
+</ul>
+
+<h3>POM vs PageFactory Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspect</th><th>POM (By Locators)</th><th>PageFactory (@FindBy)</th></tr></thead>
+<tbody>
+<tr><td>Locator type</td><td>By objects (flexible)</td><td>WebElement fields (fixed)</td></tr>
+<tr><td>Dynamic locators</td><td>Supported via methods</td><td>Not supported</td></tr>
+<tr><td>Initialization</td><td>Lazy — find on each call</td><td>Eager via initElements proxy</td></tr>
+<tr><td>Stale element risk</td><td>Low — re-finds each time</td><td>High with @CacheLookup</td></tr>
+<tr><td>Readability</td><td>Explicit By declarations</td><td>Clean @FindBy annotations</td></tr>
+<tr><td>Debugging</td><td>Easy — standard findElement</td><td>Harder — proxy indirection</td></tr>
+<tr><td>Industry preference</td><td>Preferred (2024+)</td><td>Declining usage</td></tr>
+<tr><td>Wait integration</td><td>Full control with WebDriverWait</td><td>Must wrap WebElement calls</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Industry Trend:</strong> POM with <code>By</code> locators is preferred over PageFactory. By locators support dynamic values, integrate cleanly with explicit waits, and avoid StaleElementReferenceException issues.
+</div>
+
+<h3>Method Chaining (Fluent Interface)</h3>
+<pre><code>// Fluent interface — each method returns 'this' or next page
+public class LoginPage extends BasePage {
+
+    public LoginPage enterUsername(String username) {
+        type(usernameField, username);
+        return this;  // Returns same page for chaining
+    }
+
+    public LoginPage enterPassword(String password) {
+        type(passwordField, password);
+        return this;
+    }
+
+    public HomePage clickLogin() {
+        click(loginButton);
+        return new HomePage(driver);  // Returns NEXT page
+    }
+}
+
+// Test usage — reads like English:
+HomePage home = new LoginPage(driver)
+    .enterUsername("admin")
+    .enterPassword("pass123")
+    .clickLogin();
+
+// Multi-step navigation chain:
+ProductPage product = new HomePage(driver)
+    .navigateToSearch()
+    .searchFor("laptop")
+    .clickFirstResult();</code></pre>
+
+<h3>Component-Based POM</h3>
+<p>Large pages are split into reusable components shared across multiple pages.</p>
+
+<pre><code>// HeaderComponent — shared across all pages
+public class HeaderComponent extends BasePage {
+    private By logoLink     = By.id("logo");
+    private By cartIcon     = By.cssSelector(".cart-icon");
+    private By searchBar    = By.name("q");
+    private By userMenu     = By.cssSelector(".user-dropdown");
+
+    public HeaderComponent(WebDriver driver) { super(driver); }
+
+    public void clickLogo() { click(logoLink); }
+    public int getCartItemCount() {
+        return Integer.parseInt(getText(cartIcon));
+    }
+    public SearchPage search(String query) {
+        type(searchBar, query);
+        searchBar.submit();
+        return new SearchPage(driver);
+    }
+}
+
+// HomePage COMPOSES components (HAS-A relationship)
+public class HomePage extends BasePage {
+    private HeaderComponent header;
+    private FooterComponent footer;
+    private NavigationComponent nav;
+
+    public HomePage(WebDriver driver) {
+        super(driver);
+        header = new HeaderComponent(driver);
+        footer = new FooterComponent(driver);
+        nav    = new NavigationComponent(driver);
+    }
+
+    public HeaderComponent getHeader() { return header; }
+    public FooterComponent getFooter() { return footer; }
+
+    public ProductPage navigateToCategory(String category) {
+        nav.clickCategory(category);
+        return new ProductPage(driver);
+    }
+}
+
+// Test uses components:
+@Test
+public void testSearchFromHeader() {
+    HomePage home = new LoginPage(driver).login("admin", "pass");
+    SearchPage search = home.getHeader().search("selenium book");
+    Assert.assertTrue(search.hasResults());
+}</code></pre>
+
+<h3>Interview Q&amp;A — Page Object Model</h3>
+
+<h4>Q1: What is Page Object Model?</h4>
+<p><strong>A:</strong> A design pattern separating page UI elements/actions from test logic. Each page is a class with private locators and public action methods. Tests call page methods, never interact with locators directly.</p>
+
+<h4>Q2: Why should page objects NOT contain assertions?</h4>
+<p><strong>A:</strong> Page objects represent UI behavior (actions/state), not test validation. Assertions in page objects violate Single Responsibility and make pages unusable for both positive and negative test scenarios.</p>
+
+<h4>Q3: What should clickLogin() return?</h4>
+<p><strong>A:</strong> The next page object — <code>HomePage</code>. This enables method chaining and makes navigation explicit: <code>HomePage home = loginPage.clickLogin()</code>.</p>
+
+<h4>Q4: POM vs PageFactory — which do you prefer?</h4>
+<p><strong>A:</strong> POM with By locators. It supports dynamic locators, integrates with explicit waits, avoids stale element issues, and is easier to debug. PageFactory is acceptable for static pages only.</p>
+
+<h4>Q5: How do you handle dynamic elements in POM?</h4>
+<p><strong>A:</strong> Use parameterized methods: <code>By rowLocator = By.xpath("//tr[td='" + name + "']")</code>. By locators allow runtime construction; PageFactory @FindBy does not.</p>
+
+<h4>Q6: What is component-based POM?</h4>
+<p><strong>A:</strong> Splitting shared UI sections (header, footer, nav) into separate component classes. Pages compose components via HAS-A relationship instead of duplicating locators.</p>
+
+<h4>Q7: Where do you store test data in a POM framework?</h4>
+<p><strong>A:</strong> External sources — JSON, Excel, CSV, properties files, or TestNG DataProvider. Never hardcode data inside page objects; pass as method parameters from tests.</p>
+
+<h4>Q8: How does BasePage reduce code duplication?</h4>
+<p><strong>A:</strong> Common actions (click, type, wait, scroll, isDisplayed) are implemented once in BasePage. All page classes extend BasePage and inherit these utilities.</p>
+
+<h4>Q9: Can a page object represent a modal dialog?</h4>
+<p><strong>A:</strong> Yes. Treat modals as components: <code>ConfirmationDialogComponent</code> with <code>clickConfirm()</code> and <code>clickCancel()</code> methods. Pages return dialog components when modals appear.</p>
+
+<h4>Q10: How do you handle iFrames in POM?</h4>
+<p><strong>A:</strong> Create a method in BasePage: <code>switchToFrame(By locator)</code> and <code>switchToDefault()</code>. Page objects for iframe content call switch methods before interacting with elements.</p>
+
+<h4>Q11: What is the difference between page object and page factory?</h4>
+<p><strong>A:</strong> Page Object is the design pattern (concept). Page Factory is Selenium's implementation using @FindBy annotations and initElements. You can implement POM without PageFactory.</p>
+
+<h4>Q12: How do you organize page objects for a SPA (Single Page Application)?</h4>
+<p><strong>A:</strong> Use component-based POM. SPA pages don't fully reload — create components for each UI section that may appear/disappear dynamically rather than one class per URL.</p>
+
+<h4>Q13: Should page objects handle waits internally?</h4>
+<p><strong>A:</strong> Yes. Page action methods should wait for elements before interacting. Tests should not contain wait logic — that's the page object's responsibility via BasePage.waitForElement().</p>
+
+<h4>Q14: How do you test a page object in isolation?</h4>
+<p><strong>A:</strong> Use a mock WebDriver or a lightweight page load in @BeforeMethod. Verify action methods find correct elements and return expected page objects. Keep page objects free of assertions for easy unit testing.</p>
+
+<h4>Q15: What is lazy initialization in POM context?</h4>
+<p><strong>A:</strong> With By locators, elements are found only when an action method is called — not at page object construction. This avoids StaleElementReferenceException on dynamic pages.</p>
+
+</section>
+
+<section id="section-19" class="section-card">
+<h2>Section 19: Framework-Specific Java Questions</h2>
+
+<p>These are the most frequently asked Java questions in automation framework interviews. Each answer includes practical code examples from real Selenium/TestNG frameworks.</p>
+
+<h3>Q1: Why use HashMap in automation?</h3>
+<p><strong>Answer:</strong> HashMap provides O(1) key-value lookup — ideal for config storage, test data mapping, API headers, request parameters, and element locator dictionaries. Keys are unique; values can be updated without recompilation.</p>
+<pre><code>// Config storage
+Map&lt;String, String&gt; config = new HashMap&lt;&gt;();
+config.put("browser", "chrome");
+config.put("baseUrl", "https://staging.example.com");
+
+// API headers
+Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();
+headers.put("Authorization", "Bearer " + token);
+headers.put("Content-Type", "application/json");
+
+// Test data from Excel row
+Map&lt;String, String&gt; testData = ExcelReader.getRowData("LoginData", 1);
+loginPage.login(testData.get("username"), testData.get("password"));
+
+// Element mapping for dynamic pages
+Map&lt;String, By&gt; locators = new HashMap&lt;&gt;();
+locators.put("username", By.id("user"));
+locators.put("password", By.id("pass"));
+driver.findElement(locators.get("username")).sendKeys("admin");</code></pre>
+<p><strong>Interviewer expects:</strong> You know HashMap use cases beyond basic Java — config, data, headers, locators.</p>
+
+<h3>Q2: Why use Properties files instead of hardcoding?</h3>
+<p><strong>Answer:</strong> Properties files enable environment switching (QA/Staging/Prod) without recompilation. CI/CD pipelines pass different property files per environment. Non-developers (QA leads) can update URLs and credentials without touching Java code.</p>
+<pre><code>// config.properties
+browser=chrome
+baseUrl=https://qa.example.com
+timeout=10
+headless=false
+
+// ConfigReader.java
+Properties props = new Properties();
+props.load(new FileInputStream("src/test/resources/config.properties"));
+String url = props.getProperty("baseUrl");
+
+// CI/CD override via Maven:
+// mvn test -Denv=prod  → loads config-prod.properties
+String env = System.getProperty("env", "qa");
+props.load(new FileInputStream("config-" + env + ".properties"));</code></pre>
+<p><strong>Interviewer expects:</strong> You understand externalization of config for multi-environment frameworks.</p>
+
+<h3>Q3: Why use ThreadLocal in automation?</h3>
+<p><strong>Answer:</strong> ThreadLocal provides each thread its own isolated copy of a variable. In parallel TestNG execution, each test thread gets its own WebDriver instance — preventing shared state corruption where one test quits another test's browser.</p>
+<div class="ascii-diagram">
+<pre>
+WITHOUT ThreadLocal (Parallel = BROKEN):
+Thread-1 ──→ shared WebDriver ←── Thread-2
+              (Thread-2 quits → Thread-1 fails!)
+
+WITH ThreadLocal (Parallel = SAFE):
+Thread-1 ──→ ThreadLocal ──→ WebDriver-1
+Thread-2 ──→ ThreadLocal ──→ WebDriver-2
+Thread-3 ──→ ThreadLocal ──→ WebDriver-3
+</pre>
+</div>
+<pre><code>public class DriverManager {
+    private static ThreadLocal&lt;WebDriver&gt; driverThread = new ThreadLocal&lt;&gt;();
+
+    public static WebDriver getDriver() {
+        if (driverThread.get() == null) {
+            driverThread.set(BrowserFactory.createDriverFromConfig());
+        }
+        return driverThread.get();
+    }
+
+    public static void setDriver(WebDriver driver) {
+        driverThread.set(driver);
+    }
+
+    public static void quitDriver() {
+        if (driverThread.get() != null) {
+            driverThread.get().quit();
+            driverThread.remove(); // CRITICAL: prevent memory leak
+        }
+    }
+}</code></pre>
+<p><strong>Interviewer expects:</strong> You know ThreadLocal + remove() to prevent memory leaks in thread pools.</p>
+
+<h3>Q4: Why use Singleton for DriverManager/ConfigReader?</h3>
+<p><strong>Answer:</strong> Singleton ensures config is read once (not per test), report accumulates all results in one instance, and DriverManager provides a single access point for ThreadLocal driver management across the framework.</p>
+<pre><code>// Without Singleton: each test class reads config independently
+ConfigReader c1 = new ConfigReader(); // reads file
+ConfigReader c2 = new ConfigReader(); // reads file AGAIN (wasteful)
+
+// With Singleton: one instance, one file read
+ConfigReader config = ConfigReader.getInstance();
+String url = config.getBaseUrl(); // same instance everywhere
+
+// DriverManager Singleton + ThreadLocal combo:
+DriverManager.getInstance().getDriver(); // thread-safe driver access</code></pre>
+<p><strong>Interviewer expects:</strong> You understand resource efficiency and consistent state management.</p>
+
+<h3>Q5: How to design a scalable framework?</h3>
+<p><strong>Answer:</strong> Layer the framework: Driver → Config → Pages → Tests → Reports. Apply design patterns at each layer. Scalability means adding new pages, tests, browsers, and environments without modifying existing code.</p>
+<div class="ascii-diagram">
+<pre>
+┌──────────────┐
+│   TESTS      │  Add new test class → zero changes elsewhere
+├──────────────┤
+│   PAGES      │  Add new page class → extends BasePage
+├──────────────┤
+│   UTILS      │  WaitUtils, ElementUtils — shared helpers
+├──────────────┤
+│   CONFIG     │  Singleton ConfigReader — one properties file
+├──────────────┤
+│   DRIVER     │  Factory + ThreadLocal — any browser, parallel safe
+├──────────────┤
+│   REPORTS    │  Strategy pattern — Extent/Allure switchable
+├──────────────┤
+│   LISTENERS  │  Observer pattern — auto screenshot, logging
+└──────────────┘
+</pre>
+</div>
+<p><strong>Scalability factors:</strong> New page = new class extending BasePage. New browser = new enum in BrowserFactory. New environment = new properties file. New report = new ReportStrategy implementation.</p>
+<p><strong>Interviewer expects:</strong> Clear layered architecture with patterns at each level.</p>
+
+<h3>Q6: How to manage test data?</h3>
+<p><strong>Answer:</strong> Externalize test data from test code. Use Excel/JSON/CSV for structured data, Faker for random data, API/DB for dynamic data. TestNG DataProvider feeds data into test methods.</p>
+<pre><code>// JSON data source
+ObjectMapper mapper = new ObjectMapper();
+List&lt;Map&gt; users = mapper.readValue(
+    new File("testdata/users.json"), List.class);
+
+@DataProvider
+public Object[][] loginData() {
+    return users.stream()
+        .map(u -&gt; new Object[]{u.get("username"), u.get("password")})
+        .toArray(Object[][]::new);
+}
+
+// Faker for random test data
+Faker faker = new Faker();
+String email = faker.internet().emailAddress();
+String name  = faker.name().fullName();</code></pre>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Source</th><th>Pros</th><th>Cons</th><th>When to Use</th></tr></thead>
+<tbody>
+<tr><td>Excel</td><td>Non-tech users can edit</td><td>Slower parsing, binary format</td><td>Business-driven test data</td></tr>
+<tr><td>JSON</td><td>Lightweight, version-controllable</td><td>No built-in Java support (needs library)</td><td>API test payloads, structured data</td></tr>
+<tr><td>CSV</td><td>Simple, universal</td><td>No data types, no nesting</td><td>Simple flat datasets</td></tr>
+<tr><td>Database</td><td>Dynamic, real production-like data</td><td>Setup complexity, slower</td><td>Integration tests, data validation</td></tr>
+<tr><td>Faker</td><td>Random realistic data</td><td>Non-deterministic results</td><td>Load testing, registration flows</td></tr>
+<tr><td>Properties</td><td>Environment-specific values</td><td>Key-value only, no complex structures</td><td>URLs, credentials, toggles</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Interviewer expects:</strong> Multiple data sources and knowing when to use each.</p>
+
+<h3>Q7: How to handle dynamic elements?</h3>
+<p><strong>Answer:</strong> Dynamic elements change ID/class on each page load. Use partial XPath/CSS, explicit waits, and retry patterns. Never use @CacheLookup or static locators for dynamic content.</p>
+<pre><code>// Dynamic XPath with partial match
+By dynamicRow = By.xpath("//tr[contains(@class,'data-row') and td='" + name + "']");
+
+// Explicit wait for dynamic element
+WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+WebElement element = wait.until(ExpectedConditions
+    .presenceOfElementLocated(By.cssSelector(".ajax-loaded-content")));
+
+// Retry pattern for flaky dynamic elements
+public WebElement findWithRetry(By locator, int maxAttempts) {
+    for (int i = 0; i &lt; maxAttempts; i++) {
+        try {
+            return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+        } catch (TimeoutException e) {
+            if (i == maxAttempts - 1) throw e;
+            driver.navigate().refresh();
+        }
+    }
+    return null;
+}</code></pre>
+<p><strong>Interviewer expects:</strong> Partial locators, explicit waits, and retry — not Thread.sleep().</p>
+
+<h3>Q8: How to implement cross-browser testing?</h3>
+<p><strong>Answer:</strong> BrowserFactory creates the correct driver from config or TestNG parameter. testng.xml defines parallel cross-browser suites. Selenium Grid distributes tests across browser nodes.</p>
+<pre><code>// testng.xml cross-browser suite
+// &lt;test name="ChromeTests"&gt;
+//   &lt;parameter name="browser" value="CHROME"/&gt;
+// &lt;/test&gt;
+// &lt;test name="FirefoxTests"&gt;
+//   &lt;parameter name="browser" value="FIREFOX"/&gt;
+// &lt;/test&gt;
+
+@Parameters("browser")
+@BeforeMethod
+public void setUp(@Optional("CHROME") String browser) {
+    BrowserType type = BrowserType.valueOf(browser);
+    driver = BrowserFactory.createDriver(type);
+    DriverManager.setDriver(driver);
+}</code></pre>
+<p><strong>Interviewer expects:</strong> Factory pattern + TestNG parameters + optional Grid integration.</p>
+
+<h3>Q9: How to implement environment-specific configuration?</h3>
+<p><strong>Answer:</strong> Multiple config files per environment, selected via Maven profiles or System properties. CI/CD pipeline passes <code>-Denv=staging</code> to load the correct file.</p>
+<pre><code>// File structure:
+// config/config-qa.properties
+// config/config-staging.properties
+// config/config-prod.properties
+
+public class ConfigReader {
+    private ConfigReader() {
+        String env = System.getProperty("env", "qa");
+        String path = "config/config-" + env + ".properties";
+        properties.load(new FileInputStream(path));
+    }
+}
+
+// Maven profile in pom.xml:
+// mvn test -Pstaging  → loads config-staging.properties
+// &lt;profile&gt;&lt;id&gt;staging&lt;/id&gt;
+//   &lt;properties&gt;&lt;env&gt;staging&lt;/env&gt;&lt;/properties&gt;
+// &lt;/profile&gt;</code></pre>
+<p><strong>Interviewer expects:</strong> Multi-file config with runtime environment selection.</p>
+
+<h3>Q10: How to handle test failures gracefully?</h3>
+<p><strong>Answer:</strong> Combine RetryAnalyzer for flaky tests, automatic screenshots on failure, detailed logging, and soft assertions for non-critical validations that shouldn't abort the entire test.</p>
+<pre><code>// RetryAnalyzer for flaky tests
+public class RetryAnalyzer implements IRetryAnalyzer {
+    private int count = 0;
+    private static final int MAX_RETRY = 2;
+
+    @Override
+    public boolean retry(ITestResult result) {
+        if (count &lt; MAX_RETRY) { count++; return true; }
+        return false;
+    }
+}
+@Test(retryAnalyzer = RetryAnalyzer.class)
+public void flakyTest() { /* test logic */ }
+
+// Soft assertions — collect all failures, report at end
+SoftAssert soft = new SoftAssert();
+soft.assertEquals(actualTitle, expectedTitle, "Title mismatch");
+soft.assertTrue(isLogoDisplayed, "Logo not visible");
+soft.assertAll(); // Throws if ANY assertion failed</code></pre>
+<p><strong>Interviewer expects:</strong> Multi-layered failure handling — retry, screenshot, soft assert.</p>
+
+<h3>Additional Interview Q&amp;A</h3>
+
+<h4>Q11: Why use Maven in automation projects?</h4>
+<p><strong>A:</strong> Dependency management (Selenium, TestNG, ExtentReports versions in pom.xml), standardized project structure, build lifecycle (compile → test → report), and CI/CD integration via <code>mvn test</code>.</p>
+
+<h4>Q12: What is the difference between implicit and explicit wait?</h4>
+<p><strong>A:</strong> Implicit wait is a global timeout for findElement across the entire session. Explicit wait is a targeted condition (visibility, clickability) for a specific element. Always prefer explicit waits in frameworks.</p>
+
+<h4>Q13: How do you run tests in parallel with TestNG?</h4>
+<p><strong>A:</strong> Set <code>parallel="methods"</code> and <code>thread-count="4"</code> in testng.xml. Use ThreadLocal for WebDriver isolation. Each thread gets its own driver instance via DriverManager.</p>
+
+<h4>Q14: What is PageFactory.initElements() doing internally?</h4>
+<p><strong>A:</strong> It scans the class for @FindBy annotations, creates proxy WebElement objects, and binds them to the WebDriver. Elements are lazily located on first interaction via proxy invocation handler.</p>
+
+<h4>Q15: How do you integrate ExtentReports with TestNG?</h4>
+<p><strong>A:</strong> Create ExtentReports instance in @BeforeSuite. Implement ITestListener to call extent.createTest() on start, pass/fail on result, and extent.flush() on finish. Register listener in testng.xml.</p>
+
+<h4>Q16: What is the difference between @BeforeMethod and @BeforeClass?</h4>
+<p><strong>A:</strong> @BeforeMethod runs before EACH test method — use for fresh browser launch. @BeforeClass runs once per class — use for expensive setup like DB connection or API auth token generation.</p>
+
+<h4>Q17: How do you handle authentication in API automation?</h4>
+<p><strong>A:</strong> Store token in a Singleton AuthManager. Use REST Assured RequestSpecBuilder to add Authorization header. Refresh token in @BeforeSuite if it expires during long test runs.</p>
+
+<h4>Q18: What is Log4j and why use it over System.out.println?</h4>
+<p><strong>A:</strong> Log4j provides log levels (DEBUG, INFO, WARN, ERROR), file/console output, timestamp formatting, and runtime configuration. Essential for debugging failed CI/CD runs where console output is the only evidence.</p>
+
+<h4>Q19: How do you version-control test data?</h4>
+<p><strong>A:</strong> Store JSON/CSV/Properties in <code>src/test/resources/</code> alongside code in Git. Data changes are tracked in pull requests. Sensitive data (passwords) goes in encrypted properties or CI/CD secrets, never in Git.</p>
+
+<h4>Q20: What is the role of BaseTest in a framework?</h4>
+<p><strong>A:</strong> BaseTest is the parent of all test classes. It handles @BeforeMethod (launch browser, navigate to URL), @AfterMethod (screenshot on fail, quit driver), and @BeforeSuite (init reports). Tests inherit this setup/teardown automatically.</p>
+
+<h4>Q21: How do you handle file uploads in Selenium?</h4>
+<p><strong>A:</strong> Use <code>sendKeys(absoluteFilePath)</code> on the file input element — Selenium bypasses the OS file dialog. Store test files in <code>src/test/resources/testfiles/</code>.</p>
+
+<h4>Q22: What is Selenium Grid and when do you use it?</h4>
+<p><strong>A:</strong> Grid distributes tests across multiple machines/browsers. Hub receives tests; Nodes execute on specific browsers/OS. Use when you need parallel cross-browser execution at scale beyond local ThreadLocal parallelism.</p>
+
+</section>
+
+<section id="section-20" class="section-card">
+<h2>Section 20: Top 200 Java Interview Questions for Automation Engineers</h2>
+
+<p>Grouped by topic. Each entry includes the question, a concise answer, what the interviewer expects, and a follow-up question to prepare for.</p>
+
+<!-- ===================== OOP Q1-40 ===================== -->
+<h3>OOP — Class, Object, Constructor (Q1–Q10)</h3>
+
+<h4>Q1: What is a class in Java?</h4>
+<p><strong>Answer:</strong> A class is a blueprint that defines fields (attributes) and methods (behavior). In automation, <code>LoginPage</code> is a class defining locators and login actions.</p>
+<p><strong>Interviewer Expects:</strong> Blueprint analogy applied to page objects.</p>
+<p><strong>Follow-up:</strong> What is the difference between a class and an object?</p>
+
+<h4>Q2: What is an object in Java?</h4>
+<p><strong>Answer:</strong> An object is a runtime instance of a class created with <code>new</code>. <code>LoginPage loginPage = new LoginPage(driver)</code> creates a LoginPage object bound to a WebDriver instance.</p>
+<p><strong>Interviewer Expects:</strong> Instance creation with real automation example.</p>
+<p><strong>Follow-up:</strong> How many objects can you create from one class?</p>
+
+<h4>Q3: What is a constructor?</h4>
+<p><strong>Answer:</strong> A constructor initializes object state when <code>new</code> is called. Page objects use constructors to accept WebDriver: <code>public LoginPage(WebDriver driver) { super(driver); }</code></p>
+<p><strong>Interviewer Expects:</strong> Constructor chaining with super() in page objects.</p>
+<p><strong>Follow-up:</strong> Can a constructor be private? Give an automation example.</p>
+
+<h4>Q4: What is constructor overloading?</h4>
+<p><strong>Answer:</strong> Multiple constructors with different parameter lists in the same class. BrowserFactory could have <code>BrowserFactory()</code> and <code>BrowserFactory(String browserName)</code> for default vs specified browser.</p>
+<p><strong>Interviewer Expects:</strong> Practical overloading, not just definition.</p>
+<p><strong>Follow-up:</strong> Can constructors be inherited?</p>
+
+<h4>Q5: What is the default constructor?</h4>
+<p><strong>Answer:</strong> Java provides a no-arg constructor if none is defined. Page objects typically define explicit constructors to require WebDriver, preventing accidental <code>new LoginPage()</code> without driver.</p>
+<p><strong>Interviewer Expects:</strong> Why explicit constructors matter in frameworks.</p>
+<p><strong>Follow-up:</strong> What happens if you define a parameterized constructor but no default?</p>
+
+<h4>Q6: What is <code>this</code> keyword?</h4>
+<p><strong>Answer:</strong> Refers to the current object instance. In fluent POM, <code>return this;</code> enables method chaining: <code>loginPage.enterUsername("admin").enterPassword("pass")</code>.</p>
+<p><strong>Interviewer Expects:</strong> Method chaining pattern in page objects.</p>
+<p><strong>Follow-up:</strong> What is the difference between <code>this</code> and <code>super</code>?</p>
+
+<h4>Q7: What is <code>super</code> keyword?</h4>
+<p><strong>Answer:</strong> Refers to the parent class. <code>super(driver)</code> in LoginPage constructor calls BasePage constructor to initialize WebDriver, wait, and actions.</p>
+<p><strong>Interviewer Expects:</strong> Inheritance chain in POM hierarchy.</p>
+<p><strong>Follow-up:</strong> Can you call super() from a static method?</p>
+
+<h4>Q8: What is a static variable?</h4>
+<p><strong>Answer:</strong> Belongs to the class, not any instance. Shared across all objects. Example: <code>private static ConfigReader instance</code> in Singleton — one config for entire framework.</p>
+<p><strong>Interviewer Expects:</strong> Static vs instance in Singleton/ConfigReader context.</p>
+<p><strong>Follow-up:</strong> Can static methods access instance variables?</p>
+
+<h4>Q9: What is a static method?</h4>
+<p><strong>Answer:</strong> Called on the class without creating an object. <code>BrowserFactory.createDriver()</code> and <code>ConfigReader.getInstance()</code> are static — accessed directly without instantiation.</p>
+<p><strong>Interviewer Expects:</strong> Factory and Singleton static method usage.</p>
+<p><strong>Follow-up:</strong> Why can't static methods be overridden?</p>
+
+<h4>Q10: What is method overloading?</h4>
+<p><strong>Answer:</strong> Same method name, different parameters — compile-time polymorphism. BasePage could have <code>click(By locator)</code> and <code>click(WebElement element)</code> for different input types.</p>
+<p><strong>Interviewer Expects:</strong> Overloading vs overriding distinction.</p>
+<p><strong>Follow-up:</strong> Can you overload by return type alone?</p>
+
+<h3>OOP — Encapsulation, Inheritance (Q11–Q20)</h3>
+
+<h4>Q11: What is encapsulation?</h4>
+<p><strong>Answer:</strong> Bundling data and methods together, hiding internal state with access modifiers. Page objects encapsulate private By locators and expose public action methods — tests never see locators directly.</p>
+<p><strong>Interviewer Expects:</strong> POM as encapsulation example.</p>
+<p><strong>Follow-up:</strong> How do getters/setters relate to encapsulation?</p>
+
+<h4>Q12: What are access modifiers in Java?</h4>
+<p><strong>Answer:</strong> private (class only), default (package), protected (package + subclasses), public (everywhere). POM rule: locators are private, action methods are public.</p>
+<p><strong>Interviewer Expects:</strong> POM access modifier conventions.</p>
+<p><strong>Follow-up:</strong> Why are locators private in page objects?</p>
+
+<h4>Q13: What is inheritance?</h4>
+<p><strong>Answer:</strong> A class acquires fields and methods from a parent class using <code>extends</code>. All page objects extend BasePage to inherit click(), type(), waitForElement().</p>
+<p><strong>Interviewer Expects:</strong> BasePage → LoginPage inheritance chain.</p>
+<p><strong>Follow-up:</strong> Does Java support multiple inheritance of classes?</p>
+
+<h4>Q14: What is the <code>extends</code> keyword?</h4>
+<p><strong>Answer:</strong> Declares inheritance. <code>public class LoginPage extends BasePage</code> — LoginPage inherits all protected/public methods from BasePage and can override them.</p>
+<p><strong>Interviewer Expects:</strong> extends vs implements distinction.</p>
+<p><strong>Follow-up:</strong> What is the Object class and why does every class extend it?</p>
+
+<h4>Q15: What is method overriding?</h4>
+<p><strong>Answer:</strong> Subclass provides its own implementation of a parent method. HomePage overrides <code>isPageDisplayed()</code> from BasePage with home-specific element checks.</p>
+<p><strong>Interviewer Expects:</strong> @Override annotation and runtime polymorphism.</p>
+<p><strong>Follow-up:</strong> Can you override a static method?</p>
+
+<h4>Q16: What is the <code>implements</code> keyword?</h4>
+<p><strong>Answer:</strong> A class implements an interface, providing concrete implementations for all abstract methods. <code>TestListener implements ITestListener</code> — implements onTestStart, onTestFailure, etc.</p>
+<p><strong>Interviewer Expects:</strong> Interface implementation in TestNG listeners.</p>
+<p><strong>Follow-up:</strong> Can a class implement multiple interfaces?</p>
+
+<h4>Q17: What is the IS-A vs HAS-A relationship?</h4>
+<p><strong>Answer:</strong> IS-A is inheritance (LoginPage IS-A BasePage). HAS-A is composition (HomePage HAS-A HeaderComponent). Prefer composition for shared UI components.</p>
+<p><strong>Interviewer Expects:</strong> Component-based POM as HAS-A example.</p>
+<p><strong>Follow-up:</strong> When would you choose composition over inheritance?</p>
+
+<h4>Q18: What is the <code>final</code> keyword?</h4>
+<p><strong>Answer:</strong> final variable = constant (cannot reassign), final method = cannot override, final class = cannot extend. Config values like <code>final int DEFAULT_TIMEOUT = 10</code> prevent accidental modification.</p>
+<p><strong>Interviewer Expects:</strong> final applied to config constants.</p>
+<p><strong>Follow-up:</strong> Is String final in Java? Why does it matter?</p>
+
+<h4>Q19: What is constructor chaining?</h4>
+<p><strong>Answer:</strong> One constructor calls another using <code>this()</code> or <code>super()</code>. BasePage constructor initializes driver/wait; child page constructors call <code>super(driver)</code> first.</p>
+<p><strong>Interviewer Expects:</strong> super() as first statement rule.</p>
+<p><strong>Follow-up:</strong> What happens if super() is not the first statement?</p>
+
+<h4>Q20: What is the difference between composition and inheritance?</h4>
+<p><strong>Answer:</strong> Inheritance (IS-A) shares behavior via extends. Composition (HAS-A) embeds objects as fields. Component-based POM uses composition — HomePage contains HeaderComponent rather than extending it.</p>
+<p><strong>Interviewer Expects:</strong> "Favor composition over inheritance" in POM design.</p>
+<p><strong>Follow-up:</strong> What problem does composition solve that inheritance cannot?</p>
+
+<h3>OOP — Polymorphism (Q21–Q30)</h3>
+
+<h4>Q21: What is polymorphism?</h4>
+<p><strong>Answer:</strong> One interface, many implementations. ReportStrategy interface with ExtentReportStrategy and AllureReportStrategy — test listener uses ReportStrategy without knowing which implementation runs.</p>
+<p><strong>Interviewer Expects:</strong> Strategy pattern as polymorphism example.</p>
+<p><strong>Follow-up:</strong> Compile-time vs runtime polymorphism?</p>
+
+<h4>Q22: What is compile-time polymorphism?</h4>
+<p><strong>Answer:</strong> Method overloading — compiler resolves which method to call based on parameter types at compile time. <code>waitForElement(By)</code> vs <code>waitForElement(WebElement)</code>.</p>
+<p><strong>Interviewer Expects:</strong> Overloading as static/compile-time binding.</p>
+<p><strong>Follow-up:</strong> Can overloaded methods have different return types?</p>
+
+<h4>Q23: What is runtime polymorphism?</h4>
+<p><strong>Answer:</strong> Method overriding — JVM resolves which implementation to call at runtime based on actual object type. <code>WaitStrategy strategy = new ExplicitWaitStrategy()</code> — JVM calls ExplicitWait's waitForElement().</p>
+<p><strong>Interviewer Expects:</strong> Dynamic dispatch via interface reference.</p>
+<p><strong>Follow-up:</strong> Can you achieve runtime polymorphism without interfaces?</p>
+
+<h4>Q24: Overloading vs Overriding — key differences?</h4>
+<p><strong>Answer:</strong> Overloading: same class, different parameters, compile-time. Overriding: subclass replaces parent method, same signature, runtime. Overloading = same name different params; Overriding = same name same params in child.</p>
+<p><strong>Interviewer Expects:</strong> Clear table-style comparison.</p>
+<p><strong>Follow-up:</strong> Can you override a private method?</p>
+
+<h4>Q25: What is dynamic method dispatch?</h4>
+<p><strong>Answer:</strong> JVM calls the overridden method of the actual object type at runtime, not the reference type. <code>BasePage page = new LoginPage(driver)</code> — calls LoginPage's methods, not BasePage's.</p>
+<p><strong>Interviewer Expects:</strong> Parent reference, child object concept.</p>
+<p><strong>Follow-up:</strong> What is the difference between reference type and object type?</p>
+
+<h4>Q26: Can you overload main method?</h4>
+<p><strong>Answer:</strong> Yes, but JVM only calls <code>public static void main(String[] args)</code>. Useful in automation for running test suites programmatically with different configurations.</p>
+<p><strong>Interviewer Expects:</strong> Knowing JVM entry point signature is fixed.</p>
+<p><strong>Follow-up:</strong> Can you run a Java program without main method?</p>
+
+<h4>Q27: What is upcasting?</h4>
+<p><strong>Answer:</strong> Assigning subclass object to parent reference. <code>BasePage page = new LoginPage(driver)</code> — implicit upcasting. Used when methods accept BasePage but receive any page object.</p>
+<p><strong>Interviewer Expects:</strong> Upcasting in method parameters.</p>
+<p><strong>Follow-up:</strong> What is downcasting and when is it needed?</p>
+
+<h4>Q28: What is downcasting?</h4>
+<p><strong>Answer:</strong> Casting parent reference back to subclass. <code>LoginPage login = (LoginPage) page</code> — needed to access LoginPage-specific methods. Use instanceof check first to avoid ClassCastException.</p>
+<p><strong>Interviewer Expects:</strong> instanceof before downcast pattern.</p>
+<p><strong>Follow-up:</strong> What exception does invalid downcasting throw?</p>
+
+<h4>Q29: What is the instanceof operator?</h4>
+<p><strong>Answer:</strong> Checks if an object is an instance of a class/interface. <code>if (page instanceof LoginPage)</code> before downcasting — prevents ClassCastException in generic page handling.</p>
+<p><strong>Interviewer Expects:</strong> Safe downcasting pattern.</p>
+<p><strong>Follow-up:</strong> Does instanceof work with null?</p>
+
+<h4>Q30: How is polymorphism used in DriverFactory?</h4>
+<p><strong>Answer:</strong> BrowserFactory returns WebDriver interface reference regardless of browser. Tests use <code>WebDriver driver</code> — works with ChromeDriver, FirefoxDriver, or EdgeDriver without knowing concrete type.</p>
+<p><strong>Interviewer Expects:</strong> Interface reference hiding implementation.</p>
+<p><strong>Follow-up:</strong> How would you add a new browser without changing test code?</p>
+
+<h3>OOP — Abstraction (Q31–Q40)</h3>
+
+<h4>Q31: What is abstraction?</h4>
+<p><strong>Answer:</strong> Hiding implementation details, showing only essential features. WaitStrategy interface defines waitForElement() — tests don't know if it's ExplicitWait or FluentWait internally.</p>
+<p><strong>Interviewer Expects:</strong> Interface as abstraction mechanism.</p>
+<p><strong>Follow-up:</strong> How is abstraction different from encapsulation?</p>
+
+<h4>Q32: What is an abstract class?</h4>
+<p><strong>Answer:</strong> A class that cannot be instantiated, may contain abstract and concrete methods. BasePage could be abstract with abstract <code>isPageLoaded()</code> and concrete click()/type() methods.</p>
+<p><strong>Interviewer Expects:</strong> Abstract BasePage design pattern.</p>
+<p><strong>Follow-up:</strong> Can an abstract class have a constructor?</p>
+
+<h4>Q33: What is an interface?</h4>
+<p><strong>Answer:</strong> A contract defining method signatures without implementation (pre-Java 8). ITestListener, WaitStrategy, ReportStrategy are interfaces — define what methods exist, implementations provide how.</p>
+<p><strong>Interviewer Expects:</strong> Interface in TestNG listener context.</p>
+<p><strong>Follow-up:</strong> Can an interface extend another interface?</p>
+
+<h4>Q34: Abstract class vs Interface — when to use which?</h4>
+<p><strong>Answer:</strong> Abstract class: shared state + partial implementation (BasePage with common actions). Interface: pure contract with no state (WaitStrategy, ReportStrategy). Use interface when unrelated classes share behavior.</p>
+<p><strong>Interviewer Expects:</strong> Clear decision criteria, not just definitions.</p>
+<p><strong>Follow-up:</strong> Can a class extend abstract class and implement interface?</p>
+
+<h4>Q35: Can an abstract class be final?</h4>
+<p><strong>Answer:</strong> No — abstract means must be extended; final means cannot be extended. They are contradictory modifiers. BasePage should be extendable by all page objects.</p>
+<p><strong>Interviewer Expects:</strong> Modifier conflict understanding.</p>
+<p><strong>Follow-up:</strong> Can an abstract method be static?</p>
+
+<h4>Q36: What are default methods in interfaces (Java 8)?</h4>
+<p><strong>Answer:</strong> Interfaces can have method bodies with <code>default</code> keyword. Allows adding new methods to interfaces without breaking existing implementations — backward compatibility.</p>
+<p><strong>Interviewer Expects:</strong> Java 8 interface evolution knowledge.</p>
+<p><strong>Follow-up:</strong> What happens if a class implements two interfaces with same default method?</p>
+
+<h4>Q37: What are static methods in interfaces?</h4>
+<p><strong>Answer:</strong> Java 8 allows static methods in interfaces. Called via interface name: <code>WebDriver.Navigation.navigate()</code>. Utility methods that belong to the interface contract.</p>
+<p><strong>Interviewer Expects:</strong> Interface static method invocation syntax.</p>
+<p><strong>Follow-up:</strong> Can static interface methods be overridden?</p>
+
+<h4>Q38: What is a marker interface?</h4>
+<p><strong>Answer:</strong> An empty interface with no methods — marks a class for JVM/framework treatment. Serializable and Cloneable are marker interfaces. TestNG's ITest interface marks test methods.</p>
+<p><strong>Interviewer Expects:</strong> Knowing marker interface purpose.</p>
+<p><strong>Follow-up:</strong> Is Serializable still relevant in automation?</p>
+
+<h4>Q39: How is abstraction used in reporting?</h4>
+<p><strong>Answer:</strong> ReportStrategy interface abstracts reporting. TestListener calls strategy.logPass()/logFail() — works with ExtentReports or Allure without changing listener code. Switch report tool via config.</p>
+<p><strong>Interviewer Expects:</strong> Strategy + abstraction combined example.</p>
+<p><strong>Follow-up:</strong> How would you add a third reporting tool?</p>
+
+<h4>Q40: Can you instantiate an abstract class?</h4>
+<p><strong>Answer:</strong> No — abstract classes cannot be instantiated directly. You must create a concrete subclass. Anonymous inner classes can extend abstract classes: <code>new BasePage(driver) { ... }</code> for quick test stubs.</p>
+<p><strong>Interviewer Expects:</strong> Anonymous class as workaround knowledge.</p>
+<p><strong>Follow-up:</strong> What is an anonymous inner class? Give automation example.</p>
+
+<!-- SECTION 20 PART 2 -->
+<h3>Strings (Q41–Q65)</h3>
+
+<h4>Q41: Why is String immutable in Java?</h4>
+<p><strong>Answer:</strong> Strings cannot be changed after creation — any modification creates a new object. Ensures thread safety for config keys, test names in reports, and string pool efficiency.</p>
+<p><strong>Interviewer Expects:</strong> Thread safety and string pool connection.</p>
+<p><strong>Follow-up:</strong> How does immutability affect string concatenation in loops?</p>
+
+<h4>Q42: What is the String pool?</h4>
+<p><strong>Answer:</strong> A special memory area in heap storing unique string literals. <code>"chrome"</code> in config comparisons reuses the same pool object — saves memory when browser name is referenced across framework.</p>
+<p><strong>Interviewer Expects:</strong> intern() and literal vs new String() difference.</p>
+<p><strong>Follow-up:</strong> Where is string pool stored in Java 8+?</p>
+
+<h4>Q43: == vs equals() for Strings?</h4>
+<p><strong>Answer:</strong> == compares references (memory address); equals() compares content. <code>browser == "chrome"</code> may fail for dynamic strings; always use <code>"chrome".equals(browser)</code> in config checks.</p>
+<p><strong>Interviewer Expects:</strong> Always use equals() for string content comparison.</p>
+<p><strong>Follow-up:</strong> What does String.equalsIgnoreCase() do?</p>
+
+<h4>Q44: What is String.intern()?</h4>
+<p><strong>Answer:</strong> Returns canonical pool representation. If pool has equal string, returns pool reference. Useful when comparing many dynamic browser names against known constants.</p>
+<p><strong>Interviewer Expects:</strong> Memory optimization awareness.</p>
+<p><strong>Follow-up:</strong> Performance impact of intern() on large datasets?</p>
+
+<h4>Q45: What is substring()?</h4>
+<p><strong>Answer:</strong> Extracts portion of string. Parsing test output: <code>result.substring(result.indexOf(":") + 1).trim()</code> to extract value after colon in assertion messages.</p>
+<p><strong>Interviewer Expects:</strong> Practical parsing in test validation.</p>
+<p><strong>Follow-up:</strong> Does substring share char array in older Java?</p>
+
+<h4>Q46: What is split()?</h4>
+<p><strong>Answer:</strong> Splits string by regex delimiter into array. CSV test data: <code>String[] data = line.split(",")</code> — username=data[0], password=data[1].</p>
+<p><strong>Interviewer Expects:</strong> CSV data parsing for DataProvider.</p>
+<p><strong>Follow-up:</strong> How do you split with limit parameter?</p>
+
+<h4>Q47: What is trim()?</h4>
+<p><strong>Answer:</strong> Removes leading/trailing whitespace. Essential when reading Excel/CSV data: <code>username.trim()</code> prevents login failures from invisible spaces in test data cells.</p>
+<p><strong>Interviewer Expects:</strong> Data cleaning before test input.</p>
+<p><strong>Follow-up:</strong> Difference between trim() and strip() (Java 11)?</p>
+
+<h4>Q48: What is replace() vs replaceAll()?</h4>
+<p><strong>Answer:</strong> replace() replaces literal chars; replaceAll() uses regex. Dynamic XPath: <code>xpath.replace("{name}", userName)</code> for template-based locators.</p>
+<p><strong>Interviewer Expects:</strong> Template locator pattern.</p>
+<p><strong>Follow-up:</strong> What is replaceFirst()?</p>
+
+<h4>Q49: What is String.format()?</h4>
+<p><strong>Answer:</strong> Creates formatted strings with placeholders. Log messages: <code>String.format("Test %s FAILED after %d retries", testName, retryCount)</code> — readable test logs.</p>
+<p><strong>Interviewer Expects:</strong> Logging and report message formatting.</p>
+<p><strong>Follow-up:</strong> Difference between format() and concatenation?</p>
+
+<h4>Q50: What is StringBuilder?</h4>
+<p><strong>Answer:</strong> Mutable, non-thread-safe, fast string builder. Building dynamic XPath in loops: append multiple conditions without creating intermediate String objects.</p>
+<p><strong>Interviewer Expects:</strong> StringBuilder for loop concatenation.</p>
+<p><strong>Follow-up:</strong> StringBuilder vs StringBuffer?</p>
+
+<h4>Q51: What is StringBuffer?</h4>
+<p><strong>Answer:</strong> Mutable, thread-safe (synchronized) string builder. Slower than StringBuilder. Rarely needed in automation since each test thread builds its own strings independently.</p>
+<p><strong>Interviewer Expects:</strong> Prefer StringBuilder in single-threaded test code.</p>
+<p><strong>Follow-up:</strong> When would you use StringBuffer in automation?</p>
+
+<h4>Q52: StringBuilder vs String concatenation in loops?</h4>
+<p><strong>Answer:</strong> String + in loop creates N intermediate objects (immutable). StringBuilder appends in-place — O(n) vs O(n²). Building long error messages or dynamic locators: always use StringBuilder.</p>
+<p><strong>Interviewer Expects:</strong> Performance awareness in data-driven tests.</p>
+<p><strong>Follow-up:</strong> Is Java compiler optimizing string concatenation?</p>
+
+<h4>Q53: What is charAt()?</h4>
+<p><strong>Answer:</strong> Returns character at index. Validating input masks: <code>phone.charAt(0) == '+'</code> or checking password complexity character by character.</p>
+<p><strong>Interviewer Expects:</strong> Index-based character access.</p>
+<p><strong>Follow-up:</strong> What exception does charAt(invalidIndex) throw?</p>
+
+<h4>Q54: What is toCharArray()?</h4>
+<p><strong>Answer:</strong> Converts string to char array. Anagram check: sort both char arrays and compare — common coding interview question in automation interviews.</p>
+<p><strong>Interviewer Expects:</strong> Connection to coding problems.</p>
+<p><strong>Follow-up:</strong> How do you convert char array back to String?</p>
+
+<h4>Q55: What is valueOf()?</h4>
+<p><strong>Answer:</strong> Converts primitives/objects to String. <code>String.valueOf(elementCount)</code> for logging; <code>String.valueOf(isEnabled)</code> for report entries.</p>
+<p><strong>Interviewer Expects:</strong> Type conversion in assertions and logs.</p>
+<p><strong>Follow-up:</strong> valueOf(null) returns what?</p>
+
+<h4>Q56: Reverse a string — coding approach?</h4>
+<p><strong>Answer:</strong> StringBuilder.reverse() one-liner, or two-pointer swap in char array. Validate palindrome URLs or reversed test data in automation utilities.</p>
+<p><strong>Interviewer Expects:</strong> Both approaches with complexity analysis.</p>
+<p><strong>Follow-up:</strong> Reverse words in a sentence?</p>
+
+<h4>Q57: Check palindrome — coding approach?</h4>
+<p><strong>Answer:</strong> Two-pointer from both ends comparing chars, or reverse string and compare with equals(). Validate symmetric test data or configuration values.</p>
+<p><strong>Interviewer Expects:</strong> Two-pointer O(n) solution.</p>
+<p><strong>Follow-up:</strong> Palindrome ignoring spaces and case?</p>
+
+<h4>Q58: Check anagram — coding approach?</h4>
+<p><strong>Answer:</strong> Sort both strings and compare, or count char frequencies in int[26] array. Compare shuffled test data sets or verify API response field ordering.</p>
+<p><strong>Interviewer Expects:</strong> Frequency array as optimal approach.</p>
+<p><strong>Follow-up:</strong> Anagram check for Unicode strings?</p>
+
+<h4>Q59: Find duplicate characters in string?</h4>
+<p><strong>Answer:</strong> HashMap&lt;Character, Integer&gt; frequency count. Identify duplicate test case names or repeated characters in generated test IDs for uniqueness validation.</p>
+<p><strong>Interviewer Expects:</strong> HashMap frequency pattern.</p>
+<p><strong>Follow-up:</strong> Find first non-repeated character?</p>
+
+<h4>Q60: What is String.join()?</h4>
+<p><strong>Answer:</strong> Joins array/list elements with delimiter. Building CSV from test results: <code>String.join(",", passedTests)</code> for report export.</p>
+<p><strong>Interviewer Expects:</strong> Java 8+ string utility awareness.</p>
+<p><strong>Follow-up:</strong> join() vs StringBuilder for joining?</p>
+
+<h4>Q61: What is isEmpty() vs isBlank()?</h4>
+<p><strong>Answer:</strong> isEmpty() checks length==0; isBlank() (Java 11) checks all whitespace. Form validation: <code>if (username.isBlank()) throw new IllegalArgumentException()</code>.</p>
+<p><strong>Interviewer Expects:</strong> Input validation in test data methods.</p>
+<p><strong>Follow-up:</strong> How to validate email format without regex library?</p>
+
+<h4>Q62: What is contains()?</h4>
+<p><strong>Answer:</strong> Checks if string contains substring. Page validation: <code>getPageSource().contains("Error 404")</code> or <code>getTitle().contains("Dashboard")</code>.</p>
+<p><strong>Interviewer Expects:</strong> Soft validation without exact match.</p>
+<p><strong>Follow-up:</strong> contains() vs indexOf() != -1?</p>
+
+<h4>Q63: What is matches()?</h4>
+<p><strong>Answer:</strong> Matches entire string against regex. Validate email format: <code>email.matches("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")</code>.</p>
+<p><strong>Interviewer Expects:</strong> Regex validation in form testing.</p>
+<p><strong>Follow-up:</strong> matches() vs find() in Pattern/Matcher?</p>
+
+<h4>Q64: What is toUpperCase()/toLowerCase()?</h4>
+<p><strong>Answer:</strong> Case conversion. Browser-agnostic comparison: <code>browser.toUpperCase().equals("CHROME")</code> — handles "chrome", "Chrome", "CHROME" from config.</p>
+<p><strong>Interviewer Expects:</strong> Case-insensitive config reading.</p>
+<p><strong>Follow-up:</strong> Locale-sensitive case conversion issues?</p>
+
+<h4>Q65: What is compareTo()?</h4>
+<p><strong>Answer:</strong> Lexicographic comparison returning int. Sorting test results alphabetically or comparing version strings in config: <code>version1.compareTo(version2) > 0</code>.</p>
+<p><strong>Interviewer Expects:</strong> Sorting test names or priority ordering.</p>
+<p><strong>Follow-up:</strong> compareTo() vs Comparator.comparing()?</p>
+
+<h3>Collections (Q66–Q100)</h3>
+
+<h4>Q66: List vs Set vs Map?</h4>
+<p><strong>Answer:</strong> List: ordered, allows duplicates (test execution order). Set: no duplicates (unique test IDs). Map: key-value pairs (config, locators, test data). Choose based on data structure needs.</p>
+<p><strong>Interviewer Expects:</strong> Practical automation use case for each.</p>
+<p><strong>Follow-up:</strong> When would you use LinkedHashSet?</p>
+
+<h4>Q67: ArrayList vs LinkedList?</h4>
+<p><strong>Answer:</strong> ArrayList: O(1) random access, O(n) insert/delete — best for test result lists. LinkedList: O(1) insert/delete, O(n) access — rarely used in automation.</p>
+<p><strong>Interviewer Expects:</strong> ArrayList as default List choice.</p>
+<p><strong>Follow-up:</strong> Internal array resizing in ArrayList?</p>
+
+<h4>Q68: How to add elements to ArrayList?</h4>
+<p><strong>Answer:</strong> add(), add(index, element), addAll(). Collecting test names: <code>passedTests.add(result.getName())</code> in TestListener onTestSuccess.</p>
+<p><strong>Interviewer Expects:</strong> Listener collecting results example.</p>
+<p><strong>Follow-up:</strong> add() vs add(index) performance?</p>
+
+<h4>Q69: How to remove elements from ArrayList?</h4>
+<p><strong>Answer:</strong> remove(index), remove(object), removeIf(). Filter failed tests: <code>results.removeIf(r -> r.getStatus() == SKIP)</code> before report generation.</p>
+<p><strong>Interviewer Expects:</strong> removeIf with lambda.</p>
+<p><strong>Follow-up:</strong> ConcurrentModificationException when removing during iteration?</p>
+
+<h4>Q70: How to iterate ArrayList?</h4>
+<p><strong>Answer:</strong> for-each, Iterator, forEach with lambda, streams. Logging all test results: <code>results.forEach(r -> log.info(r.getName()))</code>.</p>
+<p><strong>Interviewer Expects:</strong> Multiple iteration approaches.</p>
+<p><strong>Follow-up:</strong> Which iteration is safe during modification?</p>
+
+<h4>Q71: What is Collections.sort()?</h4>
+<p><strong>Answer:</strong> Sorts list using Comparable or Comparator. Sort test results by duration: <code>Collections.sort(results, Comparator.comparing(r -> r.getDuration()))</code>.</p>
+<p><strong>Interviewer Expects:</strong> Comparator for custom sorting.</p>
+<p><strong>Follow-up:</strong> sort() vs List.sort()?</p>
+
+<h4>Q72: What is Arrays.asList()?</h4>
+<p><strong>Answer:</strong> Converts array to fixed-size List. Browser list: <code>Arrays.asList("chrome", "firefox", "edge")</code> for cross-browser iteration — cannot add/remove elements.</p>
+<p><strong>Interviewer Expects:</strong> Fixed-size limitation awareness.</p>
+<p><strong>Follow-up:</strong> How to create mutable list from array?</p>
+
+<h4>Q73: What is HashMap?</h4>
+<p><strong>Answer:</strong> Key-value store with O(1) average get/put. Config map, test data map, API headers — most used collection in automation frameworks.</p>
+<p><strong>Interviewer Expects:</strong> Multiple automation use cases.</p>
+<p><strong>Follow-up:</strong> How does HashMap handle collisions?</p>
+
+<h4>Q74: HashMap internal working?</h4>
+<p><strong>Answer:</strong> Array of buckets; hashCode determines bucket index; equals() resolves collisions via linked list (Java 7) or tree (Java 8+, bucket size > 8). Load factor 0.75 triggers resize.</p>
+<p><strong>Interviewer Expects:</strong> hashCode + equals contract.</p>
+<p><strong>Follow-up:</strong> What happens when two keys have same hashCode?</p>
+
+<h4>Q75: HashMap vs Hashtable?</h4>
+<p><strong>Answer:</strong> HashMap: not synchronized, allows one null key. Hashtable: synchronized, no null keys — legacy, replaced by ConcurrentHashMap for thread-safe needs.</p>
+<p><strong>Interviewer Expects:</strong> Never use Hashtable; use HashMap or ConcurrentHashMap.</p>
+<p><strong>Follow-up:</strong> Why ConcurrentHashMap over synchronized HashMap?</p>
+
+<h4>Q76: What is HashSet?</h4>
+<p><strong>Answer:</strong> Set backed by HashMap — no duplicates, O(1) add/contains. Track unique failed test names: <code>Set&lt;String&gt; failedTests = new HashSet&lt;&gt;()</code>.</p>
+<p><strong>Interviewer Expects:</strong> Duplicate elimination use case.</p>
+<p><strong>Follow-up:</strong> HashSet vs TreeSet ordering?</p>
+
+<h4>Q77: What is LinkedHashMap?</h4>
+<p><strong>Answer:</strong> HashMap maintaining insertion order. Preserve test execution order in results map — iterate in the order tests ran, not random hash order.</p>
+<p><strong>Interviewer Expects:</strong> Order preservation for reporting.</p>
+<p><strong>Follow-up:</strong> LinkedHashMap vs TreeMap?</p>
+
+<h4>Q78: What is TreeMap?</h4>
+<p><strong>Answer:</strong> Sorted Map by key (Red-Black tree). Sort config entries alphabetically or prioritize test suites by name for ordered execution.</p>
+<p><strong>Interviewer Expects:</strong> O(log n) operations awareness.</p>
+<p><strong>Follow-up:</strong> Can TreeMap accept null keys?</p>
+
+<h4>Q79: What is ConcurrentHashMap?</h4>
+<p><strong>Answer:</strong> Thread-safe HashMap without locking entire map — segment/bucket-level locking. Shared test result cache in parallel execution without synchronized blocks.</p>
+<p><strong>Interviewer Expects:</strong> Parallel test result aggregation.</p>
+<p><strong>Follow-up:</strong> ConcurrentHashMap vs Collections.synchronizedMap()?</p>
+
+<h4>Q80: What is Iterator?</h4>
+<p><strong>Answer:</strong> Interface to traverse collections. Safe removal during iteration via iterator.remove(). Iterate test data map entries to build DataProvider arrays.</p>
+<p><strong>Interviewer Expects:</strong> Fail-fast iterator behavior.</p>
+<p><strong>Follow-up:</strong> Iterator vs ListIterator?</p>
+
+<h4>Q81: What is ConcurrentModificationException?</h4>
+<p><strong>Answer:</strong> Thrown when collection is structurally modified during iteration (except via Iterator.remove()). Removing from ArrayList while for-each looping causes this — use Iterator or removeIf().</p>
+<p><strong>Interviewer Expects:</strong> How to safely remove during iteration.</p>
+<p><strong>Follow-up:</strong> Does ConcurrentHashMap throw this exception?</p>
+
+<h4>Q82: What is Comparable?</h4>
+<p><strong>Answer:</strong> Interface with compareTo() for natural ordering. TestResult implements Comparable to sort by execution time: <code>results.sort(Collections.reverseOrder())</code>.</p>
+<p><strong>Interviewer Expects:</strong> Implementing compareTo in data classes.</p>
+<p><strong>Follow-up:</strong> Comparable vs Comparator?</p>
+
+<h4>Q83: What is Comparator?</h4>
+<p><strong>Answer:</strong> External comparison logic — multiple sort orders without modifying class. Sort tests by priority then name: <code>Comparator.comparing(Test::getPriority).thenComparing(Test::getName)</code>.</p>
+<p><strong>Interviewer Expects:</strong> Comparator chaining for multi-criteria sort.</p>
+<p><strong>Follow-up:</strong> Comparator.comparing() with reverse order?</p>
+
+<h4>Q84: What is Collections.unmodifiableList()?</h4>
+<p><strong>Answer:</strong> Returns read-only view of list. Prevent accidental modification of shared browser list or config keys after framework initialization.</p>
+<p><strong>Interviewer Expects:</strong> Defensive programming in framework design.</p>
+<p><strong>Follow-up:</strong> Does unmodifiableList prevent all modifications?</p>
+
+<h4>Q85: What is entrySet() in HashMap?</h4>
+<p><strong>Answer:</strong> Returns Set of Map.Entry objects for iteration. Iterate config: <code>for (Map.Entry&lt;String,String&gt; e : config.entrySet())</code> to log all settings at startup.</p>
+<p><strong>Interviewer Expects:</strong> Map iteration patterns.</p>
+<p><strong>Follow-up:</strong> keySet() vs values() vs entrySet()?</p>
+
+<h4>Q86: How to sort HashMap by value?</h4>
+<p><strong>Answer:</strong> Stream entrySet, sort by value, collect to LinkedHashMap. Sort test failure counts by frequency for flaky test identification.</p>
+<p><strong>Interviewer Expects:</strong> Stream-based map sorting.</p>
+<p><strong>Follow-up:</strong> Sort HashMap by key?</p>
+
+<h4>Q87: What is Queue in Java?</h4>
+<p><strong>Answer:</strong> FIFO data structure. Test execution queue in Grid setup — tests submitted to hub queue, processed by available nodes in order.</p>
+<p><strong>Interviewer Expects:</strong> Queue in test distribution context.</p>
+<p><strong>Follow-up:</strong> PriorityQueue use case in automation?</p>
+
+<h4>Q88: What is Stack?</h4>
+<p><strong>Answer:</strong> LIFO structure (legacy, use Deque). Navigation history in browser testing — push each page URL, pop to go back and verify breadcrumb trail.</p>
+<p><strong>Interviewer Expects:</strong> Deque as modern Stack replacement.</p>
+<p><strong>Follow-up:</strong> ArrayDeque vs LinkedList as Deque?</p>
+
+<h4>Q89: What is generics in collections?</h4>
+<p><strong>Answer:</strong> Type-safe collections: <code>Map&lt;String, WebElement&gt;</code> prevents ClassCastException. Compile-time check that config map keys are Strings and values are Strings.</p>
+<p><strong>Interviewer Expects:</strong> Generic type parameters in framework code.</p>
+<p><strong>Follow-up:</strong> What is type erasure?</p>
+
+<h4>Q90: What is autoboxing/unboxing?</h4>
+<p><strong>Answer:</strong> Automatic conversion between primitives and wrappers. <code>Map&lt;String, Integer&gt;</code> auto-boxes int timeout values; auto-unboxes when reading: <code>int t = config.get("timeout")</code>.</p>
+<p><strong>Interviewer Expects:</strong> NullPointerException risk with unboxing null Integer.</p>
+<p><strong>Follow-up:</strong> int vs Integer — when to use which?</p>
+
+<h4>Q91: What is fail-fast vs fail-safe iterator?</h4>
+<p><strong>Answer:</strong> Fail-fast (ArrayList, HashMap): throws ConcurrentModificationException on concurrent change. Fail-safe (ConcurrentHashMap): works on clone — safe for parallel test result iteration.</p>
+<p><strong>Interviewer Expects:</strong> Choose collection based on concurrency needs.</p>
+<p><strong>Follow-up:</strong> Which collections are fail-safe?</p>
+
+<h4>Q92: What is LinkedHashSet?</h4>
+<p><strong>Answer:</strong> Set maintaining insertion order, no duplicates. Remove duplicate test tags while preserving order for report: <code>new LinkedHashSet&lt;&gt;(tags)</code>.</p>
+<p><strong>Interviewer Expects:</strong> Order-preserving deduplication.</p>
+<p><strong>Follow-up:</strong> LinkedHashSet internal structure?</p>
+
+<h4>Q93: What is copyOnWriteArrayList?</h4>
+<p><strong>Answer:</strong> Thread-safe list creating copy on write — safe iteration during modification. Rare in automation; used when listener threads read test list while main thread adds results.</p>
+<p><strong>Interviewer Expects:</strong> Awareness of concurrent collection options.</p>
+<p><strong>Follow-up:</strong> Performance trade-off of copy-on-write?</p>
+
+<h4>Q94: How to convert List to Array and vice versa?</h4>
+<p><strong>Answer:</strong> toArray(), Arrays.asList(). DataProvider needs Object[][]: <code>list.toArray(new String[0])</code> for TestNG parameter feeding.</p>
+<p><strong>Interviewer Expects:</strong> DataProvider integration with collections.</p>
+<p><strong>Follow-up:</strong> Why toArray(new String[0]) instead of new String[list.size()]?</p>
+
+<h4>Q95: What is computeIfAbsent in HashMap?</h4>
+<p><strong>Answer:</strong> Java 8: if key absent, compute value and insert. Lazy-init page object cache: <code>pageCache.computeIfAbsent("login", k -> new LoginPage(driver))</code>.</p>
+<p><strong>Interviewer Expects:</strong> Java 8 Map API methods.</p>
+<p><strong>Follow-up:</strong> computeIfPresent vs merge?</p>
+
+<h4>Q96: What is ConcurrentHashMap?</h4>
+<p><strong>Answer:</strong> (Deep dive) Segment locking in Java 7; CAS + synchronized bucket in Java 8+. No locking for reads. Ideal for shared test metrics counter across parallel threads.</p>
+<p><strong>Interviewer Expects:</strong> Thread-safe without global lock.</p>
+<p><strong>Follow-up:</strong> Can ConcurrentHashMap have null keys/values?</p>
+
+<h4>Q97: What is Iterator remove()?</h4>
+<p><strong>Answer:</strong> Safely removes current element during iteration. Filter test results during traversal without ConcurrentModificationException.</p>
+<p><strong>Interviewer Expects:</strong> Safe removal pattern.</p>
+<p><strong>Follow-up:</strong> Can you call remove() twice without next()?</p>
+
+<h4>Q98: What is ListIterator?</h4>
+<p><strong>Answer:</strong> Bidirectional Iterator for List — traverse forward and backward. Navigate test step logs in reverse to find last passing step before failure.</p>
+<p><strong>Interviewer Expects:</strong> Bidirectional traversal awareness.</p>
+<p><strong>Follow-up:</strong> Can ListIterator modify list?</p>
+
+<h4>Q99: What is EnumSet?</h4>
+<p><strong>Answer:</strong> Set optimized for enum types — bit vector internally. Track which BrowserType values are enabled: <code>EnumSet.of(BrowserType.CHROME, BrowserType.FIREFOX)</code>.</p>
+<p><strong>Interviewer Expects:</strong> Enum integration with collections.</p>
+<p><strong>Follow-up:</strong> EnumSet vs HashSet for enums?</p>
+
+<h4>Q100: What is Stream API with collections?</h4>
+<p><strong>Answer:</strong> Functional operations on collections. Filter passed tests: <code>results.stream().filter(r -> r.isPassed()).map(r -> r.getName()).collect(Collectors.toList())</code>.</p>
+<p><strong>Interviewer Expects:</strong> Stream as modern collection processing.</p>
+<p><strong>Follow-up:</strong> Stream vs traditional loop — when to use which?</p>
+
+<h3>Exception Handling (Q101–Q120)</h3>
+
+<h4>Q101: Checked vs Unchecked exceptions?</h4>
+<p><strong>Answer:</strong> Checked: must handle at compile time (IOException reading config). Unchecked: RuntimeException subclasses (NoSuchElementException, TimeoutException in Selenium). Framework code handles checked; tests rely on TestNG to catch unchecked.</p>
+<p><strong>Interviewer Expects:</strong> Selenium exception examples for each type.</p>
+<p><strong>Follow-up:</strong> Should you catch Exception or specific types?</p>
+
+<h4>Q102: What is try-catch-finally?</h4>
+<p><strong>Answer:</strong> try: code that may throw; catch: handle exception; finally: always executes. BaseTest tearDown: try screenshot, catch exception, finally quit driver — ensures browser closes even if screenshot fails.</p>
+<p><strong>Interviewer Expects:</strong> finally for resource cleanup in @AfterMethod.</p>
+<p><strong>Follow-up:</strong> Does finally always execute?</p>
+
+<h4>Q103: What is try-with-resources?</h4>
+<p><strong>Answer:</strong> Auto-closes AutoCloseable resources. Reading config: <code>try (FileInputStream fis = new FileInputStream(path)) { props.load(fis); }</code> — no manual close needed.</p>
+<p><strong>Interviewer Expects:</strong> Java 7+ resource management.</p>
+<p><strong>Follow-up:</strong> What interface must resources implement?</p>
+
+<h4>Q104: What is throw vs throws?</h4>
+<p><strong>Answer:</strong> throw: explicitly throws exception instance. throws: declares method may throw — caller must handle. Page method throws ElementNotFoundException; test or utility catches it.</p>
+<p><strong>Interviewer Expects:</strong> throw in validation, throws in method signature.</p>
+<p><strong>Follow-up:</strong> Can you throw checked exception without throws declaration?</p>
+
+<h4>Q105: What is custom exception?</h4>
+<p><strong>Answer:</strong> User-defined exception extending Exception/RuntimeException. <code>FrameworkException extends RuntimeException</code> for config load failures, element not found in custom wait utility.</p>
+<p><strong>Interviewer Expects:</strong> Custom exception in framework error handling.</p>
+<p><strong>Follow-up:</strong> Checked or unchecked custom exception — which to choose?</p>
+
+<h4>Q106: What is NoSuchElementException?</h4>
+<p><strong>Answer:</strong> Selenium unchecked exception when element not found. Caused by wrong locator, element not yet loaded, or inside iframe. Fix: verify locator, add explicit wait, check frame context.</p>
+<p><strong>Interviewer Expects:</strong> Debugging steps, not just definition.</p>
+<p><strong>Follow-up:</strong> NoSuchElementException vs TimeoutException?</p>
+
+<h4>Q107: What is StaleElementReferenceException?</h4>
+<p><strong>Answer:</strong> Element was found but DOM refreshed — reference is stale. Common with AJAX pages and @CacheLookup. Fix: re-find element, avoid caching dynamic elements, use explicit waits.</p>
+<p><strong>Interviewer Expects:</strong> Root cause and POM prevention strategies.</p>
+<p><strong>Follow-up:</strong> How to handle stale element in a retry loop?</p>
+
+<h4>Q108: What is TimeoutException?</h4>
+<p><strong>Answer:</strong> Explicit wait exceeded timeout waiting for condition. Element didn't appear within 15 seconds. Fix: increase timeout, verify locator, check if element is in iframe or shadow DOM.</p>
+<p><strong>Interviewer Expects:</strong> Wait strategy debugging approach.</p>
+<p><strong>Follow-up:</strong> Implicit wait + explicit wait interaction?</p>
+
+<h4>Q109: What is ElementClickInterceptedException?</h4>
+<p><strong>Answer:</strong> Element exists but click blocked — overlay, modal, or another element on top. Fix: wait for overlay to disappear, scroll into view, use JavaScript click as fallback.</p>
+<p><strong>Interviewer Expects:</strong> JavaScriptExecutor click workaround.</p>
+<p><strong>Follow-up:</strong> How to scroll element into view before clicking?</p>
+
+<h4>Q110: What is exception propagation?</h4>
+<p><strong>Answer:</strong> Exception bubbles up call stack until caught. If page object doesn't catch NoSuchElementException, it propagates to test method, then to TestNG listener's onTestFailure.</p>
+<p><strong>Interviewer Expects:</strong> Exception flow from page → test → listener.</p>
+<p><strong>Follow-up:</strong> What is exception chaining with cause?</p>
+
+<h4>Q111: What is multi-catch?</h4>
+<p><strong>Answer:</strong> Single catch block for multiple exception types: <code>catch (NoSuchElementException | TimeoutException e)</code> — handle element-not-found and timeout with same recovery logic.</p>
+<p><strong>Interviewer Expects:</strong> Java 7+ multi-catch syntax.</p>
+<p><strong>Follow-up:</strong> Can multi-catch exceptions be in inheritance hierarchy?</p>
+
+<h4>Q112: What is finally vs try-with-resources?</h4>
+<p><strong>Answer:</strong> finally manually closes resources; try-with-resources auto-closes. Prefer try-with-resources for FileInputStream, BufferedReader in Excel/JSON data readers.</p>
+<p><strong>Interviewer Expects:</strong> Modern resource management preference.</p>
+<p><strong>Follow-up:</strong> Order of resource closing in try-with-resources?</p>
+
+<h4>Q113: What is suppressed exception?</h4>
+<p><strong>Answer:</strong> Exception hidden by another in try-with-resources. If both close() and try block throw, primary is thrown, close exception is suppressed. Access via getSuppressed().</p>
+<p><strong>Interviewer Expects:</strong> Awareness of suppressed exceptions in resource cleanup.</p>
+<p><strong>Follow-up:</strong> How to log suppressed exceptions?</p>
+
+<h4>Q114: How to handle exceptions in TestNG listeners?</h4>
+<p><strong>Answer:</strong> onTestFailure receives ITestResult with getThrowable(). Log exception message, capture screenshot, attach stack trace to ExtentReport. Never swallow exceptions silently.</p>
+<p><strong>Interviewer Expects:</strong> Listener as exception reporting layer.</p>
+<p><strong>Follow-up:</strong> How to categorize failures (assertion vs framework vs app bug)?</p>
+
+<h4>Q115: What is assert vs exception in tests?</h4>
+<p><strong>Answer:</strong> Assert: expected failure validation (test should fail). Exception: unexpected error (element not found). Assertions use Assert.fail(); framework errors throw exceptions caught by TestNG.</p>
+<p><strong>Interviewer Expects:</strong> Clear distinction in test failure analysis.</p>
+<p><strong>Follow-up:</strong> SoftAssert vs hard assert exception behavior?</p>
+
+<h4>Q116: Create custom exception for framework?</h4>
+<p><strong>Answer:</strong> <code>public class ElementNotFoundException extends RuntimeException { public ElementNotFoundException(String locator) { super("Element not found: " + locator); } }</code> — descriptive messages aid debugging.</p>
+<p><strong>Interviewer Expects:</strong> Meaningful exception messages with context.</p>
+<p><strong>Follow-up:</strong> Exception hierarchy design for large frameworks?</p>
+
+<h4>Q117: What is exception handling best practice in page objects?</h4>
+<p><strong>Answer:</strong> Page objects should NOT catch exceptions silently. Let exceptions propagate to test/listener. Optional: wrap Selenium exceptions in custom FrameworkException with page context for clearer reports.</p>
+<p><strong>Interviewer Expects:</strong> Fail-fast philosophy in POM.</p>
+<p><strong>Follow-up:</strong> When SHOULD page objects catch exceptions?</p>
+
+<h4>Q118: What is Error vs Exception?</h4>
+<p><strong>Answer:</strong> Error: JVM-level (OutOfMemoryError) — don't catch. Exception: application-level — handle gracefully. OutOfMemoryError during large screenshot may need JVM heap increase, not try-catch.</p>
+<p><strong>Interviewer Expects:</strong> Never catch Error types.</p>
+<p><strong>Follow-up:</strong> OutOfMemoryError in parallel test execution — how to fix?</p>
+
+<h4>Q119: What is printStackTrace vs logging?</h4>
+<p><strong>Answer:</strong> printStackTrace() writes to stderr — not suitable for CI/CD. Use Log4j: <code>log.error("Login failed", e)</code> — structured, level-controlled, file-output logging.</p>
+<p><strong>Interviewer Expects:</strong> Proper logging over printStackTrace.</p>
+<p><strong>Follow-up:</strong> How to attach stack trace to ExtentReport on failure?</p>
+
+<h4>Q120: What is try-catch in @AfterMethod?</h4>
+<p><strong>Answer:</strong> Wrap cleanup in try-catch to ensure driver.quit() always runs. Screenshot may fail but browser must close: try { screenshot } catch (e) { log.warn } finally { driver.quit() }.</p>
+<p><strong>Interviewer Expects:</strong> Robust teardown pattern.</p>
+<p><strong>Follow-up:</strong> What if quit() itself throws exception?</p>
+
+<h3>Java 8 (Q121–Q150)</h3>
+
+<h4>Q121: What is a lambda expression?</h4>
+<p><strong>Answer:</strong> Anonymous function: <code>(param) -> expression</code>. Selenium ExpectedConditions: <code>wait.until(driver -> driver.getTitle().contains("Home"))</code> — custom wait condition in one line.</p>
+<p><strong>Interviewer Expects:</strong> Lambda in WebDriverWait conditions.</p>
+<p><strong>Follow-up:</strong> Lambda vs anonymous inner class?</p>
+
+<h4>Q122: What is a functional interface?</h4>
+<p><strong>Answer:</strong> Interface with exactly one abstract method. @FunctionalInterface annotation. Predicate, Function, Consumer, Supplier — used extensively in Stream API for test data processing.</p>
+<p><strong>Interviewer Expects:</strong> @FunctionalInterface and SAM concept.</p>
+<p><strong>Follow-up:</strong> Is Runnable a functional interface?</p>
+
+<h4>Q123: What is Predicate?</h4>
+<p><strong>Answer:</strong> Takes input, returns boolean. Filter test results: <code>results.stream().filter(r -> r.getStatus() == ITestResult.SUCCESS)</code> — Predicate tests pass/fail.</p>
+<p><strong>Interviewer Expects:</strong> Predicate in stream filter operations.</p>
+<p><strong>Follow-up:</strong> Predicate.and() and Predicate.or()?</p>
+
+<h4>Q124: What is Function?</h4>
+<p><strong>Answer:</strong> Takes input, returns transformed output. Map test names to lowercase: <code>.map(name -> name.toLowerCase())</code> or extract method names from ITestResult objects.</p>
+<p><strong>Interviewer Expects:</strong> Function in map operations.</p>
+<p><strong>Follow-up:</strong> Function vs Consumer?</p>
+
+<h4>Q125: What is Consumer?</h4>
+<p><strong>Answer:</strong> Takes input, returns void. Log each test result: <code>results.forEach(r -> log.info(r.getName()))</code> — Consumer processes without returning.</p>
+<p><strong>Interviewer Expects:</strong> forEach with Consumer lambda.</p>
+<p><strong>Follow-up:</strong> Consumer vs Runnable?</p>
+
+<h4>Q126: What is Supplier?</h4>
+<p><strong>Answer:</strong> Takes no input, returns output. Lazy WebDriver creation: <code>Supplier&lt;WebDriver&gt; driverSupplier = () -> BrowserFactory.createDriver(type)</code>.</p>
+<p><strong>Interviewer Expects:</strong> Supplier for lazy initialization.</p>
+<p><strong>Follow-up:</strong> Optional.orElseGet(Supplier) usage?</p>
+
+<h4>Q127: What is Method Reference?</h4>
+<p><strong>Answer:</strong> Shorthand for lambda calling existing method. <code>results.forEach(System.out::println)</code> instead of <code>r -> System.out.println(r)</code>. <code>results.stream().map(ITestResult::getName)</code>.</p>
+<p><strong>Interviewer Expects:</strong> :: syntax for static, instance, constructor refs.</p>
+<p><strong>Follow-up:</strong> When to use method reference vs lambda?</p>
+
+<h4>Q128: What is Stream API?</h4>
+<p><strong>Answer:</strong> Sequence of elements supporting functional operations. Process test data: filter, map, sort, collect. Not a data structure — pipeline over collections.</p>
+<p><strong>Interviewer Expects:</strong> Stream as pipeline, not storage.</p>
+<p><strong>Follow-up:</strong> Stream vs Collection operations?</p>
+
+<h4>Q129: Intermediate vs Terminal stream operations?</h4>
+<p><strong>Answer:</strong> Intermediate (filter, map, sorted) return Stream — lazy. Terminal (collect, forEach, count) produce result — trigger execution. Chain: filter → map → collect.</p>
+<p><strong>Interviewer Expects:</strong> Lazy evaluation concept.</p>
+<p><strong>Follow-up:</strong> Can you reuse a Stream?</p>
+
+<h4>Q130: What is collect(Collectors.toList())?</h4>
+<p><strong>Answer:</strong> Terminal operation gathering stream elements into List. <code>List&lt;String&gt; failed = results.stream().filter(r -> r.failed()).map(r -> r.getName()).collect(Collectors.toList())</code>.</p>
+<p><strong>Interviewer Expects:</strong> Most common terminal operation.</p>
+<p><strong>Follow-up:</strong> toList() vs toSet() vs toMap()?</p>
+
+<h4>Q131: What is Collectors.groupingBy()?</h4>
+<p><strong>Answer:</strong> Groups stream elements by classifier function. Group test results by status: <code>collect(Collectors.groupingBy(r -> r.getStatus()))</code> — Map of status to list of results.</p>
+<p><strong>Interviewer Expects:</strong> groupingBy for test report categorization.</p>
+<p><strong>Follow-up:</strong> groupingBy with counting downstream?</p>
+
+<h4>Q132: What is Optional?</h4>
+<p><strong>Answer:</strong> Container that may or may not contain a value — avoids NullPointerException. <code>Optional.ofNullable(config.getProperty("apiKey")).orElse("default-key")</code>.</p>
+<p><strong>Interviewer Expects:</strong> Optional vs null check preference.</p>
+<p><strong>Follow-up:</strong> Optional.get() without isPresent() — why avoid?</p>
+
+<h4>Q133: What is map vs flatMap in Optional?</h4>
+<p><strong>Answer:</strong> map: transform value if present. flatMap: transform to Optional (avoids Optional&lt;Optional&gt;). Chain config lookups: <code>optional.flatMap(v -> findProperty(v))</code>.</p>
+<p><strong>Interviewer Expects:</strong> flatMap for nested Optional chains.</p>
+<p><strong>Follow-up:</strong> flatMap in Stream API?</p>
+
+<h4>Q134: What is Stream.filter()?</h4>
+<p><strong>Answer:</strong> Keeps elements matching Predicate. Filter enabled test cases: <code>testCases.stream().filter(tc -> tc.isEnabled()).collect(toList())</code>.</p>
+<p><strong>Interviewer Expects:</strong> filter with lambda Predicate.</p>
+<p><strong>Follow-up:</strong> Multiple filter vs single filter with and()?</p>
+
+<h4>Q135: What is Stream.map()?</h4>
+<p><strong>Answer:</strong> Transforms each element. Extract test names: <code>results.stream().map(ITestResult::getMethod).map(m -> m.getMethodName()).collect(toList())</code>.</p>
+<p><strong>Interviewer Expects:</strong> map for data transformation in reports.</p>
+<p><strong>Follow-up:</strong> map vs flatMap in streams?</p>
+
+<h4>Q136: What is Stream.sorted()?</h4>
+<p><strong>Answer:</strong> Sorts stream elements. Sort tests by duration: <code>.sorted(Comparator.comparing(r -> r.getEndMillis() - r.getStartMillis()))</code>.</p>
+<p><strong>Interviewer Expects:</strong> sorted with Comparator.</p>
+<p><strong>Follow-up:</strong> sorted() vs Collections.sort()?</p>
+
+<h4>Q137: What is Stream.distinct()?</h4>
+<p><strong>Answer:</strong> Removes duplicates using equals(). Unique failed test names: <code>failedNames.stream().distinct().collect(toList())</code>.</p>
+<p><strong>Interviewer Expects:</strong> distinct vs Set for deduplication.</p>
+<p><strong>Follow-up:</strong> distinct() on object streams — equals contract?</p>
+
+<h4>Q138: What is Stream.count()?</h4>
+<p><strong>Answer:</strong> Returns element count. Count passed tests: <code>long passCount = results.stream().filter(r -> r.isSuccess()).count()</code>.</p>
+<p><strong>Interviewer Expects:</strong> Terminal count operation.</p>
+<p><strong>Follow-up:</strong> count() vs size()?</p>
+
+<h4>Q139: What is Stream.anyMatch/allMatch/noneMatch?</h4>
+<p><strong>Answer:</strong> Short-circuit terminal boolean operations. Check if any test failed: <code>results.stream().anyMatch(r -> r.getStatus() == FAILURE)</code>.</p>
+<p><strong>Interviewer Expects:</strong> Short-circuit evaluation awareness.</p>
+<p><strong>Follow-up:</strong> findFirst() vs findAny()?</p>
+
+<h4>Q140: What is parallelStream()?</h4>
+<p><strong>Answer:</strong> Splits data across multiple threads for processing. Parallel test data validation — but NOT for WebDriver operations (not thread-safe). Use for CPU-bound data processing only.</p>
+<p><strong>Interviewer Expects:</strong> Never parallelStream with WebDriver.</p>
+<p><strong>Follow-up:</strong> When is parallelStream slower than stream?</p>
+
+<h4>Q141: What is default method in interface?</h4>
+<p><strong>Answer:</strong> Interface method with body. Add new listener method without breaking existing TestListener implementations — backward compatible interface evolution.</p>
+<p><strong>Interviewer Expects:</strong> Java 8 interface enhancement.</p>
+<p><strong>Follow-up:</strong> Diamond problem with default methods?</p>
+
+<h4>Q142: What is Comparator.comparing()?</h4>
+<p><strong>Answer:</strong> Creates Comparator from key extractor function. <code>Comparator.comparing(TestResult::getDuration).reversed()</code> — sort test results by execution time descending.</p>
+<p><strong>Interviewer Expects:</strong> Method reference in Comparator.</p>
+<p><strong>Follow-up:</strong> thenComparing() for multi-field sort?</p>
+
+<h4>Q143: What is Collectors.joining()?</h4>
+<p><strong>Answer:</strong> Concatenates stream strings with delimiter. Join failed test names for email report: <code>.collect(Collectors.joining(", "))</code>.</p>
+<p><strong>Interviewer Expects:</strong> joining as report formatting tool.</p>
+<p><strong>Follow-up:</strong> joining with prefix and suffix?</p>
+
+<h4>Q144: What is Stream.reduce()?</h4>
+<p><strong>Answer:</strong> Combines elements to single result. Sum all test durations: <code>results.stream().mapToLong(r -> r.getDuration()).sum()</code> or reduce with accumulator.</p>
+<p><strong>Interviewer Expects:</strong> reduce vs mapToInt().sum().</p>
+<p><strong>Follow-up:</strong> Identity value in reduce?</p>
+
+<h4>Q145: What is LocalDate/LocalDateTime?</h4>
+<p><strong>Answer:</strong> Java 8 date/time API replacing Date/Calendar. Timestamp test reports: <code>LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))</code>.</p>
+<p><strong>Interviewer Expects:</strong> Modern date API for report timestamps.</p>
+<p><strong>Follow-up:</strong> LocalDateTime vs Instant?</p>
+
+<h4>Q146: What is forEach vs for loop?</h4>
+<p><strong>Answer:</strong> forEach with lambda for functional style on collections/streams. for loop when you need index, break, or modify during iteration. Report generation: forEach; indexed retry: for loop.</p>
+<p><strong>Interviewer Expects:</strong> Appropriate choice based on use case.</p>
+<p><strong>Follow-up:</strong> Can you break out of forEach?</p>
+
+<h4>Q147: What is peek() in Stream?</h4>
+<p><strong>Answer:</strong> Intermediate operation for debugging — performs action on each element without modifying. Debug test data pipeline: <code>.peek(d -> log.debug("Processing: " + d)).filter(...)</code>.</p>
+<p><strong>Interviewer Expects:</strong> peek for debugging only, not production logic.</p>
+<p><strong>Follow-up:</strong> Does peek affect stream processing?</p>
+
+<h4>Q148: What is Collectors.toMap()?</h4>
+<p><strong>Answer:</strong> Collects stream to Map. Build locator map from list: <code>.collect(toMap(Element::getName, Element::getLocator))</code> — key collision needs merge function.</p>
+<p><strong>Interviewer Expects:</strong> toMap with merge function for duplicates.</p>
+<p><strong>Follow-up:</strong> toMap vs groupingBy?</p>
+
+<h4>Q149: What is Optional.orElseThrow()?</h4>
+<p><strong>Answer:</strong> Returns value or throws exception. Mandatory config: <code>Optional.ofNullable(config.get("dbUrl")).orElseThrow(() -> new FrameworkException("dbUrl not configured"))</code>.</p>
+<p><strong>Interviewer Expects:</strong> Fail-fast on missing required config.</p>
+<p><strong>Follow-up:</strong> orElse vs orElseGet vs orElseThrow?</p>
+
+<h4>Q150: What is interface static method?</h4>
+<p><strong>Answer:</strong> Static method in interface — called via interface name. Utility method in WaitStrategy interface: <code>WaitStrategy.defaultTimeout()</code> returning standard 10-second timeout.</p>
+<p><strong>Interviewer Expects:</strong> Static method invocation on interface.</p>
+<p><strong>Follow-up:</strong> Can static interface methods be overridden?</p>
+
+<h3>Multithreading (Q151–Q170)</h3>
+
+<h4>Q151: What is a Thread?</h4>
+<p><strong>Answer:</strong> Lightweight unit of execution. TestNG parallel="methods" thread-count="4" creates 4 threads — each running a test method simultaneously with its own WebDriver via ThreadLocal.</p>
+<p><strong>Interviewer Expects:</strong> Thread in parallel test execution context.</p>
+<p><strong>Follow-up:</strong> Process vs Thread?</p>
+
+<h4>Q152: What is Runnable interface?</h4>
+<p><strong>Answer:</strong> Functional interface with run() method — defines task for thread. Execute test suite in background thread: <code>new Thread(() -> TestNG.run()).start()</code>.</p>
+<p><strong>Interviewer Expects:</strong> Runnable as lambda-compatible interface.</p>
+<p><strong>Follow-up:</strong> Runnable vs Callable?</p>
+
+<h4>Q153: What is Thread lifecycle?</h4>
+<p><strong>Answer:</strong> New → Runnable → Running → Waiting/Timed Waiting → Terminated. TestNG thread: created at suite start, runs tests, terminates at suite end. Monitor via Thread.getState().</p>
+<p><strong>Interviewer Expects:</strong> Basic lifecycle states.</p>
+<p><strong>Follow-up:</strong> What causes TIMED_WAITING?</p>
+
+<h4>Q154: What is synchronized keyword?</h4>
+<p><strong>Answer:</strong> Provides mutual exclusion — only one thread accesses synchronized block at a time. Protect shared report counter: <code>synchronized(this) { passCount++; }</code> — but prefer AtomicInteger or ConcurrentHashMap.</p>
+<p><strong>Interviewer Expects:</strong> synchronized as basic thread safety.</p>
+<p><strong>Follow-up:</strong> synchronized method vs synchronized block?</p>
+
+<h4>Q155: What is ThreadLocal?</h4>
+<p><strong>Answer:</strong> Each thread gets its own variable copy. ThreadLocal&lt;WebDriver&gt; ensures parallel tests don't share browsers. Always call remove() in @AfterMethod to prevent memory leaks in thread pools.</p>
+<p><strong>Interviewer Expects:</strong> ThreadLocal + remove() pattern.</p>
+<p><strong>Follow-up:</strong> ThreadLocal memory leak scenario?</p>
+
+<h4>Q156: What is deadlock?</h4>
+<p><strong>Answer:</strong> Two threads waiting for each other's locks — infinite wait. Rare in automation but possible if two parallel tests lock shared report file and config file in opposite order.</p>
+<p><strong>Interviewer Expects:</strong> Prevention: lock ordering, timeout.</p>
+<p><strong>Follow-up:</strong> How to detect deadlock?</p>
+
+<h4>Q157: What is thread safety?</h4>
+<p><strong>Answer:</strong> Code behaves correctly when accessed by multiple threads. WebDriver is NOT thread-safe — each thread needs its own instance. ConfigReader Singleton IS thread-safe if properly synchronized.</p>
+<p><strong>Interviewer Expects:</strong> WebDriver thread safety as key concept.</p>
+<p><strong>Follow-up:</strong> Is HashMap thread-safe?</p>
+
+<h4>Q158: What is volatile keyword?</h4>
+<p><strong>Answer:</strong> Ensures variable visibility across threads — changes by one thread visible to all. Flag to stop test execution: <code>volatile boolean stopExecution = false</code> — checked by all parallel threads.</p>
+<p><strong>Interviewer Expects:</strong> volatile for visibility, not atomicity.</p>
+<p><strong>Follow-up:</strong> volatile vs synchronized?</p>
+
+<h4>Q159: What is ExecutorService?</h4>
+<p><strong>Answer:</strong> Thread pool manager — reuses threads instead of creating new ones. Run test batches: <code>ExecutorService pool = Executors.newFixedThreadPool(4)</code> — submit test runnables, shutdown after completion.</p>
+<p><strong>Interviewer Expects:</strong> Thread pool over raw Thread creation.</p>
+<p><strong>Follow-up:</strong> shutdown() vs shutdownNow()?</p>
+
+<h4>Q160: What is Callable vs Runnable?</h4>
+<p><strong>Answer:</strong> Callable returns result and can throw checked exceptions; Runnable returns void. Submit test task and get result: <code>Future&lt;Boolean&gt; result = pool.submit(() -> runTest())</code>.</p>
+<p><strong>Interviewer Expects:</strong> Future.get() for result retrieval.</p>
+<p><strong>Follow-up:</strong> What is Future interface?</p>
+
+<h4>Q161: How does TestNG parallel execution work?</h4>
+<p><strong>Answer:</strong> testng.xml: parallel="methods"/"tests"/"classes" with thread-count. Each thread gets separate test instance. ThreadLocal WebDriver ensures isolation. DataProvider parallel=true runs data rows concurrently.</p>
+<p><strong>Interviewer Expects:</strong> parallel attribute values and ThreadLocal requirement.</p>
+<p><strong>Follow-up:</strong> parallel="tests" vs parallel="methods"?</p>
+
+<h4>Q162: What is race condition in automation?</h4>
+<p><strong>Answer:</strong> Outcome depends on thread timing. Two parallel tests writing to same report file simultaneously corrupts output. Fix: thread-safe collections, ThreadLocal, synchronized report writes.</p>
+<p><strong>Interviewer Expects:</strong> Real race condition example in frameworks.</p>
+<p><strong>Follow-up:</strong> How to make ExtentReports thread-safe?</p>
+
+<h4>Q163: What is AtomicInteger?</h4>
+<p><strong>Answer:</strong> Thread-safe integer without synchronized. Parallel pass/fail counter: <code>AtomicInteger passCount = new AtomicInteger(0); passCount.incrementAndGet()</code> — lock-free thread safety.</p>
+<p><strong>Interviewer Expects:</strong> AtomicInteger over synchronized counter.</p>
+<p><strong>Follow-up:</strong> AtomicInteger vs volatile int?</p>
+
+<h4>Q164: What is wait/notify?</h4>
+<p><strong>Answer:</strong> Thread coordination — wait() releases lock and waits; notify() wakes waiting thread. Coordinate test completion: main thread waits until all parallel tests finish before generating summary report.</p>
+<p><strong>Interviewer Expects:</strong> Basic wait/notify concept.</p>
+<p><strong>Follow-up:</strong> Why must wait/notify be in synchronized block?</p>
+
+<h4>Q165: What is CountDownLatch?</h4>
+<p><strong>Answer:</strong> Thread synchronization aid — count down to zero releases waiting threads. Wait for 4 parallel browser launches: <code>CountDownLatch latch = new CountDownLatch(4)</code> — each thread countDown(), main thread await().</p>
+<p><strong>Interviewer Expects:</strong> CountDownLatch for startup coordination.</p>
+<p><strong>Follow-up:</strong> CountDownLatch vs CyclicBarrier?</p>
+
+<h4>Q166: Is WebDriver thread-safe?</h4>
+<p><strong>Answer:</strong> NO. WebDriver instances must not be shared across threads. Each parallel test thread needs its own driver via ThreadLocal. Sharing one driver causes random failures, stale elements, and session corruption.</p>
+<p><strong>Interviewer Expects:</strong> Definitive NO with ThreadLocal solution.</p>
+<p><strong>Follow-up:</strong> Is Selenium Grid thread-safe?</p>
+
+<h4>Q167: What is Thread.sleep() vs explicit wait?</h4>
+<p><strong>Answer:</strong> Thread.sleep() blocks thread for fixed time regardless of element state — wasteful and flaky. Explicit wait polls until condition met — efficient and reliable. NEVER use sleep in framework code.</p>
+<p><strong>Interviewer Expects:</strong> Strong preference against Thread.sleep().</p>
+<p><strong>Follow-up:</strong> When, if ever, is Thread.sleep() acceptable?</p>
+
+<h4>Q168: What is daemon thread?</h4>
+<p><strong>Answer:</strong> Background thread that doesn't prevent JVM shutdown. Screenshot cleanup thread marked daemon — JVM exits when main test suite finishes without waiting for cleanup.</p>
+<p><strong>Interviewer Expects:</strong> setDaemon(true) awareness.</p>
+<p><strong>Follow-up:</strong> Main thread vs daemon thread?</p>
+
+<h4>Q169: What is thread pool in CI/CD context?</h4>
+<p><strong>Answer:</strong> Jenkins/GitHub Actions runs tests in parallel using thread pools. Maven Surefire plugin threadCount setting controls parallel test threads. Match thread count to available CPU cores and Grid nodes.</p>
+<p><strong>Interviewer Expects:</strong> CI/CD parallel configuration knowledge.</p>
+<p><strong>Follow-up:</strong> Optimal thread count for I/O-bound vs CPU-bound tests?</p>
+
+<h4>Q170: What is CompletableFuture?</h4>
+<p><strong>Answer:</strong> Java 8 async computation with chaining. Run API setup and UI test concurrently: <code>CompletableFuture.supplyAsync(() -> getAuthToken()).thenApply(token -> runTest(token))</code>.</p>
+<p><strong>Interviewer Expects:</strong> Async test setup pattern.</p>
+<p><strong>Follow-up:</strong> CompletableFuture vs Future?</p>
+
+<h3>Design Patterns (Q171–Q185)</h3>
+
+<h4>Q171: What is Singleton pattern?</h4>
+<p><strong>Answer:</strong> One instance, global access. ConfigReader, ExtentReportManager — read config once, one report for entire suite. Private constructor + static getInstance().</p>
+<p><strong>Interviewer Expects:</strong> Automation-specific Singleton examples.</p>
+<p><strong>Follow-up:</strong> Thread-safe Singleton approaches?</p>
+
+<h4>Q172: Singleton implementations in automation?</h4>
+<p><strong>Answer:</strong> Eager, lazy synchronized, double-checked locking, Bill Pugh inner class, enum. Bill Pugh preferred for ConfigReader — no synchronization overhead, lazy, thread-safe.</p>
+<p><strong>Interviewer Expects:</strong> At least 3 implementation variants.</p>
+<p><strong>Follow-up:</strong> Enum singleton advantages?</p>
+
+<h4>Q173: What is Factory pattern?</h4>
+<p><strong>Answer:</strong> Creates objects without exposing logic. BrowserFactory creates correct WebDriver from enum/config. Client calls factory method — doesn't know concrete driver class.</p>
+<p><strong>Interviewer Expects:</strong> BrowserFactory as canonical example.</p>
+<p><strong>Follow-up:</strong> Simple Factory vs Factory Method vs Abstract Factory?</p>
+
+<h4>Q174: Factory vs Abstract Factory?</h4>
+<p><strong>Answer:</strong> Factory: one product type (WebDriver). Abstract Factory: families of related products (WebDriver + WebDriverWait + Actions for Chrome family vs Firefox family). Abstract Factory overkill for most automation.</p>
+<p><strong>Interviewer Expects:</strong> Knowing when Abstract Factory is too much.</p>
+<p><strong>Follow-up:</strong> Real Abstract Factory example in testing?</p>
+
+<h4>Q175: What is Builder pattern?</h4>
+<p><strong>Answer:</strong> Step-by-step object construction. TestConfig.Builder, REST Assured RequestSpecBuilder. Fluent API: chain methods, call build() for immutable result.</p>
+<p><strong>Interviewer Expects:</strong> REST Assured as Builder example.</p>
+<p><strong>Follow-up:</strong> Builder vs telescoping constructor?</p>
+
+<h4>Q176: What is Strategy pattern?</h4>
+<p><strong>Answer:</strong> Interchangeable algorithms. WaitStrategy (Explicit, Fluent), ReportStrategy (Extent, Allure). Switch at runtime via config without changing client code.</p>
+<p><strong>Interviewer Expects:</strong> Strategy + config-driven selection.</p>
+<p><strong>Follow-up:</strong> Strategy vs State pattern?</p>
+
+<h4>Q177: What is Observer pattern?</h4>
+<p><strong>Answer:</strong> Subject notifies observers on state change. TestNG listeners: test event → listener reacts (report, screenshot, Slack). Multiple observers for same event.</p>
+<p><strong>Interviewer Expects:</strong> ITestListener as Observer.</p>
+<p><strong>Follow-up:</strong> How to add new observer without changing TestNG?</p>
+
+<h4>Q178: What design pattern is POM?</h4>
+<p><strong>Answer:</strong> POM combines Facade (simplified page interface), encapsulation, and composition. Not a GoF pattern but a testing-specific design pattern. Page object is Facade hiding WebDriver complexity.</p>
+<p><strong>Interviewer Expects:</strong> POM as Facade variant.</p>
+<p><strong>Follow-up:</strong> POM vs Facade pattern differences?</p>
+
+<h4>Q179: What is Facade pattern in automation?</h4>
+<p><strong>Answer:</strong> Simplified interface to complex subsystem. LoginPage.login(user, pass) hides enterUsername + enterPassword + clickLogin. Test calls one method instead of three.</p>
+<p><strong>Interviewer Expects:</strong> Combined action methods as Facade.</p>
+<p><strong>Follow-up:</strong> Facade vs POM — same thing?</p>
+
+<h4>Q180: Which patterns are in your framework?</h4>
+<p><strong>Answer:</strong> Singleton (Config, Report), Factory (Browser, Page), Builder (TestConfig, API Request), Strategy (Wait, Report), Observer (TestListener), POM/Facade (Page objects). Each at appropriate layer.</p>
+<p><strong>Interviewer Expects:</strong> Concrete mapping to YOUR framework layers.</p>
+<p><strong>Follow-up:</strong> Which pattern would you add next and why?</p>
+
+<h4>Q181: Builder vs Factory — when to use which?</h4>
+<p><strong>Answer:</strong> Factory: choose between types (Chrome vs Firefox). Builder: configure one type with many options (URL, timeout, headers, body). Factory = which; Builder = how configured.</p>
+<p><strong>Interviewer Expects:</strong> Clear decision boundary.</p>
+<p><strong>Follow-up:</strong> Can Factory and Builder work together?</p>
+
+<h4>Q182: Strategy vs Factory?</h4>
+<p><strong>Answer:</strong> Factory creates objects; Strategy defines behavior. Factory: create WebDriver. Strategy: define how to wait for elements. Different purposes — often used together in same framework.</p>
+<p><strong>Interviewer Expects:</strong> Complementary, not competing patterns.</p>
+<p><strong>Follow-up:</strong> Strategy vs Template Method?</p>
+
+<h4>Q183: How does Decorator pattern apply to automation?</h4>
+<p><strong>Answer:</strong> Wrap WebDriver with decorators: WebDriverDecorator adds screenshot-on-action, logging, or retry. Selenium's WebDriver wrapper chain: RemoteWebDriver wraps actual driver with extra capabilities.</p>
+<p><strong>Interviewer Expects:</strong> WebDriver wrapping as Decorator.</p>
+<p><strong>Follow-up:</strong> Decorator vs Proxy pattern?</p>
+
+<h4>Q184: What is Command pattern in test automation?</h4>
+<p><strong>Answer:</strong> Encapsulates action as object. Each Selenium action (click, type, navigate) can be a Command object stored in a list for replay, logging, or undo. Useful for keyword-driven frameworks.</p>
+<p><strong>Interviewer Expects:</strong> Keyword-driven framework connection.</p>
+<p><strong>Follow-up:</strong> How is Cucumber step definition related to Command?</p>
+
+<h4>Q185: Anti-patterns in automation framework design?</h4>
+<p><strong>Answer:</strong> God Page Object (one class for entire app), assertions in page objects, Thread.sleep(), shared WebDriver without ThreadLocal, hardcoded test data, duplicate locators across pages, catching exceptions silently.</p>
+<p><strong>Interviewer Expects:</strong> Awareness of common mistakes.</p>
+<p><strong>Follow-up:</strong> How would you refactor a God Page Object?</p>
+
+<h3>Framework Design (Q186–Q200)</h3>
+
+<h4>Q186: What is Page Object Model?</h4>
+<p><strong>Answer:</strong> Design pattern: one class per page, private locators, public actions, no assertions. Tests call page methods. Change locator in one place — all tests updated.</p>
+<p><strong>Interviewer Expects:</strong> POM rules and benefits.</p>
+<p><strong>Follow-up:</strong> POM vs PageFactory?</p>
+
+<h4>Q187: What is DriverFactory?</h4>
+<p><strong>Answer:</strong> Factory pattern class creating WebDriver based on browser type from config/parameter. Centralizes browser setup — options, timeouts, maximization. Tests never instantiate drivers directly.</p>
+<p><strong>Interviewer Expects:</strong> Factory + enum + config integration.</p>
+<p><strong>Follow-up:</strong> How to add headless mode to DriverFactory?</p>
+
+<h4>Q188: What is BaseTest?</h4>
+<p><strong>Answer:</strong> Parent test class with @BeforeMethod (launch browser, navigate), @AfterMethod (screenshot on fail, quit driver), @BeforeSuite (init reports). All test classes extend BaseTest for consistent setup/teardown.</p>
+<p><strong>Interviewer Expects:</strong> Test lifecycle management.</p>
+<p><strong>Follow-up:</strong> BaseTest vs BasePage — different layers?</p>
+
+<h4>Q189: What is BasePage?</h4>
+<p><strong>Answer:</strong> Parent page class with common actions: click(), type(), getText(), waitForElement(), scrollTo(), isDisplayed(). All page objects extend BasePage — DRY principle for element interactions.</p>
+<p><strong>Interviewer Expects:</strong> Shared utility methods in base class.</p>
+<p><strong>Follow-up:</strong> Should BasePage be abstract?</p>
+
+<h4>Q190: How to manage configuration?</h4>
+<p><strong>Answer:</strong> Properties files per environment, Singleton ConfigReader, Maven profiles, System properties (-Denv=staging). Never hardcode URLs, credentials, or browser types in Java code.</p>
+<p><strong>Interviewer Expects:</strong> Multi-environment config strategy.</p>
+<p><strong>Follow-up:</strong> How to secure credentials in config?</p>
+
+<h4>Q191: How to manage test data?</h4>
+<p><strong>Answer:</strong> Externalize to JSON/Excel/CSV/Faker. TestNG DataProvider feeds data to tests. Environment-specific data files. Data factory pattern for dynamic data generation.</p>
+<p><strong>Interviewer Expects:</strong> Multiple data sources with DataProvider.</p>
+<p><strong>Follow-up:</strong> How to handle sensitive test data?</p>
+
+<h4>Q192: How to implement reporting?</h4>
+<p><strong>Answer:</strong> TestNG ITestListener + ExtentReports/Allure. Auto-screenshot on failure. Log test steps. Generate HTML report at suite end. Strategy pattern for swappable report tools.</p>
+<p><strong>Interviewer Expects:</strong> Listener-driven reporting flow.</p>
+<p><strong>Follow-up:</strong> ExtentReports vs Allure — pros/cons?</p>
+
+<h4>Q193: How to handle waits in framework?</h4>
+<p><strong>Answer:</strong> Explicit waits in BasePage methods — every action waits for element. Configurable timeout from properties. No Thread.sleep(). FluentWait for AJAX elements. Strategy pattern for wait types.</p>
+<p><strong>Interviewer Expects:</strong> Centralized wait in BasePage.</p>
+<p><strong>Follow-up:</strong> Implicit + explicit wait conflict?</p>
+
+<h4>Q194: How to structure testng.xml?</h4>
+<p><strong>Answer:</strong> Define suites, tests, classes, parameters (browser, env), listeners, parallel settings. Separate XML per environment or browser. Include/exclude test groups for smoke vs regression.</p>
+<p><strong>Interviewer Expects:</strong> XML structure with parameters and listeners.</p>
+<p><strong>Follow-up:</strong> How to run specific groups from Maven?</p>
+
+<h4>Q195: How to integrate API and UI testing?</h4>
+<p><strong>Answer:</strong> Shared config, auth token from API setup used in UI tests. REST Assured for API; Selenium for UI. API creates test data; UI validates display. Single BaseTest with both drivers/clients.</p>
+<p><strong>Interviewer Expects:</strong> Hybrid framework architecture.</p>
+<p><strong>Follow-up:</strong> API-first vs UI-first test design?</p>
+
+<h4>Q196: What is hybrid framework?</h4>
+<p><strong>Answer:</strong> Combines keyword-driven, data-driven, and POM approaches. POM for page structure, DataProvider for test data, keyword methods for reusable actions. Most industry frameworks are hybrid.</p>
+<p><strong>Interviewer Expects:</strong> Hybrid as practical industry standard.</p>
+<p><strong>Follow-up:</strong> Keyword-driven vs POM — trade-offs?</p>
+
+<h4>Q197: How to implement retry mechanism?</h4>
+<p><strong>Answer:</strong> TestNG IRetryAnalyzer — retry failed tests up to N times. Combine with RetryListener for reporting. Distinguish flaky tests (retry) from genuine failures (no retry).</p>
+<p><strong>Interviewer Expects:</strong> IRetryAnalyzer implementation.</p>
+<p><strong>Follow-up:</strong> How to avoid infinite retry loops?</p>
+
+<h4>Q198: How to implement logging in framework?</h4>
+<p><strong>Answer:</strong> Log4j2 with log levels (DEBUG for locators, INFO for test steps, ERROR for failures). Log to console + file. Configure via log4j2.xml. Replace all System.out.println().</p>
+<p><strong>Interviewer Expects:</strong> Log4j over println.</p>
+<p><strong>Follow-up:</strong> How to attach logs to ExtentReport?</p>
+
+<h4>Q199: How to version and maintain framework?</h4>
+<p><strong>Answer:</strong> Git branching (main/develop/feature), semantic versioning, code review for page object changes, CI/CD pipeline runs on every PR. Document framework setup in README. Keep dependencies updated in pom.xml.</p>
+<p><strong>Interviewer Expects:</strong> Framework as a product mindset.</p>
+<p><strong>Follow-up:</strong> How to handle breaking locator changes?</p>
+
+<h4>Q200: Walk me through your framework architecture.</h4>
+<p><strong>Answer:</strong> Layered: Config (Singleton properties) → Driver (Factory + ThreadLocal) → Pages (POM + BasePage) → Tests (BaseTest + DataProvider) → Reports (Listener + Strategy). Maven project, TestNG runner, ExtentReports, parallel via testng.xml, CI/CD via Jenkins.</p>
+<p><strong>Interviewer Expects:</strong> Confident end-to-end architecture explanation.</p>
+<p><strong>Follow-up:</strong> What would you improve in your current framework?</p>
+
+<h3>Additional Interview Q&amp;A — Section 20</h3>
+
+<h4>Q201: What Java version do you use for automation?</h4>
+<p><strong>A:</strong> Java 11 or 17 LTS — stable, long-term support, compatible with latest Selenium 4.x and TestNG 7.x. Java 8 minimum for Stream API and lambda support in modern frameworks.</p>
+
+<h4>Q202: Maven vs Gradle for automation projects?</h4>
+<p><strong>A:</strong> Maven: XML config, convention-over-configuration, widely used in enterprise automation. Gradle: Groovy/Kotlin DSL, faster builds. Most automation teams use Maven for simplicity and CI/CD compatibility.</p>
+
+<h4>Q203: How do you handle SSL certificate errors in Selenium?</h4>
+<p><strong>A:</strong> ChromeOptions: <code>options.addArguments("--ignore-certificate-errors")</code>. For production-like testing, import certificate into truststore instead of ignoring.</p>
+
+<h4>Q204: What is the difference between findElement and findElements?</h4>
+<p><strong>A:</strong> findElement returns first matching WebElement (throws NoSuchElementException if none). findElements returns List (empty list if none) — safer for optional elements.</p>
+
+<h4>Q205: How do you handle cookie authentication in Selenium?</h4>
+<p><strong>A:</strong> API login returns session cookie → inject via driver.manage().addCookie() → navigate to protected page. Faster than UI login for test setup.</p>
+
+<h4>Q206: What is Actions class in Selenium?</h4>
+<p><strong>A:</strong> Performs complex user interactions: hover, drag-drop, double-click, right-click, key combinations. <code>new Actions(driver).moveToElement(menu).click().perform()</code>.</p>
+
+<h4>Q207: How do you handle JavaScript alerts in Selenium?</h4>
+<p><strong>A:</strong> Alert interface: <code>driver.switchTo().alert().accept()</code> or dismiss(). Wait for alert presence before switching. Handle in page object method, not test.</p>
+
+<h4>Q208: What is JavascriptExecutor?</h4>
+<p><strong>A:</strong> Execute JavaScript in browser. Scroll: <code>js.executeScript("arguments[0].scrollIntoView(true)", element)</code>. Click intercepted element: <code>js.executeScript("arguments[0].click()", element)</code>.</p>
+
+<h4>Q209: How do you verify API response in UI tests?</h4>
+<p><strong>A:</strong> API call via REST Assured to get expected data, then verify same data displayed on UI page. Cross-validation ensures frontend-backend consistency.</p>
+
+<h4>Q210: What is the Page Object Model anti-pattern "God Class"?</h4>
+<p><strong>A:</strong> Single page class with locators and methods for entire application — hundreds of lines, unmaintainable. Fix: split into page classes and components following one-class-per-page rule.</p>
+
+<h4>Q211: How do you run tests from command line?</h4>
+<p><strong>A:</strong> <code>mvn clean test -Denv=staging -Dbrowser=firefox</code> or <code>java -cp ... org.testng.TestNG testng.xml</code>. CI/CD pipelines use Maven commands with parameters.</p>
+
+<h4>Q212: What is Selenium 4 difference from Selenium 3?</h4>
+<p><strong>A:</strong> W3C WebDriver protocol (no JSON Wire Protocol), relative locators, Chrome DevTools Protocol support, improved Actions API, Selenium Grid 4 with Docker support.</p>
+
+</section>
+
+<!-- SECTION 21 PLACEHOLDER -->
+<section id="section-21" class="section-card">
+<h2>Section 21: Coding Questions for Automation Engineers</h2>
+
+<p>Every question includes problem statement, approach, brute force solution, optimized solution, complexity analysis, and interview discussion points. All examples are relevant to automation testing scenarios.</p>
+
+<!-- ===================== STRINGS ===================== -->
+<h3>Strings (8 Questions)</h3>
+
+<h4>1. Reverse a String</h4>
+<p><strong>Problem Statement:</strong> Reverse a given string. Automation use: reverse test case IDs for uniqueness validation, reverse URL paths for breadcrumb testing.</p>
+<p><strong>Approach:</strong> Use StringBuilder.reverse() for one-liner, or two-pointer swap in char array for manual approach.</p>
+
+<p><strong>Brute Force — StringBuilder:</strong></p>
+<pre><code>public class ReverseString {
+    public static String reverse(String input) {
+        return new StringBuilder(input).reverse().toString();
+    }
+    public static void main(String[] args) {
+        String testId = "TC_LOGIN_001";
+        System.out.println("Original: " + testId);
+        System.out.println("Reversed: " + reverse(testId));
+        // Output: Original: TC_LOGIN_001
+        //         Reversed: 100_NIGOL_CT
+    }
+}</code></pre>
+
+<p><strong>Optimized — Two Pointer:</strong></p>
+<pre><code>public static String reverseTwoPointer(String input) {
+    char[] chars = input.toCharArray();
+    int left = 0, right = chars.length - 1;
+    while (left &lt; right) {
+        char temp = chars[left];
+        chars[left++] = chars[right];
+        chars[right--] = temp;
+    }
+    return new String(chars);
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(n) for char array</p>
+<p><strong>Interview Discussion:</strong> StringBuilder.reverse() is acceptable in interviews but two-pointer shows understanding of in-place manipulation. Ask: "Can you do it in-place?" — strings are immutable in Java, so char array is the workaround.</p>
+
+<h4>2. Reverse Words in a Sentence</h4>
+<p><strong>Problem Statement:</strong> Reverse the order of words in a sentence. Automation use: parse space-separated test tags, reverse execution order for dependency testing.</p>
+<p><strong>Approach:</strong> Split by space, reverse array, join. Alternative: stack-based word collection.</p>
+
+<p><strong>Brute Force — Split + Reverse:</strong></p>
+<pre><code>public class ReverseWords {
+    public static String reverseWords(String sentence) {
+        String[] words = sentence.trim().split("\\s+");
+        StringBuilder result = new StringBuilder();
+        for (int i = words.length - 1; i &gt;= 0; i--) {
+            result.append(words[i]);
+            if (i &gt; 0) result.append(" ");
+        }
+        return result.toString();
+    }
+    public static void main(String[] args) {
+        String tags = "smoke regression sanity api";
+        System.out.println(reverseWords(tags));
+        // Output: api sanity regression smoke
+    }
+}</code></pre>
+
+<p><strong>Optimized — Stack Approach:</strong></p>
+<pre><code>public static String reverseWordsStack(String sentence) {
+    java.util.Stack&lt;String&gt; stack = new java.util.Stack&lt;&gt;();
+    for (String word : sentence.trim().split("\\s+")) {
+        stack.push(word);
+    }
+    StringBuilder result = new StringBuilder();
+    while (!stack.isEmpty()) {
+        result.append(stack.pop());
+        if (!stack.isEmpty()) result.append(" ");
+    }
+    return result.toString();
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(n) for word array/stack</p>
+<p><strong>Interview Discussion:</strong> Handle multiple spaces between words with <code>trim().split("\\s+")</code>. Follow-up: reverse words in-place in char array without extra space.</p>
+
+<h4>3. Palindrome Check</h4>
+<p><strong>Problem Statement:</strong> Check if a string reads the same forwards and backwards. Automation use: validate symmetric test data, palindrome error codes, bidirectional API response matching.</p>
+<p><strong>Approach:</strong> Two-pointer comparison from both ends, or reverse string and compare with equals().</p>
+
+<p><strong>Brute Force — Reverse and Compare:</strong></p>
+<pre><code>public class PalindromeCheck {
+    public static boolean isPalindrome(String input) {
+        String cleaned = input.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        return cleaned.equals(new StringBuilder(cleaned).reverse().toString());
+    }
+    public static void main(String[] args) {
+        System.out.println(isPalindrome("A man a plan a canal Panama")); // true
+        System.out.println(isPalindrome("automation")); // false
+        System.out.println(isPalindrome("TestSet")); // false
+    }
+}</code></pre>
+
+<p><strong>Optimized — Two Pointer:</strong></p>
+<pre><code>public static boolean isPalindromeTwoPointer(String input) {
+    int left = 0, right = input.length() - 1;
+    while (left &lt; right) {
+        while (left &lt; right &amp;&amp; !Character.isLetterOrDigit(input.charAt(left))) left++;
+        while (left &lt; right &amp;&amp; !Character.isLetterOrDigit(input.charAt(right))) right--;
+        if (Character.toLowerCase(input.charAt(left)) !=
+            Character.toLowerCase(input.charAt(right))) return false;
+        left++; right--;
+    }
+    return true;
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(1) two-pointer, O(n) reverse approach</p>
+<p><strong>Interview Discussion:</strong> Always clarify: case-sensitive? Ignore spaces/punctuation? Two-pointer is O(1) space — preferred optimized answer.</p>
+
+<h4>4. Anagram Check</h4>
+<p><strong>Problem Statement:</strong> Determine if two strings are anagrams (same characters, different order). Automation use: compare shuffled test data sets, verify API request/response field sets match.</p>
+<p><strong>Approach:</strong> Sort both strings and compare, or count character frequencies in int array.</p>
+
+<p><strong>Brute Force — Sort and Compare:</strong></p>
+<pre><code>public class AnagramCheck {
+    public static boolean isAnagram(String s1, String s2) {
+        if (s1.length() != s2.length()) return false;
+        char[] a = s1.toLowerCase().toCharArray();
+        char[] b = s2.toLowerCase().toCharArray();
+        java.util.Arrays.sort(a);
+        java.util.Arrays.sort(b);
+        return java.util.Arrays.equals(a, b);
+    }
+    public static void main(String[] args) {
+        System.out.println(isAnagram("listen", "silent")); // true
+        System.out.println(isAnagram("test", "sett"));     // true
+        System.out.println(isAnagram("automation", "testing")); // false
+    }
+}</code></pre>
+
+<p><strong>Optimized — Frequency Array:</strong></p>
+<pre><code>public static boolean isAnagramFrequency(String s1, String s2) {
+    if (s1.length() != s2.length()) return false;
+    int[] freq = new int[26];
+    for (char c : s1.toLowerCase().toCharArray()) freq[c - 'a']++;
+    for (char c : s2.toLowerCase().toCharArray()) {
+        if (--freq[c - 'a'] &lt; 0) return false;
+    }
+    return true;
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n log n) sort, O(n) frequency | <strong>Space Complexity:</strong> O(1) frequency (fixed 26), O(n) sort</p>
+<p><strong>Interview Discussion:</strong> Frequency array is optimal for lowercase a-z. Follow-up: Unicode characters? Use HashMap instead of int[26].</p>
+
+<h4>5. Find Duplicate Characters</h4>
+<p><strong>Problem Statement:</strong> Find all characters that appear more than once in a string. Automation use: detect duplicate test case IDs, find repeated characters in generated passwords.</p>
+<p><strong>Approach:</strong> HashMap frequency count, or Stream groupingBy.</p>
+
+<p><strong>Brute Force — HashMap:</strong></p>
+<pre><code>public class DuplicateChars {
+    public static void findDuplicates(String input) {
+        java.util.Map&lt;Character, Integer&gt; freq = new java.util.HashMap&lt;&gt;();
+        for (char c : input.toCharArray()) {
+            freq.put(c, freq.getOrDefault(c, 0) + 1);
+        }
+        System.out.println("Duplicates in '" + input + "':");
+        freq.entrySet().stream()
+            .filter(e -&gt; e.getValue() &gt; 1)
+            .forEach(e -&gt; System.out.println("  '" + e.getKey() + "' → " + e.getValue() + " times"));
+    }
+    public static void main(String[] args) {
+        findDuplicates("automation");
+        // Output: 'a' → 2 times, 't' → 2 times, 'o' → 2 times
+        findDuplicates("TC001");
+        // Output: (no duplicates)
+    }
+}</code></pre>
+
+<p><strong>Optimized — Stream groupingBy:</strong></p>
+<pre><code>public static void findDuplicatesStream(String input) {
+    input.chars().mapToObj(c -&gt; (char) c)
+        .collect(java.util.stream.Collectors.groupingBy(
+            c -&gt; c, java.util.stream.Collectors.counting()))
+        .entrySet().stream()
+        .filter(e -&gt; e.getValue() &gt; 1)
+        .forEach(e -&gt; System.out.println(e.getKey() + " → " + e.getValue()));
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(k) where k = unique characters</p>
+<p><strong>Interview Discussion:</strong> HashMap approach is clearer in interviews. Stream version shows Java 8 fluency. Ask about case sensitivity for test ID comparison.</p>
+
+<h4>6. Character Frequency Map</h4>
+<p><strong>Problem Statement:</strong> Count frequency of each character in a string. Automation use: analyze log file character distribution, validate password complexity requirements.</p>
+<p><strong>Approach:</strong> HashMap for unordered, LinkedHashMap for insertion order, Stream for functional style.</p>
+
+<p><strong>Brute Force — HashMap:</strong></p>
+<pre><code>public class CharFrequency {
+    public static java.util.Map&lt;Character, Integer&gt; getFrequency(String input) {
+        java.util.Map&lt;Character, Integer&gt; freq = new java.util.HashMap&lt;&gt;();
+        for (char c : input.toCharArray()) {
+            freq.merge(c, 1, Integer::sum);
+        }
+        return freq;
+    }
+    public static void main(String[] args) {
+        getFrequency("password123").forEach((k, v) -&gt;
+            System.out.println(k + " → " + v));
+        // Output: p→1, a→1, s→2, w→1, o→1, r→1, d→1, 1→1, 2→1, 3→1
+    }
+}</code></pre>
+
+<p><strong>Optimized — LinkedHashMap (preserves order):</strong></p>
+<pre><code>public static java.util.Map&lt;Character, Long&gt; getFrequencyOrdered(String input) {
+    return input.chars().mapToObj(c -&gt; (char) c)
+        .collect(java.util.stream.Collectors.groupingBy(
+            c -&gt; c, java.util.LinkedHashMap::new,
+            java.util.stream.Collectors.counting()));
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(k) unique characters</p>
+<p><strong>Interview Discussion:</strong> LinkedHashMap when order matters (first occurrence order). merge() is cleaner than getOrDefault + put in Java 8+.</p>
+
+<h4>7. First Non-Repeated Character</h4>
+<p><strong>Problem Statement:</strong> Find the first character that appears only once. Automation use: find unique test identifier, first unmatched error code in log parsing.</p>
+<p><strong>Approach:</strong> LinkedHashMap maintains insertion order — iterate and find first count==1.</p>
+
+<p><strong>Brute Force — LinkedHashMap:</strong></p>
+<pre><code>public class FirstNonRepeated {
+    public static char firstNonRepeated(String input) {
+        java.util.Map&lt;Character, Integer&gt; freq = new java.util.LinkedHashMap&lt;&gt;();
+        for (char c : input.toCharArray()) {
+            freq.merge(c, 1, Integer::sum);
+        }
+        for (java.util.Map.Entry&lt;Character, Integer&gt; e : freq.entrySet()) {
+            if (e.getValue() == 1) return e.getKey();
+        }
+        return '\0';
+    }
+    public static void main(String[] args) {
+        System.out.println(firstNonRepeated("automation")); // u
+        System.out.println(firstNonRepeated("aabbccd"));    // e → wait, let me check: a→2,b→2,c→2,d→1 → d
+    }
+}</code></pre>
+
+<p><strong>Optimized — Stream:</strong></p>
+<pre><code>public static char firstNonRepeatedStream(String input) {
+    return input.chars().mapToObj(c -&gt; (char) c)
+        .collect(java.util.stream.Collectors.groupingBy(
+            c -&gt; c, java.util.LinkedHashMap::new,
+            java.util.stream.Collectors.counting()))
+        .entrySet().stream()
+        .filter(e -&gt; e.getValue() == 1)
+        .map(java.util.Map.Entry::getKey)
+        .findFirst().orElse('\0');
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(k)</p>
+<p><strong>Interview Discussion:</strong> LinkedHashMap is key — HashMap doesn't guarantee order. Two-pass: first pass count, second pass find first with count 1.</p>
+
+<h4>8. Longest Substring Without Repeating Characters</h4>
+<p><strong>Problem Statement:</strong> Find length of longest substring without repeating characters. Automation use: find longest unique test name sequence, sliding window for log analysis.</p>
+<p><strong>Approach:</strong> Sliding window with HashMap tracking last seen index.</p>
+
+<p><strong>Brute Force — Check All Substrings:</strong></p>
+<pre><code>public class LongestSubstring {
+    public static int longestUnique(String input) {
+        int maxLen = 0;
+        for (int i = 0; i &lt; input.length(); i++) {
+            java.util.Set&lt;Character&gt; seen = new java.util.HashSet&lt;&gt;();
+            for (int j = i; j &lt; input.length(); j++) {
+                if (seen.contains(input.charAt(j))) break;
+                seen.add(input.charAt(j));
+                maxLen = Math.max(maxLen, j - i + 1);
+            }
+        }
+        return maxLen;
+    }
+    public static void main(String[] args) {
+        System.out.println(longestUnique("testcase")); // 4 (tesc)
+        System.out.println(longestUnique("automation")); // 7 (automti)
+        System.out.println(longestUnique("abcabcbb")); // 3 (abc)
+    }
+}</code></pre>
+
+<p><strong>Optimized — Sliding Window:</strong></p>
+<pre><code>public static int longestUniqueSliding(String input) {
+    java.util.Map&lt;Character, Integer&gt; lastSeen = new java.util.HashMap&lt;&gt;();
+    int maxLen = 0, start = 0;
+    for (int end = 0; end &lt; input.length(); end++) {
+        char c = input.charAt(end);
+        if (lastSeen.containsKey(c) &amp;&amp; lastSeen.get(c) &gt;= start) {
+            start = lastSeen.get(c) + 1;
+        }
+        lastSeen.put(c, end);
+        maxLen = Math.max(maxLen, end - start + 1);
+    }
+    return maxLen;
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n²) brute force, O(n) sliding window | <strong>Space Complexity:</strong> O(k)</p>
+<p><strong>Interview Discussion:</strong> Sliding window is the expected optimized answer. Explain window shrink when duplicate found. Classic Google/Amazon coding question adapted for automation context.</p>
+
+<!-- ===================== ARRAYS ===================== -->
+<h3>Arrays (7 Questions)</h3>
+
+<h4>1. Find Largest Element</h4>
+<p><strong>Problem Statement:</strong> Find the largest element in an integer array. Automation use: find maximum response time from performance test results array.</p>
+<p><strong>Approach:</strong> Single pass tracking maximum value.</p>
+
+<p><strong>Brute Force — Sort and Pick Last:</strong></p>
+<pre><code>public class FindLargest {
+    public static int findLargest(int[] arr) {
+        java.util.Arrays.sort(arr);
+        return arr[arr.length - 1];
+    }
+    public static void main(String[] args) {
+        int[] responseTimes = {120, 450, 89, 1200, 340, 567};
+        System.out.println("Max response time: " + findLargest(responseTimes) + "ms");
+        // Output: Max response time: 1200ms
+    }
+}</code></pre>
+
+<p><strong>Optimized — Single Pass:</strong></p>
+<pre><code>public static int findLargestOptimized(int[] arr) {
+    int max = arr[0];
+    for (int i = 1; i &lt; arr.length; i++) {
+        if (arr[i] &gt; max) max = arr[i];
+    }
+    return max;
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n log n) sort, O(n) single pass | <strong>Space Complexity:</strong> O(1)</p>
+<p><strong>Interview Discussion:</strong> Single pass is optimal. Sort modifies array — mention if that's acceptable. Arrays.stream().max() is Java 8 alternative.</p>
+
+<h4>2. Find Second Largest Element</h4>
+<p><strong>Problem Statement:</strong> Find second largest element in array. Automation use: second slowest API endpoint, runner-up test priority score.</p>
+<p><strong>Approach:</strong> Track two variables — largest and second largest in single pass.</p>
+
+<p><strong>Brute Force — Sort:</strong></p>
+<pre><code>public class SecondLargest {
+    public static int findSecondLargest(int[] arr) {
+        java.util.Arrays.sort(arr);
+        return arr[arr.length - 2];
+    }
+    public static void main(String[] args) {
+        int[] scores = {85, 92, 78, 95, 88, 91};
+        System.out.println("Second highest score: " + findSecondLargest(scores));
+        // Output: Second highest score: 92
+    }
+}</code></pre>
+
+<p><strong>Optimized — Two Variables:</strong></p>
+<pre><code>public static int findSecondLargestOpt(int[] arr) {
+    int largest = Integer.MIN_VALUE, second = Integer.MIN_VALUE;
+    for (int num : arr) {
+        if (num &gt; largest) {
+            second = largest;
+            largest = num;
+        } else if (num &gt; second &amp;&amp; num != largest) {
+            second = num;
+        }
+    }
+    return second;
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n log n) sort, O(n) optimized | <strong>Space Complexity:</strong> O(1)</p>
+<p><strong>Interview Discussion:</strong> Handle edge cases: all same elements, array length &lt; 2. Two-variable approach handles duplicates correctly.</p>
+
+<h4>3. Missing Number in 1-N</h4>
+<p><strong>Problem Statement:</strong> Array contains N-1 numbers from 1 to N. Find the missing number. Automation use: find missing test case ID in sequential test suite.</p>
+<p><strong>Approach:</strong> Sum formula n*(n+1)/2 minus array sum, or XOR all numbers.</p>
+
+<p><strong>Brute Force — Sum Formula:</strong></p>
+<pre><code>public class MissingNumber {
+    public static int findMissing(int[] arr, int n) {
+        int expectedSum = n * (n + 1) / 2;
+        int actualSum = 0;
+        for (int num : arr) actualSum += num;
+        return expectedSum - actualSum;
+    }
+    public static void main(String[] args) {
+        int[] testIds = {1, 2, 3, 5, 6, 7, 8}; // N=8, missing 4
+        System.out.println("Missing test ID: TC_" + findMissing(testIds, 8));
+        // Output: Missing test ID: TC_4
+    }
+}</code></pre>
+
+<p><strong>Optimized — XOR:</strong></p>
+<pre><code>public static int findMissingXOR(int[] arr, int n) {
+    int xor = 0;
+    for (int i = 1; i &lt;= n; i++) xor ^= i;
+    for (int num : arr) xor ^= num;
+    return xor;
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(1)</p>
+<p><strong>Interview Discussion:</strong> XOR avoids integer overflow for large N. Sum formula simpler but overflow risk with large arrays. Both are O(n).</p>
+
+<h4>4. Move Zeros to End</h4>
+<p><strong>Problem Statement:</strong> Move all zeros to end while maintaining relative order of non-zero elements. Automation use: compact test result arrays removing skipped/null entries.</p>
+<p><strong>Approach:</strong> Two-pointer — one for iteration, one for next non-zero position.</p>
+
+<p><strong>Brute Force — New Array:</strong></p>
+<pre><code>public class MoveZeros {
+    public static int[] moveZeros(int[] arr) {
+        int[] result = new int[arr.length];
+        int idx = 0;
+        for (int num : arr) {
+            if (num != 0) result[idx++] = num;
+        }
+        return result;
+    }
+    public static void main(String[] args) {
+        int[] results = {1, 0, 3, 0, 0, 5, 0, 7};
+        int[] moved = moveZeros(results);
+        System.out.println(java.util.Arrays.toString(moved));
+        // Output: [1, 3, 5, 7, 0, 0, 0, 0]
+    }
+}</code></pre>
+
+<p><strong>Optimized — In-Place Two Pointer:</strong></p>
+<pre><code>public static void moveZerosInPlace(int[] arr) {
+    int nonZero = 0;
+    for (int i = 0; i &lt; arr.length; i++) {
+        if (arr[i] != 0) {
+            int temp = arr[nonZero];
+            arr[nonZero] = arr[i];
+            arr[i] = temp;
+            nonZero++;
+        }
+    }
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(n) brute, O(1) in-place</p>
+<p><strong>Interview Discussion:</strong> In-place two-pointer is preferred. Minimize swaps — swap only when nonZero != i for better performance.</p>
+
+<h4>5. Find Duplicate Numbers</h4>
+<p><strong>Problem Statement:</strong> Find duplicate numbers in array of 1 to N. Automation use: detect duplicate test case IDs in execution queue.</p>
+<p><strong>Approach:</strong> HashSet for detection, Floyd's cycle for O(1) space.</p>
+
+<p><strong>Brute Force — HashSet:</strong></p>
+<pre><code>public class FindDuplicates {
+    public static java.util.List&lt;Integer&gt; findDuplicates(int[] arr) {
+        java.util.Set&lt;Integer&gt; seen = new java.util.HashSet&lt;&gt;();
+        java.util.List&lt;Integer&gt; duplicates = new java.util.ArrayList&lt;&gt;();
+        for (int num : arr) {
+            if (!seen.add(num)) duplicates.add(num);
+        }
+        return duplicates;
+    }
+    public static void main(String[] args) {
+        int[] testIds = {1, 3, 4, 2, 3, 5, 1, 7};
+        System.out.println("Duplicate IDs: " + findDuplicates(testIds));
+        // Output: Duplicate IDs: [3, 1]
+    }
+}</code></pre>
+
+<p><strong>Optimized — Floyd's Cycle (for 1-N range):</strong></p>
+<pre><code>public static int findDuplicateFloyd(int[] arr) {
+    int slow = arr[0], fast = arr[0];
+    do {
+        slow = arr[slow];
+        fast = arr[arr[fast]];
+    } while (slow != fast);
+    slow = arr[0];
+    while (slow != fast) {
+        slow = arr[slow];
+        fast = arr[fast];
+    }
+    return slow;
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(n) HashSet, O(1) Floyd</p>
+<p><strong>Interview Discussion:</strong> HashSet is simpler and handles multiple duplicates. Floyd's cycle works when array represents linked list (values 1-N, index as pointer). Know both approaches.</p>
+
+<h4>6. Maximum Difference (Buy-Sell Stock)</h4>
+<p><strong>Problem Statement:</strong> Find maximum difference between two elements where larger comes after smaller. Automation use: find best time window for performance improvement (max response time drop).</p>
+<p><strong>Approach:</strong> Track minimum seen so far, calculate max difference at each step (Kadane's variant).</p>
+
+<p><strong>Brute Force — All Pairs:</strong></p>
+<pre><code>public class MaxDifference {
+    public static int maxDifference(int[] arr) {
+        int maxDiff = 0;
+        for (int i = 0; i &lt; arr.length; i++) {
+            for (int j = i + 1; j &lt; arr.length; j++) {
+                maxDiff = Math.max(maxDiff, arr[j] - arr[i]);
+            }
+        }
+        return maxDiff;
+    }
+    public static void main(String[] args) {
+        int[] responseTimes = {800, 650, 1200, 400, 900, 300, 1100};
+        System.out.println("Max improvement window: " + maxDifference(responseTimes) + "ms");
+        // Output: Max improvement window: 800ms (400-1200 or 300-1100)
+    }
+}</code></pre>
+
+<p><strong>Optimized — Kadane's Approach:</strong></p>
+<pre><code>public static int maxDifferenceOpt(int[] arr) {
+    int minVal = arr[0], maxDiff = 0;
+    for (int i = 1; i &lt; arr.length; i++) {
+        maxDiff = Math.max(maxDiff, arr[i] - minVal);
+        minVal = Math.min(minVal, arr[i]);
+    }
+    return maxDiff;
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n²) brute, O(n) optimized | <strong>Space Complexity:</strong> O(1)</p>
+<p><strong>Interview Discussion:</strong> Classic "Best Time to Buy and Sell Stock" problem. Kadane's variant tracks running minimum. Return 0 if array is decreasing.</p>
+
+<h4>7. Rotate Array by K Positions</h4>
+<p><strong>Problem Statement:</strong> Rotate array right by K positions. Automation use: rotate test execution order, circular buffer for test retry queue.</p>
+<p><strong>Approach:</strong> Reverse entire array, then reverse first K and rest separately.</p>
+
+<p><strong>Brute Force — One by One:</strong></p>
+<pre><code>public class RotateArray {
+    public static void rotate(int[] arr, int k) {
+        k = k % arr.length;
+        for (int i = 0; i &lt; k; i++) {
+            int last = arr[arr.length - 1];
+            for (int j = arr.length - 1; j &gt; 0; j--) {
+                arr[j] = arr[j - 1];
+            }
+            arr[0] = last;
+        }
+    }
+    public static void main(String[] args) {
+        int[] testOrder = {1, 2, 3, 4, 5, 6, 7};
+        rotate(testOrder, 3);
+        System.out.println(java.util.Arrays.toString(testOrder));
+        // Output: [5, 6, 7, 1, 2, 3, 4]
+    }
+}</code></pre>
+
+<p><strong>Optimized — Reverse Approach:</strong></p>
+<pre><code>public static void rotateReverse(int[] arr, int k) {
+    k = k % arr.length;
+    reverse(arr, 0, arr.length - 1);
+    reverse(arr, 0, k - 1);
+    reverse(arr, k, arr.length - 1);
+}
+private static void reverse(int[] arr, int start, int end) {
+    while (start &lt; end) {
+        int temp = arr[start];
+        arr[start++] = arr[end];
+        arr[end--] = temp;
+    }
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n*k) brute, O(n) reverse | <strong>Space Complexity:</strong> O(1)</p>
+<p><strong>Interview Discussion:</strong> Reverse approach is elegant — explain three reverses. Handle k > array.length with k % n. Follow-up: rotate left instead of right?</p>
+
+<!-- ===================== COLLECTIONS ===================== -->
+<h3>Collections (4 Questions)</h3>
+
+<h4>1. Sort Employees by Salary (Comparable)</h4>
+<p><strong>Problem Statement:</strong> Sort employees by salary using Comparable. Automation use: sort test results by execution duration, prioritize test cases by severity.</p>
+<p><strong>Approach:</strong> Implement Comparable in Employee class, use Collections.sort().</p>
+
+<p><strong>Complete Code:</strong></p>
+<pre><code>import java.util.*;
+
+class TestResult implements Comparable&lt;TestResult&gt; {
+    String testName;
+    long durationMs;
+    String status;
+
+    TestResult(String name, long duration, String status) {
+        this.testName = name; this.durationMs = duration; this.status = status;
+    }
+
+    @Override
+    public int compareTo(TestResult other) {
+        return Long.compare(this.durationMs, other.durationMs);
+    }
+
+    @Override
+    public String toString() {
+        return testName + " (" + durationMs + "ms, " + status + ")";
+    }
+}
+
+public class SortBySalary {
+    public static void main(String[] args) {
+        List&lt;TestResult&gt; results = new ArrayList&lt;&gt;(Arrays.asList(
+            new TestResult("LoginTest", 1200, "PASS"),
+            new TestResult("SearchTest", 450, "PASS"),
+            new TestResult("CheckoutTest", 3200, "FAIL"),
+            new TestResult("ProfileTest", 890, "PASS")
+        ));
+        Collections.sort(results);
+        System.out.println("Sorted by duration (fastest first):");
+        results.forEach(System.out::println);
+        // Output: SearchTest (450ms) → ProfileTest (890ms) → LoginTest (1200ms) → CheckoutTest (3200ms)
+    }
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n log n) | <strong>Space Complexity:</strong> O(1)</p>
+<p><strong>Interview Discussion:</strong> Comparable for natural ordering (one sort criteria). Comparator for multiple/alternative sort orders. compareTo must be consistent with equals.</p>
+
+<h4>2. Sort HashMap by Value</h4>
+<p><strong>Problem Statement:</strong> Sort HashMap entries by value. Automation use: rank pages by failure count, sort API endpoints by response time.</p>
+<p><strong>Approach:</strong> Stream entrySet, sort by value, collect to LinkedHashMap.</p>
+
+<p><strong>Complete Code:</strong></p>
+<pre><code>import java.util.*;
+import java.util.stream.*;
+
+public class SortMapByValue {
+    public static void main(String[] args) {
+        Map&lt;String, Integer&gt; failureCount = new HashMap&lt;&gt;();
+        failureCount.put("LoginPage", 12);
+        failureCount.put("SearchPage", 3);
+        failureCount.put("CheckoutPage", 25);
+        failureCount.put("ProfilePage", 7);
+
+        Map&lt;String, Integer&gt; sorted = failureCount.entrySet().stream()
+            .sorted(Map.Entry.comparingByValue())
+            .collect(Collectors.toMap(
+                Map.Entry::getKey, Map.Entry::getValue,
+                (a, b) -&gt; a, LinkedHashMap::new));
+
+        System.out.println("Pages ranked by failures (least first):");
+        sorted.forEach((page, count) -&gt;
+            System.out.println("  " + page + " → " + count + " failures"));
+        // Output: SearchPage→3, ProfilePage→7, LoginPage→12, CheckoutPage→25
+    }
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n log n) | <strong>Space Complexity:</strong> O(n)</p>
+<p><strong>Interview Discussion:</strong> LinkedHashMap preserves sorted order. reversed() for descending. TreeMap natural order alternative if keys should be sorted.</p>
+
+<h4>3. Word Count in Paragraph</h4>
+<p><strong>Problem Statement:</strong> Count word frequencies in a paragraph. Automation use: analyze test log output, count error message occurrences.</p>
+<p><strong>Approach:</strong> Split by whitespace, HashMap frequency count.</p>
+
+<p><strong>Complete Code:</strong></p>
+<pre><code>import java.util.*;
+
+public class WordCount {
+    public static Map&lt;String, Integer&gt; countWords(String paragraph) {
+        Map&lt;String, Integer&gt; wordCount = new HashMap&lt;&gt;();
+        for (String word : paragraph.toLowerCase().split("\\s+")) {
+            word = word.replaceAll("[^a-zA-Z0-9]", "");
+            if (!word.isEmpty()) {
+                wordCount.merge(word, 1, Integer::sum);
+            }
+        }
+        return wordCount;
+    }
+    public static void main(String[] args) {
+        String log = "Test FAILED on LoginPage Test FAILED on CheckoutPage " +
+                     "Test PASSED on SearchPage Test FAILED on LoginPage";
+        countWords(log).entrySet().stream()
+            .sorted(Map.Entry.&lt;String, Integer&gt;comparingByValue().reversed())
+            .forEach(e -&gt; System.out.println(e.getKey() + " → " + e.getValue()));
+        // Output: test→4, failed→3, on→4, loginpage→2, ...
+    }
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(k) unique words</p>
+<p><strong>Interview Discussion:</strong> Handle punctuation with regex cleanup. Case-insensitive with toLowerCase(). Stream groupingBy as alternative one-liner.</p>
+
+<h4>4. Remove Duplicates Preserving Order</h4>
+<p><strong>Problem Statement:</strong> Remove duplicates from list while maintaining insertion order. Automation use: deduplicate test case names while preserving execution order.</p>
+<p><strong>Approach:</strong> LinkedHashSet automatically deduplicates with order preservation.</p>
+
+<p><strong>Complete Code:</strong></p>
+<pre><code>import java.util.*;
+import java.util.stream.*;
+
+public class RemoveDuplicates {
+    public static List&lt;String&gt; removeDuplicates(List&lt;String&gt; testNames) {
+        return new ArrayList&lt;&gt;(new LinkedHashSet&lt;&gt;(testNames));
+    }
+
+    public static List&lt;String&gt; removeDuplicatesStream(List&lt;String&gt; testNames) {
+        return testNames.stream().distinct().collect(Collectors.toList());
+    }
+
+    public static void main(String[] args) {
+        List&lt;String&gt; tests = Arrays.asList(
+            "LoginTest", "SearchTest", "LoginTest", "CheckoutTest",
+            "SearchTest", "ProfileTest", "LoginTest");
+        System.out.println("Original: " + tests);
+        System.out.println("Deduped:  " + removeDuplicates(tests));
+        // Output: Deduped: [LoginTest, SearchTest, CheckoutTest, ProfileTest]
+    }
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(n)</p>
+<p><strong>Interview Discussion:</strong> LinkedHashSet is the cleanest approach. Stream distinct() also preserves order (since Java 8). HashSet loses order — wrong answer if order matters.</p>
+
+<!-- ===================== JAVA 8 STREAMS ===================== -->
+<h3>Java 8 Streams (4 Questions)</h3>
+
+<h4>1. Stream Sorting (Multiple Criteria)</h4>
+<p><strong>Problem Statement:</strong> Sort test results by status (FAIL first) then by duration (longest first). Automation use: prioritize failed tests in report, then slowest.</p>
+<p><strong>Approach:</strong> Comparator chaining with thenComparing().</p>
+
+<p><strong>Complete Code:</strong></p>
+<pre><code>import java.util.*;
+import java.util.stream.*;
+
+public class StreamMultiSort {
+    static class TestResult {
+        String name; String status; long durationMs;
+        TestResult(String n, String s, long d) { name=n; status=s; durationMs=d; }
+        public String toString() { return name + " [" + status + ", " + durationMs + "ms]"; }
+    }
+
+    public static void main(String[] args) {
+        List&lt;TestResult&gt; results = Arrays.asList(
+            new TestResult("LoginTest", "PASS", 1200),
+            new TestResult("CheckoutTest", "FAIL", 3200),
+            new TestResult("SearchTest", "PASS", 450),
+            new TestResult("ProfileTest", "FAIL", 890),
+            new TestResult("CartTest", "FAIL", 1500)
+        );
+
+        results.stream()
+            .sorted(Comparator
+                .comparing((TestResult r) -&gt; r.status.equals("PASS") ? 1 : 0)
+                .thenComparing(r -&gt; r.durationMs, Comparator.reverseOrder()))
+            .forEach(System.out::println);
+        // Output: CheckoutTest [FAIL, 3200ms] → CartTest [FAIL, 1500ms] →
+        //         ProfileTest [FAIL, 890ms] → LoginTest [PASS, 1200ms] → SearchTest [PASS, 450ms]
+    }
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n log n) | <strong>Space Complexity:</strong> O(n)</p>
+<p><strong>Interview Discussion:</strong> Comparator.comparing() + thenComparing() for multi-field sort. reversed() for descending. Method references vs lambdas in comparators.</p>
+
+<h4>2. Stream Filtering (Complex Conditions)</h4>
+<p><strong>Problem Statement:</strong> Filter test results that FAILED with duration &gt; 1000ms and name contains "Test". Automation use: identify slow failing tests for investigation.</p>
+<p><strong>Approach:</strong> Predicate composition with and/or/negate.</p>
+
+<p><strong>Complete Code:</strong></p>
+<pre><code>import java.util.*;
+import java.util.stream.*;
+import java.util.function.Predicate;
+
+public class StreamFilter {
+    static class TestResult {
+        String name; String status; long durationMs;
+        TestResult(String n, String s, long d) { name=n; status=s; durationMs=d; }
+        public String toString() { return name + " [" + status + ", " + durationMs + "ms]"; }
+    }
+
+    public static void main(String[] args) {
+        List&lt;TestResult&gt; results = Arrays.asList(
+            new TestResult("LoginTest", "FAIL", 1200),
+            new TestResult("SearchTest", "PASS", 450),
+            new TestResult("CheckoutTest", "FAIL", 3200),
+            new TestResult("APIHealth", "FAIL", 200),
+            new TestResult("ProfileTest", "FAIL", 890)
+        );
+
+        Predicate&lt;TestResult&gt; isFailed = r -&gt; r.status.equals("FAIL");
+        Predicate&lt;TestResult&gt; isSlow = r -&gt; r.durationMs &gt; 1000;
+        Predicate&lt;TestResult&gt; hasTest = r -&gt; r.name.contains("Test");
+
+        System.out.println("Slow failing tests:");
+        results.stream()
+            .filter(isFailed.and(isSlow).and(hasTest))
+            .forEach(System.out::println);
+        // Output: LoginTest [FAIL, 1200ms], CheckoutTest [FAIL, 3200ms]
+    }
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(1)</p>
+<p><strong>Interview Discussion:</strong> Predicate.and/or/negate for readable complex filters. Extract predicates as named variables for clarity. Alternative: single lambda with &amp;&amp; operators.</p>
+
+<h4>3. Grouping by Department</h4>
+<p><strong>Problem Statement:</strong> Group test cases by module/department. Automation use: group test results by page module for per-module pass/fail summary.</p>
+<p><strong>Approach:</strong> Collectors.groupingBy() with optional downstream collector.</p>
+
+<p><strong>Complete Code:</strong></p>
+<pre><code>import java.util.*;
+import java.util.stream.*;
+
+public class StreamGrouping {
+    static class TestCase {
+        String name; String module; String status;
+        TestCase(String n, String m, String s) { name=n; module=m; status=s; }
+    }
+
+    public static void main(String[] args) {
+        List&lt;TestCase&gt; tests = Arrays.asList(
+            new TestCase("testLogin", "Auth", "PASS"),
+            new TestCase("testLogout", "Auth", "PASS"),
+            new TestCase("testSearch", "Search", "FAIL"),
+            new TestCase("testFilter", "Search", "PASS"),
+            new TestCase("testCheckout", "Cart", "FAIL"),
+            new TestCase("testAddToCart", "Cart", "PASS")
+        );
+
+        Map&lt;String, List&lt;TestCase&gt;&gt; byModule =
+            tests.stream().collect(Collectors.groupingBy(t -&gt; t.module));
+
+        byModule.forEach((module, cases) -&gt; {
+            long failed = cases.stream().filter(t -&gt; t.status.equals("FAIL")).count();
+            System.out.println(module + ": " + cases.size() + " tests, " + failed + " failed");
+        });
+        // Output: Auth: 2 tests, 0 failed
+        //         Search: 2 tests, 1 failed
+        //         Cart: 2 tests, 1 failed
+    }
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(n)</p>
+<p><strong>Interview Discussion:</strong> groupingBy with counting downstream: <code>groupingBy(module, counting())</code>. partitioningBy for binary split (pass/fail). Multi-level grouping with nested groupingBy.</p>
+
+<h4>4. Counting Elements by Category</h4>
+<p><strong>Problem Statement:</strong> Count test results by status category (PASS/FAIL/SKIP). Automation use: generate test summary dashboard counts.</p>
+<p><strong>Approach:</strong> groupingBy + counting downstream collector.</p>
+
+<p><strong>Complete Code:</strong></p>
+<pre><code>import java.util.*;
+import java.util.stream.*;
+
+public class StreamCounting {
+    public static void main(String[] args) {
+        List&lt;String&gt; testStatuses = Arrays.asList(
+            "PASS", "PASS", "FAIL", "PASS", "SKIP",
+            "FAIL", "PASS", "FAIL", "SKIP", "PASS",
+            "PASS", "FAIL", "PASS", "PASS", "SKIP"
+        );
+
+        Map&lt;String, Long&gt; statusCounts = testStatuses.stream()
+            .collect(Collectors.groupingBy(s -&gt; s, Collectors.counting()));
+
+        System.out.println("=== Test Execution Summary ===");
+        statusCounts.forEach((status, count) -&gt;
+            System.out.printf("  %-6s: %d (%.1f%%)%n", status, count,
+                count * 100.0 / testStatuses.size()));
+
+        long totalFailed = statusCounts.getOrDefault("FAIL", 0L);
+        System.out.println("\nPass rate: " +
+            String.format("%.1f%%", (1 - totalFailed * 1.0 / testStatuses.size()) * 100));
+        // Output: PASS: 8 (53.3%), FAIL: 4 (26.7%), SKIP: 3 (20.0%)
+        //         Pass rate: 73.3%
+    }
+}</code></pre>
+<p><strong>Time Complexity:</strong> O(n) | <strong>Space Complexity:</strong> O(k) categories</p>
+<p><strong>Interview Discussion:</strong> groupingBy + counting is the idiomatic Java 8 approach. Alternative: Collectors.counting() vs manual increment. Follow-up: count by module AND status (multi-level grouping).</p>
+
+<div class="callout">
+<strong>Interview Tip:</strong> Always mention automation context when solving coding problems — "I'd use this HashMap frequency count to detect duplicate test IDs" shows you connect Java fundamentals to real testing work. Interviewers value domain awareness over pure algorithm memorization.
+</div>
+
+</section>

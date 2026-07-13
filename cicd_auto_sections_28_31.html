@@ -1,0 +1,966 @@
+<section id="section-28" class="section-card">
+<h2>Section 28: Jenkins Cheat Sheet</h2>
+
+<p>Quick-reference tables for Jenkins interviews and daily CI/CD work. Bookmark this section for last-minute revision before a Jenkins or SDET interview.</p>
+
+<div class="callout tip">
+<strong>How to Use This Cheat Sheet:</strong> Scan tables by topic, then drill into Pipeline Keywords and Quick Templates when you need syntax on the spot. Interviewers often ask "define X" from Core Concepts and "write a Jenkinsfile that does Y" from Templates.
+</div>
+
+<h3>Core Concepts</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Term</th><th>Definition</th><th>Interview Tip</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Master (Controller)</strong></td><td>Central Jenkins server that schedules builds, serves UI, stores job config, and orchestrates agents.</td><td>Say "controller" in modern Jenkins; master is legacy terminology but still used in interviews.</td></tr>
+    <tr><td><strong>Agent (Node)</strong></td><td>Machine (physical, VM, or container) that executes build steps. Can be permanent or ephemeral.</td><td>Distinguish agent (machine) from executor (slot on that machine).</td></tr>
+    <tr><td><strong>Executor</strong></td><td>Single concurrent build slot on an agent. One agent can have multiple executors.</td><td>Example: agent with 4 executors runs 4 builds in parallel max.</td></tr>
+    <tr><td><strong>Workspace</strong></td><td>Directory on agent where source is checked out and build runs (<code>${WORKSPACE}</code>).</td><td>Clean workspace plugin prevents stale artifacts between runs.</td></tr>
+    <tr><td><strong>Build</strong></td><td>Single execution instance of a job/pipeline, identified by BUILD_NUMBER.</td><td>Build ≠ job. One job can have thousands of builds.</td></tr>
+    <tr><td><strong>Stage</strong></td><td>Logical grouping of steps in a Pipeline (e.g., Checkout, Test, Report).</td><td>Stages appear in Blue Ocean and Stage View for visibility.</td></tr>
+    <tr><td><strong>Pipeline</strong></td><td>Automated CI/CD workflow defined as code (Jenkinsfile) or via UI.</td><td>Emphasize "Pipeline as Code" — version-controlled, reviewable, reproducible.</td></tr>
+    <tr><td><strong>Node</strong></td><td>Scripted Pipeline block that allocates an agent and workspace for steps.</td><td>In Declarative, use <code>agent</code>; in Scripted, use <code>node</code>.</td></tr>
+    <tr><td><strong>Label</strong></td><td>Tag on agents for routing builds (e.g., <code>linux</code>, <code>docker</code>, <code>windows</code>).</td><td><code>agent { label 'linux && docker' }</code> routes to matching agents.</td></tr>
+    <tr><td><strong>View</strong></td><td>Dashboard grouping of related jobs (e.g., "QA Automation", "Nightly Regression").</td><td>Views help organize 50+ jobs; not required for pipeline logic.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Job Types</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Type</th><th>Config</th><th>Version Control</th><th>Best For</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Freestyle</strong></td><td>UI-based: SCM, build steps, post-build actions</td><td>Config stored in Jenkins, not Git</td><td>Quick POC, single-suite smoke jobs, legacy maintenance</td></tr>
+    <tr><td><strong>Pipeline</strong></td><td>Jenkinsfile in repo (Declarative or Scripted)</td><td>Full Pipeline as Code in Git</td><td>Parameterized test runs, multi-stage, parallel browsers</td></tr>
+    <tr><td><strong>Multibranch Pipeline</strong></td><td>Auto-discovers branches/PRs; Jenkinsfile per branch</td><td>Branch-specific Jenkinsfile in Git</td><td>PR validation, branch-based suite selection, feature-branch smoke</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Pipeline Keywords</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Keyword</th><th>Purpose</th><th>Syntax</th><th>Example</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>pipeline</code></td><td>Root block for Declarative Pipeline</td><td><code>pipeline { ... }</code></td><td><code>pipeline { agent any; stages { ... } }</code></td></tr>
+    <tr><td><code>agent</code></td><td>Where pipeline/stage runs</td><td><code>agent any | label 'x' | docker 'img'</code></td><td><code>agent { label 'linux' }</code></td></tr>
+    <tr><td><code>stages</code></td><td>Container for all stages</td><td><code>stages { stage('A'){...} }</code></td><td><code>stages { stage('Test') { steps { ... } } }</code></td></tr>
+    <tr><td><code>stage</code></td><td>Named logical phase</td><td><code>stage('Name') { steps { } }</code></td><td><code>stage('Smoke Tests') { steps { sh 'mvn test' } }</code></td></tr>
+    <tr><td><code>steps</code></td><td>Actual commands/actions</td><td><code>steps { sh 'cmd' }</code></td><td><code>steps { sh 'mvn clean test' }</code></td></tr>
+    <tr><td><code>post</code></td><td>Actions after pipeline/stage completes</td><td><code>post { always { } success { } }</code></td><td><code>post { failure { emailext(...) } }</code></td></tr>
+    <tr><td><code>tools</code></td><td>Auto-install JDK, Maven, Git</td><td><code>tools { maven 'M3' }</code></td><td><code>tools { jdk 'JDK17'; maven 'M3' }</code></td></tr>
+    <tr><td><code>parameters</code></td><td>User inputs at build time</td><td><code>parameters { string(...) }</code></td><td><code>parameters { choice(name: 'BROWSER', choices: ['chrome','firefox']) }</code></td></tr>
+    <tr><td><code>environment</code></td><td>Define env vars</td><td><code>environment { VAR = 'val' }</code></td><td><code>environment { BROWSER = "${params.BROWSER}" }</code></td></tr>
+    <tr><td><code>when</code></td><td>Conditional stage execution</td><td><code>when { branch 'main' }</code></td><td><code>when { expression { params.RUN_REGRESSION == 'true' } }</code></td></tr>
+    <tr><td><code>parallel</code></td><td>Run stages concurrently</td><td><code>parallel { stage('A'){} stage('B'){} }</code></td><td>Parallel Chrome + Firefox test stages</td></tr>
+    <tr><td><code>input</code></td><td>Pause for manual approval</td><td><code>input message: 'Approve?'</code></td><td><code>input message: 'Deploy to QA?', ok: 'Proceed'</code></td></tr>
+    <tr><td><code>timeout</code></td><td>Limit stage/pipeline duration</td><td><code>options { timeout(time: 30, unit: 'MINUTES') }</code></td><td>Prevent hung Selenium runs from blocking agents</td></tr>
+    <tr><td><code>retry</code></td><td>Retry stage on failure</td><td><code>options { retry(2) }</code></td><td>Flaky network checkout — retry 2 times</td></tr>
+    <tr><td><code>script</code></td><td>Embed Groovy in Declarative</td><td><code>steps { script { ... } }</code></td><td><code>script { env.BUILD_TAG = "build-${BUILD_NUMBER}" }</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Declarative vs Scripted Pipeline</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Feature</th><th>Declarative</th><th>Scripted</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Syntax Structure</td><td>Rigid: <code>pipeline { agent stages post }</code></td><td>Free-form Groovy in <code>node { }</code></td></tr>
+    <tr><td>Learning Curve</td><td>Lower — opinionated, predictable</td><td>Higher — full Groovy required</td></tr>
+    <tr><td>Validation</td><td>Jenkins validates structure at start</td><td>Runtime errors only</td></tr>
+    <tr><td>Error Handling</td><td>Built-in <code>post { }</code> blocks</td><td>Manual try/catch/finally</td></tr>
+    <tr><td>Readability</td><td>High — standard layout for teams</td><td>Varies — can become spaghetti</td></tr>
+    <tr><td>Flexibility</td><td>Moderate — use <code>script { }</code> for Groovy</td><td>Maximum — dynamic stages, loops</td></tr>
+    <tr><td>Blue Ocean Support</td><td>Full native support</td><td>Partial — depends on structure</td></tr>
+    <tr><td>Best For QA</td><td>90% of test automation pipelines</td><td>Dynamic matrix, custom suite discovery</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Build Triggers</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Trigger</th><th>When</th><th>Syntax / Config</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>SCM Polling</strong></td><td>Jenkins polls Git every N minutes for changes</td><td><code>H/5 * * * *</code> (every 5 min) in "Poll SCM" trigger</td></tr>
+    <tr><td><strong>Webhook</strong></td><td>Instant build on push/PR (GitHub, GitLab, Bitbucket)</td><td>Enable "GitHub hook trigger" + configure webhook URL in repo settings</td></tr>
+    <tr><td><strong>Cron</strong></td><td>Scheduled builds (nightly, weekly regression)</td><td><code>0 2 * * *</code> (2 AM daily), <code>0 3 * * 0</code> (3 AM Sunday)</td></tr>
+    <tr><td><strong>Upstream</strong></td><td>Trigger after another job completes</td><td>"Build after other projects" → <code>upstream-job</code> or Pipeline <code>build job: 'x'</code></td></tr>
+    <tr><td><strong>Manual</strong></td><td>User clicks "Build Now" or "Build with Parameters"</td><td>No trigger config — default for on-demand runs</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Post Actions</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Condition</th><th>When</th><th>Usage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>always</code></td><td>Runs regardless of build result</td><td>Archive artifacts, publish reports, cleanup workspace</td></tr>
+    <tr><td><code>success</code></td><td>Build completed without failure</td><td>Send success notification, trigger downstream deploy</td></tr>
+    <tr><td><code>failure</code></td><td>Build failed (red)</td><td>Email QA team, Slack alert, attach console log</td></tr>
+    <tr><td><code>unstable</code></td><td>Build succeeded but tests failed (yellow)</td><td>Notify team — common when JUnit publisher marks unstable on test fail</td></tr>
+    <tr><td><code>changed</code></td><td>Status changed from previous build</td><td>Alert only on new failures or recoveries — reduces noise</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Essential Plugins</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Plugin</th><th>Purpose</th><th>Must Have?</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Pipeline</strong></td><td>Core Pipeline support (Declarative + Scripted)</td><td>Yes — required for Jenkinsfile</td></tr>
+    <tr><td><strong>Git / GitHub</strong></td><td>SCM checkout, webhooks, PR integration</td><td>Yes</td></tr>
+    <tr><td><strong>Maven Integration</strong></td><td>Invoke Maven goals from UI/Pipeline</td><td>Yes for Java automation</td></tr>
+    <tr><td><strong>JUnit</strong></td><td>Publish TestNG/JUnit XML results, trend graphs</td><td>Yes</td></tr>
+    <tr><td><strong>Allure</strong></td><td>Rich HTML test reports with history</td><td>Highly recommended</td></tr>
+    <tr><td><strong>HTML Publisher</strong></td><td>Publish Extent/custom HTML reports</td><td>Recommended</td></tr>
+    <tr><td><strong>Email Extension</strong></td><td>Customizable email notifications</td><td>Yes</td></tr>
+    <tr><td><strong>Credentials Binding</strong></td><td>Securely inject secrets into pipeline</td><td>Yes</td></tr>
+    <tr><td><strong>Docker Pipeline</strong></td><td>Build/run tests inside Docker containers</td><td>Yes for containerized runs</td></tr>
+    <tr><td><strong>Blue Ocean</strong></td><td>Modern pipeline visualization UI</td><td>Nice to have</td></tr>
+    <tr><td><strong>Parameterized Trigger</strong></td><td>Trigger downstream jobs with parameters</td><td>Recommended for multi-job setups</td></tr>
+    <tr><td><strong>Timestamper</strong></td><td>Add timestamps to console output</td><td>Nice to have — helps debugging</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Maven Commands for Jenkins</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Command</th><th>What it Does</th><th>When to Use</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>mvn clean test</code></td><td>Delete target/, compile, run all tests</td><td>Standard CI smoke/regression step</td></tr>
+    <tr><td><code>mvn test -DsuiteXmlFile=smoke.xml</code></td><td>Run specific TestNG suite</td><td>Parameterized pipeline — suite selection</td></tr>
+    <tr><td><code>mvn clean test -Dtest=LoginTest</code></td><td>Run single test class</td><td>Debug pipeline, targeted re-runs</td></tr>
+    <tr><td><code>mvn test -Dbrowser=chrome -Denv=qa</code></td><td>Pass custom system properties</td><td>Browser/environment parameterization</td></tr>
+    <tr><td><code>mvn test -Dsurefire.parallel=methods -Dsurefire.threadCount=4</code></td><td>Parallel test execution</td><td>Speed up regression in CI</td></tr>
+    <tr><td><code>mvn clean verify</code></td><td>Run tests + integration checks</td><td>Full validation before deploy stage</td></tr>
+    <tr><td><code>mvn test -Dcucumber.filter.tags="@smoke"</code></td><td>Run tagged Cucumber scenarios</td><td>Tag-based suite in pipeline</td></tr>
+    <tr><td><code>mvn allure:report</code></td><td>Generate Allure HTML report</td><td>Post-test reporting stage</td></tr>
+    <tr><td><code>mvn -B clean test</code></td><td>Batch mode — non-interactive</td><td>Always use <code>-B</code> in CI to avoid prompts</td></tr>
+    <tr><td><code>mvn test -Dmaven.test.failure.ignore=true</code></td><td>Continue build despite test failures</td><td>Collect all failures before reporting (use carefully)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Git Commands for Jenkins</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Command</th><th>Purpose</th><th>CI/CD Usage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>git clone &lt;url&gt;</code></td><td>Clone repository</td><td>Jenkins checkout step (automatic in Pipeline)</td></tr>
+    <tr><td><code>git checkout &lt;branch&gt;</code></td><td>Switch to branch</td><td>Multibranch auto-checkout; manual for feature testing</td></tr>
+    <tr><td><code>git pull origin main</code></td><td>Fetch and merge latest</td><td>Freestyle SCM update before build</td></tr>
+    <tr><td><code>git log -1 --oneline</code></td><td>Show latest commit</td><td>Log commit in console for traceability</td></tr>
+    <tr><td><code>git rev-parse HEAD</code></td><td>Get full commit SHA</td><td>Store in report — maps test run to exact code</td></tr>
+    <tr><td><code>git diff HEAD~1</code></td><td>Changes in latest commit</td><td>Debug what triggered failure</td></tr>
+    <tr><td><code>git clean -fdx</code></td><td>Remove untracked files</td><td>Ensure clean workspace before test run</td></tr>
+    <tr><td><code>git submodule update --init</code></td><td>Initialize submodules</td><td>Projects with shared test libraries as submodules</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Environment Variables</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Variable</th><th>Value</th><th>Usage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>BUILD_NUMBER</code></td><td>Incremental integer (e.g., 142)</td><td>Tag reports, name artifacts: <code>report-build-142</code></td></tr>
+    <tr><td><code>JOB_NAME</code></td><td>Job/pipeline name</td><td>Email subject, log context</td></tr>
+    <tr><td><code>BUILD_URL</code></td><td>Full URL to build page</td><td>Clickable link in failure emails/Slack</td></tr>
+    <tr><td><code>WORKSPACE</code></td><td>Absolute path to build directory</td><td>Reference report paths, screenshots</td></tr>
+    <tr><td><code>NODE_NAME</code></td><td>Agent name running the build</td><td>Debug agent-specific issues (Grid node vs local)</td></tr>
+    <tr><td><code>GIT_COMMIT</code></td><td>Current commit SHA</td><td>Trace test results to exact code version</td></tr>
+    <tr><td><code>GIT_BRANCH</code></td><td>Branch name (e.g., origin/develop)</td><td>Conditional stages based on branch</td></tr>
+    <tr><td><code>BUILD_ID</code></td><td>Unique build ID (timestamp-based)</td><td>Legacy; prefer BUILD_NUMBER for display</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Quick Templates</h3>
+
+<h4>Minimal Jenkinsfile (5 lines)</h4>
+<pre><code>pipeline {
+    agent any
+    stages {
+        stage('Test') { steps { sh 'mvn clean test' } }
+    }
+}</code></pre>
+
+<h4>Parameterized Jenkinsfile (10 lines)</h4>
+<pre><code>pipeline {
+    agent any
+    parameters {
+        choice(name: 'BROWSER', choices: ['chrome', 'firefox'], description: 'Browser')
+        choice(name: 'ENV', choices: ['qa', 'staging'], description: 'Environment')
+    }
+    stages {
+        stage('Run Tests') {
+            steps { sh 'mvn clean test -Dbrowser=${params.BROWSER} -Denv=${params.ENV}' }
+        }
+    }
+}</code></pre>
+
+<h4>Parallel Stages Template</h4>
+<pre><code>stage('Cross-Browser Tests') {
+    parallel {
+        stage('Chrome') {
+            steps { sh 'mvn test -Dbrowser=chrome -DsuiteXmlFile=smoke.xml' }
+        }
+        stage('Firefox') {
+            steps { sh 'mvn test -Dbrowser=firefox -DsuiteXmlFile=smoke.xml' }
+        }
+    }
+}</code></pre>
+
+<h4>Email Notification Template</h4>
+<pre><code>post {
+    failure {
+        emailext (
+            subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: "Build failed. Check: ${env.BUILD_URL}",
+            to: 'qa-team@company.com'
+        )
+    }
+    always {
+        junit 'target/surefire-reports/*.xml'
+        allure includeProperties: false, jdk: '', results: [[path: 'target/allure-results']]
+    }
+}</code></pre>
+
+<div class="callout">
+<strong>Interview Quick Win:</strong> Memorize the Minimal + Parameterized templates. Most "write a Jenkinsfile" questions are variations of these two with an added <code>post</code> or <code>parallel</code> block.
+</div>
+
+</section>
+
+<section id="section-29" class="section-card">
+<h2>Section 29: CI/CD Cheat Sheet</h2>
+
+<p>End-to-end CI/CD quick reference for automation engineers — concepts, pipeline stages, test strategy, tools, Docker/K8s commands, quality gates, and common failure fixes.</p>
+
+<h3>CI/CD Concepts</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Concept</th><th>Definition</th><th>QA Relevance</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>CI (Continuous Integration)</strong></td><td>Developers merge code frequently; each merge triggers automated build + test.</td><td>Your tests run on every commit/PR — catch regressions early.</td></tr>
+    <tr><td><strong>CD — Delivery</strong></td><td>Code is always in a deployable state; manual approval before production.</td><td>QA validates staging; sign-off gate before release.</td></tr>
+    <tr><td><strong>CD — Deployment</strong></td><td>Every passing build auto-deploys to production (fully automated).</td><td>Requires high test confidence — smoke must be rock-solid.</td></tr>
+    <tr><td><strong>Pipeline</strong></td><td>Automated sequence of stages from code commit to deploy/report.</td><td>You design test stages inside the pipeline.</td></tr>
+    <tr><td><strong>Stage</strong></td><td>Logical phase: Checkout → Build → Test → Deploy.</td><td>Each test type (smoke, API, regression) is typically its own stage.</td></tr>
+    <tr><td><strong>Artifact</strong></td><td>Build output stored for later stages (JAR, Docker image, test reports).</td><td>Archive Allure/HTML reports as artifacts for history.</td></tr>
+    <tr><td><strong>Quality Gate</strong></td><td>Pass/fail criteria that block promotion (e.g., 0 critical bugs, 95% pass rate).</td><td>QA defines thresholds — pipeline fails if gate not met.</td></tr>
+    <tr><td><strong>Build</strong></td><td>Single pipeline execution triggered by commit, schedule, or manual action.</td><td>One build = one test run with traceable BUILD_NUMBER.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Pipeline Stages for Automation</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Stage</th><th>Purpose</th><th>Duration</th><th>Tools</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Checkout</strong></td><td>Pull latest code from Git</td><td>~30 sec</td><td>Git plugin, <code>checkout scm</code></td></tr>
+    <tr><td><strong>Build</strong></td><td>Compile code, resolve dependencies</td><td>1–3 min</td><td>Maven (<code>mvn compile</code>), Gradle</td></tr>
+    <tr><td><strong>Smoke</strong></td><td>Fast critical-path validation</td><td>5–10 min</td><td>TestNG smoke.xml, Cucumber @smoke</td></tr>
+    <tr><td><strong>API Test</strong></td><td>Validate backend endpoints</td><td>10–20 min</td><td>REST Assured, Postman/Newman</td></tr>
+    <tr><td><strong>Regression</strong></td><td>Full functional coverage</td><td>30 min – 2 hrs</td><td>TestNG parallel, Selenium Grid</td></tr>
+    <tr><td><strong>Report</strong></td><td>Generate and publish test results</td><td>1–2 min</td><td>Allure, Extent, JUnit publisher</td></tr>
+    <tr><td><strong>Email</strong></td><td>Notify team of pass/fail</td><td>&lt;1 min</td><td>Email Extension, Slack plugin</td></tr>
+    <tr><td><strong>Deploy</strong></td><td>Push build to target environment</td><td>2–10 min</td><td>Docker, kubectl, Azure DevOps release</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Test Execution Strategy</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Trigger</th><th>Suite</th><th>Duration</th><th>Scope</th><th>Pass Criteria</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>PR / Pull Request</strong></td><td>Smoke + critical API</td><td>5–15 min</td><td>Changed module + sanity</td><td>100% smoke pass; block merge on fail</td></tr>
+    <tr><td><strong>Post-Merge</strong></td><td>Smoke + API regression</td><td>15–30 min</td><td>Full API + UI smoke</td><td>Zero P1 failures</td></tr>
+    <tr><td><strong>Nightly</strong></td><td>Full regression</td><td>1–3 hrs</td><td>All browsers, all modules</td><td>≥95% pass; investigate new failures</td></tr>
+    <tr><td><strong>Weekly</strong></td><td>Extended + performance</td><td>3–6 hrs</td><td>Edge cases, load tests</td><td>Performance SLA met; no memory leaks</td></tr>
+    <tr><td><strong>Release</strong></td><td>Full suite + manual sign-off</td><td>4–8 hrs</td><td>Production-like env, UAT</td><td>Zero open blockers; QA sign-off</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Testing in CI/CD</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Activity</th><th>When</th><th>Tool</th><th>QA Responsibility</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Unit test validation</td><td>Every commit</td><td>JUnit, TestNG (dev-written)</td><td>Ensure automation doesn't break unit tests</td></tr>
+    <tr><td>Smoke test execution</td><td>Every PR</td><td>TestNG, Selenium, Cucumber</td><td>Maintain smoke suite; keep under 10 min</td></tr>
+    <tr><td>API test execution</td><td>Post-merge / nightly</td><td>REST Assured, Postman</td><td>Own API test suite and data setup</td></tr>
+    <tr><td>UI regression</td><td>Nightly / release</td><td>Selenium Grid, Playwright</td><td>Design suite, fix flaky tests, analyze failures</td></tr>
+    <tr><td>Report generation</td><td>After every test stage</td><td>Allure, Extent</td><td>Configure listeners; archive artifacts</td></tr>
+    <tr><td>Quality gate enforcement</td><td>Before deploy stage</td><td>Jenkins, SonarQube</td><td>Define pass thresholds with team</td></tr>
+    <tr><td>Environment provisioning</td><td>Pre-test stage</td><td>Docker, docker-compose</td><td>Ensure test env matches config</td></tr>
+    <tr><td>Failure triage</td><td>On pipeline failure</td><td>Console log, screenshots, videos</td><td>Classify: product bug vs automation bug vs env issue</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>DevOps Tools for QA</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Tool</th><th>Category</th><th>QA Usage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Jenkins</strong></td><td>CI Server</td><td>Schedule and run test suites, parameterized builds</td></tr>
+    <tr><td><strong>GitHub Actions</strong></td><td>CI/CD (cloud-native)</td><td>PR checks, matrix builds, publish reports</td></tr>
+    <tr><td><strong>Azure DevOps</strong></td><td>CI/CD + Boards</td><td>Pipelines, test plans, release gates</td></tr>
+    <tr><td><strong>Docker</strong></td><td>Containerization</td><td>Consistent test environments, Selenium Grid</td></tr>
+    <tr><td><strong>Kubernetes</strong></td><td>Container orchestration</td><td>Scale Grid nodes, ephemeral test agents</td></tr>
+    <tr><td><strong>SonarQube</strong></td><td>Code quality</td><td>Track code smells in test framework code</td></tr>
+    <tr><td><strong>Allure TestOps</strong></td><td>Test management</td><td>Centralized report history, flaky test detection</td></tr>
+    <tr><td><strong>Slack / Teams</strong></td><td>Notifications</td><td>Real-time pipeline failure alerts</td></tr>
+    <tr><td><strong>Artifactory / Nexus</strong></td><td>Artifact repository</td><td>Store framework JARs, Docker images</td></tr>
+    <tr><td><strong>Ansible / Terraform</strong></td><td>Infrastructure as Code</td><td>Provision test environments on demand</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Docker Quick Reference</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Command</th><th>Purpose</th><th>QA Usage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>docker build -t my-tests .</code></td><td>Build image from Dockerfile</td><td>Create reproducible test runner image</td></tr>
+    <tr><td><code>docker run my-tests mvn test</code></td><td>Run container with command</td><td>Execute tests in isolated environment</td></tr>
+    <tr><td><code>docker-compose up -d</code></td><td>Start multi-container stack</td><td>Spin up App + DB + Selenium Grid</td></tr>
+    <tr><td><code>docker ps</code></td><td>List running containers</td><td>Verify Grid hub/nodes are up</td></tr>
+    <tr><td><code>docker logs &lt;container&gt;</code></td><td>View container logs</td><td>Debug failed test container runs</td></tr>
+    <tr><td><code>docker exec -it &lt;id&gt; bash</code></td><td>Shell into running container</td><td>Inspect files, debug inside container</td></tr>
+    <tr><td><code>docker stop &lt;id&gt;</code></td><td>Stop container</td><td>Cleanup after pipeline stage</td></tr>
+    <tr><td><code>docker system prune -f</code></td><td>Remove unused resources</td><td>Free disk on Jenkins agents</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Kubernetes Quick Reference</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Command</th><th>Purpose</th><th>QA Usage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>kubectl get pods</code></td><td>List pods in namespace</td><td>Check Selenium Grid pod status</td></tr>
+    <tr><td><code>kubectl logs &lt;pod&gt;</code></td><td>View pod logs</td><td>Debug test failures in K8s agents</td></tr>
+    <tr><td><code>kubectl apply -f deployment.yaml</code></td><td>Deploy resources from YAML</td><td>Deploy test environment stack</td></tr>
+    <tr><td><code>kubectl delete pod &lt;pod&gt;</code></td><td>Remove pod (auto-recreates)</td><td>Restart stuck Grid node</td></tr>
+    <tr><td><code>kubectl describe pod &lt;pod&gt;</code></td><td>Detailed pod info + events</td><td>Diagnose CrashLoopBackOff on test pods</td></tr>
+    <tr><td><code>kubectl port-forward svc/app 8080:80</code></td><td>Access service locally</td><td>Hit app under test from local machine</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Cloud CI/CD Quick Reference</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Platform</th><th>Config File</th><th>Key Syntax</th><th>Best For</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>GitHub Actions</strong></td><td><code>.github/workflows/ci.yml</code></td><td><code>on: push</code>, <code>jobs:</code>, <code>runs-on: ubuntu-latest</code></td><td>GitHub-hosted repos, PR checks, open source</td></tr>
+    <tr><td><strong>Azure DevOps</strong></td><td><code>azure-pipelines.yml</code></td><td><code>trigger:</code>, <code>pool:</code>, <code>steps:</code></td><td>Enterprise Microsoft shops, integrated boards</td></tr>
+    <tr><td><strong>GitLab CI</strong></td><td><code>.gitlab-ci.yml</code></td><td><code>stages:</code>, <code>script:</code>, <code>artifacts:</code></td><td>Self-hosted GitLab, integrated registry</td></tr>
+    <tr><td><strong>AWS CodePipeline</strong></td><td><code>buildspec.yml</code> + console</td><td><code>phases: build/test/post_build</code></td><td>AWS-native deployments, Lambda triggers</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Quality Gates</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Gate</th><th>Threshold</th><th>Action on Fail</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Smoke Test Pass Rate</strong></td><td>100% pass</td><td>Block merge / fail pipeline immediately</td></tr>
+    <tr><td><strong>Regression Pass Rate</strong></td><td>≥ 95% pass</td><td>Mark unstable; notify QA lead; investigate before release</td></tr>
+    <tr><td><strong>Code Coverage</strong></td><td>≥ 80% (team-defined)</td><td>Block deploy; dev must add tests</td></tr>
+    <tr><td><strong>Critical / Blocker Bugs</strong></td><td>0 open blockers</td><td>Hold release; require QA sign-off exception</td></tr>
+    <tr><td><strong>Performance SLA</strong></td><td>Response &lt; 2 sec (p95)</td><td>Fail performance stage; escalate to dev</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Common Failures &amp; Fixes</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Issue</th><th>Root Cause</th><th>Quick Fix</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Build fails at checkout</td><td>Invalid credentials or branch deleted</td><td>Verify Jenkins credentials; check branch name in job config</td></tr>
+    <tr><td><code>mvn: command not found</code></td><td>Maven not on agent PATH</td><td>Add Maven via <code>tools { maven 'M3' }</code> or install on agent</td></tr>
+    <tr><td>Tests pass locally, fail in CI</td><td>Headless mode, different env, missing config</td><td>Run with <code>-Dheadless=true</code> locally; match CI env vars</td></tr>
+    <tr><td>Connection refused to app URL</td><td>App not running or wrong URL in CI</td><td>Start app in prior stage; use correct <code>ENV</code> property</td></tr>
+    <tr><td>OutOfMemoryError</td><td>Insufficient heap for parallel tests</td><td>Set <code>MAVEN_OPTS=-Xmx2048m</code>; reduce thread count</td></tr>
+    <tr><td>Flaky tests cause random failures</td><td>Timing issues, shared state, stale elements</td><td>Add explicit waits; isolate test data; quarantine flaky tests</td></tr>
+    <tr><td>Permission denied on shell script</td><td>Script not executable</td><td><code>chmod +x script.sh</code> or use <code>sh script.sh</code></td></tr>
+    <tr><td>JUnit publisher finds no results</td><td>Wrong path or tests didn't run</td><td>Verify <code>target/surefire-reports/*.xml</code> exists post-test</td></tr>
+    <tr><td>Docker stage fails</td><td>Daemon not running on agent</td><td>Ensure agent has Docker installed; use <code>agent { docker 'image' }</code></td></tr>
+    <tr><td>Pipeline stuck waiting for input</td><td>Manual approval stage with no approver</td><td>Configure approver list; add timeout on <code>input</code> step</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout warning">
+<strong>Remember:</strong> In interviews, pair every "failure" with your troubleshooting approach: check console log → identify failing stage → reproduce locally → classify (env / code / test) → fix and re-run.
+</div>
+
+</section>
+
+<section id="section-30" class="section-card">
+<h2>Section 30: 1-Day Interview Revision Notes</h2>
+
+<p>Condensed revision for Jenkins and CI/CD interviews. Read through once in the morning, then re-read the Confused Topics table and Quick Revision Points before your interview.</p>
+
+<div class="callout tip">
+<strong>1-Day Plan:</strong> Morning — Sections 28–29 tables (2 hrs). Afternoon — Top 50 Q&amp;A + Confused Topics (2 hrs). Evening — 50 Quick Points + Mock answers aloud (1 hr).
+</div>
+
+<h3>Top 25 Most Asked Jenkins Questions</h3>
+
+<h4>1. What is Jenkins and why is it used in test automation?</h4>
+<p>Jenkins is an open-source CI/CD server that automates build, test, and deployment workflows. Automation engineers use it to schedule TestNG/Cucumber suites on every commit, generate reports, and notify teams on failure.</p>
+
+<h4>2. Explain Master vs Agent architecture.</h4>
+<p>The Master (Controller) schedules jobs and serves the UI; Agents (Nodes) execute build steps on their own machines. This distributes load — regression runs on dedicated Linux agents while the master stays lightweight.</p>
+
+<h4>3. What is a Jenkinsfile?</h4>
+<p>A Jenkinsfile is a text file stored in Git that defines the entire pipeline as code. It enables version control, PR reviews, and reproducible pipelines across environments.</p>
+
+<h4>4. Declarative vs Scripted Pipeline — which do you prefer?</h4>
+<p>Declarative uses a structured <code>pipeline { }</code> block with built-in validation and <code>post</code> actions — ideal for standard test pipelines. Scripted offers full Groovy flexibility for dynamic stages but is harder to maintain.</p>
+
+<h4>5. How do you trigger a Jenkins job on Git push?</h4>
+<p>Configure a webhook in GitHub/GitLab pointing to <code>/github-webhook/</code> and enable "GitHub hook trigger" in the job. This is instant and preferred over SCM polling.</p>
+
+<h4>6. What is SCM polling?</h4>
+<p>Jenkins periodically checks the Git repo for new commits using a cron expression like <code>H/5 * * * *</code>. It works without webhooks but adds delay and unnecessary load.</p>
+
+<h4>7. How do you run a specific TestNG suite in Jenkins?</h4>
+<p>Use Maven: <code>mvn clean test -DsuiteXmlFile=src/test/resources/smoke.xml</code>. In Pipeline, pass the suite as a parameter for flexibility.</p>
+
+<h4>8. What are Jenkins parameters?</h4>
+<p>User inputs at build time — choice, string, boolean. Example: browser selection (<code>chrome</code>/<code>firefox</code>) or environment (<code>qa</code>/<code>staging</code>).</p>
+
+<h4>9. Explain parallel stages in Jenkins.</h4>
+<p>The <code>parallel { }</code> block runs multiple stages concurrently on the same or different agents. Common for cross-browser testing — Chrome and Firefox simultaneously.</p>
+
+<h4>10. What is the post section in a Pipeline?</h4>
+<p>Defines actions after stage/pipeline completion: <code>always</code>, <code>success</code>, <code>failure</code>, <code>unstable</code>, <code>changed</code>. Used for email alerts, report publishing, and cleanup.</p>
+
+<h4>11. How do you publish TestNG results in Jenkins?</h4>
+<p>Use the JUnit plugin: <code>junit 'target/surefire-reports/*.xml'</code> in the post block. Jenkins displays trend graphs and marks build unstable on test failure.</p>
+
+<h4>12. What is a Multibranch Pipeline?</h4>
+<p>Auto-discovers branches and PRs in Git; each branch gets its own pipeline from its Jenkinsfile. Ideal for PR validation — feature branches run smoke, develop runs regression.</p>
+
+<h4>13. How do you secure credentials in Jenkins?</h4>
+<p>Store secrets in Jenkins Credentials Manager and inject via <code>withCredentials</code> or credentials binding plugin. Never hardcode passwords in Jenkinsfile.</p>
+
+<h4>14. What is the difference between Freestyle and Pipeline?</h4>
+<p>Freestyle is UI-configured, not version-controlled. Pipeline uses Jenkinsfile in Git — scriptable, reviewable, supports parallel stages and complex logic.</p>
+
+<h4>15. How do you run tests inside Docker from Jenkins?</h4>
+<p>Use <code>agent { docker { image 'maven:3.9-eclipse-temurin-17' } }</code> or Docker Pipeline plugin to build/run containers. Ensures consistent JDK and dependencies.</p>
+
+<h4>16. What causes a Jenkins build to be "unstable" (yellow)?</h4>
+<p>Build completed but tests failed, or a post-build step flagged quality issues. JUnit publisher marks unstable when test failures exist but the pipeline didn't crash.</p>
+
+<h4>17. How do you archive test reports as artifacts?</h4>
+<p><code>archiveArtifacts artifacts: 'target/allure-report/**', allowEmptyArchive: true</code> in the post block. Reports remain downloadable after workspace cleanup.</p>
+
+<h4>18. What is a shared library in Jenkins?</h4>
+<p>Reusable Groovy code stored in a separate Git repo, imported via <code>@Library</code>. Teams use it for common functions: checkout, run tests, send notifications.</p>
+
+<h4>19. How do you debug a failed Jenkins build?</h4>
+<p>Open Console Output → identify failing stage → check error message → reproduce locally with same Maven command and env vars → fix and push.</p>
+
+<h4>20. What is Blue Ocean?</h4>
+<p>Modern Jenkins UI plugin for visualizing pipelines as stages with pass/fail status. Easier to read than raw console log for multi-stage test pipelines.</p>
+
+<h4>21. How do you set environment variables in Pipeline?</h4>
+<p>Use <code>environment { BROWSER = 'chrome' }</code> at pipeline or stage level. Access via <code>${env.BROWSER}</code> or <code>${BROWSER}</code> in shell steps.</p>
+
+<h4>22. What is the workspace in Jenkins?</h4>
+<p>The directory on the agent where source is checked out and commands execute. Path available as <code>${WORKSPACE}</code>. Clean workspace plugin prevents stale files.</p>
+
+<h4>23. How do you schedule nightly regression?</h4>
+<p>Add a cron trigger: <code>triggers { cron('0 2 * * *') }</code> in Jenkinsfile (2 AM daily) or configure "Build periodically" in Freestyle job.</p>
+
+<h4>24. What plugins are essential for test automation?</h4>
+<p>Pipeline, Git, Maven Integration, JUnit, Allure, Email Extension, Credentials Binding, Docker Pipeline. These cover checkout, execution, reporting, and notifications.</p>
+
+<h4>25. How do you integrate Allure reports in Jenkins?</h4>
+<p>Run tests with Allure listener, then in post: <code>allure includeProperties: false, jdk: '', results: [[path: 'target/allure-results']]</code>. Requires Allure Jenkins plugin.</p>
+
+<h3>Top 25 Most Asked CI/CD Questions</h3>
+
+<h4>1. What is CI/CD?</h4>
+<p>CI (Continuous Integration) automatically builds and tests every code change. CD (Continuous Delivery/Deployment) automates release to staging or production after tests pass.</p>
+
+<h4>2. What is the difference between CI and CD?</h4>
+<p>CI focuses on integration and automated testing on every commit. CD extends this to automated, repeatable delivery or deployment to environments with minimal manual steps.</p>
+
+<h4>3. What is a CI/CD pipeline?</h4>
+<p>An automated workflow of stages — checkout, build, test, report, deploy — triggered by code changes. QA owns the test stages and quality gates within the pipeline.</p>
+
+<h4>4. CI vs CD — Delivery vs Deployment?</h4>
+<p>Delivery means code is always deployable but requires manual approval for production. Deployment means every passing build auto-goes to production with no human gate.</p>
+
+<h4>5. What is a quality gate?</h4>
+<p>Predefined pass/fail criteria (e.g., 100% smoke pass, 0 blockers) that block promotion to the next stage. QA defines thresholds with the team.</p>
+
+<h4>6. What test suites run at each CI/CD stage?</h4>
+<p>PR: smoke (5–10 min). Post-merge: smoke + API. Nightly: full regression. Release: full suite + UAT sign-off. Match duration to feedback speed needed.</p>
+
+<h4>7. How does QA fit into CI/CD?</h4>
+<p>QA designs test stages, maintains automation suites, defines quality gates, triages pipeline failures, and ensures reports reach stakeholders.</p>
+
+<h4>8. What is an artifact in CI/CD?</h4>
+<p>Output stored from a build stage — JAR files, Docker images, test reports. Artifacts are passed to later stages or archived for audit.</p>
+
+<h4>9. How do you handle flaky tests in CI?</h4>
+<p>Identify via trend analysis, add explicit waits, isolate test data, retry with caution, quarantine persistently flaky tests, and fix root cause — never ignore.</p>
+
+<h4>10. What is Pipeline as Code?</h4>
+<p>Defining the entire CI/CD workflow in a version-controlled file (Jenkinsfile, azure-pipelines.yml). Changes go through PR review like application code.</p>
+
+<h4>11. GitHub Actions vs Jenkins — when to use which?</h4>
+<p>GitHub Actions is native to GitHub repos, YAML-based, zero infra setup. Jenkins is self-hosted, highly customizable, supports complex enterprise setups and shared libraries.</p>
+
+<h4>12. What is Docker's role in CI/CD?</h4>
+<p>Provides consistent, isolated environments for builds and tests. Eliminates "works on my machine" — same image runs locally and in CI.</p>
+
+<h4>13. What is headless browser testing in CI?</h4>
+<p>Running browsers without a GUI (<code>--headless</code>) since CI agents have no display. Always test headless locally before pushing to catch CI-specific failures.</p>
+
+<h4>14. How do you run parallel tests in CI?</h4>
+<p>TestNG parallel execution (<code>-Dsurefire.parallel=methods</code>), Jenkins parallel stages for browser matrix, or Selenium Grid for distributed UI tests.</p>
+
+<h4>15. What is a smoke test in CI context?</h4>
+<p>Fast critical-path tests (5–10 min) run on every PR to catch showstopper bugs early. Must be stable — flaky smoke blocks the entire team.</p>
+
+<h4>16. How do you integrate API tests in CI/CD?</h4>
+<p>Add a dedicated pipeline stage running REST Assured or Postman/Newman after build. Run on post-merge; keep independent of UI for faster feedback.</p>
+
+<h4>17. What happens when a CI build fails?</h4>
+<p>Pipeline stops (or continues based on config), team gets notified, author investigates console log, classifies failure (code/automation/env), fixes and re-runs.</p>
+
+<h4>18. What is shift-left testing?</h4>
+<p>Moving testing earlier in the development cycle — unit tests on commit, automation on PR, not just before release. CI/CD enables shift-left.</p>
+
+<h4>19. How do you manage test data in CI?</h4>
+<p>Use dedicated test databases, API seed scripts, Docker-compose for dependencies, or mock services. Never point CI at production data.</p>
+
+<h4>20. What is infrastructure as code (IaC) for QA?</h4>
+<p>Defining test environments in code (Docker Compose, Terraform, Ansible) so they are reproducible and version-controlled alongside test scripts.</p>
+
+<h4>21. What metrics should QA track in CI/CD?</h4>
+<p>Pass rate trend, build duration, flaky test rate, mean time to detect/fix failures, and coverage. Allure TestOps and Jenkins trend graphs help.</p>
+
+<h4>22. How do you implement PR validation?</h4>
+<p>Webhook triggers pipeline on PR; smoke + API tests run; GitHub/GitLab status check blocks merge if failed. Multibranch Pipeline handles this natively in Jenkins.</p>
+
+<h4>23. What is the difference between build and deploy stages?</h4>
+<p>Build compiles code and runs tests. Deploy pushes the validated artifact to a target environment (QA, staging, prod). Tests must pass before deploy.</p>
+
+<h4>24. How do you reduce CI pipeline duration?</h4>
+<p>Parallel execution, run smoke on PR and full regression nightly, cache Maven dependencies, use Docker layers, and split suites by module.</p>
+
+<h4>25. Describe your CI/CD setup from a real project.</h4>
+<p>Structure: Git push → webhook → Jenkins Multibranch → checkout → Maven build → parallel Chrome/Firefox smoke → Allure report → email on failure. Mention parameters, quality gates, and a troubleshooting example.</p>
+
+<h3>Frequently Confused Topics</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Topic A</th><th>Topic B</th><th>Key Difference</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>CI</strong></td><td><strong>CD (Delivery vs Deployment)</strong></td><td>CI = build + test on every change. Delivery = deployable with manual prod approval. Deployment = fully automated prod release.</td></tr>
+    <tr><td><strong>Freestyle</strong></td><td><strong>Pipeline</strong></td><td>Freestyle = UI config, not in Git. Pipeline = Jenkinsfile as code, supports parallel/conditional stages.</td></tr>
+    <tr><td><strong>Declarative</strong></td><td><strong>Scripted Pipeline</strong></td><td>Declarative = structured, validated, built-in post. Scripted = free Groovy, maximum flexibility.</td></tr>
+    <tr><td><strong>Master</strong></td><td><strong>Agent</strong></td><td>Master schedules and orchestrates. Agent executes build steps. Master should not run heavy tests.</td></tr>
+    <tr><td><strong>Build</strong></td><td><strong>Stage vs Step</strong></td><td>Build = one run instance. Stage = logical group (Test). Step = single action inside stage (sh 'mvn test').</td></tr>
+    <tr><td><strong>SCM Polling</strong></td><td><strong>Webhook</strong></td><td>Polling = Jenkins checks Git periodically (delayed). Webhook = Git notifies Jenkins instantly on push.</td></tr>
+    <tr><td><strong>mvn test</strong></td><td><strong>mvn clean test</strong></td><td><code>test</code> reuses compiled classes (stale risk). <code>clean test</code> deletes target/ first — always use in CI.</td></tr>
+    <tr><td><strong>Parallel Stages</strong></td><td><strong>Parallel Execution</strong></td><td>Parallel stages = Jenkins runs stages concurrently. Parallel execution = TestNG/Surefire runs test methods concurrently within one stage.</td></tr>
+    <tr><td><strong>Docker Image</strong></td><td><strong>Container</strong></td><td>Image = read-only template (blueprint). Container = running instance of an image. CI builds image; each run creates a container.</td></tr>
+    <tr><td><strong>GitHub Actions</strong></td><td><strong>Jenkins</strong></td><td>Actions = cloud-native, YAML in repo, GitHub-hosted runners. Jenkins = self-hosted, Groovy pipelines, enterprise plugins.</td></tr>
+    <tr><td><strong>Allure</strong></td><td><strong>Extent Reports</strong></td><td>Allure = listener-based, rich history, CI plugin integration. Extent = programmatic report builder, Spark HTML dashboard.</td></tr>
+    <tr><td><strong>Smoke</strong></td><td><strong>Sanity vs Regression</strong></td><td>Smoke = critical paths, every PR (~5 min). Sanity = narrow check after bug fix. Regression = full coverage, nightly/release.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>50 Quick Revision Points</h3>
+
+<h4>Jenkins Basics (1–10)</h4>
+<ol>
+  <li>Jenkins is an open-source CI server — automates build, test, deploy.</li>
+  <li>Master schedules; Agents execute. Never run heavy tests on master.</li>
+  <li>Executor = one concurrent build slot on an agent.</li>
+  <li>Workspace = checkout directory; available as <code>${WORKSPACE}</code>.</li>
+  <li>BUILD_NUMBER increments per job run — use for report tagging.</li>
+  <li>Freestyle = UI config. Pipeline = Jenkinsfile in Git.</li>
+  <li>Plugins extend Jenkins — Pipeline, Git, JUnit, Allure are essential.</li>
+  <li>Credentials stored in Jenkins Credentials Manager, not in code.</li>
+  <li>Console Output is the first place to debug any failure.</li>
+  <li>Views group related jobs on the dashboard.</li>
+</ol>
+
+<h4>Pipeline Essentials (11–20)</h4>
+<ol start="11">
+  <li>Declarative Pipeline starts with <code>pipeline { agent stages post }</code>.</li>
+  <li><code>agent any</code> runs on any available agent; use labels for routing.</li>
+  <li><code>parameters { }</code> enables Build with Parameters.</li>
+  <li><code>environment { }</code> sets env vars for stages.</li>
+  <li><code>parallel { }</code> runs stages concurrently — great for cross-browser.</li>
+  <li><code>when { branch 'main' }</code> conditionally runs stages.</li>
+  <li><code>post { failure { } }</code> sends alerts and publishes reports.</li>
+  <li><code>tools { maven 'M3' }</code> auto-provisions Maven on agent.</li>
+  <li>Multibranch Pipeline auto-creates jobs per Git branch/PR.</li>
+  <li>Always use <code>mvn -B clean test</code> in CI — batch mode, clean build.</li>
+</ol>
+
+<h4>CI/CD Concepts (21–30)</h4>
+<ol start="21">
+  <li>CI = integrate and test on every commit.</li>
+  <li>CD Delivery = always deployable, manual prod gate.</li>
+  <li>CD Deployment = auto-deploy to prod after tests pass.</li>
+  <li>Pipeline = automated sequence of stages from commit to release.</li>
+  <li>Quality gate = threshold that blocks promotion (e.g., 100% smoke).</li>
+  <li>Artifact = build output archived for later stages.</li>
+  <li>Shift-left = test early via CI on every PR.</li>
+  <li>PR validation = smoke on PR, block merge on failure.</li>
+  <li>Flaky tests erode CI trust — fix or quarantine immediately.</li>
+  <li>Pipeline as Code = Jenkinsfile/azure-pipelines.yml in Git.</li>
+</ol>
+
+<h4>Integration — TestNG, Cucumber, Selenium (31–40)</h4>
+<ol start="31">
+  <li>Run TestNG suite: <code>mvn test -DsuiteXmlFile=smoke.xml</code>.</li>
+  <li>Run Cucumber tags: <code>mvn test -Dcucumber.filter.tags="@smoke"</code>.</li>
+  <li>Publish results: <code>junit 'target/surefire-reports/*.xml'</code>.</li>
+  <li>Allure: add listener + <code>allure results: [[path: 'target/allure-results']]</code>.</li>
+  <li>Pass browser via <code>-Dbrowser=chrome</code> from pipeline parameter.</li>
+  <li>Headless in CI: <code>-Dheadless=true</code> — test locally first.</li>
+  <li>Selenium Grid: set <code>-DgridUrl=http://hub:4444</code> in pipeline.</li>
+  <li>Parallel TestNG: <code>-Dsurefire.parallel=methods -Dsurefire.threadCount=4</code>.</li>
+  <li>Extent Reports: generate in test code; publish via HTML Publisher plugin.</li>
+  <li>Archive screenshots on failure: <code>archiveArtifacts 'screenshots/**'</code>.</li>
+</ol>
+
+<h4>Troubleshooting &amp; Best Practices (41–50)</h4>
+<ol start="41">
+  <li>Debug flow: console log → failing stage → reproduce locally → fix.</li>
+  <li>Classify failures: product bug, automation bug, or environment issue.</li>
+  <li>Match CI env vars locally before claiming "works on my machine."</li>
+  <li>Set <code>MAVEN_OPTS=-Xmx2048m</code> for parallel test runs.</li>
+  <li>Use <code>timeout</code> option to prevent hung builds blocking agents.</li>
+  <li>Clean workspace between runs to avoid stale artifacts.</li>
+  <li>Never hardcode secrets — use credentials binding.</li>
+  <li>Keep smoke suite under 10 minutes for fast PR feedback.</li>
+  <li>Track pass rate trends — sudden drops indicate regressions.</li>
+  <li>Document pipeline in README so team can self-serve builds.</li>
+</ol>
+
+<h3>Common Interview Mistakes</h3>
+<div class="callout warning">
+<ul>
+  <li><strong>Saying "I just click Build Now"</strong> — Shows no pipeline ownership. Instead, explain triggers, parameters, and Jenkinsfile.</li>
+  <li><strong>Not knowing pipeline syntax</strong> — Be able to write a basic Declarative Jenkinsfile on a whiteboard.</li>
+  <li><strong>Confusing CI and CD</strong> — CI = test on commit. CD = deliver/deploy after validation. Know Delivery vs Deployment.</li>
+  <li><strong>Not understanding headless execution</strong> — CI agents have no GUI; explain <code>--headless</code> and why tests fail without it.</li>
+  <li><strong>Can't explain troubleshooting approach</strong> — Always describe: log → stage → reproduce → classify → fix.</li>
+  <li><strong>Not knowing parametrized builds</strong> — Explain browser/env/suite parameters and why they matter.</li>
+  <li><strong>Ignoring reporting in CI/CD</strong> — Mention Allure/JUnit publisher, artifact archiving, and email/Slack alerts.</li>
+  <li><strong>Not knowing Git integration</strong> — Explain webhooks, Multibranch, and PR validation.</li>
+  <li><strong>Can't explain test strategy</strong> — Map smoke/regression/nightly to triggers with durations.</li>
+  <li><strong>Not understanding Docker basics</strong> — Know image vs container and why Docker is used in CI.</li>
+</ul>
+</div>
+
+<h3>Interview Tips for 4+ Years Experience</h3>
+<ol>
+  <li><strong>Framework-level discussion:</strong> Explain how your POM framework integrates with CI — listeners, suite XML, config per env.</li>
+  <li><strong>Pipeline ownership:</strong> Say "I designed/maintained the Jenkinsfile" — describe stages you added and why.</li>
+  <li><strong>Troubleshooting stories:</strong> Prepare one STAR story: pipeline failed → diagnosed → fixed flaky test / env issue.</li>
+  <li><strong>Cross-team collaboration:</strong> Mention working with DevOps on agent setup, Docker images, and webhook config.</li>
+  <li><strong>Parameterized pipelines:</strong> Demonstrate you built self-service test runs for manual QA and devs.</li>
+  <li><strong>Quality gates:</strong> Explain how you defined pass criteria and blocked bad releases.</li>
+  <li><strong>Parallel execution:</strong> Discuss Grid setup, thread count tuning, and duration reduction achieved.</li>
+  <li><strong>Reporting strategy:</strong> Allure history, trend analysis, and stakeholder-friendly dashboards.</li>
+  <li><strong>Migration experience:</strong> Freestyle → Pipeline, or Jenkins → GitHub Actions — show adaptability.</li>
+  <li><strong>Metrics mindset:</strong> Cite pass rate, build time, flaky rate improvements you delivered.</li>
+</ol>
+
+<h3>What Interviewers Look For at 4+ Years</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Area</th><th>Expected Knowledge</th><th>Red Flag</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Jenkins / CI</td><td>Write Declarative Pipeline; configure triggers, parameters, post actions</td><td>Only knows "Build Now" button; can't write Jenkinsfile</td></tr>
+    <tr><td>Pipeline Design</td><td>Multi-stage with parallel browsers, conditional stages, quality gates</td><td>Single-stage job with hardcoded values</td></tr>
+    <tr><td>Maven Integration</td><td>Suite selection, properties, parallel config, Allure reporting</td><td>Only runs <code>mvn test</code> with no parameters</td></tr>
+    <tr><td>Git / SCM</td><td>Webhooks, Multibranch, PR validation, branch strategies</td><td>Doesn't know how CI is triggered from Git</td></tr>
+    <tr><td>Docker</td><td>Run tests in containers, docker-compose for test stacks</td><td>Can't explain image vs container</td></tr>
+    <tr><td>Troubleshooting</td><td>Systematic approach with real examples; reads console logs</td><td>"I ask DevOps to fix it" with no own diagnosis</td></tr>
+    <tr><td>Test Strategy</td><td>Maps suites to triggers (PR/nightly/release) with durations</td><td>Runs everything on every commit</td></tr>
+    <tr><td>Reporting</td><td>Allure/Extent integration, artifact archiving, notifications</td><td>No mention of reports or stakeholder communication</td></tr>
+    <tr><td>Framework + CI</td><td>End-to-end: framework design through pipeline to dashboard</td><td>Selenium and Jenkins discussed as separate silos</td></tr>
+    <tr><td>Soft Skills</td><td>Ownership, collaboration with DevOps/dev, metrics-driven improvements</td><td>Passive role — "I just run what was configured"</td></tr>
+  </tbody>
+</table>
+</div>
+
+</section>
+
+<section id="section-31" class="section-card">
+<h2>Section 31: Senior Automation Engineer Roadmap</h2>
+
+<p>Career progression guide for automation engineers with ~4 years experience targeting Senior AE, SDET II/III, or DevTest/SRE paths. Use the self-assessment to identify gaps and the 6-week plan to close them before interviews.</p>
+
+<h3>Current Role: Automation Engineer (4 Years) — Skills Self-Assessment</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Skill</th><th>Current Level (1–5)</th><th>Target</th><th>Priority</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Jenkins</strong></td><td>3 — Freestyle + basic Pipeline</td><td>4 — Design parameterized, parallel pipelines</td><td>High</td></tr>
+    <tr><td><strong>CI/CD Concepts</strong></td><td>3 — Understands CI vs CD</td><td>4 — Owns quality gates and test strategy</td><td>High</td></tr>
+    <tr><td><strong>Git</strong></td><td>4 — Branching, PRs, merge</td><td>4 — Maintain (strong foundation)</td><td>Medium</td></tr>
+    <tr><td><strong>Maven</strong></td><td>4 — POM, suites, profiles</td><td>4 — Maintain; add parallel tuning</td><td>Medium</td></tr>
+    <tr><td><strong>Docker</strong></td><td>2 — Basic run/build</td><td>4 — Test containers, compose stacks</td><td>High</td></tr>
+    <tr><td><strong>Kubernetes</strong></td><td>1 — Awareness only</td><td>3 — Deploy Grid, read logs, basic ops</td><td>Medium</td></tr>
+    <tr><td><strong>Azure DevOps</strong></td><td>2 — Used in one project</td><td>3 — Write azure-pipelines.yml</td><td>Low</td></tr>
+    <tr><td><strong>GitHub Actions</strong></td><td>2 — Basic workflow</td><td>3 — Matrix builds, artifacts</td><td>Medium</td></tr>
+    <tr><td><strong>Pipeline Design</strong></td><td>3 — Single-project pipelines</td><td>4 — Multi-stage, reusable patterns</td><td>High</td></tr>
+    <tr><td><strong>Troubleshooting</strong></td><td>3 — Console log analysis</td><td>4 — Systematic root-cause with metrics</td><td>High</td></tr>
+    <tr><td><strong>Selenium Grid</strong></td><td>3 — RemoteWebDriver setup</td><td>4 — Grid in Docker/K8s, scale nodes</td><td>Medium</td></tr>
+    <tr><td><strong>Test Strategy</strong></td><td>3 — Smoke/regression split</td><td>4 — Define gates, map suites to triggers</td><td>High</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout tip">
+<strong>Self-Assessment Guide:</strong> 1 = heard of it, 2 = used with help, 3 = independent on projects, 4 = design and mentor others, 5 = org-wide expert. Target 4 on High-priority skills for Senior AE interviews.
+</div>
+
+<h3>Career Paths</h3>
+
+<h4>Path 1: Senior AE → Lead QA → QA Manager</h4>
+<p>Deepen automation architecture, CI/CD ownership, and team leadership. Lead QA adds framework governance and hiring; QA Manager adds people management, budgeting, and cross-project quality strategy. Best if you enjoy mentoring and stakeholder communication.</p>
+
+<h4>Path 2: SDET II → SDET III → Staff SDET</h4>
+<p>Focus on engineering excellence — shared libraries, platform tooling, performance testing, and developer productivity. Staff SDET influences org-wide test infrastructure and technical direction. Best if you prefer coding over management.</p>
+
+<h4>Path 3: DevOps-focused QA → DevTest Engineer → SRE</h4>
+<p>Shift toward infrastructure — Docker, Kubernetes, Terraform, monitoring, and release engineering. DevTest bridges QA and DevOps; SRE owns reliability and incident response. Best if you enjoy systems, pipelines, and on-call culture.</p>
+
+<div class="ascii-diagram">Career Path Overview
+──────────────────────────────────────────────────────────────────
+Path 1 (Management):  AE → Senior AE → Lead QA → QA Manager
+Path 2 (Technical):   AE → SDET II → SDET III → Staff SDET
+Path 3 (DevOps/SRE):  AE → DevTest Engineer → SRE → Platform Engineer
+──────────────────────────────────────────────────────────────────</div>
+
+<h3>CI/CD Skills at Each Level</h3>
+
+<h4>Junior (0–2 years)</h4>
+<ul>
+  <li>Trigger builds manually or via schedule</li>
+  <li>Read console output and identify pass/fail</li>
+  <li>Download and review archived reports</li>
+</ul>
+
+<h4>Mid (2–4 years)</h4>
+<ul>
+  <li>Create Freestyle jobs with Git + Maven</li>
+  <li>Write basic Declarative Jenkinsfile</li>
+  <li>Configure JUnit/Allure report publishing</li>
+</ul>
+
+<h4>Senior (4–7 years)</h4>
+<ul>
+  <li>Design multi-stage pipelines with parameters and parallel stages</li>
+  <li>Integrate Docker agents and Selenium Grid</li>
+  <li>Troubleshoot failures; define quality gates and test strategy</li>
+</ul>
+
+<h4>Architect (7+ years)</h4>
+<ul>
+  <li>Build shared pipeline libraries for multiple teams</li>
+  <li>Dynamic pipelines, K8s ephemeral agents, multi-project CI/CD</li>
+  <li>Define org-wide standards, metrics, and tooling strategy</li>
+</ul>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Level</th><th>Jenkins</th><th>CI/CD</th><th>Docker</th><th>Cloud</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Junior</strong></td><td>Trigger builds, read logs</td><td>Understand CI concept</td><td>Know what containers are</td><td>Awareness</td></tr>
+    <tr><td><strong>Mid</strong></td><td>Freestyle + basic Pipeline</td><td>PR validation, smoke on commit</td><td>docker run, docker build</td><td>Used one platform</td></tr>
+    <tr><td><strong>Senior</strong></td><td>Parameterized, parallel, Multibranch</td><td>Quality gates, test strategy</td><td>Compose stacks, Grid in Docker</td><td>GitHub Actions or Azure Pipelines</td></tr>
+    <tr><td><strong>Architect</strong></td><td>Shared libraries, dynamic pipelines</td><td>Multi-project, org-wide standards</td><td>K8s agents, custom images</td><td>Multi-cloud, IaC integration</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Certifications</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Certification</th><th>Provider</th><th>Relevance</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Certified Jenkins Engineer (CJE)</strong></td><td>CloudBees</td><td>Direct Jenkins credibility for pipeline-focused roles</td></tr>
+    <tr><td><strong>AWS Cloud Practitioner</strong></td><td>Amazon</td><td>Foundation for cloud CI/CD and AWS CodePipeline</td></tr>
+    <tr><td><strong>Azure DevOps Engineer Expert</strong></td><td>Microsoft</td><td>Enterprise shops using Azure Pipelines and Boards</td></tr>
+    <tr><td><strong>Docker Certified Associate</strong></td><td>Docker</td><td>Validates container skills for DevTest/SRE path</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Salary Benchmarks (India — 2025–2026 Approximate)</h3>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Role</th><th>Experience</th><th>Salary Range (LPA)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Automation Engineer</td><td>2–4 years</td><td>6 – 12</td></tr>
+    <tr><td>Senior Automation Engineer / SDET II</td><td>4–7 years</td><td>12 – 22</td></tr>
+    <tr><td>Lead QA / SDET III</td><td>7–10 years</td><td>20 – 35</td></tr>
+    <tr><td>Staff SDET / DevTest Engineer</td><td>10+ years</td><td>30 – 50+</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+<strong>Note:</strong> Salaries vary by city (Bangalore/Hyderabad/Pune premium), product vs service company, and CI/CD depth. Strong Jenkins + Docker + pipeline design skills typically add 15–25% premium at 4+ years.
+</div>
+
+<h3>Learning Resources</h3>
+
+<h4>YouTube Channels (5)</h4>
+<ol>
+  <li><strong>Testers Talk</strong> — Jenkins, CI/CD, and Selenium integration tutorials</li>
+  <li><strong>Automation Step by Step</strong> — Jenkins Pipeline and Maven for QA</li>
+  <li><strong>TechWorld with Nana</strong> — CI/CD concepts, Docker, and Kubernetes fundamentals</li>
+  <li><strong>DevOps Directive</strong> — Pipeline design and DevOps tooling deep dives</li>
+  <li><strong>QA Automation Expert</strong> — TestNG, Cucumber, and Jenkins end-to-end projects</li>
+</ol>
+
+<h4>Blogs &amp; Documentation (5)</h4>
+<ol>
+  <li><strong>Jenkins.io Documentation</strong> — Official Pipeline syntax reference</li>
+  <li><strong>CloudBees Blog</strong> — Jenkins best practices and plugin guides</li>
+  <li><strong>TestAutomationU (Applitools)</strong> — Free courses on CI/CD for testers</li>
+  <li><strong>Ministry of Testing</strong> — Community articles on pipeline testing strategies</li>
+  <li><strong>GitHub Actions Docs</strong> — YAML workflow reference for cloud-native CI</li>
+</ol>
+
+<h4>Practice Labs (3)</h4>
+<ol>
+  <li><strong>KodeKloud Jenkins Labs</strong> — Hands-on Pipeline and Docker exercises</li>
+  <li><strong>Docker Playground / Play with Docker</strong> — Free browser-based Docker labs</li>
+  <li><strong>Local setup:</strong> Jenkins in Docker + sample Maven project + GitHub webhook — best real practice</li>
+</ol>
+
+<h4>Books (2)</h4>
+<ol>
+  <li><strong>"Continuous Delivery" — Humble &amp; Farley</strong> — Foundational CI/CD principles and deployment pipelines</li>
+  <li><strong>"Jenkins 2: Up and Running" — Madsen</strong> — Pipeline as Code, plugins, and automation patterns</li>
+</ol>
+
+<h3>6-Week CI/CD Interview Prep Plan</h3>
+
+<h4>Week 1: Jenkins Fundamentals + Pipeline Basics</h4>
+<p>Install Jenkins (Docker), create Freestyle job, write first Declarative Jenkinsfile, configure Git webhook, publish JUnit results.</p>
+
+<h4>Week 2: TestNG/Cucumber + Maven Integration</h4>
+<p>Parameterize browser/env/suite, run TestNG XML and Cucumber tags from pipeline, integrate Allure reporting.</p>
+
+<h4>Week 3: Docker + Grid + Advanced Pipeline</h4>
+<p>Run tests in Docker agent, set up docker-compose with Selenium Grid, add parallel stages for cross-browser.</p>
+
+<h4>Week 4: Cloud CI/CD + Troubleshooting</h4>
+<p>Build a GitHub Actions workflow, compare with Jenkins, practice debugging 5 common pipeline failures from Section 29.</p>
+
+<h4>Week 5: Interview Questions Practice</h4>
+<p>Answer all 50 questions from Section 30 aloud, write 3 Jenkinsfiles from memory (minimal, parameterized, parallel).</p>
+
+<h4>Week 6: Mock Interviews + Scenario Practice</h4>
+<p>Whiteboard pipeline design, explain real project CI/CD setup, prepare 2 troubleshooting STAR stories, review Confused Topics table.</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Week</th><th>Focus</th><th>Daily Hours</th><th>Activities</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>1</strong></td><td>Jenkins fundamentals + Pipeline basics</td><td>1.5 – 2 hrs</td><td>Install Jenkins, Freestyle job, first Jenkinsfile, JUnit publisher</td></tr>
+    <tr><td><strong>2</strong></td><td>TestNG/Cucumber + Maven integration</td><td>1.5 – 2 hrs</td><td>Parameterized builds, suite XML, Cucumber tags, Allure setup</td></tr>
+    <tr><td><strong>3</strong></td><td>Docker + Grid + advanced pipeline</td><td>2 hrs</td><td>Docker agent, docker-compose Grid, parallel browser stages</td></tr>
+    <tr><td><strong>4</strong></td><td>Cloud CI/CD + troubleshooting</td><td>1.5 – 2 hrs</td><td>GitHub Actions workflow, debug 5 failure scenarios</td></tr>
+    <tr><td><strong>5</strong></td><td>Interview questions practice</td><td>2 hrs</td><td>50 Q&amp;A drill, write Jenkinsfiles from memory</td></tr>
+    <tr><td><strong>6</strong></td><td>Mock interviews + scenarios</td><td>2 hrs</td><td>Whiteboard design, STAR stories, Confused Topics review</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout tip">
+<strong>Final Advice:</strong> At 4+ years, interviewers want proof you owned CI/CD — not just ran tests. Build one end-to-end project (framework + Jenkinsfile + Docker + Allure) and walk through it confidently. That single project answers 60% of interview questions.
+</div>
+
+</section>
