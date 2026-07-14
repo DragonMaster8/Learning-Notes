@@ -39,51 +39,57 @@
   </div>
 </div>
 
-<!-- Sidebar -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <a href="index.html" class="sidebar-back">&larr; Dashboard</a>
-    <div class="user-bar"><span class="user-avatar"></span><span class="user-greeting"></span></div>
+<div id="progress-bar"></div>
+<button id="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+<button id="sidebar-expand-btn" aria-label="Show sidebar">&#9776;</button>
+
+<aside id="sidebar">
+  <button class="sidebar-collapse-btn" aria-label="Hide sidebar" title="Hide sidebar">&laquo;</button>
+  <div class="logo"><span>&#128300;</span> Add-On Topics</div>
+  <div class="user-bar"><span class="user-avatar"></span><span class="user-greeting"></span></div>
+  <a href="index.html" class="back-to-home">&larr; All Topics</a>
+  <div id="search-container">
+    <input type="text" id="search-box" placeholder="Search notes..." aria-label="Search">
+    <span class="search-shortcut">Ctrl+K</span>
   </div>
-  <h2 class="sidebar-title">Add-On Topics</h2>
-  <p style="color:var(--text-muted);font-size:0.72rem;margin:0 0 0.5rem;padding:0 0.5rem;">Reference material — optional for interviews</p>
-  <nav class="sidebar-nav" id="sidebar-nav">
-        <a href="#section-1" class="nav-link">Playwright Automation</a>
-        <a href="#section-2" class="nav-link">REST Assured Deep Dive</a>
-        <a href="#section-3" class="nav-link">Microservices Testing</a>
-        <a href="#section-4" class="nav-link">DSA for SDET</a>
-        <a href="#section-5" class="nav-link">Appium & Mobile Testing</a>
-        <a href="#section-6" class="nav-link">Security Testing Basics</a>
-        <a href="#section-7" class="nav-link">Cloud Testing for QA</a>
+  <div class="search-info"></div>
+  <nav id="nav-links">
+    <a href="#section-1">1. Playwright Automation</a>
+    <a href="#section-2">2. REST Assured Deep Dive</a>
+    <a href="#section-3">3. Microservices Testing</a>
+    <a href="#section-4">4. DSA for SDET</a>
+    <a href="#section-5">5. Appium &amp; Mobile Testing</a>
+    <a href="#section-6">6. Security Testing Basics</a>
+    <a href="#section-7">7. Cloud Testing for QA</a>
   </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" id="logout-btn">Logout</button>
+  </div>
 </aside>
 
-<!-- Toggle Sidebar -->
-<button class="sidebar-toggle" id="sidebar-toggle">&#9776;</button>
+<main id="main-content">
 
-<!-- Main Content -->
-<main class="main-content" id="main-content">
-  <header class="page-header">
-    <h1>Add-On Topics for QA Engineers</h1>
-    <p class="subtitle">Playwright, REST Assured, Microservices, DSA, Appium, Security & Cloud — Optional Reference Material</p>
-    <div class="header-stats">
-      <div class="stat"><span>7</span> Sections</div>
-      <div class="stat"><span>130+</span> Interview Q&amp;A</div>
-      <div class="stat"><span>Add-On</span> Priority</div>
-    </div>
-  </header>
-
-  <div id="reading-toolbar" class="reading-toolbar">
-    <div class="toolbar-group"><button id="font-dec" class="toolbar-btn" title="Decrease font">A&minus;</button><span class="font-size-display" id="font-size-display">16px</span><button id="font-inc" class="toolbar-btn" title="Increase font">A+</button></div>
-    <span class="toolbar-sep"></span>
-    <div class="toolbar-group"><span class="toolbar-label">&#9201; Total</span> <span id="total-read-time"></span></div>
-    <span class="toolbar-sep"></span>
-    <div class="toolbar-group"><span class="toolbar-label">Progress</span> <span id="progress-pct">0%</span></div>
-    <span class="toolbar-sep"></span>
-    <button id="reset-progress" class="toolbar-btn" title="Reset progress for this page">Reset</button>
-    <span class="toolbar-sep"></span>
-    <div class="toolbar-group"><span class="toolbar-kbd">&larr; &rarr;</span> <span class="toolbar-label">navigate</span></div>
+<div class="page-header">
+  <h1>Add-On Topics for QA Engineers</h1>
+  <p>Playwright, REST Assured, Microservices, DSA, Appium, Security &amp; Cloud &mdash; Optional Reference Material</p>
+  <div class="header-stats">
+    <div class="stat"><span>7</span><small>Sections</small></div>
+    <div class="stat"><span>130+</span><small>Interview Q&amp;A</small></div>
+    <div class="stat"><span>Add-On</span><small>Reference</small></div>
   </div>
+</div>
+
+<div id="reading-toolbar">
+  <div class="toolbar-group"><button class="font-decrease" title="Decrease font">A&minus;</button><span class="font-size-display">16px</span><button class="font-increase" title="Increase font">A+</button></div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-group"><span class="toolbar-label">&#9201; Total</span><span id="total-read-time"></span></div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-group"><span class="toolbar-label">Progress</span><span id="sections-progress"></span></div>
+  <div class="toolbar-sep"></div>
+  <button id="reset-progress" title="Reset all progress on this page">Reset</button>
+  <div class="toolbar-sep toolbar-kbd-sep"></div>
+  <div class="toolbar-group toolbar-kbd"><kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate</div>
+</div>
 
 <section id="section-1" class="section-card">
 <h2>Section 1: Playwright Automation</h2>

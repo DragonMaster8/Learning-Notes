@@ -670,7 +670,6 @@
       'dipali_notes.html': 12,
       'sql_database_notes.html': 20,
       'testing_agile_jira_notes.html': 19,
-      'cicd_jenkins_notes.html': 22,
       'testng_cucumber_notes.html': 35,
       'java_selenium_notes.html': 42,
       'java_automation_notes.html': 25,

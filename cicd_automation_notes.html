@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CI/CD &amp; Jenkins for Automation Engineers</title>
+<title>CI/CD &amp; Jenkins — Learning Notes</title>
 <meta name="description" content="Complete CI/CD &amp; Jenkins Handbook for QA Automation Engineers — 31 sections, Jenkins pipelines, TestNG/Cucumber/Selenium integration, Docker, Kubernetes, 300+ interview questions.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,7 +45,7 @@
 
 <aside id="sidebar">
   <button class="sidebar-collapse-btn" aria-label="Hide sidebar" title="Hide sidebar">&laquo;</button>
-  <div class="logo"><span>&#9881;</span> CI/CD for Automation</div>
+  <div class="logo"><span>&#9881;</span> CI/CD &amp; Jenkins</div>
   <div class="user-bar"><span class="user-avatar"></span><span class="user-greeting"></span></div>
   <a href="index.html" class="back-to-home">&larr; All Topics</a>
   <div id="search-container">
@@ -94,26 +94,25 @@
 <main id="main-content">
 
 <div class="page-header">
-  <h1>CI/CD &amp; Jenkins for Automation Engineers</h1>
+  <h1>CI/CD &amp; Jenkins</h1>
   <p>Complete handbook &mdash; Jenkins pipelines, TestNG/Cucumber/Selenium/Playwright integration, Maven, Git, Docker, Kubernetes, Azure DevOps, GitHub Actions, 300+ interview questions, troubleshooting, and career roadmap.</p>
   <div class="header-stats">
-    <div class="stat"><span>31</span> Sections</div>
-    <div class="stat"><span>300+</span> Interview Q&amp;A</div>
-    <div class="stat"><span>8</span> Real Scenarios</div>
-    <div class="stat"><span>4+ Yrs</span> Experience Level</div>
+    <div class="stat"><span>31</span><small>Sections</small></div>
+    <div class="stat"><span>300+</span><small>Interview Q&amp;A</small></div>
+    <div class="stat"><span>8</span><small>Real Scenarios</small></div>
   </div>
 </div>
 
 <div id="reading-toolbar">
-  <div class="toolbar-group"><span class="toolbar-label">Font</span><button class="font-decrease" title="Decrease font">A&minus;</button><span class="font-size-display">16px</span><button class="font-increase" title="Increase font">A+</button></div>
+  <div class="toolbar-group"><button class="font-decrease" title="Decrease font">A&minus;</button><span class="font-size-display">16px</span><button class="font-increase" title="Increase font">A+</button></div>
   <div class="toolbar-sep"></div>
-  <div class="toolbar-group"><span class="toolbar-label">Total</span><span id="total-read-time"></span></div>
+  <div class="toolbar-group"><span class="toolbar-label">&#9201; Total</span><span id="total-read-time"></span></div>
   <div class="toolbar-sep"></div>
   <div class="toolbar-group"><span class="toolbar-label">Progress</span><span id="sections-progress"></span></div>
   <div class="toolbar-sep"></div>
-  <div class="toolbar-group toolbar-kbd"><kbd>&larr;</kbd><kbd>&rarr;</kbd> Navigate &bull; <kbd>Ctrl</kbd>+<kbd>K</kbd> Search</div>
-  <div class="toolbar-sep"></div>
-  <button id="reset-progress" title="Reset all progress on this page">Reset Progress</button>
+  <button id="reset-progress" title="Reset all progress on this page">Reset</button>
+  <div class="toolbar-sep toolbar-kbd-sep"></div>
+  <div class="toolbar-group toolbar-kbd"><kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate</div>
 </div>
 
 <!-- CI/CD for Automation Engineers - Sections 1-7 -->
@@ -1680,35 +1679,6 @@ docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 </section>
 
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CI/CD for Automation Engineers — Sections 8–14</title>
-<style>
-  body { font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; max-width: 960px; margin: 0 auto; padding: 2rem; color: #1a1a2e; background: #f8f9fa; }
-  .section-card { background: #fff; border-radius: 8px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); border-left: 4px solid #2563eb; }
-  .section-card h2 { color: #1e40af; margin-top: 0; border-bottom: 2px solid #e5e7eb; padding-bottom: .5rem; }
-  .section-card h3 { color: #374151; margin-top: 1.5rem; }
-  .section-card h4 { color: #4b5563; margin-top: 1rem; }
-  .callout { background: #eff6ff; border-left: 4px solid #2563eb; padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
-  .callout.warning { background: #fffbeb; border-color: #f59e0b; }
-  .callout.tip { background: #ecfdf5; border-color: #10b981; }
-  .table-wrap { overflow-x: auto; margin: 1rem 0; }
-  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
-  th, td { border: 1px solid #d1d5db; padding: .6rem .8rem; text-align: left; }
-  th { background: #f3f4f6; font-weight: 600; }
-  tr:nth-child(even) { background: #f9fafb; }
-  pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: .85rem; }
-  code { font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
-  p code, li code { background: #f1f5f9; color: #be185d; padding: .15rem .4rem; border-radius: 3px; font-size: .9em; }
-  .ascii-diagram { background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; font-family: 'Cascadia Code', Consolas, monospace; font-size: .85rem; white-space: pre; overflow-x: auto; border-radius: 6px; }
-  ul, ol { padding-left: 1.5rem; }
-  li { margin-bottom: .4rem; }
-</style>
-</head>
-<body>
 
 <section id="section-8" class="section-card">
 <h2>Section 8: Jenkins Jobs</h2>
@@ -3342,10 +3312,6 @@ src/test/resources/testdata/staging/users.json
   <li>Test data: seed before run, reset DB, env-specific files, dynamic factories for parallel</li>
 </ul>
 </section>
-
-</body>
-</html>
-
 
 <section id="section-15" class="section-card">
 <h2>Section 15: Reporting in Jenkins</h2>
